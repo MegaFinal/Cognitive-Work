@@ -1,76 +1,110 @@
-//
-//  House.swift
-//  Cognitive-Work
-//
-//  Created by Jonas Fernando Nascimento Melo on 07/08/26.
-//
-
 import Foundation
 import CloudKit
 
+/// Represents a house stored in CloudKit.
 class House: Identifiable {
+
     var id: CKRecord.ID
     var name: String
     var description: String
-//    var tasks: [CKRecord.Reference?]
-//    var users: [CKRecord.Reference?]
-//    var shopList: [CKRecord.Reference?]
-    
-    /// Referência ao CKRecord original  necessária para update/delete no CloudKitManager.
+
+    /// The original CloudKit record used for persistence operations.
     let record: CKRecord
-    
+
+    /// Creates a house model from a CloudKit record.
+    ///
+    /// - Parameter record: The CloudKit record representing the house.
+    /// - Returns: A `House` instance when the record is valid;
+    ///   otherwise `nil`.
     init?(record: CKRecord) {
         guard record.recordType == "House",
-        let name = record["name"] as? String else {
-                    return nil
+              let name = record["name"] as? String
+        else {
+            return nil
         }
+
         self.id = record.recordID
         self.name = name
         self.description = record["description"] as? String ?? ""
-//        self.tasks = record["tasks"] as? CKRecord.Reference
-//        self.users = record["users"] as? CKRecord.Reference
-//        self.shopList = record["shopList"] as? CKRecord.Reference
-        
         self.record = record
     }
-    
-    static func newRecord(name: String, description: String, zoneID: CKRecordZone.ID) -> CKRecord {
-        let id = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-        let record = CKRecord(recordType: "House", recordID: id)
+
+    /// Creates a new CloudKit record representing a house.
+    ///
+    /// - Parameters:
+    ///   - name: The house name.
+    ///   - description: The house description.
+    ///   - zoneID: The CloudKit zone where the record will be stored.
+    /// - Returns: A new unsaved `House` CloudKit record.
+    static func newRecord(name: String,description: String,zoneID: CKRecordZone.ID) -> CKRecord {
+        let id = CKRecord.ID(
+            recordName: UUID().uuidString,
+            zoneID: zoneID
+        )
+
+        let record = CKRecord(
+            recordType: "House",
+            recordID: id
+        )
+
         record["name"] = name
         record["description"] = description
-//        record["tasks"] = CKRecord.Reference(record: household, action: .none)
-//        record["users"] = CKRecord.Reference(record: household, action: .none)
-//        record["shopList"] = CKRecord.Reference(record: household, action: .none)
+
         return record
     }
-    
-    static func creatHouse(name: String, description: String) async {
-        _ = await CloudKitManager.shared.createHouse(name: name, description: description)
+
+    /// Creates a house through the shared CloudKit manager.
+    ///
+    /// - Parameters:
+    ///   - name: The house name.
+    ///   - description: The house description.
+    static func createHouse(name: String,description: String) async {
+        _ = await CloudKitManager.shared.createHouse(
+            name: name,
+            description: description
+        )
     }
-    
+
+    /// Fetches the first house available to the current user.
+    ///
+    /// - Returns: A `House` instance when a house is found;
+    ///   otherwise `nil`.
     static func fetchHouse() async -> House? {
         do {
-            let houseRecord = try await CloudKitManager.shared.fetchHouse()
-            return House(record: houseRecord)
-        }
-        catch {
-            print("Error convert House record to House Type")
+            let record = try await CloudKitManager.shared.fetchHouse()
+            return House(record: record)
+        } catch {
+            print("Failed to convert house record to House.")
             return nil
         }
     }
-    
+
+    /// Deletes a house from CloudKit.
+    ///
+    /// - Parameter house: The CloudKit record representing the house.
     static func deleteHouse(_ house: CKRecord) async {
         _ = await CloudKitManager.shared.deleteHouse(house)
     }
-    
-    
-    func updateUserAttributes(name: String? = nil, description: String? = nil) async {
-        if let name = name { self.name = name }
-        if let description = description { self.description = description }
-        
-        _ = await CloudKitManager.shared.updateHouseAttributes(house: record, name: name, description: description)
+
+    /// Updates the local model and persists the specified house attributes.
+    ///
+    /// - Parameters:
+    ///   - name: The new house name, or `nil` to keep the current value.
+    ///   - description: The new house description, or `nil` to keep the
+    ///     current value.
+    func updateAttributes(name: String? = nil,description: String? = nil) async {
+        if let name {
+            self.name = name
+        }
+
+        if let description {
+            self.description = description
+        }
+
+        _ = await CloudKitManager.shared.updateHouseAttributes(
+            house: record,
+            name: name,
+            description: description
+        )
     }
 }
-
-
