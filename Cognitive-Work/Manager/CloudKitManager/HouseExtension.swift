@@ -1,3 +1,10 @@
+//
+// HouseExtension.swift
+// Cognitive-Work
+//
+// Created by Jonas Fernando Nascimento Melo on 11/08/26.
+//
+
 import CloudKit
 
 // MARK: - House CRUD

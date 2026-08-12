@@ -1,3 +1,10 @@
+//
+// CloudKitManager.swift
+// Cognitive-Work
+//
+// Created by Jonas Fernando Nascimento Melo on 11/08/26.
+//
+
 import CloudKit
 
 /// Manages CloudKit operations for houses, users, and shared records.
