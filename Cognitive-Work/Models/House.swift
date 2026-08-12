@@ -60,15 +60,17 @@ class House: Identifiable {
         }
     }
     
-    func updateHouseName(house: CKRecord, newName: String) async {
-        _ = await CloudKitManager.shared.updateHouseName(house, newName: newName)
-    }
-    
-    func updateHouseDescription(house: CKRecord, newDescription: String) async {
-        _ = await CloudKitManager.shared.updateHouseDescription(house, newDescription: newDescription)
-    }
-    
-    static func deleteHouse(house: CKRecord) async {
+    static func deleteHouse(_ house: CKRecord) async {
         _ = await CloudKitManager.shared.deleteHouse(house)
     }
+    
+    
+    func updateUserAttributes(name: String? = nil, description: String? = nil) async {
+        if let name = name { self.name = name }
+        if let description = description { self.description = description }
+        
+        _ = await CloudKitManager.shared.updateHouseAttributes(house: record, name: name, description: description)
+    }
 }
+
+

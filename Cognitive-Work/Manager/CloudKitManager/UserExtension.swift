@@ -10,32 +10,36 @@ import CloudKit
 // MARK: - User extension (CRUD)
 extension CloudKitManager {
     
-    func createUser(title: String, dueDate: Date?, priority: Int = 0, house: CKRecord) async -> CKRecord? {
-        let zoneID = house.recordID.zoneID
-        let userID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-        let todo = CKRecord(recordType: "ToDo", recordID: userID)
-        todo["title"]    = title
-        todo["dueDate"]  = dueDate
-        todo["priority"] = priority
-        todo["isDone"]   = false
-        todo["household"] = CKRecord.Reference(record: house, action: .deleteSelf) // apaga o todo se a casa for apagada
-        todo.parent = CKRecord.Reference(record: house, action: .none) //gera relacionamento de pai
-        do {
-            let db = zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
-            let saved = try await db.save(todo)
-            return saved
-        } catch {
-            errorMessage = "Fail to creatUser: \(error.localizedDescription)"
-            return nil
-        }
-    }
-    
-    func fetchUser(household: CKRecord) async -> [CKRecord] {
-        let predicate = NSPredicate(format: "household == %@", CKRecord.Reference(record: household, action: .none))
-        let query = CKQuery(recordType: "ToDo", predicate: predicate)
+    func createUser(name: String, profilePicture: Data, coins: Int = 0,
+                    points: Int = 0, couponsLimit: Int = 0) async -> CKRecord? {
+        guard let cloudKitUserID = try? await CKContainer.default().userRecordID()
+        else {return nil}
+        let userID = CKRecord.ID(recordName: cloudKitUserID.recordName, zoneID: houseZoneID)
+        
+        let user = CKRecord(recordType: "User", recordID: userID)
+        user["name"] = name
+        user["profilePicture"]  = profilePicture
+        user["coins"] = coins
+        user["points"] = points
+        user["couponsLimit"] = couponsLimit
         
         do {
-            let zoneID = household.recordID.zoneID
+            try await privateDB.save(user)
+        }
+        catch {
+            print("Fail to save user in private database \(error.localizedDescription)")
+        }
+        
+        return user
+    }
+    
+    func fetchAllUsers(house: CKRecord) async -> [CKRecord] {
+        let predicate = NSPredicate(format: "house == %@",
+                                    CKRecord.Reference(record: house, action: .none))
+        let query = CKQuery(recordType: "User", predicate: predicate)
+        
+        do {
+            let zoneID = house.recordID.zoneID
             let db = zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
             let (results, _) = try await db.records(matching: query, inZoneWith: zoneID)
             return results.compactMap { try? $0.1.get() }
@@ -45,18 +49,67 @@ extension CloudKitManager {
         }
     }
     
-    func updateUser(toDo: CKRecord, title: String? = nil, dueDate: Date?? = nil, priority: Int? = nil, isDone: Bool? = nil) async -> Bool {
-        if let title = title       { toDo["title"] = title }
-        if let dueDate = dueDate   { toDo["dueDate"] = dueDate }
-        if let priority = priority { toDo["priority"] = priority }
-        if let isDone = isDone     { toDo["isDone"] = isDone }
+    func updateUserAttributes(user: CKRecord, name: String? = nil,
+                              profilePicture: Data? = nil, coins: Int? = nil, points: Int? = nil,
+                              couponLimit: Int? = nil) async -> Bool {
+        if let name = name { user["name"] = name }
+        if let profilePicture = profilePicture { user["profilePicture"] = profilePicture }
+        if let coins = coins { user["coins"] = coins }
+        if let points = points { user["points"] = points }
+        if let couponLimit = couponLimit { user["couponLimit"] = couponLimit }
         
         do {
-            let db = toDo.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
-            _ = try await db.save(toDo)
+            let db = user.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+            _ = try await db.save(user)
             return true
         } catch {
             errorMessage = "Fail to update user: \(error.localizedDescription)"
+            return false
+        }
+    }
+    
+    func addHouseToUser(user: CKRecord, house: CKRecord) async -> Bool {
+        do {
+            let db = house.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+            let houseReference = CKRecord.Reference(record: house, action: .none)
+            
+            if db === privateDB {
+                user["house"] = houseReference
+                user.parent = houseReference
+                try await db.save(user)
+            }
+            else {
+                let userCopy = CKRecord(
+                    recordType: user.recordType,
+                    recordID: CKRecord.ID(
+                        recordName: user.recordID.recordName,
+                        zoneID: house.recordID.zoneID
+                    )
+                )
+
+                userCopy["name"] = user["name"]
+                userCopy["house"] = houseReference
+                userCopy.parent = houseReference
+
+                try await db.save(userCopy)
+            }
+            return true
+        } catch {
+            print("Fail to attribute user a house: \(error.localizedDescription)")
+            return false
+        }
+    }
+    
+    func removeUserHouse(user: CKRecord) async -> Bool{
+        do {
+            user.parent = nil
+            user["house"] = nil
+            let db = user.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+            _ = try await db.save(user)
+            return true
+        }
+        catch {
+            print("Fail to remove users's house:  \(error.localizedDescription)")
             return false
         }
     }

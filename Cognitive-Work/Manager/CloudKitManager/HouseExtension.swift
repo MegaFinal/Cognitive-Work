@@ -90,24 +90,16 @@ extension CloudKitManager {
         }
     }
     
-    func updateHouseName(_ house: CKRecord, newName: String) async -> Bool {
-        house["name"] = newName
+    func updateHouseAttributes(house: CKRecord, name: String? = nil, description: String? = nil) async -> Bool {
+        if let name = name { house["name"] = name }
+        if let description = description { house["description"] = description }
+        
         do {
-            _ = try await privateDB.save(house)
+            let db = house.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+            _ = try await db.save(house)
             return true
         } catch {
-            errorMessage = "Fail to update house name: \(error.localizedDescription)"
-            return false
-        }
-    }
-    
-    func updateHouseDescription(_ house: CKRecord, newDescription: String) async -> Bool {
-        house["description"] = newDescription
-        do {
-            _ = try await privateDB.save(house)
-            return true
-        } catch {
-            errorMessage = "Fail to update house description: \(error.localizedDescription)"
+            errorMessage = "Fail to update user: \(error.localizedDescription)"
             return false
         }
     }
