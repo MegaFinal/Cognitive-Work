@@ -8,131 +8,77 @@
 import Foundation
 import CloudKit
 
-class ChoreModel {
-    private(set) var id: CKRecord.ID
-    private(set) var choreName: String
-    private(set) var description: String
-    private(set) var dueDate: Date?
-    private(set) var frequency: Recurrence
-    private(set) var duration: TimeInterval
-    private(set) var isPublic: Bool
-    private(set) var isLate: Bool = false
-    private(set) var weight: Int = 0
-    private(set) var priorityTag: PriorityTag
-    private(set) var image: Data?
-    private(set) var previousChore: [CKRecord.Reference] = []
-    private(set) var checkList: [CKRecord.Reference]
-    private(set) var currentResponsible: CKRecord.Reference?
-    private(set) var allResponsibleUsers: [CKRecord.Reference]
-    private(set) var room: CKRecord.Reference?
-    
-    init?(record: CKRecord) {
-        guard record.recordType == "ChoreModel",
-              let choreName = record["choreName"] as? String
-        else {
-            return nil
-        }
-        
-        self.id = record.recordID
-        self.choreName = choreName
-        self.description = record["description"] as? String ?? ""
-        self.dueDate = record["dueDate"] as? Date
-        self.frequency = Recurrence(rawValue: record["frequency"] as? String ?? "daily") ?? .daily
-        self.duration = record["duration"] as? Double ?? -1
-        self.isPublic = record["isPublic"] as? Bool ?? false
-        self.isLate = record["isLate"] as? Bool ?? false
-        self.weight = record["weight"] as? Int ?? 0
-        self.priorityTag = PriorityTag(rawValue: record["priorityTag"] as? String ?? "notUrgent") ?? .notUrgent
-        self.image = record["image"] as? Data
-        self.previousChore = record["previousChore"] as? [CKRecord.Reference] ?? []
-        self.checkList = record["checkList"] as? [CKRecord.Reference] ?? []
-        self.currentResponsible = record["currentResponsible"] as? CKRecord.Reference
-        self.allResponsibleUsers = record["allResponsibleUsers"] as? [CKRecord.Reference] ?? []
-        self.room = record["room"] as? CKRecord.Reference
-    }
-    
-    static func newChoreRecord(
-        choreName: String,
-        description: String,
-        dueDate: Date? = nil,
-        frequency: Recurrence,
-        duration: DateInterval,
-        isPublic: Bool,
-        isLate: Bool,
-        weight: Int,
-        priorityTag: PriorityTag,
-        image: Data,
-        previousChore: [CKRecord.Reference],
-        checkList: [CKRecord.Reference],
-        currentResponsible: CKRecord.Reference? = nil,
-        allResponsibleUsers: [CKRecord.Reference],
-        room: CKRecord.Reference
-    ) async -> CKRecord? {
-        let zoneID = CloudKitManager.shared.houseZoneID
-        
-        let id = CKRecord.ID(
-            recordName: UUID().uuidString,
-            zoneID: zoneID
-        )
-        
-        let record = CKRecord(
-            recordType: "ChoreModel",
-            recordID: id
-        )
-
+struct ChoreModel: CloudKitSyncable {
+    static let recordType = "ChoreModel"
+ 
+    var recordID: CKRecord.ID?
+ 
+    var choreName: String
+    var choreDescription: String
+    var dueDate: Date?
+    var frequency: Recurrence
+    var duration: TimeInterval
+    var isPublic: Bool
+    var isLate: Bool = false
+    var weight: Int = 0
+    var priorityTag: PriorityTag
+    var image: Data
+    var checkList: [CKRecord.Reference]
+    var currentResponsible: CKRecord.Reference?
+    var allResponsibleUsers: [CKRecord.Reference]
+    var room: CKRecord.Reference
+ 
+    func populate(record: CKRecord) {
         record["choreName"] = choreName
-        record["description"] = description
+        record["description"] = choreDescription
         record["dueDate"] = dueDate
         record["frequency"] = frequency.rawValue
-        record["duration"] = duration.duration
+        record["duration"] = duration
         record["isPublic"] = isPublic
         record["isLate"] = isLate
         record["weight"] = weight
         record["priorityTag"] = priorityTag.rawValue
         record["image"] = image
-        record["previousChore"] = previousChore
         record["checkList"] = checkList
         record["currentResponsible"] = currentResponsible
         record["allResponsibleUsers"] = allResponsibleUsers
         record["room"] = room
-        
-        return record
     }
-}
-
-enum Recurrence: String {
-    case daily = "daily"
-    case weekly = "weekly"
-    case fortnightly = "fortnightly"
-    case montly = "montly"
-}
-
-enum PriorityTag: String {
-    case urgent = "urgent"
-    case notUrgent = "notUrgent"
-}
-
-enum RoomColor: String {
-    case urgent = "urgent"
-    case notUrgent = "notUrgent"
-}
-
-class CheckItem {
-    private var id: UUID = UUID()
-    private var checkItemName: String
-    private var isLate: Bool
-    
-    init(checkItemName: String, isLate: Bool) {
-        self.checkItemName = checkItemName
+ 
+    init?(record: CKRecord) {
+        guard
+            let choreName = record["choreName"] as? String,
+            let choreDescription = record["description"] as? String,
+            let frequencyRaw = record["frequency"] as? String,
+            let frequency = Recurrence(rawValue: frequencyRaw),
+            let duration = record["duration"] as? TimeInterval,
+            let isPublic = record["isPublic"] as? Bool,
+            let isLate = record["isLate"] as? Bool,
+            let weight = record["weight"] as? Int,
+            let priorityTagRaw = record["priorityTag"] as? String,
+            let priorityTag = PriorityTag(rawValue: priorityTagRaw),
+            let image = record["image"] as? Data,
+            let checkList = record["checkList"] as? [CKRecord.Reference],
+            let allResponsibleUsers = record["allResponsibleUsers"] as? [CKRecord.Reference],
+            let room = record["room"] as? CKRecord.Reference
+        else {
+            return nil
+        }
+ 
+        self.recordID = record.recordID
+        self.choreName = choreName
+        self.choreDescription = choreDescription
+        self.dueDate = record["dueDate"] as? Date
+        self.frequency = frequency
+        self.duration = duration
+        self.isPublic = isPublic
         self.isLate = isLate
+        self.weight = weight
+        self.priorityTag = priorityTag
+        self.image = image
+        self.checkList = checkList
+        self.currentResponsible = record["currentResponsible"] as? CKRecord.Reference
+        self.allResponsibleUsers = allResponsibleUsers
+        self.room = room
     }
-}
-
-class Room {
-    private var id: UUID = UUID()
-    private var roomName: String
-    private var relatedChores: [ChoreModel]
-    private var house: House
-    private var roomColor: RoomColor
-    
 }
