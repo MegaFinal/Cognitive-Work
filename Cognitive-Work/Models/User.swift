@@ -1,3 +1,10 @@
+//
+// User.swift
+// Cognitive-Work
+//
+// Created by Jonas Fernando Nascimento Melo on 11/08/26.
+//
+
 import Foundation
 import CloudKit
 
