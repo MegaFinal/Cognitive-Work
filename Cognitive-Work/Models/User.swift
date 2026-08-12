@@ -11,13 +11,13 @@ import CloudKit
 /// Represents a user stored in CloudKit.
 class User: Identifiable {
 
-    var id: CKRecord.ID
-    var name: String
-    var profilePicture: Data?
-    var coins: Int
-    var points: Int
-    var house: CKRecord.Reference?
-    var couponLimit: Int
+    private(set) var id: CKRecord.ID
+    private(set) var name: String
+    private(set) var profilePicture: Data?
+    private(set) var coins: Int
+    private(set) var points: Int
+    private(set) var house: CKRecord.Reference?
+    private(set) var couponLimit: Int
 
     /// The original CloudKit record used for persistence operations.
     var record: CKRecord
