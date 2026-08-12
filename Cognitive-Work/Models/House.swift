@@ -11,9 +11,9 @@ import CloudKit
 /// Represents a house stored in CloudKit.
 class House: Identifiable {
 
-    var id: CKRecord.ID
-    var name: String
-    var description: String
+    private(set) var id: CKRecord.ID
+    private(set) var name: String
+    private(set) var description: String
 
     /// The original CloudKit record used for persistence operations.
     let record: CKRecord
