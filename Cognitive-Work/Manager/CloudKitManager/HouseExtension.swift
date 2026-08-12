@@ -1,5 +1,5 @@
 //
-//  HouseExtencion.swift
+//  HouseExtension.swift
 //  Cognitive-Work
 //
 //  Created by Jonas Fernando Nascimento Melo on 11/08/26.
@@ -90,29 +90,21 @@ extension CloudKitManager {
         }
     }
     
-    func updateHouseName(_ house: CKRecord, newName: String) async -> Bool {
-        house["name"] = newName
+    func updateHouseAttributes(house: CKRecord, name: String? = nil, description: String? = nil) async -> Bool {
+        if let name = name { house["name"] = name }
+        if let description = description { house["description"] = description }
+        
         do {
-            _ = try await privateDB.save(house)
+            let db = house.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+            _ = try await db.save(house)
             return true
         } catch {
-            errorMessage = "Fail to update house name: \(error.localizedDescription)"
+            errorMessage = "Fail to update user: \(error.localizedDescription)"
             return false
         }
     }
     
-    func updateHouseDescription(_ house: CKRecord, newDescription: String) async -> Bool {
-        house["description"] = newDescription
-        do {
-            _ = try await privateDB.save(house)
-            return true
-        } catch {
-            errorMessage = "Fail to update house description: \(error.localizedDescription)"
-            return false
-        }
-    }
-    
-    /// Apaga a casa inteira — isso remove o share e revoga acesso de todos os moradores
+    /// Apaga a casa inteira isso remove o share e revoga acesso de todos os moradores
     func deleteHouse(_ house: CKRecord) async -> Bool {
         do {
             try await privateDB.deleteRecord(withID: house.recordID)
