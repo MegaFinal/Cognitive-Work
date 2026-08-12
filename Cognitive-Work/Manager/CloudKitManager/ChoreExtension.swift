@@ -75,8 +75,6 @@ extension CloudKitManager {
 
     /// Fetches the first house available to the current user.
     ///
-    /// Owned houses are checked before shared houses.
-    ///
     /// - Returns: The first owned or shared house found.
     ///
     /// - Throws: `HouseError.notFound` when no house is available.
@@ -96,9 +94,9 @@ extension CloudKitManager {
         throw CloudKitErrors.choreNotFound
     }
 
-    /// Fetches houses owned by the current user.
+    /// Fetches chores owned by the current user.
     ///
-    /// - Returns: All houses stored in the current user's private database.
+    /// - Returns: All chores stored in the current user's private database.
     private func fetchPrivateChores() async -> [CKRecord] {
         let query = CKQuery(
             recordType: "ChoreModel",
@@ -120,9 +118,9 @@ extension CloudKitManager {
         }
     }
 
-    /// Fetches houses shared with the current user.
+    /// Fetches chores shared with the current user.
     ///
-    /// - Returns: All houses found in the user's shared database zones.
+    /// - Returns: All chores found in the user's shared database zones.
     private func fetchSharedChores() async -> [CKRecord] {
         do {
             let zones = try await sharedDB.allRecordZones()
@@ -158,8 +156,8 @@ extension CloudKitManager {
     /// Only parameters with non-`nil` values are modified.
     ///
     /// - Parameters:
-    ///   - house: The house record to update.
-    ///   - name: The new house name, or `nil` to keep the current value.
+    ///   - chore: The chore record to update.
+    ///   - choreName: The new house name, or `nil` to keep the current value.
     ///   - description: The new house description, or `nil` to keep the
     ///     current value.
     /// - Returns: `true` if the update succeeds; otherwise `false`.
