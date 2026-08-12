@@ -1,5 +1,5 @@
 //
-//  HouseExtencion.swift
+//  HouseExtension.swift
 //  Cognitive-Work
 //
 //  Created by Jonas Fernando Nascimento Melo on 11/08/26.
@@ -112,7 +112,7 @@ extension CloudKitManager {
         }
     }
     
-    /// Apaga a casa inteira — isso remove o share e revoga acesso de todos os moradores
+    /// Apaga a casa inteira isso remove o share e revoga acesso de todos os moradores
     func deleteHouse(_ house: CKRecord) async -> Bool {
         do {
             try await privateDB.deleteRecord(withID: house.recordID)

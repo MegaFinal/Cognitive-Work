@@ -16,7 +16,7 @@ class House: Identifiable {
 //    var users: [CKRecord.Reference?]
 //    var shopList: [CKRecord.Reference?]
     
-    /// Referência ao CKRecord original — necessária para update/delete no CloudKitManager.
+    /// Referência ao CKRecord original  necessária para update/delete no CloudKitManager.
     let record: CKRecord
     
     init?(record: CKRecord) {
