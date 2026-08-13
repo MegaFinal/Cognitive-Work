@@ -36,7 +36,32 @@ struct ChoreModelTests {
     }
     
     @Test
-    func fetchCreatedChoreSuccessfullyTest() async throws {
+    func fetchAllChoresSuccessfullyTest() async throws {
+        await CloudKitManager.shared.createZoneIfNeeded()
+        
+        let chore = ChoreModel(
+            name: "fetchChoreTest",
+            description: "fetchDescription",
+            frequency: .daily,
+            duration: 30.0,
+            isPublic: true,
+            priorityTag: .urgent
+        )
+        
+        let savedItem = await CloudKitManager.shared.create(chore)
+        
+        let chores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        print("ERROR:", CloudKitManager.shared.errorMessage as Any)
+        
+        #expect(!chores.isEmpty)
+        
+        if let savedItem {
+            await CloudKitManager.shared.delete(savedItem)
+        }
+    }
+    
+    @Test
+    func fetchCreatedChoreWithPredicateSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
         let chore = ChoreModel(
@@ -58,5 +83,54 @@ struct ChoreModelTests {
         if let savedItem {
             await CloudKitManager.shared.delete(savedItem)
         }
+    }
+    
+    @Test
+    func fetchFirstChoreSuccessfullyTest() async throws {
+        await CloudKitManager.shared.createZoneIfNeeded()
+        
+        let chores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        print("ERROR:", CloudKitManager.shared.errorMessage as Any)
+        
+        #expect(!chores.isEmpty)
+    }
+    
+    @Test
+    func deleteCreatedChoreSuccessfullyTest() async throws {
+        await CloudKitManager.shared.createZoneIfNeeded()
+        
+        let chore = ChoreModel(
+            name: "deleteChoreTest",
+            description: "deleteChoreTest",
+            frequency: .daily,
+            duration: 30.0,
+            isPublic: true,
+            priorityTag: .urgent
+        )
+        let savedItem = await CloudKitManager.shared.create(chore)
+        
+        let result = await CloudKitManager.shared.delete(savedItem!)
+        
+        #expect(result == true)
+    }
+    
+    @Test
+    func updateCreatedChoreSuccessfullyTest() async throws {
+        await CloudKitManager.shared.createZoneIfNeeded()
+        
+        let chore = ChoreModel(
+            name: "updateChoreTest",
+            description: "updateChoreTest",
+            frequency: .daily,
+            duration: 30.0,
+            isPublic: true,
+            priorityTag: .urgent
+        )
+        var savedItem = await CloudKitManager.shared.create(chore)
+        savedItem!.name = "newName"
+            
+        let result = await CloudKitManager.shared.update(savedItem!)
+        
+        #expect(result == true)
     }
 }

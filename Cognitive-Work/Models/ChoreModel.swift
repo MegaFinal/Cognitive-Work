@@ -95,7 +95,7 @@ struct ChoreModel: CloudKitSyncable {
     }
     
     func populate(record: CKRecord) {
-        record["choreName"] = name
+        record["name"] = name
         record["description"] = description
         record["dueDate"] = dueDate
         record["frequency"] = frequency.rawValue
