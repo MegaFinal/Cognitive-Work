@@ -6,6 +6,6 @@
 //
 
 enum RoomColor: String {
-    case urgent = "urgent"
-    case notUrgent = "notUrgent"
+    case red = "red"
+    case blue = "blue"
 }

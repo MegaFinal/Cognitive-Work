@@ -8,18 +8,15 @@
 import Foundation
 
 /// Errors that can occur while retrieving houses.
-enum CloudKitErrors: Error, LocalizedError {
-
+enum CloudKitErrors<T>: Error, LocalizedError {
+    
     /// Indicates that no owned or shared house was found.
-    case houseNotFound
-    case choreNotFound
+    case notFound(T)
 
     var errorDescription: String? {
         switch self {
-        case .houseNotFound:
-            return "No owned or shared house was found."
-        case .choreNotFound:
-            return "No private or shared chore was found"
+        case .notFound:
+            return "No private or shared record was found for type: \(T.self)"
         }
     }
 }
