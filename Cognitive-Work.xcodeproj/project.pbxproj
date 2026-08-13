@@ -6,7 +6,26 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		84127251302E380E00982FA0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 910DAADB3026477D00F899C0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 910DAAE23026477D00F899C0;
+			remoteInfo = "Cognitive-Work";
+		};
+		84127260302E382D00982FA0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 910DAADB3026477D00F899C0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 910DAAE23026477D00F899C0;
+			remoteInfo = "Cognitive-Work";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		8412724D302E380E00982FA0 /* Cognitive-WorkTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Cognitive-WorkTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8412725A302E382D00982FA0 /* Cognitive-WorkUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Cognitive-WorkUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		910DAAE33026477D00F899C0 /* Cognitive-Work.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Cognitive-Work.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -21,6 +40,16 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		8412724E302E380E00982FA0 /* Cognitive-WorkTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Cognitive-WorkTests";
+			sourceTree = "<group>";
+		};
+		8412725B302E382D00982FA0 /* Cognitive-WorkUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Cognitive-WorkUITests";
+			sourceTree = "<group>";
+		};
 		910DAAE53026477D00F899C0 /* Cognitive-Work */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -32,6 +61,20 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		8412724A302E380E00982FA0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		84127257302E382D00982FA0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		910DAAE03026477D00F899C0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -46,6 +89,8 @@
 			isa = PBXGroup;
 			children = (
 				910DAAE53026477D00F899C0 /* Cognitive-Work */,
+				8412724E302E380E00982FA0 /* Cognitive-WorkTests */,
+				8412725B302E382D00982FA0 /* Cognitive-WorkUITests */,
 				910DAAE43026477D00F899C0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +99,8 @@
 			isa = PBXGroup;
 			children = (
 				910DAAE33026477D00F899C0 /* Cognitive-Work.app */,
+				8412724D302E380E00982FA0 /* Cognitive-WorkTests.xctest */,
+				8412725A302E382D00982FA0 /* Cognitive-WorkUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,6 +108,52 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		8412724C302E380E00982FA0 /* Cognitive-WorkTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 84127253302E380E00982FA0 /* Build configuration list for PBXNativeTarget "Cognitive-WorkTests" */;
+			buildPhases = (
+				84127249302E380E00982FA0 /* Sources */,
+				8412724A302E380E00982FA0 /* Frameworks */,
+				8412724B302E380E00982FA0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				84127252302E380E00982FA0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				8412724E302E380E00982FA0 /* Cognitive-WorkTests */,
+			);
+			name = "Cognitive-WorkTests";
+			packageProductDependencies = (
+			);
+			productName = "Cognitive-WorkTests";
+			productReference = 8412724D302E380E00982FA0 /* Cognitive-WorkTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		84127259302E382D00982FA0 /* Cognitive-WorkUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 84127262302E382D00982FA0 /* Build configuration list for PBXNativeTarget "Cognitive-WorkUITests" */;
+			buildPhases = (
+				84127256302E382D00982FA0 /* Sources */,
+				84127257302E382D00982FA0 /* Frameworks */,
+				84127258302E382D00982FA0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				84127261302E382D00982FA0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				8412725B302E382D00982FA0 /* Cognitive-WorkUITests */,
+			);
+			name = "Cognitive-WorkUITests";
+			packageProductDependencies = (
+			);
+			productName = "Cognitive-WorkUITests";
+			productReference = 8412725A302E382D00982FA0 /* Cognitive-WorkUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		910DAAE23026477D00F899C0 /* Cognitive-Work */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 910DAAF03026477F00F899C0 /* Build configuration list for PBXNativeTarget "Cognitive-Work" */;
@@ -93,6 +186,14 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					8412724C302E380E00982FA0 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 910DAAE23026477D00F899C0;
+					};
+					84127259302E382D00982FA0 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 910DAAE23026477D00F899C0;
+					};
 					910DAAE23026477D00F899C0 = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -113,11 +214,27 @@
 			projectRoot = "";
 			targets = (
 				910DAAE23026477D00F899C0 /* Cognitive-Work */,
+				8412724C302E380E00982FA0 /* Cognitive-WorkTests */,
+				84127259302E382D00982FA0 /* Cognitive-WorkUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		8412724B302E380E00982FA0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		84127258302E382D00982FA0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		910DAAE13026477D00F899C0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,6 +245,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		84127249302E380E00982FA0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		84127256302E382D00982FA0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		910DAADF3026477D00F899C0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,7 +268,102 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		84127252302E380E00982FA0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 910DAAE23026477D00F899C0 /* Cognitive-Work */;
+			targetProxy = 84127251302E380E00982FA0 /* PBXContainerItemProxy */;
+		};
+		84127261302E382D00982FA0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 910DAAE23026477D00F899C0 /* Cognitive-Work */;
+			targetProxy = 84127260302E382D00982FA0 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		84127254302E380E00982FA0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 32M6C7GWMQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dayo.Cognitive-WorkTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cognitive-Work.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cognitive-Work";
+			};
+			name = Debug;
+		};
+		84127255302E380E00982FA0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 32M6C7GWMQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dayo.Cognitive-WorkTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cognitive-Work.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Cognitive-Work";
+			};
+			name = Release;
+		};
+		84127263302E382D00982FA0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 32M6C7GWMQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dayo.Cognitive-WorkUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Cognitive-Work";
+			};
+			name = Debug;
+		};
+		84127264302E382D00982FA0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 32M6C7GWMQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "dayo.Cognitive-WorkUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Cognitive-Work";
+			};
+			name = Release;
+		};
 		910DAAEE3026477F00F899C0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -330,6 +556,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		84127253302E380E00982FA0 /* Build configuration list for PBXNativeTarget "Cognitive-WorkTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				84127254302E380E00982FA0 /* Debug */,
+				84127255302E380E00982FA0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		84127262302E382D00982FA0 /* Build configuration list for PBXNativeTarget "Cognitive-WorkUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				84127263302E382D00982FA0 /* Debug */,
+				84127264302E382D00982FA0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		910DAADE3026477D00F899C0 /* Build configuration list for PBXProject "Cognitive-Work" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
