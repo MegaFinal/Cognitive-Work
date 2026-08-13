@@ -6,14 +6,31 @@
 //
 
 import Foundation
+import CloudKit
 
-class CheckItemModel {
-    private var id: UUID = UUID()
-    private var checkItemName: String
-    private var isLate: Bool
+struct CheckItemModel: CloudKitSyncable {
+    static var recordType: String = "CheckItemModel"
     
-    init(checkItemName: String, isLate: Bool) {
+    var recordID: CKRecord.ID?
+    
+    private var checkItemName: String
+    private var isDone: Bool
+    
+    init?(record: CKRecord) {
+        guard
+            let checkItemName = record["checkItemName"] as? String,
+            let isDone = record["isDone"] as? Bool
+        else {
+            return nil
+        }
+        
+        self.recordID = record.recordID
         self.checkItemName = checkItemName
-        self.isLate = isLate
+        self.isDone = isDone
+    }
+    
+    func populate(record: CKRecord) {
+        record["checkItemName"] = checkItemName
+        record["isDone"] = isDone
     }
 }
