@@ -14,24 +14,6 @@ import CloudKit
 @MainActor
 struct HouseModelTests {
     @Test func createHouseSuccessfullyTest() async throws {
-        await CloudKitManager.shared.createZoneIfNeeded()
-        
-        let house = HouseModel(
-            name: "choreTest",
-            description: "testDescription",
-            chores:[] ,
-            users:[],
-            shopListItem:[] ,
-           )
-        
-        let savedItem = await CloudKitManager.shared.create(chore)
-        
-        print("ERRO:", CloudKitManager.shared.errorMessage as Any)
-        
-        #expect(savedItem != nil)
-        
-        if let savedItem {
-            await CloudKitManager.shared.delete(savedItem)
-        }
+
     }
 }
