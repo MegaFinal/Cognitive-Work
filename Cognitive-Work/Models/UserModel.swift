@@ -49,6 +49,33 @@ struct UserModel: CloudKitSyncable {
         self.couponLimit = couponLimit
     }
     
+    init(
+        name: String,
+        profilePicture: Data? = nil,
+        tier: Tier,
+        coins: Int = 0,
+        points: Int = 0,
+        badges: [CKRecord.Reference] = [],
+        tasks: [CKRecord.Reference] = [],
+        availableTime: [CKRecord.Reference] = [],
+        house: CKRecord.Reference? = nil,
+        coupons: [CKRecord.Reference] = [],
+        couponLimit: Int = 0
+    ) {
+        self.recordID = nil
+        self.name = name
+        self.profilePicture = profilePicture
+        self.tier = tier
+        self.coins = coins
+        self.points = points
+        self.badges = badges
+        self.tasks = tasks
+        self.availableTime = availableTime
+        self.house = house
+        self.coupons = coupons
+        self.couponLimit = couponLimit
+    }
+    
     func populate(record: CKRecord) {
         record["name"] = name
         record["profilePicture"] = profilePicture
