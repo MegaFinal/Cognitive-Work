@@ -27,10 +27,10 @@ struct ChoreModel: CloudKitSyncable {
     var currentResponsible: CKRecord.Reference?
     var allResponsibleUsers: [CKRecord.Reference]?
     var room: CKRecord.Reference?
- 
+    
     init?(record: CKRecord) {
         guard
-            let name = record["choreName"] as? String,
+            let name = record["name"] as? String,
             let description = record["description"] as? String,
             let frequencyRaw = record["frequency"] as? String,
             let frequency = Recurrence(rawValue: frequencyRaw),
@@ -39,15 +39,11 @@ struct ChoreModel: CloudKitSyncable {
             let isLate = record["isLate"] as? Bool,
             let weight = record["weight"] as? Int,
             let priorityTagRaw = record["priorityTag"] as? String,
-            let priorityTag = PriorityTag(rawValue: priorityTagRaw),
-            let image = record["image"] as? Data,
-            let checkList = record["checkList"] as? [CKRecord.Reference],
-            let allResponsibleUsers = record["allResponsibleUsers"] as? [CKRecord.Reference],
-            let room = record["room"] as? CKRecord.Reference
+            let priorityTag = PriorityTag(rawValue: priorityTagRaw)
         else {
             return nil
         }
- 
+
         self.recordID = record.recordID
         self.name = name
         self.description = description
@@ -58,11 +54,11 @@ struct ChoreModel: CloudKitSyncable {
         self.isLate = isLate
         self.weight = weight
         self.priorityTag = priorityTag
-        self.image = image
-        self.checkList = checkList
+        self.image = record["image"] as? Data
+        self.checkList = record["checkList"] as? [CKRecord.Reference]
         self.currentResponsible = record["currentResponsible"] as? CKRecord.Reference
-        self.allResponsibleUsers = allResponsibleUsers
-        self.room = room
+        self.allResponsibleUsers = record["allResponsibleUsers"] as? [CKRecord.Reference]
+        self.room = record["room"] as? CKRecord.Reference
     }
     
     init(
