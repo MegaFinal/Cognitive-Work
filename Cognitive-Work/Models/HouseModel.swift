@@ -33,6 +33,21 @@ struct HouseModel: CloudKitSyncable {
         self.shopListItem = shopListItem
     }
     
+    init(
+        name: String,
+        description: String,
+        chores: [CKRecord.Reference] = [],
+        users: [CKRecord.Reference] = [],
+        shopListItem: [CKRecord.Reference] = []
+    ) {
+        self.recordID = nil
+        self.name = name
+        self.description = description
+        self.chores = chores
+        self.users = users
+        self.shopListItem = shopListItem
+    }
+    
     func populate(record: CKRecord) {
         record["name"] = name
         record["description"] = description

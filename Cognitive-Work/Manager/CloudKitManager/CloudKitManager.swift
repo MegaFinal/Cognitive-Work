@@ -53,6 +53,7 @@ class CloudKitManager {
     ///
     /// If the operation fails, `errorMessage` is updated with
     /// the corresponding CloudKit error.
+    @discardableResult
     func createZoneIfNeeded() async -> Bool {
         let zone = CKRecordZone(zoneID: houseZoneID)
 

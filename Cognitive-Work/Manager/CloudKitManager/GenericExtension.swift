@@ -21,7 +21,7 @@ extension CloudKitManager {
    ///     (e.g. a chore whose parent is its room).
    /// - Returns: A copy of `item` with `recordID` set, or `nil` on failure.
    @discardableResult
-   func create<T: CloudKitSyncable>(
+   func  create<T: CloudKitSyncable>(
        _ item: T,
        zoneID: CKRecordZone.ID? = nil,
        parent: CKRecord.Reference? = nil
@@ -49,7 +49,7 @@ extension CloudKitManager {
    }
 
    /// Fetches every record of `type` visible to the current user:
-   /// owned records first, then everything in shared zones.
+   /// private records first, then everything in shared zones.
    func fetchAll<T: CloudKitSyncable>(
        _ type: T.Type,
        predicate: NSPredicate = NSPredicate(value: true)
@@ -60,8 +60,7 @@ extension CloudKitManager {
        return ownedItems + sharedItems
    }
 
-   /// Fetches the first available record of `type`: owned first,
-   /// falling back to shared. Mirrors the old `fetchHouse`/`fetchChores`.
+   /// Fetches the first available record of `type`: private first,
    func fetchFirst<T: CloudKitSyncable>(_ type: T.Type) async throws -> T {
        if let first = await fetchPrivate(type, predicate: NSPredicate(value: true)).first {
            return first
@@ -112,12 +111,8 @@ extension CloudKitManager {
 
    /// Re-saves every field of an existing model.
    ///
-   /// Fetches the current `CKRecord` first (so its change tag and any
-   /// system fields aren't clobbered), overwrites it with `item`'s
-   /// current values, then saves. Unlike the old per-type functions,
-   /// this always writes the full model rather than only changed keys —
-   /// see the note at the bottom of this file if you need true partial
-   /// updates for a specific type.
+   /// Fetches the current `CKRecord` first, overwrites it with `item`'s
+   /// current values, then saves.
    @discardableResult
    func update<T: CloudKitSyncable>(_ item: T) async -> Bool {
        guard let recordID = item.recordID else {
