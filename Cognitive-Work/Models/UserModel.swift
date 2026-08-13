@@ -11,11 +11,11 @@ struct UserModel: CloudKitSyncable {
     var tier: Tier
     var coins: Int
     var points: Int
-    var badges: [CKRecord.Reference]
-    var tasks: [CKRecord.Reference]
-    var availableTime: [CKRecord.Reference]
+    var badges: [CKRecord.Reference]?
+    var tasks: [CKRecord.Reference]?
+    var availableTime: [CKRecord.Reference]?
     var house: CKRecord.Reference?
-    var coupons: [CKRecord.Reference]
+    var coupons: [CKRecord.Reference]?
     var couponLimit: Int
     
     init?(record: CKRecord) {
@@ -55,11 +55,11 @@ struct UserModel: CloudKitSyncable {
         tier: Tier,
         coins: Int = 0,
         points: Int = 0,
-        badges: [CKRecord.Reference] = [],
-        tasks: [CKRecord.Reference] = [],
-        availableTime: [CKRecord.Reference] = [],
+        badges: [CKRecord.Reference]? = nil,
+        tasks: [CKRecord.Reference]? = nil,
+        availableTime: [CKRecord.Reference]? = nil,
         house: CKRecord.Reference? = nil,
-        coupons: [CKRecord.Reference] = [],
+        coupons: [CKRecord.Reference]? = nil,
         couponLimit: Int = 0
     ) {
         self.recordID = nil
@@ -82,6 +82,7 @@ struct UserModel: CloudKitSyncable {
         record["tier"] = tier.rawValue
         record["coins"] = coins
         record["points"] = points
+        if let badges = 
         record["badges"] = badges
         record["tasks"] = tasks
         record["house"] = house
