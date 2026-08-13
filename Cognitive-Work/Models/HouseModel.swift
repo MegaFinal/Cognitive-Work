@@ -9,10 +9,10 @@ struct HouseModel: CloudKitSyncable {
     
     var name: String
     var description: String
-    var chores: [CKRecord.Reference]
-    var users: [CKRecord.Reference]
-    var shopListItem: [CKRecord.Reference]
-    var rooms: [CKRecord.Reference]
+    var chores: [CKRecord.Reference]?
+    var users: [CKRecord.Reference]?
+    var shopListItem: [CKRecord.Reference]?
+    var rooms: [CKRecord.Reference]?
 
 
     init?(record: CKRecord) {
@@ -36,12 +36,39 @@ struct HouseModel: CloudKitSyncable {
         self.rooms = rooms
     }
     
+    init(
+        name: String,
+        description: String,
+        chores: [CKRecord.Reference]? = nil,
+        users: [CKRecord.Reference]? = nil,
+        shopListItem: [CKRecord.Reference]? = nil
+    ) {
+        self.recordID = nil
+        self.name = name
+        self.description = description
+        self.chores = chores
+        self.users = users
+        self.shopListItem = shopListItem
+    }
+    
     func populate(record: CKRecord) {
         record["name"] = name
         record["description"] = description
         record["chores"] = chores
+        if let chores = chores {
+            record["chores"] = chores
+        }
         record["users"] = users
+        if let users = users {
+            record["users"] = users
+        }
         record["shopListItem"] = shopListItem
+        if let shopListItem = shopListItem {
+            record["shopListItem"] = shopListItem
+        }
         record["rooms"] = rooms
+        if let rooms = rooms {
+            record["rooms"] = rooms
+        }
     }
 }

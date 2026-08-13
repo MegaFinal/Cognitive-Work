@@ -22,11 +22,11 @@ struct ChoreModel: CloudKitSyncable {
     var isLate: Bool = false
     var weight: Int = 0
     var priorityTag: PriorityTag
-    var image: Data
-    var checkList: [CKRecord.Reference]
+    var image: Data?
+    var checkList: [CKRecord.Reference]?
     var currentResponsible: CKRecord.Reference?
-    var allResponsibleUsers: [CKRecord.Reference]
-    var room: CKRecord.Reference
+    var allResponsibleUsers: [CKRecord.Reference]?
+    var room: CKRecord.Reference?
  
     init?(record: CKRecord) {
         guard
@@ -65,6 +65,39 @@ struct ChoreModel: CloudKitSyncable {
         self.room = room
     }
     
+    init(
+        name: String,
+        description: String,
+        dueDate: Date? = nil,
+        frequency: Recurrence,
+        duration: TimeInterval,
+        isPublic: Bool,
+        isLate: Bool = false,
+        weight: Int = 0,
+        priorityTag: PriorityTag,
+        image: Data? = nil,
+        checkList: [CKRecord.Reference]? = nil,
+        currentResponsible: CKRecord.Reference? = nil,
+        allResponsibleUsers: [CKRecord.Reference]? = nil,
+        room: CKRecord.Reference? = nil
+    ) {
+        self.recordID = nil
+        self.name = name
+        self.description = description
+        self.dueDate = dueDate
+        self.frequency = frequency
+        self.duration = duration
+        self.isPublic = isPublic
+        self.isLate = isLate
+        self.weight = weight
+        self.priorityTag = priorityTag
+        self.image = image
+        self.checkList = checkList
+        self.currentResponsible = currentResponsible
+        self.allResponsibleUsers = allResponsibleUsers
+        self.room = room
+    }
+    
     func populate(record: CKRecord) {
         record["choreName"] = name
         record["description"] = description
@@ -76,9 +109,13 @@ struct ChoreModel: CloudKitSyncable {
         record["weight"] = weight
         record["priorityTag"] = priorityTag.rawValue
         record["image"] = image
-        record["checkList"] = checkList
+        if let checkList = checkList {
+            record["checkList"] = checkList
+        }
         record["currentResponsible"] = currentResponsible
-        record["allResponsibleUsers"] = allResponsibleUsers
+        if let allResponsibleUsers = allResponsibleUsers {
+            record["allResponsibleUsers"] = allResponsibleUsers
+        }
         record["room"] = room
     }
 }

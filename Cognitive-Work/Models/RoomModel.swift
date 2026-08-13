@@ -35,6 +35,19 @@ struct RoomModel: CloudKitSyncable {
         self.color = color
     }
     
+    init(
+        name: String,
+        relatedChores: [CKRecord.Reference] = [],
+        house: CKRecord.Reference,
+        color: RoomColor
+    ) {
+        self.recordID = nil
+        self.name = name
+        self.relatedChores = relatedChores
+        self.house = house
+        self.color = color
+    }
+    
     func populate(record: CKRecord) {
         record["name"] = name
         record["relatedChores"] = relatedChores

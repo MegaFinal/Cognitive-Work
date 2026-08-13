@@ -29,6 +29,11 @@ struct CheckItemModel: CloudKitSyncable {
         self.isDone = isDone
     }
     
+    init(checkItemName: String, isDone: Bool) {
+        self.checkItemName = checkItemName
+        self.isDone = isDone
+    }
+        
     func populate(record: CKRecord) {
         record["checkItemName"] = checkItemName
         record["isDone"] = isDone

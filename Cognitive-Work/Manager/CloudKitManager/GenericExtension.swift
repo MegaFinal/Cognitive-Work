@@ -21,7 +21,7 @@ extension CloudKitManager {
    ///     (e.g. a chore whose parent is its room).
    /// - Returns: A copy of `item` with `recordID` set, or `nil` on failure.
    @discardableResult
-   func create<T: CloudKitSyncable>(
+   func  create<T: CloudKitSyncable>(
        _ item: T,
        zoneID: CKRecordZone.ID? = nil,
        parent: CKRecord.Reference? = nil
