@@ -9,18 +9,16 @@ struct HouseModel: CloudKitSyncable {
     
     var name: String
     var description: String
-    var chores: [CKRecord.Reference]
-    var users: [CKRecord.Reference]
-    var shopListItem: [CKRecord.Reference]
+    var chores: [CKRecord.Reference]?
+    var users: [CKRecord.Reference]?
+    var shopListItem: [CKRecord.Reference]?
+    var rooms: [CKRecord.Reference]?
 
 
     init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
-            let description = record["description"] as? String,
-            let chores = record["chores"] as? [CKRecord.Reference],
-            let users = record["users"] as? [CKRecord.Reference],
-            let shopListItem = record["shopListItem"] as? [CKRecord.Reference]
+            let description = record["description"] as? String
         else {
             return nil
         }
@@ -28,17 +26,18 @@ struct HouseModel: CloudKitSyncable {
         self.recordID = record.recordID
         self.name = name
         self.description = description
-        self.chores = chores
-        self.users = users
-        self.shopListItem = shopListItem
+        self.chores = record["chores"] as? [CKRecord.Reference]
+        self.users = record["users"] as? [CKRecord.Reference]
+        self.shopListItem = record["shopListItem"] as? [CKRecord.Reference]
+        self.rooms = record["rooms"] as? [CKRecord.Reference]
     }
     
     init(
         name: String,
         description: String,
-        chores: [CKRecord.Reference] = [],
-        users: [CKRecord.Reference] = [],
-        shopListItem: [CKRecord.Reference] = []
+        chores: [CKRecord.Reference]? = nil,
+        users: [CKRecord.Reference]? = nil,
+        shopListItem: [CKRecord.Reference]? = nil
     ) {
         self.recordID = nil
         self.name = name
@@ -52,7 +51,20 @@ struct HouseModel: CloudKitSyncable {
         record["name"] = name
         record["description"] = description
         record["chores"] = chores
+        if let chores = chores {
+            record["chores"] = chores
+        }
         record["users"] = users
+        if let users = users {
+            record["users"] = users
+        }
         record["shopListItem"] = shopListItem
+        if let shopListItem = shopListItem {
+            record["shopListItem"] = shopListItem
+        }
+        record["rooms"] = rooms
+        if let rooms = rooms {
+            record["rooms"] = rooms
+        }
     }
 }
