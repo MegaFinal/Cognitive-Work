@@ -19,9 +19,15 @@ protocol CloudKitSyncable {
 
     /// The underlying CloudKit record identifier.
     var recordID: CKRecord.ID? { get set }
+    
+    /// The underlying `CKRecord` as last fetched from or saved to CloudKit.
+    var record: CKRecord? { get set }
 
     /// Writes this model's fields into `record`.
     func populate(record: CKRecord)
+    
+    /// Writes this model's fields into `record` and return it.
+    func toRecord() -> CKRecord
 
     /// Builds a model instance from a fetched record.
     init?(record: CKRecord)

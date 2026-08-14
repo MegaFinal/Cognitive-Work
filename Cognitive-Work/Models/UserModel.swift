@@ -4,6 +4,7 @@ import CloudKit
 struct UserModel: CloudKitSyncable {
     static var recordType: String = "UserModel"
     
+    var record: CKRecord?
     var recordID: CKRecord.ID?
     
     var name: String
@@ -28,6 +29,7 @@ struct UserModel: CloudKitSyncable {
             return nil
         }
 
+        self.record = record
         self.recordID = record.recordID
         self.name = name
         self.coins = coins
@@ -55,6 +57,7 @@ struct UserModel: CloudKitSyncable {
         coupons: [CKRecord.Reference]? = nil,
         couponLimit: Int = 0
     ) {
+        self.record = nil
         self.recordID = nil
         self.name = name
         self.profilePicture = profilePicture
@@ -92,4 +95,33 @@ struct UserModel: CloudKitSyncable {
         }
         record["couponLimit"] = couponLimit
     }
+
+    func toRecord() -> CKRecord {
+        let record = self.record ?? CKRecord(recordType: UserModel.recordType)
+        
+        record["name"] = name
+        record["profilePicture"] = profilePicture
+        record["tier"] = tier.rawValue
+        record["coins"] = coins
+        record["points"] = points
+        if let badges = badges {
+            record["badges"] = badges
+        }
+        if let tasks = tasks {
+            record["tasks"] = tasks
+        }
+        if let house = house {
+            record["house"] = house
+        }
+        if let availableTime = availableTime {
+            record["availableTime"] = availableTime
+        }
+        if let coupons = coupons {
+            record["coupons"] = coupons
+        }
+        record["couponLimit"] = couponLimit
+        
+        return record
+    }
+    
 }

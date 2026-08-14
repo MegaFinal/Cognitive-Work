@@ -26,6 +26,7 @@ extension CloudKitManager {
        zoneID: CKRecordZone.ID? = nil,
        parent: CKRecord.Reference? = nil
    ) async -> T? {
+       await createZoneIfNeeded()
        let zone = zoneID ?? houseZoneID
        let id = CKRecord.ID(recordName: UUID().uuidString, zoneID: zone)
        let record = CKRecord(recordType: T.recordType, recordID: id)

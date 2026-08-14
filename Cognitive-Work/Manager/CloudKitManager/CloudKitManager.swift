@@ -85,27 +85,12 @@ class CloudKitManager {
         share[CKShare.SystemFieldKey.title] = house["name"] as? String
         share.publicPermission = .readWrite
 
-        let operation = CKModifyRecordsOperation(
-            recordsToSave: [house, share],
-            recordIDsToDelete: nil
-        )
-
-        operation.savePolicy = .allKeys
-
-        return await withCheckedContinuation { continuation in
-            operation.modifyRecordsResultBlock = { result in
-                switch result {
-                case .success:
-                    continuation.resume(returning: share)
-
-                case .failure(let error):
-                    self.errorMessage =
-                        "Failed to create share: \(error.localizedDescription)"
-                    continuation.resume(returning: nil)
-                }
-            }
-
-            privateDB.add(operation)
+        do {
+            _ = try await privateDB.modifyRecords(saving: [house, share], deleting: [])
+            return share
+        } catch {
+            self.errorMessage = "Failed to create share: \(error.localizedDescription)"
+            return nil
         }
     }
 

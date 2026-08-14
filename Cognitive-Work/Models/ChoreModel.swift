@@ -11,6 +11,7 @@ import CloudKit
 struct ChoreModel: CloudKitSyncable {
     static let recordType = "ChoreModel"
  
+    var record: CKRecord?
     var recordID: CKRecord.ID?
  
     var name: String
@@ -48,6 +49,7 @@ struct ChoreModel: CloudKitSyncable {
             return nil
         }
  
+        self.record = record
         self.recordID = record.recordID
         self.name = name
         self.description = description
@@ -81,6 +83,7 @@ struct ChoreModel: CloudKitSyncable {
         allResponsibleUsers: [CKRecord.Reference]? = nil,
         room: CKRecord.Reference? = nil
     ) {
+        self.record = nil
         self.recordID = nil
         self.name = name
         self.description = description
@@ -117,5 +120,30 @@ struct ChoreModel: CloudKitSyncable {
             record["allResponsibleUsers"] = allResponsibleUsers
         }
         record["room"] = room
+    }
+    
+    func toRecord() -> CKRecord {
+        let record = self.record ?? CKRecord(recordType: ChoreModel.recordType)
+        
+        record["choreName"] = name
+        record["description"] = description
+        record["dueDate"] = dueDate
+        record["frequency"] = frequency.rawValue
+        record["duration"] = duration
+        record["isPublic"] = isPublic
+        record["isLate"] = isLate
+        record["weight"] = weight
+        record["priorityTag"] = priorityTag.rawValue
+        record["image"] = image
+        if let checkList = checkList {
+            record["checkList"] = checkList
+        }
+        record["currentResponsible"] = currentResponsible
+        if let allResponsibleUsers = allResponsibleUsers {
+            record["allResponsibleUsers"] = allResponsibleUsers
+        }
+        record["room"] = room
+        
+        return record
     }
 }
