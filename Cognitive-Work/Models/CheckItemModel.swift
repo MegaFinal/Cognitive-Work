@@ -13,29 +13,29 @@ struct CheckItemModel: CloudKitSyncable {
     
     var recordID: CKRecord.ID?
     
-    private var checkItemName: String
-    private var isDone: Bool
+    var name: String
+    var isDone: Bool
     
     init?(record: CKRecord) {
         guard
-            let checkItemName = record["checkItemName"] as? String,
+            let name = record["checkItemName"] as? String,
             let isDone = record["isDone"] as? Bool
         else {
             return nil
         }
         
         self.recordID = record.recordID
-        self.checkItemName = checkItemName
+        self.name = name
         self.isDone = isDone
     }
     
-    init(checkItemName: String, isDone: Bool) {
-        self.checkItemName = checkItemName
+    init(name: String, isDone: Bool) {
+        self.name = name
         self.isDone = isDone
     }
         
     func populate(record: CKRecord) {
-        record["checkItemName"] = checkItemName
+        record["checkItemName"] = name
         record["isDone"] = isDone
     }
 }
