@@ -83,7 +83,7 @@ struct UserModelTests {
         await CloudKitManager.shared.delete(itemSaved!)
     }
     
-    @Test func deleteItemSuccessfullyTest() async throws {
+    @Test func deleteUserSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
         let user = UserModel(name: "SpecificUser", tier: .tier1)
