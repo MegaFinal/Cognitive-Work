@@ -35,9 +35,6 @@ struct UserModelTests {
         try await Task.sleep(for: .seconds(2))
 
         let fetchedUser = await CloudKitManager.shared.fetchAll(UserModel.self)
-        for user in fetchedUser{
-            print("\n", user)
-        }
         #expect(!fetchedUser.isEmpty)
         
         if let itemSaved = itemSaved {
