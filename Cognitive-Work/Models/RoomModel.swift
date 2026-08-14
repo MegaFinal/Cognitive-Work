@@ -13,16 +13,14 @@ struct RoomModel: CloudKitSyncable {
     
     var recordID: CKRecord.ID?
     
-    private var name: String?
-    private var relatedChores: [CKRecord.Reference]
-    private var house: CKRecord.Reference
-    private var color: RoomColor
+    var name: String?
+    var relatedChores: [CKRecord.Reference]?
+    var house: CKRecord.Reference?
+    var color: RoomColor
     
     init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
-            let relatedChores = record["relatedChores"] as? [CKRecord.Reference],
-            let house = record["house"] as? CKRecord.Reference,
             let color = RoomColor(rawValue: record["roomColor"] as? String ?? "notUrgent")
         else {
             return nil
@@ -30,15 +28,15 @@ struct RoomModel: CloudKitSyncable {
         
         self.recordID = record.recordID
         self.name = name
-        self.relatedChores = relatedChores
-        self.house = house
+        self.relatedChores = record["relatedChores"] as? [CKRecord.Reference]
+        self.house = record["house"] as? CKRecord.Reference
         self.color = color
     }
     
     init(
         name: String,
-        relatedChores: [CKRecord.Reference] = [],
-        house: CKRecord.Reference,
+        relatedChores: [CKRecord.Reference]? = nil,
+        house: CKRecord.Reference? = nil,
         color: RoomColor
     ) {
         self.recordID = nil
@@ -50,8 +48,12 @@ struct RoomModel: CloudKitSyncable {
     
     func populate(record: CKRecord) {
         record["name"] = name
-        record["relatedChores"] = relatedChores
-        record["house"] = house
+        if let relatedChores = relatedChores {
+            record["relatedChores"] = relatedChores
+        }
+        if let house = house {
+            record["house"] = house
+        }
         record["roomColor"] = color.rawValue
     }
 }

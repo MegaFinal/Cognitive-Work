@@ -83,11 +83,11 @@ struct UserModelTests {
         await CloudKitManager.shared.delete(itemSaved!)
     }
     
-    @Test func deleteItemSuccessfullyTest() async throws {
+    @Test func deleteUserSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
         let user = UserModel(name: "SpecificUser", tier: .tier1)
-        var itemSaved = await CloudKitManager.shared.create(user)
+        let itemSaved = await CloudKitManager.shared.create(user)
         
         #expect(itemSaved != nil)
         try await Task.sleep(for: .seconds(2))
