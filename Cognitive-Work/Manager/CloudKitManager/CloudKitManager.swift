@@ -191,4 +191,14 @@ class CloudKitManager {
         try await privateDB.save(privateSubscription)
         try await sharedDB.save(sharedSubscription)
     }
+    
+    func generateShareLink(share: CKShare) async throws -> URL {
+        let (savedResults, _) = try await container.privateCloudDatabase.modifyRecords(
+            saving: [share], deleting: []
+        )
+        guard let url = share.url else {
+            throw NSError(domain: "Share", code: -1, userInfo: [NSLocalizedDescriptionKey: "Share sem URL"])
+        }
+        return url
+    }
 }
