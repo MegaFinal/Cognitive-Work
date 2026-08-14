@@ -18,11 +18,7 @@ struct HouseModel: CloudKitSyncable {
     init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
-            let description = record["description"] as? String,
-            let chores = record["chores"] as? [CKRecord.Reference],
-            let users = record["users"] as? [CKRecord.Reference],
-            let shopListItem = record["shopListItem"] as? [CKRecord.Reference],
-            let rooms = record["rooms"] as? [CKRecord.Reference]
+            let description = record["description"] as? String
         else {
             return nil
         }
@@ -30,10 +26,10 @@ struct HouseModel: CloudKitSyncable {
         self.recordID = record.recordID
         self.name = name
         self.description = description
-        self.chores = chores
-        self.users = users
-        self.shopListItem = shopListItem
-        self.rooms = rooms
+        self.chores = record["chores"] as? [CKRecord.Reference]
+        self.users = record["users"] as? [CKRecord.Reference]
+        self.shopListItem = record["shopListItem"] as? [CKRecord.Reference]
+        self.rooms = record["rooms"] as? [CKRecord.Reference]
     }
     
     init(
