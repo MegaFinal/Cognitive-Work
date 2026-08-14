@@ -13,10 +13,10 @@ struct RoomModel: CloudKitSyncable {
     
     var recordID: CKRecord.ID?
     
-    private var name: String?
-    private var relatedChores: [CKRecord.Reference]?
-    private var house: CKRecord.Reference?
-    private var color: RoomColor
+    var name: String?
+    var relatedChores: [CKRecord.Reference]?
+    var house: CKRecord.Reference?
+    var color: RoomColor
     
     init?(record: CKRecord) {
         guard

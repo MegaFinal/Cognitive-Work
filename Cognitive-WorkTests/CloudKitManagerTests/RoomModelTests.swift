@@ -15,9 +15,9 @@ struct RoomModelTests {
     @Test func createRoomSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = RoomModel(name: "roomTestName", color: RoomColor.blue)
+        let room = RoomModel(name: "roomTestName", color: RoomColor.blue)
         
-        let itemSaved = await CloudKitManager.shared.create(user)
+        let itemSaved = await CloudKitManager.shared.create(room)
         CloudKitManager.shared.errorMessage == nil ? print("success") : print("ERRO:", CloudKitManager.shared.errorMessage as Any)
         
         #expect(itemSaved != nil)
@@ -26,11 +26,11 @@ struct RoomModelTests {
         }
     }
     
-    @Test func fetchAllUsersSuccessfullyTest() async throws {
+    @Test func fetchAllRoomsSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = UserModel(name: "AllUser", tier: .tier1)
-        let itemSaved = await CloudKitManager.shared.create(user)
+        let room = RoomModel(name: "roomFetchAllTestName", color: RoomColor.blue)
+        let itemSaved = await CloudKitManager.shared.create(room)
         #expect(itemSaved != nil)
         try await Task.sleep(for: .seconds(2))
 
@@ -42,32 +42,32 @@ struct RoomModelTests {
         }
     }
     
-    @Test func fetchSpecificUserSuccessfully() async throws {
+    @Test func fetchSpecificRoomSuccessfully() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = UserModel(name: "SpecificUser", tier: .tier1)
-        let itemSaved = await CloudKitManager.shared.create(user)
+        let room = RoomModel(name: "roomFetchSpecificTestName", color: RoomColor.blue)
+        let itemSaved = await CloudKitManager.shared.create(room)
         
         #expect(itemSaved != nil)
         try await Task.sleep(for: .seconds(2))
         
-        let predicate = NSPredicate(format: "name == %@", "SpecificUser")
-        let fetchedUsers = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: predicate)
-        print(fetchedUsers)
+        let predicate = NSPredicate(format: "name == %@", "roomFetchSpecificTestName")
+        let fetchedRooms = await CloudKitManager.shared.fetchAll(RoomModel.self, predicate: predicate)
+        print(fetchedRooms)
         print("Error:", CloudKitManager.shared.errorMessage as Any)
         
-        #expect(fetchedUsers.contains { $0.name == "SpecificUser" })
+        #expect(fetchedRooms.contains { $0.name == "roomFetchSpecificTestName" })
         
         if let itemSaved = itemSaved {
             await CloudKitManager.shared.delete(itemSaved)
         }
     }
 
-    @Test func updateUserSuccessfullyTest() async throws {
+    @Test func updateRoomsSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = UserModel(name: "SpecificUser", tier: .tier1)
-        var itemSaved = await CloudKitManager.shared.create(user)
+        let room = RoomModel(name: "roomUpdateTestName", color: RoomColor.blue)
+        var itemSaved = await CloudKitManager.shared.create(room)
         
         #expect(itemSaved != nil)
         try await Task.sleep(for: .seconds(2))
@@ -77,17 +77,17 @@ struct RoomModelTests {
         try await Task.sleep(for: .seconds(2))
 
         let predicate = NSPredicate(format: "name == %@", "UpdatedName")
-        let updatedUsers = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: predicate)
-        #expect(updatedUsers.contains { $0.name == "UpdatedName"})
+        let updatedRooms = await CloudKitManager.shared.fetchAll(RoomModel.self, predicate: predicate)
+        #expect(updatedRooms.contains { $0.name == "UpdatedName"})
         
         await CloudKitManager.shared.delete(itemSaved!)
     }
     
-    @Test func deleteItemSuccessfullyTest() async throws {
+    @Test func deleteRoomSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = UserModel(name: "SpecificUser", tier: .tier1)
-        var itemSaved = await CloudKitManager.shared.create(user)
+        let room = UserModel(name: "SpecificUser", tier: .tier1)
+        let itemSaved = await CloudKitManager.shared.create(room)
         
         #expect(itemSaved != nil)
         try await Task.sleep(for: .seconds(2))
