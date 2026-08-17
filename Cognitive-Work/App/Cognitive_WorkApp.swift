@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct Cognitive_WorkApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var body: some Scene {
         WindowGroup {
             ContentView()

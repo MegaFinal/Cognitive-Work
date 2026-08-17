@@ -33,7 +33,7 @@ struct CheckItemModel: CloudKitSyncable {
         self.name = name
         self.isDone = isDone
     }
-        
+    
     func populate(record: CKRecord) {
         record["checkItemName"] = name
         record["isDone"] = isDone
