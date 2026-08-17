@@ -60,6 +60,20 @@ extension CloudKitManager {
        let (ownedItems, sharedItems) = await (owned, shared)
        return ownedItems + sharedItems
    }
+    
+    func fetchRecord<T: CloudKitSyncable>(for item: T) async -> CKRecord? {
+        guard let recordID = item.recordID else {
+            errorMessage = "Sem recordID para \(T.recordType)"
+            return nil
+        }
+        let database = recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+        do {
+            return try await database.record(for: recordID)
+        } catch {
+            errorMessage = "Falha ao buscar record: \(error.localizedDescription)"
+            return nil
+        }
+    }
 
    /// Fetches the first available record of `type`: owned first,
    /// falling back to shared. Mirrors the old `fetchHouse`/`fetchChores`.

@@ -11,7 +11,6 @@ import CloudKit
 struct RoomModel: CloudKitSyncable {
     static var recordType: String = "RoomModel"
     
-    var record: CKRecord?
     var recordID: CKRecord.ID?
     
     var name: String?
@@ -27,7 +26,6 @@ struct RoomModel: CloudKitSyncable {
             return nil
         }
         
-        self.record = record
         self.recordID = record.recordID
         self.name = name
         self.relatedChores = record["relatedChores"] as? [CKRecord.Reference]
@@ -41,7 +39,6 @@ struct RoomModel: CloudKitSyncable {
         house: CKRecord.Reference? = nil,
         color: RoomColor
     ) {
-        self.record = nil
         self.recordID = nil
         self.name = name
         self.relatedChores = relatedChores
@@ -58,20 +55,5 @@ struct RoomModel: CloudKitSyncable {
             record["house"] = house
         }
         record["roomColor"] = color.rawValue
-    }
-    
-    func toRecord() -> CKRecord {
-        let record = self.record ?? CKRecord(recordType: RoomModel.recordType)
-        
-        record["name"] = name
-        if let relatedChores = relatedChores {
-            record["relatedChores"] = relatedChores
-        }
-        if let house = house {
-            record["house"] = house
-        }
-        record["roomColor"] = color.rawValue
-        
-        return record
     }
 }

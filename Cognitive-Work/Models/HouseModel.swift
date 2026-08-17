@@ -5,7 +5,6 @@ import CloudKit
 struct HouseModel: CloudKitSyncable {
     static var recordType: String = "HouseModel"
     
-    var record: CKRecord?
     var recordID: CKRecord.ID?
     
     var name: String
@@ -13,8 +12,8 @@ struct HouseModel: CloudKitSyncable {
     var chores: [CKRecord.Reference]
     var users: [CKRecord.Reference]
     var shopListItem: [CKRecord.Reference]
-
-
+    
+    
     init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
@@ -26,7 +25,6 @@ struct HouseModel: CloudKitSyncable {
             return nil
         }
         
-        self.record = record
         self.recordID = record.recordID
         self.name = name
         self.description = description
@@ -42,7 +40,6 @@ struct HouseModel: CloudKitSyncable {
         users: [CKRecord.Reference] = [],
         shopListItem: [CKRecord.Reference] = []
     ) {
-        self.record = nil
         self.recordID = nil
         self.name = name
         self.description = description
@@ -57,17 +54,5 @@ struct HouseModel: CloudKitSyncable {
         record["chores"] = chores
         record["users"] = users
         record["shopListItem"] = shopListItem
-    }
-    
-    func toRecord() -> CKRecord {
-        let record = self.record ?? CKRecord(recordType: HouseModel.recordType)
-        
-        record["name"] = name
-        record["description"] = description
-        record["chores"] = chores
-        record["users"] = users
-        record["shopListItem"] = shopListItem
-        
-        return record
     }
 }
