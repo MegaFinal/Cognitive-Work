@@ -1,0 +1,67 @@
+//
+//  AppDelegate.swift
+//  Cognitive-Work
+//
+//  Created by Jonas Fernando Nascimento Melo on 14/08/26.
+//
+
+import UIKit
+import CloudKit
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let config = UISceneConfiguration(name: "Default Configuration",
+                                          sessionRole: connectingSceneSession.role)
+        config.delegateClass = SceneDelegate.self
+        return config
+    }
+    
+    func application(
+        _ application: UIApplication,
+        userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
+    ) {
+        Task {
+            let success = await CloudKitManager.shared.acceptShare(metadata: cloudKitShareMetadata)
+            if success {
+                NotificationCenter.default.post(name: .didAcceptShare, object: nil)
+            }
+        }
+    }
+    
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable : Any]
+    ) async -> UIBackgroundFetchResult {
+        
+        let notification = CKNotification(fromRemoteNotificationDictionary: userInfo)
+        
+        if notification?.subscriptionID == "shared-changes" {
+            NotificationCenter.default.post(name: .cloudKitDidChange, object: nil)
+        }
+        return .newData
+    }
+    
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
+    ) -> Bool {
+        
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]){ granted, error in
+            print("Permission Status:", granted)
+        }
+        
+        application.registerForRemoteNotifications()
+        
+        return true
+    }
+}
+
+extension Notification.Name {
+    static let didAcceptShare = Notification.Name("didAcceptShare")
+    static let cloudKitDidChange = Notification.Name("cloudKitDidChange")
+    
+}
