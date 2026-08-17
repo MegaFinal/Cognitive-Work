@@ -1,13 +1,15 @@
 //
-// CloudKitManager.swift
-// Cognitive-Work
+//  CloudKitManager.swift
+//  Cognitive-Work
 //
-// Created by Jonas Fernando Nascimento Melo on 11/08/26.
+//  Created by Jonas Fernando Nascimento Melo on 11/08/26.
 //
 
 import CloudKit
 
 /// Manages CloudKit operations for houses, users, and shared records.
+///
+/// Failing operations return `false` or `nil` and describe the reason in ``errorMessage``.
 @Observable
 class CloudKitManager {
 
@@ -16,19 +18,25 @@ class CloudKitManager {
 
     // MARK: - Properties
 
+    /// The app's iCloud container.
     let container: CKContainer
+
+    /// Database holding records owned by the current user.
     let privateDB: CKDatabase
+
+    /// Database holding records shared with the current user by others.
     let sharedDB: CKDatabase
 
+    /// Description of the most recent failure, or `nil` when none occurred.
     var errorMessage: String?
 
+    /// Name of the custom zone that stores all house data.
     private let zoneName = "HomeEnvironment"
 
     /// The custom zone owned by the current iCloud user.
     ///
-    /// This zone should only be used for operations that belong
-    /// to the current user, such as creating the custom zone.
-    /// For operations involving a specific house, use the house's
+    /// Use this zone only for operations that belong to the current user, such as creating the
+    /// custom zone. For operations involving a specific house, use that house's
     /// `recordID.zoneID` instead.
     @ObservationIgnored
     lazy var houseZoneID = CKRecordZone.ID(
@@ -48,11 +56,9 @@ class CloudKitManager {
 
     /// Creates the custom house zone if it does not already exist.
     ///
-    /// - Returns: `true` when the zone is successfully saved,
-    ///   otherwise `false`.
+    /// - Returns: `true` when the zone is successfully saved, otherwise `false`.
     ///
-    /// If the operation fails, `errorMessage` is updated with
-    /// the corresponding CloudKit error.
+    /// If the operation fails, ``errorMessage`` is updated with the corresponding CloudKit error.
     @discardableResult
     func createZoneIfNeeded() async -> Bool {
         let zone = CKRecordZone(zoneID: houseZoneID)
@@ -68,14 +74,13 @@ class CloudKitManager {
 
     // MARK: - Sharing
 
-    /// Creates and saves a share for a house when one does not already exist.
+    /// Returns the share for a house, creating one when it does not exist yet.
     ///
-    /// If the house already has an associated share, the existing share
-    /// is returned instead of creating a new one.
+    /// - Parameter house: The house record whose share should be retrieved or created.
+    /// - Returns: The existing or newly created `CKShare`, or `nil` if the operation fails.
     ///
-    /// - Parameter house: The house whose share should be retrieved or created.
-    /// - Returns: The existing or newly created `CKShare`, or `nil` if the
-    ///   operation fails.
+    /// > Important: New shares are created with `publicPermission == .readWrite`, so anyone
+    /// > holding the link can join and edit the house.
     func resolveShare(for house: CKRecord) async -> CKShare? {
         if let existing = await fetchShare(for: house) {
             return existing
@@ -96,12 +101,11 @@ class CloudKitManager {
 
     /// Fetches the share associated with a house.
     ///
-    /// The database is selected automatically based on the owner of the
-    /// house's record zone.
+    /// The database is selected automatically based on the owner of the house's record zone.
     ///
-    /// - Parameter house: The house whose share should be fetched.
-    /// - Returns: The associated `CKShare`, or `nil` if the house has no share
-    ///   or the operation fails.
+    /// - Parameter house: The house record whose share should be fetched.
+    /// - Returns: The associated `CKShare`, or `nil` if the house has no share or the operation
+    ///   fails.
     func fetchShare(for house: CKRecord) async -> CKShare? {
         guard let shareReference = house.share else {
             return nil
@@ -116,20 +120,17 @@ class CloudKitManager {
                 for: shareReference.recordID
             ) as? CKShare
         } catch {
-            errorMessage =
-                "Failed to fetch share: \(error.localizedDescription)"
+            errorMessage = "Failed to fetch share: \(error.localizedDescription)"
             return nil
         }
     }
 
     /// Accepts a CloudKit share invitation.
     ///
-    /// - Parameter metadata: The metadata received from the CloudKit
-    ///   share invitation.
-    /// - Returns: `true` if the invitation was accepted successfully;
-    ///   otherwise `false`.
+    /// - Parameter metadata: The metadata received from the CloudKit share invitation.
+    /// - Returns: `true` if the invitation was accepted successfully; otherwise `false`.
     ///
-    /// If the operation fails, `errorMessage` contains the failure reason.
+    /// If the operation fails, ``errorMessage`` contains the failure reason.
     func acceptShare(metadata: CKShare.Metadata) async -> Bool {
         let operation = CKAcceptSharesOperation(
             shareMetadatas: [metadata]
@@ -176,14 +177,20 @@ class CloudKitManager {
         try await privateDB.save(privateSubscription)
         try await sharedDB.save(sharedSubscription)
     }
-    
+
+    /// Saves a share and returns the invitation link CloudKit assigned to it.
+    ///
+    /// - Parameter share: The share to save.
+    /// - Returns: The invitation URL other users can open to join.
+    /// - Throws: A CloudKit error if the share cannot be saved, or
+    ///   ``CloudKitErrors/missingShareURL`` if CloudKit returns no URL.
     func generateShareLink(share: CKShare) async throws -> URL {
-        let (savedResults, _) = try await container.privateCloudDatabase.modifyRecords(
-            saving: [share], deleting: []
-        )
+        _ = try await privateDB.modifyRecords(saving: [share], deleting: [])
+
         guard let url = share.url else {
-            throw NSError(domain: "Share", code: -1, userInfo: [NSLocalizedDescriptionKey: "Share sem URL"])
+            throw CloudKitErrors.missingShareURL
         }
+
         return url
     }
 }
