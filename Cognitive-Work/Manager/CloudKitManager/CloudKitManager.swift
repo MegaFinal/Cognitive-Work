@@ -188,7 +188,7 @@ class CloudKitManager {
         _ = try await privateDB.modifyRecords(saving: [share], deleting: [])
 
         guard let url = share.url else {
-            throw CloudKitErrors.missingShareURL
+            throw CloudKitErrors<Any>.missingShareURL
         }
 
         return url

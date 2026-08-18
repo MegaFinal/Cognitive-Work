@@ -96,6 +96,21 @@ extension CloudKitManager {
             return nil
         }
     }
+    
+    func fetchRecordsByRecordReference<T: CloudKitSyncable>(for type: T.Type,recordReferences: [CKRecord.Reference]) async -> [T]? {
+        var records: [CKRecord]? = []
+        for recordReference in recordReferences {
+            let database = recordReference.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+            do {
+                let fetchedRecord = try await database.record(for: recordReference.recordID)
+                records?.append(fetchedRecord)
+            } catch {
+                errorMessage = "Failed to fetch \(recordReference.recordID.recordName): \(error.localizedDescription)"
+                return nil
+            }
+        }
+        return records == [] ? nil : records?.compactMap{_ in T.init(record: )} as? [T]
+    }
 
     /// Fetches the first available record of `type`, searching private records before shared
     /// ones.

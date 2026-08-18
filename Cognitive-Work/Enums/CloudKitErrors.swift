@@ -12,11 +12,14 @@ enum CloudKitErrors<T>: Error, LocalizedError {
     
     /// Indicates that no owned or shared house was found.
     case notFound(T)
+    case missingShareURL
 
     var errorDescription: String? {
         switch self {
         case .notFound:
             return "No private or shared record was found for type: \(T.self)"
+        case .missingShareURL:
+            return "Missing URL"
         }
     }
 }
