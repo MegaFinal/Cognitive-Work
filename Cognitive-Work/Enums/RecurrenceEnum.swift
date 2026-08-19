@@ -6,6 +6,7 @@
 //
 
 enum Recurrence: String {
+    case none = "none"
     case daily = "daily"
     case weekly = "weekly"
     case fortnightly = "fortnightly"

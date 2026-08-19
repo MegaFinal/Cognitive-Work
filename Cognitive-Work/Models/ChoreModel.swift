@@ -110,7 +110,7 @@ struct ChoreModel: CloudKitSyncable {
     init(
         name: String,
         description: String,
-        isDone: Bool,
+        isDone: Bool = false,
         dueDate: Date? = nil,
         frequency: Recurrence,
         duration: TimeInterval,
