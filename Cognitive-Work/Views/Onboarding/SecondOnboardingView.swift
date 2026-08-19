@@ -7,7 +7,9 @@
 
 import SwiftUI
 
-struct MemojiOnboardingView: View {
+struct SecondOnboardingView: View {
+    @State private var viewModel = MemojiPickerViewModel()
+    
     var body: some View {
         VStack(alignment: .center) {
             
@@ -21,13 +23,26 @@ struct MemojiOnboardingView: View {
                     .foregroundStyle(.gray)
                     .lineLimit(nil)
             }
-            .padding()
+            Spacer()
+            
+            Group {
+                ProfileImage(image: viewModel.profileImage)
+                    .padding()
+                Text("AA")
+                    .bold()
+                    .font(.system(size: 43))
+            }
+            
+            Spacer()
+            
+            OnboardingProgressButton(text: "Continuar")
             
             
         }
+        .padding()
     }
 }
 
 #Preview {
-    MemojiOnboardingView()
+    SecondOnboardingView()
 }
