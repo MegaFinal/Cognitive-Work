@@ -109,7 +109,7 @@ extension CloudKitManager {
                 return nil
             }
         }
-        return records == [] ? nil : records?.compactMap{_ in T.init(record: )} as? [T]
+        return records?.compactMap { T.init(record: $0) }
     }
 
     /// Fetches the first available record of `type`, searching private records before shared
