@@ -221,4 +221,17 @@ extension CloudKitManager {
             return false
         }
     }
+    
+    @discardableResult
+    func delete<T: CloudKitSyncable>(_ type: T.Type, recordID: CKRecord.ID) async -> Bool {
+        let database = recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+
+        do {
+            _ = try await database.deleteRecord(withID: recordID)
+            return true
+        } catch {
+            errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
+            return false
+        }
+    }
 }

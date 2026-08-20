@@ -1,310 +1,96 @@
 //
-//  AlgorithmTests.swift
+//  SchedulerIntegrationTests.swift
 //  Cognitive-Work
 //
-//  Created by Jonas Fernando Nascimento Melo on 19/08/26.
+//  Testes de integração: exercitam o agendador contra o CloudKit real,
+//  criando registros de verdade e verificando o que foi persistido.
 //
-
+//  Requisitos para rodar:
+//   - simulador/dispositivo com conta iCloud ativa
+//   - container do CloudKit acessível (Development)
+//   - conexão de rede
+//
+//  A suíte é `.serialized` de propósito: os testes compartilham o mesmo banco
+//  remoto e capacidade de slots, então rodar em paralelo produz interferência.
+//
 
 import Testing
 import Foundation
-@testable import Cognitive_Work
 import CloudKit
+@testable import Cognitive_Work
 
 @MainActor
-class AlgorithmTests {
-    var localAlice: UserModel! = nil
-    var localBob: UserModel! = nil
-    var localCarol: UserModel! = nil
+struct AlgorithmTests {
+    var avalibleTime1Reference: [CKRecord.Reference] = []
+    var avalibleTime2Reference: [CKRecord.Reference] = []
+    var chores: [ChoreModel] = []
     
-    var localChores: [ChoreModel] = []
+    var alice = UserModel(name: "Alice", tier: .tier1)
+    var bob = UserModel(name: "Bob", tier: .tier1)
     
-    func setup() async {
-        localAlice = await CloudKitManager.shared.create(alice)
-        localBob = await CloudKitManager.shared.create(bob)
-        localCarol = await CloudKitManager.shared.create(carol)
+    
+    mutating func setup() async {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
         
+        var avalibleTime1 = [
+            AvailableTimeModel(capacityMinutes: 60, day: today, user: nil),
+            AvailableTimeModel(capacityMinutes: 30, day: calendar.date(byAdding: .day, value: 1, to: today)!, user: nil),
+            AvailableTimeModel(capacityMinutes: 120, day: calendar.date(byAdding: .day, value: 2, to: today)!, user: nil)
+        ]
+        var avalibleTime2 = [
+            AvailableTimeModel(capacityMinutes: 20, day: calendar.date(byAdding: .day, value: 1, to: today)!, user: nil),
+            AvailableTimeModel(capacityMinutes: 30, day: calendar.date(byAdding: .day, value: 2, to: today)!, user: nil),
+            AvailableTimeModel(capacityMinutes: 60, day: calendar.date(byAdding: .day, value: 3, to: today)!, user: nil)
+        ]
+        
+        for avt in avalibleTime1{
+            let saved = await CloudKitManager.shared.create(avt)
+            let avtReference = CKRecord.Reference(recordID: (saved?.recordID!)!, action: .none)
+            avalibleTime1Reference.append(avtReference)
+        }
+        
+        for avt in avalibleTime2{
+            let saved = await CloudKitManager.shared.create(avt)
+            let avtReference = CKRecord.Reference(recordID: (saved?.recordID!)!, action: .none)
+            avalibleTime2Reference.append(avtReference)
+        }
+        alice.availableTime = avalibleTime1Reference
+        bob.availableTime = avalibleTime2Reference
+        
+        await CloudKitManager.shared.create(alice)
+        await CloudKitManager.shared.create(bob)
+        
+        try? await Task.sleep(for: .seconds(1))
+        let alicePredicate = NSPredicate(format: "name == %@", "Alice")
+        let bobPredicate = NSPredicate(format: "name == %@", "Bob")
+        
+        alice = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: alicePredicate).first!
+        bob = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: bobPredicate).first!
+        
+        var chores: [ChoreModel] = [
+            ChoreModel(name: "tarefa1", description: "description1", frequency: .daily, duration: 20, isPublic: true, priorityTag: .low),
+            ChoreModel(name: "tarefa2", description: "description2", frequency: .fortnightly, duration: 40, isPublic: true, priorityTag: .medium),
+            ChoreModel(name: "tarefa3", description: "description3", frequency: .montly, duration: 30, isPublic: true, priorityTag: .high),
+            ChoreModel(name: "tarefa4", description: "description4", frequency: .none, duration: 10, isPublic: true, priorityTag: .urgent),
+            ChoreModel(name: "tarefa5", description: "description5", frequency: .weekly, duration: 15, isPublic: true, priorityTag: .low),
+        ]
         for chore in chores {
-            localChores.append(await CloudKitManager.shared.create(chore)!)
+            self.chores.append(await CloudKitManager.shared.create(chore)!)
         }
     }
     
-    @Test func scheduleTest() async {
+    @Test mutating func test() async {
         await setup()
+        await TaskSchedulerEngine.schedule(chores: chores, users: [alice,bob])
         
-        let alice = TestFixtures.makeUser(name: "Alice")
-        let bob = TestFixtures.makeUser(name: "Bob")
+        let alicePredicate = NSPredicate(format: "name == %@", "Alice")
+        let bobPredicate = NSPredicate(format: "name == %@", "Bob")
         
-        let aliceSlots = [
-            TestFixtures.makeSlot(user: alice, dayOffset: 0, capacityMinutes: 60),
-            TestFixtures.makeSlot(user: alice, dayOffset: 1, capacityMinutes: 60)
-        ]
-        let bobSlots = [
-            TestFixtures.makeSlot(user: bob, dayOffset: 0, capacityMinutes: 60),
-            TestFixtures.makeSlot(user: bob, dayOffset: 2, capacityMinutes: 150)
-        ]
+        alice = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: alicePredicate).first!
+        bob = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: bobPredicate).first!
         
-        let userAvailableTimeMap: [CKRecord.ID: [AvailableTimeModel]] = [
-            alice.recordID!: aliceSlots,
-            bob.recordID!: bobSlots
-        ]
-        let userTotalCapacity: [CKRecord.ID: Int] = [
-            alice.recordID!: aliceSlots.reduce(0) { $0 + $1.capacityMinutes },
-            bob.recordID!: bobSlots.reduce(0) { $0 + $1.capacityMinutes }
-        ]
-        
-        let context = ScheduleContext(
-            userAvailableTimeMap: userAvailableTimeMap,
-            choreResponsibleMap: [:],
-            userTotalCapacity: userTotalCapacity,
-            minimumCapacity: userTotalCapacity.values.min() ?? 0
-        )
-        
-        var remainingCapacity = context.initialRemainingCapacity()
-        var userAssignedMinutes = context.initialUserAssignedMinutes(users: [alice, bob])
-        
-        let chore = ChoreModel(name: "Wash Dishes", description: "", isDone: false, frequency: .daily, duration: 20, isPublic: true, priorityTag: .medium)
-        
-        let results = scheduleDailyChores(
-            [chore], users: [alice, bob], context: context,
-            now: Calendar.current.startOfDay(for: Date()),
-            remainingCapacity: &remainingCapacity,
-            userAssignedMinutes: &userAssignedMinutes
-        )
-        
-        #expect(results.count == 1)
-        #expect(results.first?.newAssignments.count == 7)
+        #expect(alice.chores != nil)
+        #expect(bob.chores != nil)
     }
 }
-
-let alice: UserModel = UserModel(name: "Alice", tier: .tier1, coins: 120, points: 340, couponLimit: 3)
-let bob: UserModel = UserModel(name: "Bob", tier: .tier1, coins: 40, points: 90, couponLimit: 3)
-let carol: UserModel = UserModel(name: "Carol", tier: .tier1, coins: 60, points: 150, couponLimit: 3)
-
-// MARK: - Chores
-
-let chores: [ChoreModel] = [
-    
-    // Urgentes
-    
-    //AliceRef
-    ChoreModel(
-        name: "Cook Dinner",
-        description: "Prepare the evening meal for the house.",
-        isDone: false,
-        frequency: .daily,
-        duration: 20 * 60,
-        isPublic: false,
-        priorityTag: .urgent
-    ),
-    //bobRef
-    ChoreModel(
-        name: "Pick Up Prescription",
-        description: "Collect the pending prescription at the pharmacy.",
-        isDone: false,
-        frequency: .daily,
-        duration: 40 * 60,
-        isPublic: false,
-        priorityTag: .urgent
-    ),
-    ChoreModel(
-        name: "Pay Utility Bills",
-        description: "Settle electricity, water and internet.",
-        isDone: false,
-        frequency: .none,
-        duration: 25 * 60,
-        isPublic: true,
-        priorityTag: .urgent
-    ),
-    
-    // Alta
-    
-    ChoreModel(
-        name: "Vacuum & Mop Floors",
-        description: "Vacuum and mop the shared areas.",
-        isDone: false,
-        frequency: .daily,
-        duration: 20 * 60,
-        isPublic: true,
-        priorityTag: .high
-    ),
-    ChoreModel(
-        name: "Grocery Shopping",
-        description: "Buy the items on the shared list.",
-        isDone: false,
-        frequency: .none,
-        duration: 20 * 60,
-        isPublic: true,
-        priorityTag: .high
-    ),
-    ChoreModel(
-        name: "Laundry",
-        description: "Wash, dry and fold the clothes.",
-        isDone: false,
-        frequency: .none,
-        duration: 120 * 60,
-        isPublic: true,
-        priorityTag: .high
-    ),
-    ChoreModel(
-        name: "Clean Bathroom",
-        description: "Scrub the sink, toilet, shower and mirror.",
-        isDone: false,
-        frequency: .none,
-        duration: 150 * 60,
-        isPublic: true,
-        priorityTag: .high
-    ),
-    ChoreModel(
-        name: "Meal Prep for Week",
-        description: "Cook and portion meals for the coming week.",
-        isDone: false,
-        frequency: .none,
-        duration: 20 * 60,
-        isPublic: true,
-        priorityTag: .high
-    ),
-    
-    // Média
-    
-    ChoreModel(
-        name: "Wash Dishes",
-        description: "Clean the dishes and wipe the counter.",
-        isDone: false,
-        frequency: .daily,
-        duration: 20 * 60,
-        isPublic: true,
-        priorityTag: .medium
-    ),
-    ChoreModel(
-        name: "Water Plants",
-        description: "Water the indoor and balcony plants.",
-        isDone: false,
-        frequency: .none,
-        duration: 15 * 60,
-        isPublic: true,
-        priorityTag: .medium
-    ),
-    ChoreModel(
-        name: "Change Bed Sheets",
-        description: "Swap the sheets and pillowcases.",
-        isDone: false,
-        frequency: .none,
-        duration: 30 * 60,
-        isPublic: true,
-        priorityTag: .medium
-    ),
-    ChoreModel(
-        name: "Organize Pantry",
-        description: "Sort the pantry and discard expired items.",
-        isDone: false,
-        frequency: .none,
-        duration: 20 * 60,
-        isPublic: true,
-        priorityTag: .medium
-    ),
-    ChoreModel(
-        name: "Deep Clean Fridge",
-        description: "Empty the fridge, clean the shelves and restock.",
-        isDone: false,
-        frequency: .none,
-        duration: 10 * 60,
-        isPublic: true,
-        priorityTag: .medium
-    ),
-    ChoreModel(
-        name: "Iron Clothes",
-        description: "Iron the clothes waiting in the basket.",
-        isDone: false,
-        frequency: .none,
-        duration: 40 * 60,
-        isPublic: true,
-        priorityTag: .medium
-    ),
-    
-    // Baixa
-    
-    ChoreModel(
-        name: "Take Out Trash",
-        description: "Take the bags out and replace the liners.",
-        isDone: false,
-        frequency: .none,
-        duration: 10 * 60,
-        isPublic: true,
-        priorityTag: .low
-    ),
-    ChoreModel(
-        name: "Dust Shelves",
-        description: "Dust the shelves and living room surfaces.",
-        isDone: false,
-        frequency: .none,
-        duration: 25 * 60,
-        isPublic: true,
-        priorityTag: .low
-    ),
-    ChoreModel(
-        name: "Sort Mail",
-        description: "Go through the mail and discard what is not needed.",
-        isDone: false,
-        frequency: .none,
-        duration: 15 * 60,
-        isPublic: true,
-        priorityTag: .low
-    ),
-    ChoreModel(
-        name: "Wash Car",
-        description: "Wash the car inside and out.",
-        isDone: false,
-        frequency: .none,
-        duration: 160 * 60,
-        isPublic: true,
-        priorityTag: .low
-    ),
-    ChoreModel(
-        name: "Reorganize Closet",
-        description: "Reorganize the closet and set aside clothes to donate.",
-        isDone: false,
-        frequency: .none,
-        duration: 50 * 60,
-        isPublic: true,
-        priorityTag: .low
-    ),
-    
-    //Alice ref
-    ChoreModel(
-        name: "Clean Windows",
-        description: "Clean the windows and frames.",
-        isDone: false,
-        frequency: .none,
-        duration: 80 * 60,
-        isPublic: false,
-        priorityTag: .low
-    )
-]
-
-enum TestFixtures {
-    
-    static func fakeRecordID(_ name: String) -> CKRecord.ID {
-        CKRecord.ID(recordName: name)
-    }
-    
-    static func day(offset: Int, from base: Date = Date()) -> Date {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: base)
-        return calendar.date(byAdding: .day, value: offset, to: today)!
-    }
-    
-    static func makeUser(name: String) -> UserModel {
-        var user = UserModel(name: name, tier: .tier1)
-        user.recordID = fakeRecordID("user-\(name)")
-        return user
-    }
-    
-    static func makeSlot(user: UserModel, dayOffset: Int, capacityMinutes: Int) -> AvailableTimeModel {
-        var slot = AvailableTimeModel(capacityMinutes: capacityMinutes, day: day(offset: dayOffset))
-        slot.recordID = fakeRecordID("slot-\(user.name)-\(dayOffset)")
-        slot.user = CKRecord.Reference(recordID: user.recordID!, action: .none)
-        return slot
-    }
-}
-

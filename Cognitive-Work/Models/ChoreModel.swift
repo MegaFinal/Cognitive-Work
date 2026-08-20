@@ -31,8 +31,8 @@ struct ChoreModel: CloudKitSyncable {
     /// How often the chore repeats.
     var frequency: Recurrence
 
-    /// Expected time to complete the chore, in seconds.
-    var duration: TimeInterval
+    /// Expected time to complete the chore, in minutes.
+    var duration: Double
 
     /// Whether every member of the house can see and claim the chore.
     var isPublic: Bool
@@ -113,7 +113,7 @@ struct ChoreModel: CloudKitSyncable {
         isDone: Bool = false,
         dueDate: Date? = nil,
         frequency: Recurrence,
-        duration: TimeInterval,
+        duration: Double,
         isPublic: Bool,
         isLate: Bool = false,
         weight: Int = 0,

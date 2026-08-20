@@ -7,7 +7,7 @@ import Foundation
 import CloudKit
 
 /// A member of a house, including their gamification progress.
-struct UserModel: CloudKitSyncable {
+struct UserModel: CloudKitSyncable, Hashable {
 
     /// CloudKit record type backing this model.
     static var recordType: String = "UserModel"
