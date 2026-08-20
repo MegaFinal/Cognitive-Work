@@ -6,38 +6,45 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct SecondOnboardingView: View {
     @State private var viewModel = MemojiPickerViewModel()
+    @State private var usernameText: String = ""
+    @State private var selectedItem: PhotosPickerItem? = nil
     
     var body: some View {
-        VStack(alignment: .center) {
+        VStack(alignment: .center, spacing: 58) {
+            OnboardingHeaderText(titleText: "Para começarmos...", descriptionText: "Escolha um Memoji e um nome para utilizar no seu app")
             
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Para Começarmos...")
-                    .font(.title)
-                    .bold()
-                    .foregroundStyle(.black.opacity(0.7))
-                Text("Escolha um Memoji e um nome para utilizar no seu app")
-                    .font(.callout)
-                    .foregroundStyle(.gray)
-                    .lineLimit(nil)
-            }
-            Spacer()
-            
-            Group {
+            PhotosPicker(selection: $selectedItem, matching: .images) {
                 ProfileImage(image: viewModel.profileImage)
-                    .padding()
-                Text("AA")
-                    .bold()
-                    .font(.system(size: 43))
             }
+            .layoutPriority(1)
             
-            Spacer()
+//            TextField("", text: $usernameText, prompt: Text("Name")
+//                .foregroundStyle(.black)
+//            )
+            TextField("Nome", text: $usernameText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 43, weight: .bold))
+                .foregroundColor(.primary)
+                .accentColor(.blue)
+                .multilineTextAlignment(.center)
             
             OnboardingProgressButton(text: "Continuar")
             
-            
+        }
+        .onChange(of: selectedItem) { oldValue, newItem in
+            Task {
+                if let newItem,
+                   let data = try? await newItem.loadTransferable(type: Data.self),
+                   let uiImage = UIImage(data: data) {
+                    await MainActor.run {
+                        viewModel.profileImage = uiImage
+                    }
+                }
+            }
         }
         .padding()
     }

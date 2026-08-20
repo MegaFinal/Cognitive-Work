@@ -6,30 +6,58 @@
 //
 
 import SwiftUI
+// MARK: UIKIT PROFILE IMAGE FOR MEMOJI
+//struct ProfileImage: View {
+//    let image: UIImage?
+//    
+//    var body: some View {
+//        Group {
+//            if let image {
+//                Image(uiImage: image)
+//                    .resizable()
+//                    .scaledToFit()
+//                    .padding(15)
+//                    .background(Color(.systemBackground))
+//            }
+//            else {
+//                Circle()
+//                    .fill(Color(.systemGray5))
+//                    .overlay {
+//                        Image(systemName: "person.fill.badge.plus")
+//                            .font(.system(size: 65))
+//                            .foregroundStyle(.gray)
+//                    }
+//            }
+//        }
+//        .frame(width: 285)
+//        .clipShape(Circle())
+//        .shadow(radius: 5)
+//    }
+//}
 
 struct ProfileImage: View {
     let image: UIImage?
     
-    var body: some View {        
+    var body: some View {
         Group {
             if let image {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFit()
-                    .padding(15)
+                    .scaledToFill() // Mudado para fill para preencher o círculo perfeitamente
+                    .frame(width: 285, height: 285)
                     .background(Color(.systemBackground))
             }
             else {
                 Circle()
                     .fill(Color(.systemGray5))
+                    .frame(width: 285, height: 285)
                     .overlay {
                         Image(systemName: "person.fill.badge.plus")
-                            .font(.system(size: 85))
+                            .font(.system(size: 65))
                             .foregroundStyle(.gray)
                     }
             }
         }
-        .frame(width: 285)
         .clipShape(Circle())
         .shadow(radius: 5)
     }

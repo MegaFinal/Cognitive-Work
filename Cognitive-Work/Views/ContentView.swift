@@ -98,7 +98,8 @@ import CloudKit
 
 struct ContentView: View {
     var body: some View {
-        FirstOnboardingView()
+//        FirstOnboardingView()
+        SecondOnboardingView()
     }
 }
 

@@ -17,13 +17,13 @@ struct OnboardingProgressButton: View {
             //action
         } label: {
             Text(text)
-                .frame(width: width * 0.5, height: height * 0.05)
+                .frame(width: width * 0.6, height: height * 0.06)
                 .foregroundColor(.white)
                 .fontWeight(.medium)
                 .background(
                     Capsule()
-                    .foregroundColor(.blue)
-                    .glassEffect()
+                        .foregroundColor(.blue)
+                        .glassEffect()
                 )
         }
     }
