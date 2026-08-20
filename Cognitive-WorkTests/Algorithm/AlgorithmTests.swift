@@ -2,17 +2,6 @@
 //  SchedulerIntegrationTests.swift
 //  Cognitive-Work
 //
-//  Testes de integração: exercitam o agendador contra o CloudKit real,
-//  criando registros de verdade e verificando o que foi persistido.
-//
-//  Requisitos para rodar:
-//   - simulador/dispositivo com conta iCloud ativa
-//   - container do CloudKit acessível (Development)
-//   - conexão de rede
-//
-//  A suíte é `.serialized` de propósito: os testes compartilham o mesmo banco
-//  remoto e capacidade de slots, então rodar em paralelo produz interferência.
-//
 
 import Testing
 import Foundation
@@ -131,9 +120,9 @@ struct AlgorithmTests {
         await deleteAll()
     }
     
-    // MARK: - Teste User Chore Overload
+    // MARK: - Teste Incremental Scheduling and Reassignment
     
-    @Test mutating func userChoreOverload() async {
+    @Test mutating func incrementalSchedulingAndReassignment() async {
         await setup(
             chores: [
                 ChoreModel(name: "tarefa1", description: "description1", frequency: .daily, duration: 20, isPublic: true, priorityTag: .low),
@@ -222,4 +211,76 @@ struct AlgorithmTests {
         
         await deleteAll()
     }
+    
+    // MARK: - Teste Insufficient Capacity
+        @Test mutating func insufficientCapacity() async {
+            await setup(
+                chores: [
+                    ChoreModel(name: "tarefaGigante", description: "Muito longa", frequency: .none, duration: 999, isPublic: true, priorityTag: .urgent)
+                ]
+            )
+            
+            await TaskSchedulerEngine.schedule(chores: chores, users: [alice, bob])
+            
+            let taskRef = CKRecord.Reference(recordID: chores[0].recordID!, action: .none)
+            let fetchedChore = await CloudKitManager.shared.fetchRecordsByRecordReference(
+                for: ChoreModel.self,
+                recordReferences: [taskRef]
+            )?.first
+            
+            #expect(fetchedChore?.dueDate == nil)
+            #expect(fetchedChore?.currentResponsible == nil)
+            
+            await deleteAll()
+        }
+        
+        // MARK: - Teste Idempotency / Re-scheduling
+        @Test mutating func schedulingIdempotency() async {
+            await setup(
+                chores: [
+                    ChoreModel(name: "tarefaRepetida", description: "Teste idempotencia", frequency: .daily, duration: 10, isPublic: true, priorityTag: .medium)
+                ]
+            )
+            
+            await TaskSchedulerEngine.schedule(chores: chores, users: [alice, bob])
+            
+            let alicePredicate = NSPredicate(format: "name == %@", aliceName)
+            alice = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: alicePredicate).first!
+            let choreCount = alice.chores?.count ?? 0
+            
+            let refreshedChores = await CloudKitManager.shared.fetchRecordsByRecordReference(
+                for: ChoreModel.self,
+                recordReferences: chores.compactMap { $0.recordID }.map { CKRecord.Reference(recordID: $0, action: .none) }
+            ) ?? []
+            
+            await TaskSchedulerEngine.schedule(chores: refreshedChores, users: [alice, bob])
+            
+            alice = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: alicePredicate).first!
+            let choreCount2 = alice.chores?.count ?? 0
+            
+            #expect(choreCount == choreCount2)
+            
+            await deleteAll()
+        }
+        
+    // MARK: - Teste Fixed Responsible with No Capacity
+        @Test mutating func fixedResponsibleWithoutCapacity() async {
+            let aliceChore = ChoreModel(name: "AliceChore", description: "AliceChore no time", frequency: .none, duration: 500, isPublic: true, priorityTag: .high)
+            
+            await setup(chores: [aliceChore])
+            
+            let choreRef = CKRecord.Reference(recordID: chores[0].recordID!, action: .none)
+            var savedChore = (await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: [choreRef]))!.first!
+            savedChore.currentResponsible = CKRecord.Reference(recordID: alice.recordID!, action: .none)
+            
+            _ = await CloudKitManager.shared.update(savedChore)
+            
+            await TaskSchedulerEngine.schedule(chores: [savedChore], users: [alice, bob])
+            
+            let choreFetched = await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: [choreRef])?.first
+            
+            #expect(choreFetched?.dueDate == nil)
+            
+            await deleteAll()
+        }
 }
