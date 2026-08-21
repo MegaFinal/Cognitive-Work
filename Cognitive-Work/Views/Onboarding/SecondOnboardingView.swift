@@ -22,9 +22,6 @@ struct SecondOnboardingView: View {
             }
             .layoutPriority(1)
             
-//            TextField("", text: $usernameText, prompt: Text("Name")
-//                .foregroundStyle(.black)
-//            )
             TextField("Nome", text: $usernameText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 43, weight: .bold))
@@ -32,7 +29,7 @@ struct SecondOnboardingView: View {
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
             
-            OnboardingProgressButton(text: "Continuar")
+            OnboardingProgressButton(text: "Continuar", action: {})
             
         }
         .onChange(of: selectedItem) { oldValue, newItem in
