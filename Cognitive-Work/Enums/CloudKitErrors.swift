@@ -18,8 +18,9 @@ enum CloudKitErrors<T>: Error, LocalizedError {
         switch self {
         case .notFound:
             return "No private or shared record was found for type: \(T.self)"
+            
         case .missingShareURL:
-            return "Missing URL"
+            return "Missing share URL"
         }
     }
 }
