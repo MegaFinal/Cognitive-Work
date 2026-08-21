@@ -13,6 +13,7 @@ import UIKit
 /// ``MemojiTextView`` overrides the standard paste behavior to inspect
 /// pasteboard contents for images. When an image is found, it is passed
 /// to ``onImageReceived``
+/// `It's not being used at the moment
 
 final class MemojiUITextView: UITextView {
 
