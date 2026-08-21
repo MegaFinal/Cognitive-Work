@@ -31,34 +31,34 @@ class CarouselCardViewModel: Identifiable {
         isShowingBack.toggle()
     }
     
-    func fetchRoomDependencies() async {
-        guard !isLoadingDependencies else { return }
+    func fetchRoomDependencies() async -> RoomModel? {
+        guard !isLoadingDependencies else { return nil }
         
         await MainActor.run { isLoadingDependencies = true }
         
-        if let roomRef = chore.room {
-
-//            if let record = try? await db.record(for: roomRef.recordID),
-            if let record = await CloudKitManager.shared.fetchRecord(for: <#T##CloudKitSyncable#>), predicate: <#T##NSPredicate#>),
-               let room = RoomModel(record: record) {
-                await MainActor.run {
-                    self.roomName = room.name ?? "Nome do Cômodo"
-                    self.roomColor = room.color.uiColor
-                }
-            }
+        if chore.room != nil {
+            return await CloudKitManager.shared.fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [chore.room!])?.first
         } else {
             await MainActor.run { self.roomName = "Cômodo não encontrado" }
         }
         
         await MainActor.run { isLoadingDependencies = false }
+        return nil
     }
     
-    func fetchUserDependencies() async {
-        guard !isLoadingDependencies else { return }
+    func fetchUserDependencies() async -> UserModel? {
+        guard !isLoadingDependencies else { return nil }
         
         await MainActor.run { isLoadingDependencies = true }
         
+        if chore.currentResponsible != nil {
+            return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [chore.currentResponsible!])?.first
+        } else {
+            await MainActor.run { self.roomName = "User não encontrado" }
+        }
+        
         await MainActor.run { isLoadingDependencies = false }
+        return nil
     }
     
     // MARK: - Mocks for preview
