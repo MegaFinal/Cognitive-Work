@@ -22,6 +22,8 @@ struct ChoreModel: CloudKitSyncable {
 
     /// Free-form details about how the chore should be done.
     var description: String
+    
+    var isDone: Bool
 
     /// When the chore is next due, or `nil` when it has no deadline.
     var dueDate: Date?
@@ -29,8 +31,8 @@ struct ChoreModel: CloudKitSyncable {
     /// How often the chore repeats.
     var frequency: Recurrence
 
-    /// Expected time to complete the chore, in seconds.
-    var duration: TimeInterval
+    /// Expected time to complete the chore, in minutes.
+    var duration: Double
 
     /// Whether every member of the house can see and claim the chore.
     var isPublic: Bool
@@ -58,6 +60,8 @@ struct ChoreModel: CloudKitSyncable {
 
     /// The room this chore belongs to.
     var room: CKRecord.Reference?
+    
+    var dailyAssignments: [CKRecord.Reference]?
 
     /// Creates a model from a CloudKit record.
     ///
@@ -68,6 +72,7 @@ struct ChoreModel: CloudKitSyncable {
         guard
             let name = record["name"] as? String,
             let description = record["description"] as? String,
+            let isDone = record["isDone"] as? Bool,
             let frequencyRaw = record["frequency"] as? String,
             let frequency = Recurrence(rawValue: frequencyRaw),
             let duration = record["duration"] as? TimeInterval,
@@ -83,6 +88,7 @@ struct ChoreModel: CloudKitSyncable {
         self.recordID = record.recordID
         self.name = name
         self.description = description
+        self.isDone = isDone
         self.dueDate = record["dueDate"] as? Date
         self.frequency = frequency
         self.duration = duration
@@ -95,6 +101,7 @@ struct ChoreModel: CloudKitSyncable {
         self.currentResponsible = record["currentResponsible"] as? CKRecord.Reference
         self.allResponsibleUsers = record["allResponsibleUsers"] as? [CKRecord.Reference]
         self.room = record["room"] as? CKRecord.Reference
+        self.dailyAssignments = record["dailyAssignment"] as? [CKRecord.Reference]
     }
 
     /// Creates a new, unsaved chore.
@@ -103,9 +110,10 @@ struct ChoreModel: CloudKitSyncable {
     init(
         name: String,
         description: String,
+        isDone: Bool = false,
         dueDate: Date? = nil,
         frequency: Recurrence,
-        duration: TimeInterval,
+        duration: Double,
         isPublic: Bool,
         isLate: Bool = false,
         weight: Int = 0,
@@ -114,11 +122,13 @@ struct ChoreModel: CloudKitSyncable {
         checkList: [CKRecord.Reference]? = nil,
         currentResponsible: CKRecord.Reference? = nil,
         allResponsibleUsers: [CKRecord.Reference]? = nil,
-        room: CKRecord.Reference? = nil
+        room: CKRecord.Reference? = nil,
+        dailyAssignment: [CKRecord.Reference]? = nil
     ) {
         self.recordID = nil
         self.name = name
         self.description = description
+        self.isDone = isDone
         self.dueDate = dueDate
         self.frequency = frequency
         self.duration = duration
@@ -131,6 +141,7 @@ struct ChoreModel: CloudKitSyncable {
         self.currentResponsible = currentResponsible
         self.allResponsibleUsers = allResponsibleUsers
         self.room = room
+        self.dailyAssignments = dailyAssignment
     }
 
     /// Writes this model's values into a CloudKit record.
@@ -142,6 +153,7 @@ struct ChoreModel: CloudKitSyncable {
     func populate(record: CKRecord) {
         record["name"] = name
         record["description"] = description
+        record["isDone"] = isDone
         record["dueDate"] = dueDate
         record["frequency"] = frequency.rawValue
         record["duration"] = duration
@@ -157,6 +169,11 @@ struct ChoreModel: CloudKitSyncable {
         if let allResponsibleUsers {
             record["allResponsibleUsers"] = allResponsibleUsers
         }
-        record["room"] = room
+        if let room {
+            record["room"] = room
+        }
+        if let dailyAssignments {
+            record["dailyAssignment"] = dailyAssignments
+        }
     }
 }
