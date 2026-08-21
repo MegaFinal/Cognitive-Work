@@ -73,11 +73,14 @@ class OnboardingViewModel {
         
         if let savedHouse = await CloudKitManager.shared.create(newHouse) {
             self.currentHouse = savedHouse
-            
+ 
             guard let houseRecordID = savedHouse.recordID else { return }
-            var userToUpdate = savedUser
-            userToUpdate.house = CKRecord.Reference(recordID: houseRecordID, action: .none)
-            _ = await CloudKitManager.shared.update(userToUpdate)
+
+            if let userRecord = await CloudKitManager.shared.fetchRecord(for: savedUser) {
+                userRecord.parent = CKRecord.Reference(recordID: houseRecordID, action: .none)
+                userRecord["house"] = CKRecord.Reference(recordID: houseRecordID, action: .none)
+                _ = await CloudKitManager.shared.update(record: userRecord)
+            }
             
             isLoading = false
             navigateToFourth = true
@@ -107,11 +110,11 @@ class OnboardingViewModel {
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
         var savedRoomReferences: [CKRecord.Reference] = []
-        let houseReference = CKRecord.Reference(recordID: houseID, action: .none)
+        let houseReference = CKRecord.Reference(recordID: houseID, action: .deleteSelf)
         
         for draft in selectedDrafts {
             let roomModel = RoomModel(name: draft.name, house: houseReference, color: draft.color)
-            if let savedRoom = await CloudKitManager.shared.create(roomModel),
+            if let savedRoom = await CloudKitManager.shared.create(roomModel, parent: houseReference),
                let roomID = savedRoom.recordID {
                 savedRoomReferences.append(CKRecord.Reference(recordID: roomID, action: .none))
             }

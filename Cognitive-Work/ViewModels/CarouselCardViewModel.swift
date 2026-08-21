@@ -37,9 +37,9 @@ class CarouselCardViewModel: Identifiable {
         await MainActor.run { isLoadingDependencies = true }
         
         if let roomRef = chore.room {
-            let db = roomRef.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? CloudKitManager.shared.privateDB : CloudKitManager.shared.sharedDB
-            
-            if let record = try? await db.record(for: roomRef.recordID),
+
+//            if let record = try? await db.record(for: roomRef.recordID),
+            if let record = await CloudKitManager.shared.fetchRecord(for: <#T##CloudKitSyncable#>), predicate: <#T##NSPredicate#>),
                let room = RoomModel(record: record) {
                 await MainActor.run {
                     self.roomName = room.name ?? "Nome do Cômodo"
@@ -57,19 +57,6 @@ class CarouselCardViewModel: Identifiable {
         guard !isLoadingDependencies else { return }
         
         await MainActor.run { isLoadingDependencies = true }
-        
-        if let userRef = chore.currentResponsible {
-            let db = userRef.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? CloudKitManager.shared.privateDB : CloudKitManager.shared.sharedDB
-            
-            if let record = try? await db.record(for: userRef.recordID),
-               let user = UserModel(record: record) {
-                await MainActor.run {
-                    if let imgData = user.profilePicture, let uiImage = UIImage(data: imgData) {
-                        self.profileImage = Image(uiImage: uiImage)
-                    }
-                }
-            }
-        }
         
         await MainActor.run { isLoadingDependencies = false }
     }

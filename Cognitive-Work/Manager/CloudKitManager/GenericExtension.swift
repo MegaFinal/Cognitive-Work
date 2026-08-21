@@ -181,6 +181,18 @@ extension CloudKitManager {
             return false
         }
     }
+    
+    func update(record: CKRecord) async -> Bool {
+        let database = record.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+
+        do {
+            _ = try await database.save(record)
+            return true
+        } catch {
+            errorMessage = "Failed to update \(record.recordType): \(error.localizedDescription)"
+            return false
+        }
+    }
 
     /// Deletes the record backing a model.
     ///
