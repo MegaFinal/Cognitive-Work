@@ -31,47 +31,34 @@ class CarouselCardViewModel: Identifiable {
         isShowingBack.toggle()
     }
     
-    func fetchRoomDependencies() async {
-        guard !isLoadingDependencies else { return }
+    func fetchRoomDependencies() async -> RoomModel? {
+        guard !isLoadingDependencies else { return nil }
         
         await MainActor.run { isLoadingDependencies = true }
         
-        if let roomRef = chore.room {
-            let db = roomRef.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? CloudKitManager.shared.privateDB : CloudKitManager.shared.sharedDB
-            
-            if let record = try? await db.record(for: roomRef.recordID),
-               let room = RoomModel(record: record) {
-                await MainActor.run {
-                    self.roomName = room.name ?? "Nome do Cômodo"
-                    self.roomColor = room.color.uiColor
-                }
-            }
+        if chore.room != nil {
+            return await CloudKitManager.shared.fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [chore.room!])?.first
         } else {
             await MainActor.run { self.roomName = "Cômodo não encontrado" }
         }
         
         await MainActor.run { isLoadingDependencies = false }
+        return nil
     }
     
-    func fetchUserDependencies() async {
-        guard !isLoadingDependencies else { return }
+    func fetchUserDependencies() async -> UserModel? {
+        guard !isLoadingDependencies else { return nil }
         
         await MainActor.run { isLoadingDependencies = true }
         
-        if let userRef = chore.currentResponsible {
-            let db = userRef.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? CloudKitManager.shared.privateDB : CloudKitManager.shared.sharedDB
-            
-            if let record = try? await db.record(for: userRef.recordID),
-               let user = UserModel(record: record) {
-                await MainActor.run {
-                    if let imgData = user.profilePicture, let uiImage = UIImage(data: imgData) {
-                        self.profileImage = Image(uiImage: uiImage)
-                    }
-                }
-            }
+        if chore.currentResponsible != nil {
+            return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [chore.currentResponsible!])?.first
+        } else {
+            await MainActor.run { self.roomName = "User não encontrado" }
         }
         
         await MainActor.run { isLoadingDependencies = false }
+        return nil
     }
     
     // MARK: - Mocks for preview

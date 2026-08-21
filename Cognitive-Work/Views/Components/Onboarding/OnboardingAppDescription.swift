@@ -11,6 +11,8 @@ struct OnboardingAppDescription: View {
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
+    var action: () -> Void
+    
     var body: some View {
         VStack(spacing: 20) {
             VStack(alignment: .leading, spacing: 20) {
@@ -23,10 +25,9 @@ struct OnboardingAppDescription: View {
                 Text("Mas antes, precisamos saber um pouco mais sobre a rotina na \ncasa...")
             }
             
-            OnboardingProgressButton(text: "Começar")
+            OnboardingProgressButton(text: "Começar", action: action)
         }
         .frame(width: width * 0.8)
-        .font(.default)
         .foregroundColor(.gray)
         .multilineTextAlignment(.leading)
         .padding(.horizontal, 30)
@@ -35,5 +36,5 @@ struct OnboardingAppDescription: View {
 }
 
 #Preview {
-    OnboardingAppDescription()
+    OnboardingAppDescription(action: {})
 }
