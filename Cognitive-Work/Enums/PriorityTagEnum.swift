@@ -6,6 +6,21 @@
 //
 
 enum PriorityTag: String {
+    case low = "low"
+    case medium = "medium"
+    case high = "high"
     case urgent = "urgent"
-    case notUrgent = "notUrgent"
+    
+    var intValue: Int {
+        switch self {
+        case .low: return 0
+        case .medium: return 1
+        case .high: return 2
+        case .urgent: return 3
+        }
+    }
+    
+    static func isLarger (lhs: PriorityTag, rhs: PriorityTag) -> Bool {
+        lhs.intValue < rhs.intValue
+    }
 }

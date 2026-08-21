@@ -96,6 +96,21 @@ extension CloudKitManager {
             return nil
         }
     }
+    
+    func fetchRecordsByRecordReference<T: CloudKitSyncable>(for type: T.Type,recordReferences: [CKRecord.Reference]) async -> [T]? {
+        var records: [CKRecord]? = []
+        for recordReference in recordReferences {
+            let database = recordReference.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+            do {
+                let fetchedRecord = try await database.record(for: recordReference.recordID)
+                records?.append(fetchedRecord)
+            } catch {
+                errorMessage = "Failed to fetch \(recordReference.recordID.recordName): \(error.localizedDescription)"
+                return nil
+            }
+        }
+        return records?.compactMap { T.init(record: $0) }
+    }
 
     /// Fetches the first available record of `type`, searching private records before shared
     /// ones.
@@ -196,6 +211,19 @@ extension CloudKitManager {
             return false
         }
 
+        let database = recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+
+        do {
+            _ = try await database.deleteRecord(withID: recordID)
+            return true
+        } catch {
+            errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
+            return false
+        }
+    }
+    
+    @discardableResult
+    func delete<T: CloudKitSyncable>(_ type: T.Type, recordID: CKRecord.ID) async -> Bool {
         let database = recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
 
         do {
