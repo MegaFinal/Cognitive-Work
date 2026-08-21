@@ -7,7 +7,7 @@ import Foundation
 import CloudKit
 
 /// A member of a house, including their gamification progress.
-struct UserModel: CloudKitSyncable {
+struct UserModel: CloudKitSyncable, Hashable {
 
     /// CloudKit record type backing this model.
     static var recordType: String = "UserModel"
@@ -34,7 +34,7 @@ struct UserModel: CloudKitSyncable {
     var badges: [CKRecord.Reference]?
 
     /// References to the chores assigned to the user.
-    var tasks: [CKRecord.Reference]?
+    var chores: [CKRecord.Reference]?
 
     /// References to the user's declared availability slots.
     var availableTime: [CKRecord.Reference]?
@@ -73,7 +73,7 @@ struct UserModel: CloudKitSyncable {
         self.tier = Tier(rawValue: record["tier"] as? String ?? "") ?? .tier1
         self.profilePicture = record["profilePicture"] as? Data
         self.badges = record["badges"] as? [CKRecord.Reference] ?? []
-        self.tasks = record["tasks"] as? [CKRecord.Reference] ?? []
+        self.chores = record["chores"] as? [CKRecord.Reference] ?? []
         self.availableTime = record["availableTime"] as? [CKRecord.Reference]
         self.coupons = record["coupons"] as? [CKRecord.Reference]
         self.house = record["house"] as? CKRecord.Reference
@@ -102,7 +102,7 @@ struct UserModel: CloudKitSyncable {
         self.coins = coins
         self.points = points
         self.badges = badges
-        self.tasks = tasks
+        self.chores = tasks
         self.availableTime = availableTime
         self.house = house
         self.coupons = coupons
@@ -124,8 +124,8 @@ struct UserModel: CloudKitSyncable {
         if let badges {
             record["badges"] = badges
         }
-        if let tasks {
-            record["tasks"] = tasks
+        if let chores {
+            record["chores"] = chores
         }
         if let house {
             record["house"] = house
