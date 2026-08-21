@@ -16,7 +16,7 @@ struct Carousel: View {
         ZStack {
             // Clear background that occupies the whole screen to allow
             // clearing the focus state by tapping the empty space
-            Color.blue
+            Color.white
                 .onTapGesture {
                     viewModel.clearFocus()
                 }
@@ -28,7 +28,7 @@ struct Carousel: View {
             else if viewModel.cardViewModels.isEmpty {
                 Text("Nenhuma tarefa no momento")
                     .font(.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
             }
             else {
                 // Card loop
@@ -77,8 +77,8 @@ struct Carousel: View {
     let carouselVM = CarouselViewModel()
     
     let mock1 = ChoreModel(name: "Lavar Banheiro", description: "", frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent)
-    let mock2 = ChoreModel(name: "Varrer Chão", description: "", frequency: .daily, duration: 900, isPublic: true, priorityTag: .notUrgent)
-    let mock3 = ChoreModel(name: "Arrumar Cama", description: "", frequency: .montly, duration: 300, isPublic: true, priorityTag: .notUrgent)
+    let mock2 = ChoreModel(name: "Varrer Chão", description: "", frequency: .daily, duration: 900, isPublic: true, priorityTag: .low)
+    let mock3 = ChoreModel(name: "Arrumar Cama", description: "", frequency: .montly, duration: 300, isPublic: true, priorityTag: .low)
     let mock4 = ChoreModel(name: "Lavar Louça", description: "", frequency: .daily, duration: 400, isPublic: true, priorityTag: .urgent)
     
     carouselVM.cardViewModels = [

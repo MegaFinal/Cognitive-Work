@@ -10,25 +10,35 @@ import SwiftUI
 struct OnboardingProgressButton: View {
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
+    
     var text: String
+    var isLoading: Bool = false
+    var action: () -> Void
     
     var body: some View {
         Button {
-            //action
+            action()
         } label: {
-            Text(text)
-                .frame(width: width * 0.6, height: height * 0.06)
-                .foregroundColor(.white)
-                .fontWeight(.medium)
-                .background(
-                    Capsule()
-                        .foregroundColor(.blue)
-                        .glassEffect()
-                )
+            ZStack {
+                if isLoading {
+                    ProgressView().tint(.white)
+                } else {
+                    Text(text)
+                }
+            }
+            .frame(width: width * 0.5, height: height * 0.05)
+            .foregroundColor(.white)
+            .fontWeight(.medium)
+            .background(
+                Capsule()
+                    .foregroundColor(.blue)
+                    .glassEffect()
+            )
         }
+        .disabled(isLoading)
     }
 }
 
 #Preview {
-    OnboardingProgressButton(text: "texto")
+    OnboardingProgressButton(text: "Continuar", action: {})
 }

@@ -29,7 +29,7 @@ struct SecondOnboardingView: View {
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
             
-            OnboardingProgressButton(text: "Continuar")
+            OnboardingProgressButton(text: "Continuar", action: {})
             
         }
         .onChange(of: selectedItem) { oldValue, newItem in
