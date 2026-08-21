@@ -53,38 +53,8 @@ struct OnboardingDelimiteTime: View {
                 .padding(.top, height * 0.023)
                 
                 ForEach(sortedDays, id: \.self) { day in
-                    HStack(spacing: width * 0.03) {
-                        Text(day)
-                            .font(.system(size: 16))
-                            .fontWeight(.medium)
-                        
-                        VStack {
-                            HStack(spacing: width * 0.03) {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .frame(width: width * 0.096, height: width * 0.096)
-                                RoundedRectangle(cornerRadius: 4)
-                                    .frame(width: width * 0.096, height: width * 0.096)
-                                RoundedRectangle(cornerRadius: 4)
-                                    .frame(width: width * 0.096, height: width * 0.096)
-                                RoundedRectangle(cornerRadius: 4)
-                                    .frame(width: width * 0.096, height: width * 0.096)
-                                RoundedRectangle(cornerRadius: 4)
-                                    .frame(width: width * 0.096, height: width * 0.096)
-                                RoundedRectangle(cornerRadius: 4)
-                                    .frame(width: width * 0.096, height: width * 0.096)
-                            }
-                            .foregroundStyle(.delimiteTimeSquareComponent)
-                            HStack {
-                                Text("Segunda - Feira")
-                                    .font(.system(size: 14))
-                                    .fontWeight(.medium)
-                                Spacer()
-                            }
-                            .foregroundStyle(.delimiteTimeTextComponent)
-                        }
-                    }
+                    OnboardingCustomSliderComponent(dayOfWeek: day, dayOfWeekAbbreviation: day, width: width, height: height)
                 }
-                StarRatingSlider(rating: $currentRating)
             }
             .padding(.horizontal, width * 0.0865)
         }
@@ -95,13 +65,41 @@ struct OnboardingDelimiteTime: View {
     OnboardingDelimiteTime()
 }
 
-struct StarRatingSlider: View {
+struct OnboardingCustomSliderComponent: View {
+    @State var rating = 0
+    
+    let dayOfWeek: String
+    let dayOfWeekAbbreviation: String
+    let width: CGFloat
+    let height: CGFloat
+    var body: some View {
+        HStack(spacing: width * 0.03) {
+            Text(dayOfWeekAbbreviation)
+                .font(.system(size: 16))
+                .fontWeight(.medium)
+            
+            VStack {
+               CustomSliderComponent(rating: $rating)
+                .foregroundStyle(.delimiteTimeSquareComponent)
+                HStack {
+                    Text("Segunda - Feira")
+                        .font(.system(size: 14))
+                        .fontWeight(.medium)
+                    Spacer()
+                }
+                .foregroundStyle(.delimiteTimeTextComponent)
+            }
+        }
+    }
+}
+
+struct CustomSliderComponent: View {
     @Binding var rating: Int
     var maxRating: Int = 6
     var starSize: CGFloat = 38
     var activeColor: Color = .delimiteTimeSelectedSquareComponent
     var inactiveColor: Color = .delimiteTimeSquareComponent
-    
+    var spacing: CGFloat = 12
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
@@ -123,11 +121,11 @@ struct StarRatingSlider: View {
                     }
             )
         }
-        .frame(width: CGFloat(maxRating) * (starSize + 4), height: starSize)
+//        .frame(width: CGFloat(maxRating) * (starSize + spacing), height: starSize)
     }
     
     private func starsView(color: Color) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: spacing) {
             ForEach(0..<maxRating, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 4)
                     .frame(width: starSize, height: starSize)
@@ -137,16 +135,11 @@ struct StarRatingSlider: View {
     }
     
     private func updateRating(with xPosition: CGFloat, in totalWidth: CGFloat) {
-        // Calculate raw position percentage
         let percentage = xPosition / totalWidth
-        // Convert to a raw Double rating value
         let rawRating = percentage * Double(maxRating)
         
-        // Ceil rounds up so tapping the first star gives 1 instead of 0
-        // Int() converts it to a whole integer
         let calculatedRating = Int(ceil(rawRating))
         
-        // Clamp the integer results securely between 0 and your maximum rating
         rating = max(0, min(maxRating, calculatedRating))
     }
 }
