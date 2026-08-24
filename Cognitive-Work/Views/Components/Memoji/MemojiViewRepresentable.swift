@@ -16,6 +16,7 @@ import UIKit
 ///
 /// The view remains visually hidden while still allowing the system
 /// keyboard to interact with the underlying `UITextView`
+/// `It's not being used at the moment
 
 struct MemojiViewRepresentable: UIViewRepresentable {
     @Binding var selectedImage: UIImage? /// The binding containing the image received from the keyboard.
