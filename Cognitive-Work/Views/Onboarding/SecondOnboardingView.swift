@@ -9,11 +9,15 @@ import SwiftUI
 import PhotosUI
 
 struct SecondOnboardingView: View {
+    @Environment(OnboardingViewModel.self) var vm
+    
     @State private var viewModel = MemojiPickerViewModel()
     @State private var usernameText: String = ""
     @State private var selectedItem: PhotosPickerItem? = nil
     
     var body: some View {
+        @Bindable var bindableViewModel = vm
+        
         VStack(alignment: .center, spacing: 58) {
             OnboardingHeaderText(titleText: "Para começarmos...", descriptionText: "Escolha um Memoji e um nome para utilizar no seu app")
             
@@ -32,6 +36,11 @@ struct SecondOnboardingView: View {
             OnboardingProgressButton(text: "Continuar", action: {})
             
         }
+        .navigationBarBackButtonHidden()
+        .navigationDestination(isPresented: $bindableViewModel.navigateToThird) {
+            ThirdOnboardingView()
+        }
+        .padding()
         .onChange(of: selectedItem) { oldValue, newItem in
             Task {
                 if let newItem,
@@ -43,10 +52,10 @@ struct SecondOnboardingView: View {
                 }
             }
         }
-        .padding()
     }
 }
 
 #Preview {
     SecondOnboardingView()
+        .environment(OnboardingViewModel())
 }
