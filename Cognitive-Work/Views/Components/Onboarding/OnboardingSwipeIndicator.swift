@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// A hint prompting the user to swipe up to continue
 struct OnboardingSwipeIndicator: View {
     var body: some View {
         VStack(spacing: 10) {

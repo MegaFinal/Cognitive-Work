@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// The expanded pitch shown on the welcome screen after the user swipes up
 struct OnboardingAppDescription: View {
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height

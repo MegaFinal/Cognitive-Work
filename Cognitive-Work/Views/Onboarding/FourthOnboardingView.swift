@@ -7,10 +7,25 @@
 
 import SwiftUI
 
+/// The step where the user selects which rooms exist in their house
+///
+/// `FourthOnboardingView` renders the list of available rooms (from
+/// ``OnboardingViewModel/availableRooms``) as a two-column grid of
+/// ``OnboardingRoomCard`` items
+///
+/// Tapping a card toggles its selection state, tapping the dedicated "add" card
+/// presents ``NewRoomSheet`` so the user can define a custom room
+///
+///  Confirming the selection persists the chosen rooms via
+/// ``OnboardingViewModel/saveSelectedRooms()``.
 struct FourthOnboardingView: View {
+    /// The shared onboarding view model, read from the environment
     @Environment(OnboardingViewModel.self) var viewModel
     
+    /// Whether the sheet for creating a custom room is currently presented
     @State private var isShowingCustomRoomSheet = false
+    
+    /// The two-column grid layout used to display room cards
     var columns = [GridItem(), GridItem()]
     
     var body: some View {
@@ -47,17 +62,10 @@ struct FourthOnboardingView: View {
             }
         }
         .sheet(isPresented: $isShowingCustomRoomSheet) {
-            AddCustomRoomSheet()
+            NewRoomSheet()
+             .presentationDetents([.medium])
         }
         .navigationBarBackButtonHidden(viewModel.isLoading)
-    }
-}
-
-struct AddCustomRoomSheet: View {
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        
     }
 }
 

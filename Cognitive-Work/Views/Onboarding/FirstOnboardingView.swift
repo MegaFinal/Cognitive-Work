@@ -7,10 +7,23 @@
 
 import SwiftUI
 
+/// The entry point of the onboarding flow.
+///
+/// `FirstOnboardingView` presents the app's welcome screen, swiping up expands
+/// the screen into a longer app description (``OnboardingAppDescription``)
+/// and reveals the "Continuar" action that pushes the user into the rest of the
+/// onboarding flow
+///
+/// The view owns the shared ``OnboardingViewModel`` for the onboarding flow
+/// and injects it into the environment so that subsequent screens can
+/// read and mutate it without it being passed down explicitly
 struct FirstOnboardingView: View {
+    /// Whether the description panel is expanded, replacing the initial tagline
     @State private var isExpanded = false
+    /// Whether the "swipe up" hint indicator is currently visible
     @State private var isSwipeVisible = false
     
+    /// The shared view model for navigation and state across the onboarding flow
     @State private var viewModel = OnboardingViewModel()
     
     var width = UIScreen.main.bounds.width
@@ -69,7 +82,7 @@ struct FirstOnboardingView: View {
                 }
             }
             .navigationDestination(isPresented: $viewModel.navigateToSecond) {
-                ContentView()
+                SecondOnboardingView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToThird) {
                 ThirdOnboardingView()
