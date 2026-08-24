@@ -69,7 +69,7 @@ struct FirstOnboardingView: View {
                 }
             }
             .navigationDestination(isPresented: $viewModel.navigateToSecond) {
-                ContentView()
+                SecondOnboardingView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToThird) {
                 ThirdOnboardingView()
