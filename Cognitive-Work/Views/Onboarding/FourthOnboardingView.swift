@@ -63,7 +63,8 @@ struct FourthOnboardingView: View {
         }
         .sheet(isPresented: $isShowingCustomRoomSheet) {
             NewRoomSheet()
-             .presentationDetents([.medium])
+                .environment(viewModel)
+                .presentationDetents([.medium])
         }
         .navigationBarBackButtonHidden(viewModel.isLoading)
     }

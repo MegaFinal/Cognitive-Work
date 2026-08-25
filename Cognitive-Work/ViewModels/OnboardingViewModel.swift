@@ -31,6 +31,8 @@ struct RoomDTO: Identifiable {
 class OnboardingViewModel {
     /// The name entered by the user for their profile
     var userName: String = ""
+    
+    var userProfilePicture: UIImage?
     /// The name of the house being created
     var houseName: String = "Minha Casa"
     /// A short description of the house being created
@@ -72,16 +74,23 @@ class OnboardingViewModel {
         isLoading = true
         errorMessage = nil
         
-        let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, tier: .tier1)
+        let imageData = userProfilePicture?.jpegData(compressionQuality: 0.8)
+        
+        let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageData, tier: .tier1)
         
         if let savedUser = await CloudKitManager.shared.create(newUser) {
             self.currentUser = savedUser
-            isLoading = false
             navigateToThird = true
         } else {
             errorMessage = "Erro ao criar usuário."
-            isLoading = false
         }
+        isLoading = false
+    }
+    
+    /// Updates the profile image with the image received from the keyboard.
+    /// - Parameter image: The image selected by the user.
+    func updateProfileImage(_ image: UIImage) {
+        userProfilePicture = image
     }
     
     /// Creates a new house record and links the current user to it, then advances to room selection
