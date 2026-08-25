@@ -8,6 +8,13 @@
 import Foundation
 import SwiftUI
 
+/// A selectable card representing a single room
+///
+/// The card displays an SF Symbol icon and a label. Its appearance flips between
+/// an unselected (white background, black content) and selected (blue
+/// background, white content) state depending on ``isSelected``
+///
+/// Selection handling is applied by the parent view via a tap gesture
 struct OnboardingRoomCard: View {
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height

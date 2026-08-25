@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// A full-width title-and-description header used atop onboarding screens
 struct OnboardingHeader: View {
     var title: String
     var description: String

@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+/// A primary action button that can display a loading spinner
+///
+/// While ``isLoading`` is `true`, the button shows a `ProgressView` instead of
+/// ``text`` and disables itself, preventing duplicate taps during an in-flight
+/// asynchronous action (e.g. a CloudKit save).
+///
+/// Used throughout the onboarding flow as the primary "continue" action
 struct OnboardingProgressButton: View {
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
