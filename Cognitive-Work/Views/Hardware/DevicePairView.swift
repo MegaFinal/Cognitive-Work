@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct DevicePairView: View {
-    @Environment(WifiConnectionViewModel.self) var viewModel
+    @Bindable var viewModel: WifiConnectionViewModel
     
     var body: some View {
         @Bindable var viewModel = viewModel
@@ -45,5 +45,5 @@ struct DevicePairView: View {
 }
 
 #Preview {
-    DevicePairView()
+    DevicePairView(viewModel: WifiConnectionViewModel())
 }

@@ -35,7 +35,7 @@ struct WifiCredentialsView: View {
                             .foregroundColor(.gray)
                     }
                 }
-                SendWifiCredentialsButton() {
+                SendWifiCredentialsButton(viewModel: viewModel) {
                     viewModel.navigateToParingView = true
                     print(viewModel.navigateToParingView)
                 }
@@ -43,13 +43,12 @@ struct WifiCredentialsView: View {
             .textFieldStyle(.roundedBorder)
             .padding()
             .navigationDestination(isPresented: $viewModel.navigateToParingView) {
-                DevicePairView()
+                DevicePairView(viewModel: viewModel)
             }
-            .environment(viewModel)
             .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }
             } message: {
-                Text(viewModel.errorMessage ?? "")
+                Text(viewModel.errorMessage ?? "Deu algum erro.")
             }
         }
     }
