@@ -20,6 +20,7 @@ struct OnboardingProgressButton: View {
     
     var text: String
     var isLoading: Bool = false
+    var isDisabled: Bool = false
     var action: () -> Void
     
     var body: some View {
@@ -38,11 +39,11 @@ struct OnboardingProgressButton: View {
             .fontWeight(.medium)
             .background(
                 Capsule()
-                    .foregroundColor(.blue)
+                    .foregroundColor(isDisabled ? .gray : .blue)
                     .glassEffect()
             )
         }
-        .disabled(isLoading)
+        .disabled(isLoading || isDisabled)
     }
 }
 
