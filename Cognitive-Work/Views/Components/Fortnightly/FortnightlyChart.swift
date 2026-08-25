@@ -9,23 +9,44 @@ import SwiftUI
 import CloudKit
 
 struct FortnightlyChart: View {
-    @State private var viewModel = FortnightlyViewModel()
+    @State private var viewModel: FortnightlyViewModel
     let house: HouseModel?
     
+    init(house: HouseModel?, viewModel: FortnightlyViewModel = FortnightlyViewModel()) {
+        self.house = house
+        _viewModel = State(initialValue: viewModel)
+    }
+    
     var body: some View {
-        VStack{
-            FortnightlyBarChart()
-            FortnightlyLegend(users: viewModel.users)
+        VStack(spacing: 16) {
+            if viewModel.isLoading {
+                ProgressView("Carregando gráfico...")
+            } else if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+            } else {
+                FortnightlyBarChart(
+                    users: viewModel.users,
+                    entries: viewModel.usageEntries,
+                    startDate: viewModel.startDate
+                )
+                FortnightlyLegend(users: viewModel.users)
+            }
         }
-        .frame(width: 332)
+        .frame(width: 350)
         .task {
-            guard let houseID = house?.recordID else { return }
-            let ref = CKRecord.Reference(recordID: houseID, action: .none)
-            await viewModel.loadUsers(houseReference: ref)
+            if let houseID = house?.recordID, viewModel.users.isEmpty {
+                let houseRef = CKRecord.Reference(recordID: houseID, action: .none)
+                await viewModel.loadFortnightlyData(houseReference: houseRef)
+            }
         }
     }
 }
 
 #Preview {
-    //    FortnightlyChart()
+    let previewVM = FortnightlyViewModel()
+    previewVM.loadMockData()
+    
+    return FortnightlyChart(house: nil, viewModel: previewVM)
+        .padding()
 }

@@ -78,7 +78,7 @@ struct Carousel: View {
     
     let mock1 = ChoreModel(name: "Lavar Banheiro", description: "", frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent)
     let mock2 = ChoreModel(name: "Varrer Chão", description: "", frequency: .daily, duration: 900, isPublic: true, priorityTag: .low)
-    let mock3 = ChoreModel(name: "Arrumar Cama", description: "", frequency: .montly, duration: 300, isPublic: true, priorityTag: .low)
+    let mock3 = ChoreModel(name: "Arrumar Cama", description: "", frequency: .monthly, duration: 300, isPublic: true, priorityTag: .low)
     let mock4 = ChoreModel(name: "Lavar Louça", description: "", frequency: .daily, duration: 400, isPublic: true, priorityTag: .urgent)
     
     carouselVM.cardViewModels = [

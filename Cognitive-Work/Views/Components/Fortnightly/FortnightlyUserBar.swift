@@ -8,17 +8,54 @@
 import SwiftUI
 
 struct FortnightlyUserBar: View {
-    var barHeight: Double
+    var maxBarHeight: Double
+    var durationMinutes: Double
+    var maxMinutes: Double = 120.0
     var barColor: Color
+    var choreName: String
     
     var body: some View {
-        RoundedRectangle(cornerRadius: 4)
-            .frame(width: 40, height: barHeight)
-            .foregroundStyle(barColor)
+        let ratio = min(1.0, max(0.0, durationMinutes / maxMinutes))
+        let calculatedHeight = max(14.0, ratio * maxBarHeight)
         
+        return RoundedRectangle(cornerRadius: 4)
+            .fill(barColor)
+            .frame(width: 38, height: calculatedHeight)
+//            .overlay(
+//                    Text("\(Int(durationMinutes))m")
+//                        .font(.system(size: 8, weight: .bold))
+//                        .foregroundColor(.white)
+//            )
     }
 }
 
-#Preview {
-    FortnightlyUserBar(barHeight: 148, barColor: .gray)
+// MARK: - Preview Mock
+#Preview{
+    VStack(spacing: 16) {
+        FortnightlyUserBar(
+            maxBarHeight: 60,
+            durationMinutes: 30.0,
+            maxMinutes: 120.0,
+            barColor: .blue,
+            choreName: "Lavar a louça"
+        )
+        
+        FortnightlyUserBar(
+            maxBarHeight: 60,
+            durationMinutes: 60.0,
+            maxMinutes: 120.0,
+            barColor: .purple,
+            choreName: "Estudar Swift"
+        )
+        
+        FortnightlyUserBar(
+            maxBarHeight: 60,
+            durationMinutes: 120.0,
+            maxMinutes: 120.0,
+            barColor: .orange,
+            choreName: "Limpar a casa"
+        )
+    }
+    .padding()
+    .background(Color(.systemBackground))
 }
