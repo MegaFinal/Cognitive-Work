@@ -32,7 +32,7 @@ struct SecondOnboardingView: View {
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
             
-            OnboardingProgressButton(text: "Continuar", action: {
+            OnboardingProgressButton(text: "Continuar",isLoading: vm.isLoading,  action: {
                 Task {
                     await vm.createUser()
                 }
