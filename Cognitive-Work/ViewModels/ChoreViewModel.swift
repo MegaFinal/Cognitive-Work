@@ -75,6 +75,16 @@ class ChoreViewModel: Identifiable {
             .fetchRecordsByRecordReference(for: CheckItemModel.self, recordReferences: refs) ?? []
     }
     
+    func postpone(byDays days: Int) async {
+        let currentDate = chore.dueDate ?? Date()
+        
+        if let newDate = Calendar.current.date(byAdding: .day, value: days, to: currentDate) {
+            chore.dueDate = newDate
+            
+            await CloudKitManager.shared.update(chore)
+        }
+    }
+    
     static func mock(
         chore: ChoreModel,
         roomName: String,
