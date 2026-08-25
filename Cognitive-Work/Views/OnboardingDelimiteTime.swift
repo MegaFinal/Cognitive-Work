@@ -7,18 +7,78 @@
 
 import SwiftUI
 
-struct OnboardingDelimiteTime: View {
-    let daysOfWeek: [String : Int] = ["Seg" : 0, "Ter" : 0, "Qua" : 0, "Qui" : 0, "Sex" : 0, "Sab" : 0, "Dom" : 0]
-    @State var weekOrder = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"]
+@Observable
+class DayOfWeekDTO {
+    let name: String
+    let nameAbbreviation: String
+    var freeTime: FreeTimeEnum = .none
     
-    private var sortedDays: [String] {
-        let orderIndex = Dictionary(uniqueKeysWithValues: weekOrder.enumerated().map { ($1, $0) })
-        return daysOfWeek.keys.sorted {
-            orderIndex[$0, default: .max] < orderIndex[$1, default: .max]
+    init(name: String, nameAbbreviation: String) {
+        self.name = name
+        self.nameAbbreviation = nameAbbreviation
+    }
+}
+
+enum FreeTimeEnum: String{
+    case none = ""
+    case thirtyMinutes = "Até 30 minutos"
+    case oneHour = "Até 1 hora"
+    case twoHours = "Até 2 horas"
+    case threeHours = "Até 3 horas"
+    case fourHours = "Até 4 horas"
+    case fiveHours = "5 horas ou mais"
+    
+    var timeInHours: Double {
+        switch self {
+        case .none:
+            return 0.0
+        case .thirtyMinutes:
+            return 0.5
+        case .oneHour:
+            return 1.0
+        case .twoHours:
+            return 2.0
+        case .threeHours:
+            return 3.0
+        case .fourHours:
+            return 4.0
+        case .fiveHours:
+            return 5.0
         }
     }
     
-    @State var currentRating = 0
+    init(_ num: Int) {
+        switch num {
+        case 0 :
+            self = .none
+        case 1 :
+            self = .thirtyMinutes
+        case 2 :
+            self = .oneHour
+        case 3 :
+            self = .twoHours
+        case 4 :
+            self = .threeHours
+        case 5 :
+            self = .fourHours
+        case 6 :
+            self = .fiveHours
+        default:
+            self = .none
+        }
+    }
+}
+
+struct OnboardingDelimiteTime: View {
+    @State var weekOrder = [
+        DayOfWeekDTO(name: "Segunda - Feira", nameAbbreviation: "Seg"),
+        DayOfWeekDTO(name: "Terça - Feira", nameAbbreviation:"Ter"),
+        DayOfWeekDTO(name: "Quarta - Feira", nameAbbreviation: "Qua"),
+        DayOfWeekDTO(name: "Quinta - Feira", nameAbbreviation: "Qui"),
+        DayOfWeekDTO(name: "Sexta - Feira", nameAbbreviation:"Sex"),
+        DayOfWeekDTO(name: "Sabado -", nameAbbreviation: "Sab"),
+        DayOfWeekDTO(name: "Domingo -",nameAbbreviation: "Dom")
+    ]
     
     var body: some View {
         GeometryReader { geometry in
@@ -31,14 +91,14 @@ struct OnboardingDelimiteTime: View {
                     .font(.system(size: 32))
                     .foregroundStyle(.titleGray)
                     .padding(.top, height * 0.034)
+                    .padding(.bottom, 10)
                 
                 Text("Defina seu tempo disponível para realizar tarefas domésticas durante a semana")
                     .bold()
                     .font(.system(size: 16))
                     .foregroundStyle(.subTitleGray)
-                    .padding(.top, 0.001)
                 
-                HStack(spacing: 29) {
+                HStack(spacing: width * 0.073) {
                     Spacer()
                     Text("30’")
                     Text("1h")
@@ -52,8 +112,22 @@ struct OnboardingDelimiteTime: View {
                 .padding(.trailing, 10)
                 .padding(.top, height * 0.023)
                 
-                ForEach(sortedDays, id: \.self) { day in
-                    OnboardingCustomSliderComponent(dayOfWeek: day, dayOfWeekAbbreviation: day, width: width, height: height)
+                ForEach($weekOrder, id: \.name) { $day in
+                    OnboardingCustomSliderComponent(dayOfWeek: $day, width: width)
+                }
+                HStack {
+                    Spacer()
+                    Button {
+                        // TODO ação: avançar e salvar
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 56, height: 56)
+                            .background(Color.accentColor, in: Circle())
+                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                    }
+
                 }
             }
             .padding(.horizontal, width * 0.0865)
@@ -66,50 +140,59 @@ struct OnboardingDelimiteTime: View {
 }
 
 struct OnboardingCustomSliderComponent: View {
-    @State var rating = 0
+    @Binding var dayOfWeek: DayOfWeekDTO
+    @State var rating: Int = 0
     
-    let dayOfWeek: String
-    let dayOfWeekAbbreviation: String
     let width: CGFloat
-    let height: CGFloat
     var body: some View {
-        HStack(spacing: width * 0.03) {
-            Text(dayOfWeekAbbreviation)
-                .font(.system(size: 16))
-                .fontWeight(.medium)
-            
-            VStack {
-               CustomSliderComponent(rating: $rating)
-                .foregroundStyle(.delimiteTimeSquareComponent)
-                HStack {
-                    Text("Segunda - Feira")
-                        .font(.system(size: 14))
-                        .fontWeight(.medium)
-                    Spacer()
+            HStack(spacing: width * 0.03) {
+                Text(dayOfWeek.nameAbbreviation)
+                    .font(.system(size: 16))
+                    .fontWeight(.medium)
+                    .frame(width: width * 0.091, alignment: .leading)
+
+                VStack {
+                   FreeTimeSlider(rating: $rating)
+                    HStack {
+                        Text(dayOfWeek.name)
+                            .font(.system(size: 14))
+                            .fontWeight(.medium)
+                        Text(dayOfWeek.freeTime.rawValue)
+                            .font(.system(size: 14))
+                            .fontWeight(.light)
+                        Spacer()
+                    }
+                    .foregroundStyle(.delimiteTimeTextComponent)
                 }
-                .foregroundStyle(.delimiteTimeTextComponent)
+            }
+            .onChange(of: rating) {
+                dayOfWeek.freeTime = FreeTimeEnum(rating)
             }
         }
     }
-}
 
-struct CustomSliderComponent: View {
+
+struct FreeTimeSlider: View {
     @Binding var rating: Int
     var maxRating: Int = 6
-    var starSize: CGFloat = 38
+    var squareSize: CGFloat = 38
     var activeColor: Color = .delimiteTimeSelectedSquareComponent
     var inactiveColor: Color = .delimiteTimeSquareComponent
     var spacing: CGFloat = 12
+    
     var body: some View {
         GeometryReader { geometry in
+            
             ZStack(alignment: .leading) {
-                starsView(color: inactiveColor)
+                RectangleView(color: inactiveColor)
                 
-                starsView(color: activeColor)
+                RectangleView(color: activeColor)
                     .mask(
                         Rectangle()
                             .size(
-                                width: geometry.size.width * CGFloat(Double(rating) / Double(maxRating)),
+                                width: rating < 6 ?
+                                    geometry.size.width * CGFloat(Double(rating) / Double(maxRating)) :
+                                    geometry.size.width + 4.0,
                                 height: geometry.size.height
                             )
                     )
@@ -121,14 +204,14 @@ struct CustomSliderComponent: View {
                     }
             )
         }
-//        .frame(width: CGFloat(maxRating) * (starSize + spacing), height: starSize)
+        .frame(maxWidth: CGFloat(maxRating) * squareSize + spacing * CGFloat(maxRating - 1),maxHeight: squareSize)
     }
     
-    private func starsView(color: Color) -> some View {
+    private func RectangleView(color: Color) -> some View {
         HStack(spacing: spacing) {
             ForEach(0..<maxRating, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 4)
-                    .frame(width: starSize, height: starSize)
+                    .frame(width: squareSize, height: squareSize)
                     .foregroundColor(color)
             }
         }
@@ -141,5 +224,6 @@ struct CustomSliderComponent: View {
         let calculatedRating = Int(ceil(rawRating))
         
         rating = max(0, min(maxRating, calculatedRating))
+        print(rating)
     }
 }
