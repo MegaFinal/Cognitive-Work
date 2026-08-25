@@ -7,7 +7,11 @@
 
 import SwiftUI
 
+/// The step where the user chooses whether to join an existing house
+/// or create a new one
+/// On success the flow advances to ``FourthOnboardingView``
 struct ThirdOnboardingView: View {
+    /// The shared onboarding view model, read from the environment
     @Environment(OnboardingViewModel.self) var viewModel
     
     var width = UIScreen.main.bounds.width

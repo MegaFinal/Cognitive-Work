@@ -67,7 +67,6 @@ struct Carousel: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
-            // Inicia o fetch do CloudKit quando a tela aparece
             await viewModel.fetchChores()
         }
     }

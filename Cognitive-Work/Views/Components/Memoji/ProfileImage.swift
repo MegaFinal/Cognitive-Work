@@ -33,25 +33,25 @@ struct ProfileImage: View {
         }
         .clipShape(Circle())
         .shadow(radius: 5)
-        .onTapGesture {
-            requestPhotoGaleryAcess()
-        }
+//        .onTapGesture {
+//            requestPhotoGaleryAcess()
+//        }
     }
     // Função que chama o alerta nativo do iOS
-    func requestPhotoGaleryAcess() {
-        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
-            switch status {
-            case .authorized, .limited:
-                print("Usuário permitiu. Aqui você pode abrir a galeria.")
-            case .denied, .restricted:
-                print("Usuário negou o acesso.")
-            case .notDetermined:
-                break
-            @unknown default:
-                break
-            }
-        }
-    }
+//    func requestPhotoGaleryAcess() {
+//        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
+//            switch status {
+//            case .authorized, .limited:
+//                print("Usuário permitiu. Aqui você pode abrir a galeria.")
+//            case .denied, .restricted:
+//                print("Usuário negou o acesso.")
+//            case .notDetermined:
+//                break
+//            @unknown default:
+//                break
+//            }
+//        }
+//    }
 }
 //#Preview {
 //    ProfileImage()
