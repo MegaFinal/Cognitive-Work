@@ -66,26 +66,5 @@ struct Carousel: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task {
-            await viewModel.fetchChores()
-        }
     }
-}
-
-#Preview {
-    let carouselVM = CarouselViewModel()
-    
-    let mock1 = ChoreModel(name: "Lavar Banheiro", description: "", frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent)
-    let mock2 = ChoreModel(name: "Varrer Chão", description: "", frequency: .daily, duration: 900, isPublic: true, priorityTag: .low)
-    let mock3 = ChoreModel(name: "Arrumar Cama", description: "", frequency: .monthly, duration: 300, isPublic: true, priorityTag: .low)
-    let mock4 = ChoreModel(name: "Lavar Louça", description: "", frequency: .daily, duration: 400, isPublic: true, priorityTag: .urgent)
-    
-    carouselVM.cardViewModels = [
-        CarouselCardViewModel.mock(chore: mock1, roomName: "Banheiro", color: .blue, imageName: "person.circle"),
-        CarouselCardViewModel.mock(chore: mock2, roomName: "Sala", color: .red, imageName: "person.circle"),
-        CarouselCardViewModel.mock(chore: mock3, roomName: "Quarto", color: .blue, imageName: "person.circle"),
-        CarouselCardViewModel.mock(chore: mock4, roomName: "Cozinha", color: .red, imageName: "person.circle")
-    ]
-    
-    return Carousel(viewModel: carouselVM)
 }
