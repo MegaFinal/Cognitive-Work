@@ -15,7 +15,7 @@ struct ChecklistItemButton: View {
             item.isDone.toggle()
             
         } label: {
-            HStack(alignment: .top) {
+            HStack {
                 Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(item.isDone ? .green : .gray)
                     .font(.headline)
@@ -25,8 +25,6 @@ struct ChecklistItemButton: View {
                     .foregroundColor(item.isDone ? .gray : .black)
                     .font(.caption)
                     .multilineTextAlignment(.leading)
-                
-                Spacer()
             }
         }
         .buttonStyle(.plain)

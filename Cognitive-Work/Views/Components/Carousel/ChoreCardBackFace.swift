@@ -14,9 +14,10 @@ struct ChoreCardBackFace: View {
     var height = UIScreen.main.bounds.height
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 20) {
             Text(viewModel.chore.name)
                 .font(.title2)
+                .padding(.top)
             
             Image(systemName: viewModel.cardSymbol)
                 .resizable()
@@ -36,26 +37,23 @@ struct ChoreCardBackFace: View {
                 )
             }
             
-            VStack (alignment: .leading, spacing: 10) {
-                Text(viewModel.chore.description)
-                    .font(.caption)
-                
+            VStack (alignment: .leading, spacing: 15) {
                 HStack {
                     Text("Cômodo")
-                        .font(.subheadline)
+                        .font(.footnote)
                         .fontWeight(.medium)
                     
                     Spacer()
                     
                     Text(viewModel.roomName)
-                        .font(.caption)
-                        .padding(5)
+                        .font(.caption2)
+                        .padding(3)
                         .background(viewModel.roomColor)
                         .clipShape(Capsule())
                 }
                 
                 Text("Checklist")
-                    .font(.subheadline)
+                    .font(.footnote)
                     .fontWeight(.medium)
                 
                 ForEach($viewModel.checklistItems, id: \.id) { $item in
@@ -64,7 +62,7 @@ struct ChoreCardBackFace: View {
                 
                 HStack {
                     Text("Responsáveis")
-                        .font(.subheadline)
+                        .font(.footnote)
                         .fontWeight(.medium)
                     
                     Spacer()
@@ -75,6 +73,40 @@ struct ChoreCardBackFace: View {
                 }
             }
             .frame(width: width * 0.75)
+            
+            HStack {
+                Button{
+                    Task {
+                        await viewModel.postpone(byDays: 7)
+                    }
+                }
+                label: {
+                    Text("Adiar 1 semana")
+                        .font(.caption)
+                        .foregroundColor(.black)
+                }
+                .padding(.horizontal, 30)
+                .padding(.vertical, 10)
+                .background(.gray.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 22))
+                
+                Button{
+                    Task {
+                        await viewModel.postpone(byDays: 1)
+                    }
+                }
+                label: {
+                    Text("Adiar 1 dia")
+                        .font(.caption)
+                        .foregroundColor(.black)
+                }
+                .padding(.horizontal, 30)
+                .padding(.vertical, 10)
+                .background(.gray.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 22))
+            }
+            
+            Spacer()
         }
         .frame(width: width * 0.88, height: height * 0.65)
         .background(.white)

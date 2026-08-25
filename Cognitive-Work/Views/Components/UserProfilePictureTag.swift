@@ -19,7 +19,7 @@ struct UserProfilePictureTag: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: width * 0.05)
+                    .frame(width: width * 0.04)
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
