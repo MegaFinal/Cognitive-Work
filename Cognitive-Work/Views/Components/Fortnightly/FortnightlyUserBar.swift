@@ -21,11 +21,11 @@ struct FortnightlyUserBar: View {
         return RoundedRectangle(cornerRadius: 4)
             .fill(barColor)
             .frame(width: 38, height: calculatedHeight)
-//            .overlay(
-//                    Text("\(Int(durationMinutes))m")
-//                        .font(.system(size: 8, weight: .bold))
-//                        .foregroundColor(.white)
-//            )
+            .overlay(
+                    Text("\(Int(durationMinutes))m")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white)
+            )
     }
 }
 
