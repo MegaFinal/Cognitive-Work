@@ -15,7 +15,7 @@ class CarouselViewModel {
     var activeIndex:  Int    = 0
     
     /// The chores currently loaded into the carousel
-    var cardViewModels: [CarouselCardViewModel] = []
+    var cardViewModels: [ChoreViewModel] = []
     var isLoading: Bool = false
     
     private let flipDuration: Double = 0.6
@@ -35,7 +35,7 @@ class CarouselViewModel {
         let fetchedChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         
         await MainActor.run {
-            self.cardViewModels = fetchedChores.map { CarouselCardViewModel(chore: $0) }
+            self.cardViewModels = fetchedChores.map { ChoreViewModel(chore: $0) }
             self.isLoading = false
         }
     }

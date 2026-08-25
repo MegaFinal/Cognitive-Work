@@ -143,6 +143,10 @@ struct ChoreModel: CloudKitSyncable {
         self.room = room
         self.dailyAssignments = dailyAssignment
     }
+    
+    func updateCheckItem(_ item: CheckItemModel) async {
+        await CloudKitManager.shared.update(item)
+    }
 
     /// Writes this model's values into a CloudKit record.
     ///
