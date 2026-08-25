@@ -9,23 +9,26 @@ import Foundation
 import CloudKit
 
 /// A single entry in a chore's checklist.
-struct CheckItemModel: CloudKitSyncable {
-
+struct CheckItemModel: CloudKitSyncable, Identifiable {
+    var id: String {
+        recordID?.recordName ?? UUID().uuidString
+    }
+    
     /// CloudKit record type backing this model.
     static var recordType: String = "CheckItemModel"
-
+    
     /// Identifier of the stored record, or `nil` before the item is saved.
     var recordID: CKRecord.ID?
-
+    
     /// Label shown to the user.
     ///
     /// > Note: Persisted under the `checkItemName` key, unlike the other models, which use
     /// > `name`. Keep this in mind when writing queries.
     var name: String
-
+    
     /// Whether the item has been checked off.
     var isDone: Bool
-
+    
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
@@ -37,12 +40,12 @@ struct CheckItemModel: CloudKitSyncable {
         else {
             return nil
         }
-
+        
         self.recordID = record.recordID
         self.name = name
         self.isDone = isDone
     }
-
+    
     /// Creates a new, unsaved checklist item.
     ///
     /// - Parameters:
@@ -52,7 +55,7 @@ struct CheckItemModel: CloudKitSyncable {
         self.name = name
         self.isDone = isDone
     }
-
+    
     /// Writes this model's values into a CloudKit record.
     ///
     /// - Parameter record: The record to populate.
