@@ -114,7 +114,7 @@ class FortnightlyViewModel {
     }
     
 }
-
+// MARK: - Mock Data Extension
 extension FortnightlyViewModel {
     func loadMockData() {
         let user1ID = CKRecord.ID(recordName: "user-1")
@@ -153,7 +153,7 @@ extension FortnightlyViewModel {
             currentResponsible: nil
         )
         choreWashDishes.recordID = CKRecord.ID(recordName: "chore-wash-dishes")
-
+        
         var choreWaterPlants = ChoreModel(
             name: "Water the Plants",
             description: "Balcony and living room",

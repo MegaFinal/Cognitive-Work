@@ -23,13 +23,18 @@ struct ChoreCard: View {
                 Image(systemName: "toilet")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: width * 0.25, height: height * 0.2)
+                    .frame(width: width * 0.2, height: height * 0.2)
                     .padding(.horizontal)
 
 
                 ChorePriority(chore: chore, user: $user)
             }
         }
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .foregroundStyle(.delimiteTimeSquareComponent)
+                .frame(width: 345, height: 290)
+        )
     }
 }
 

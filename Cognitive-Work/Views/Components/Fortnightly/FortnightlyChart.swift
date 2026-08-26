@@ -9,14 +9,9 @@ import SwiftUI
 import CloudKit
 
 struct FortnightlyChart: View {
-    @State private var viewModel: FortnightlyViewModel
-    @State private var selectedEntry: DailyUsageEntry?
+    var viewModel: FortnightlyViewModel
     let house: HouseModel?
-
-    init(house: HouseModel?, viewModel: FortnightlyViewModel = FortnightlyViewModel()) {
-        self.house = house
-        _viewModel = State(initialValue: viewModel)
-    }
+    @State private var selectedEntry: DailyUsageEntry?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -32,6 +27,7 @@ struct FortnightlyChart: View {
                     onSelect: { entry in selectedEntry = entry }
                 )
                 FortnightlyLegend(users: viewModel.users)
+                    .padding(.bottom)
 
                 if let entry = selectedEntry,
                    let chore = viewModel.chores.first(where: { $0.recordID == entry.choreID }),
@@ -44,7 +40,7 @@ struct FortnightlyChart: View {
                 }
             }
         }
-        .frame(width: 350)
+        .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
         .task {
             if let houseID = house?.recordID, viewModel.users.isEmpty {
                 let houseRef = CKRecord.Reference(recordID: houseID, action: .none)
@@ -71,6 +67,6 @@ struct FortnightlyChart: View {
     let previewVM = FortnightlyViewModel()
     previewVM.loadMockData()
     
-    return FortnightlyChart(house: nil, viewModel: previewVM)
-        .padding()
+    return FortnightlyChart(viewModel: previewVM, house: nil)
+            .padding()
 }
