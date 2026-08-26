@@ -10,5 +10,5 @@ enum Recurrence: String {
     case daily = "daily"
     case weekly = "weekly"
     case fortnightly = "fortnightly"
-    case montly = "montly"
+    case monthly = "monthly"
 }

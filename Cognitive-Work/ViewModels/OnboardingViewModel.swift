@@ -8,15 +8,6 @@
 import SwiftUI
 import CloudKit
 
-struct RoomDTO: Identifiable {
-    let id = UUID()
-    var name: String
-    var symbol: String
-    var isSelected: Bool = false
-    var isAddButton: Bool = false
-    var color: RoomColor = .blue
-}
-
 /// The shared state and business logic for the entire onboarding flow.
 ///
 /// `OnboardingViewModel` is created once by ``FirstOnboardingView`` and injected into

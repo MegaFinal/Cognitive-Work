@@ -14,13 +14,13 @@ import CloudKit
 ///   - users: An array of ``UserModel`` instances representing the household members.
 ///   - chores: An array of ``ChoreModel`` instances to evaluate.
 ///   - now: The start date of the scheduling period (today).
-///   - oneWeekLater: The end date of the scheduling period (7 days later).
+///   - windowEnd: The end date of the scheduling period (14 days later).
 /// - Returns: A ``ScheduleContext`` instance containing aggregated scheduling metadata.
 func buildScheduleContext(
     users: [UserModel],
     chores: [ChoreModel],
     now: Date,
-    oneWeekLater: Date
+    windowEnd: Date
 ) async -> ScheduleContext {
 
     // Initialize a dictionary to store the list of available time slots for each user ID
@@ -38,10 +38,10 @@ func buildScheduleContext(
             recordReferences: refs
         ) ?? []
 
-        // Filter for valid time slots between today (inclusive) and one week later (exclusive)
+        // Filter for valid time slots between today (inclusive) and window end (exclusive)
         let validSlots = slots.filter { slot in
             let day = Calendar.current.startOfDay(for: slot.day)
-            return day >= now && day < oneWeekLater
+            return day >= now && day < windowEnd
         }
 
         // Store valid time slots in the user's available time map
@@ -84,20 +84,34 @@ func buildScheduleContext(
     )
 }
 
-// MARK: - Daily Chores
+// MARK: - Recurring Chores
 
-/// Schedules daily chores across the one-week period for appropriate users.
+/// Helper function to determine which day offsets a recurring frequency should appear on within the window.
+func occurrenceOffsets(for frequency: Recurrence, windowDays: Int) -> [Int] {
+    switch frequency {
+    case .daily:
+        return Array(0..<windowDays)
+    case .weekly:
+        return Swift.stride(from: 0, to: windowDays, by: 7).map { $0 }
+    case .fortnightly:
+        return Swift.stride(from: 0, to: windowDays, by: 14).map { $0 }
+    case .monthly, .none:
+        return []
+    }
+}
+
+/// Schedules recurring chores across the 14-day period for appropriate users based on their frequency.
 ///
 /// - Parameters:
-///   - dailyChores: An array of daily chores to schedule.
+///   - recurringChores: An array of recurring chores to schedule.
 ///   - users: An array of available household members.
 ///   - context: The current scheduling context.
 ///   - now: The start date.
 ///   - remainingCapacity: A mutable reference to remaining capacity per time slot.
 ///   - userAssignedMinutes: A mutable reference to total assigned minutes per user.
 /// - Returns: An array of ``ScheduleResult`` containing the newly generated assignments.
-func scheduleDailyChores(
-    _ dailyChores: [ChoreModel],
+func scheduleRecurringChores(
+    _ recurringChores: [ChoreModel],
     users: [UserModel],
     context: ScheduleContext,
     now: Date,
@@ -108,8 +122,8 @@ func scheduleDailyChores(
     // Initialize the scheduling results array
     var results: [ScheduleResult] = []
 
-    // Iterate through each daily chore
-    for chore in dailyChores {
+    // Iterate through each recurring chore
+    for chore in recurringChores {
         // Ensure the chore ID exists
         guard let choreID = chore.recordID else { continue }
         // Create a scheduling result object for the current chore
@@ -119,8 +133,8 @@ func scheduleDailyChores(
         let fixedUser = context.choreResponsibleMap[choreID]
         let targetUsers = fixedUser.map { [$0] } ?? users
 
-        // Loop through the next 7 days (offsets 0 to 6)
-        for dayOffset in 0..<7 {
+        // Loop through the specific occurrence offsets for this chore's frequency within the 14-day window
+        for dayOffset in occurrenceOffsets(for: chore.frequency, windowDays: 14) {
             // Calculate the specific date for the current offset day, skipping if it fails
             guard let day = Calendar.current.date(byAdding: .day, value: dayOffset, to: now) else { continue }
 
@@ -143,7 +157,7 @@ func scheduleDailyChores(
                 }
             }
 
-            // Daily chores must be assigned to someone every day, even if everyone lacks sufficient capacity
+            // Recurring chores must be assigned to someone on their scheduled days, even if everyone lacks sufficient capacity
             let pool = availableToday.isEmpty ? targetUsers : availableToday
 
             // Select the user from the candidate pool who currently has the fewest assigned minutes (to achieve load balancing)
@@ -166,7 +180,7 @@ func scheduleDailyChores(
             // Accumulate the assigned minutes for the selected user
             userAssignedMinutes[chosenUserID, default: 0] += Int(chore.duration)
 
-            // Create cloud references and generate the daily chore assignment model (DailyAssignmentModel)
+            // Create cloud references and generate the daily assignment model (DailyAssignmentModel)
             let chosenUserRef = CKRecord.Reference(recordID: chosenUserID, action: CKRecord.ReferenceAction.none)
             let choreRef = CKRecord.Reference(recordID: choreID, action: CKRecord.ReferenceAction.deleteSelf)
             let assignment = DailyAssignmentModel(
@@ -194,7 +208,7 @@ func scheduleDailyChores(
 ///   - assignedChores: An array of chores with predetermined assignees.
 ///   - context: The scheduling context.
 ///   - now: The start date.
-///   - oneWeekLater: The end date.
+///   - windowEnd: The end date.
 ///   - remainingCapacity: Mutable slot capacity dictionary.
 ///   - userAssignedMinutes: Mutable user assigned minutes dictionary.
 /// - Returns: An array of ``ScheduleResult``.
@@ -202,7 +216,7 @@ func scheduleAssignedChores(
     _ assignedChores: [ChoreModel],
     context: ScheduleContext,
     now: Date,
-    oneWeekLater: Date,
+    windowEnd: Date,
     remainingCapacity: inout [CKRecord.ID: Double],
     userAssignedMinutes: inout [CKRecord.ID: Int]
 ) -> [ScheduleResult] {
@@ -222,7 +236,7 @@ func scheduleAssignedChores(
         // Filter for available time slots within the validity period with sufficient capacity
         let distributables = slots.filter { slot in
             let day = Calendar.current.startOfDay(for: slot.day)
-            guard day >= now && day < oneWeekLater, let slotID = slot.recordID else { return false }
+            guard day >= now && day < windowEnd, let slotID = slot.recordID else { return false }
             let remaining = remainingCapacity[slotID] ?? 0
 
             return remaining >= chore.duration
@@ -259,7 +273,7 @@ func scheduleAssignedChores(
 ///   - users: All available household users.
 ///   - context: The scheduling context.
 ///   - now: The start date.
-///   - oneWeekLater: The end date.
+///   - windowEnd: The end date.
 ///   - remainingCapacity: Mutable slot capacity dictionary.
 ///   - userAssignedMinutes: Mutable user assigned minutes dictionary.
 /// - Returns: An array of ``ScheduleResult``.
@@ -268,7 +282,7 @@ func scheduleFreeChores(
     users: [UserModel],
     context: ScheduleContext,
     now: Date,
-    oneWeekLater: Date,
+    windowEnd: Date,
     remainingCapacity: inout [CKRecord.ID: Double],
     userAssignedMinutes: inout [CKRecord.ID: Int]
 ) -> [ScheduleResult] {
@@ -286,7 +300,7 @@ func scheduleFreeChores(
             let slots = context.userAvailableTimeMap[userID] ?? []
             for slot in slots {
                 let day = Calendar.current.startOfDay(for: slot.day)
-                guard day >= now && day < oneWeekLater, let slotID = slot.recordID else { continue }
+                guard day >= now && day < windowEnd, let slotID = slot.recordID else { continue }
                 let remaining = remainingCapacity[slotID] ?? 0
 
                 // If capacity is sufficient, add to the optional distribution list

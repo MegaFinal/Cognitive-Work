@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ChoreCardFrontFace: View {
-    let viewModel: CarouselCardViewModel
+    let viewModel: ChoreViewModel
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -23,15 +23,29 @@ struct ChoreCardFrontFace: View {
                 .scaledToFit()
                 .frame(width: width * 0.3, height: height * 0.15)
         }
-        .frame(width: width * 0.68, height: height * 0.4)
+        .frame(width: width * 0.72, height: height * 0.47)
         .background(viewModel.roomColor)
-        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .clipShape(RoundedRectangle(cornerRadius: 31))
     }
 }
 
 #Preview {
-    let mockChore = ChoreModel(name: "Lavar banheiro", description: "", frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent)
-    let mockVM = CarouselCardViewModel.mock(chore: mockChore, roomName: "Banheiro da Suíte", color: RoomColor.blue.uiColor, imageName: "person.circle")
+    let mockChore = ChoreModel(
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão e limpar o espelho",
+        frequency: .weekly,
+        duration: 1800,
+        isPublic: true,
+        priorityTag: .urgent
+    )
+    
+    let mockVM = ChoreViewModel.mock(
+        chore: mockChore,
+        roomName: "Banheiro da Suíte",
+        color: Color.blue
+    )
+    
+    mockVM.cardSymbol = "toilet"
     
     return ChoreCardFrontFace(viewModel: mockVM)
 }

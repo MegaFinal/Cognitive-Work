@@ -12,7 +12,7 @@ import SwiftUI
 ///   - `frontFace:` View that represents the front face of the card
 ///   - `quantity:` View that represents the back of the card
 struct CarouselCardFrame: View {
-    @Bindable var viewModel: CarouselCardViewModel
+    let viewModel: ChoreViewModel
    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -32,29 +32,26 @@ struct CarouselCardFrame: View {
         }
         .animation(.easeInOut(duration: fadeDuration), value: isShowingBack)
         .rotation3DEffect(.degrees(rotation), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
-        .task {
-            await viewModel.fetchRoomDependencies()
-            await viewModel.fetchUserDependencies()
-        }
     }
 }
 
 #Preview {
     let mockChore = ChoreModel(
-        name: "Lavar a louça",
-        description: "",
-        frequency: .daily,
-        duration: 900,
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão e limpar o espelho",
+        frequency: .weekly,
+        duration: 1800,
         isPublic: true,
         priorityTag: .urgent
     )
     
-    let mockVM = CarouselCardViewModel.mock(
+    let mockVM = ChoreViewModel.mock(
         chore: mockChore,
-        roomName: "Cozinha",
-        color: RoomColor.blue.uiColor,
-        imageName: "person.circle.fill"
+        roomName: "Banheiro da Suíte",
+        color: Color.blue
     )
     
-    return CarouselCardFrame(viewModel: mockVM, rotation: 0, isShowingBack: false)
+    mockVM.cardSymbol = "toilet"
+    
+    return ChoreCardFrontFace(viewModel: mockVM)
 }
