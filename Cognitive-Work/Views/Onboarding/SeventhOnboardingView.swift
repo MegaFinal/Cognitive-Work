@@ -7,24 +7,6 @@
 
 import SwiftUI
 
-@Observable
-class ChoreDTO {
-    let name: String
-    let description: String
-    let frequency: Recurrence
-    let duration: Double
-    let priorityTag: PriorityTag
-    var isSelected: Bool = false
-    
-    init(name: String, description: String, frequency: Recurrence, duration: Double, priorityTag: PriorityTag){
-        self.name = name
-        self.description = description
-        self.frequency = frequency
-        self.duration = duration
-        self.priorityTag = priorityTag
-    }
-}
-
 struct SeventhOnboardingView: View {
     @State var showChores = false
     @State var rooms: [RoomDTO] = [
