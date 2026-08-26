@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct OnboardingDelimiteTime: View {
+struct EighthOnboardingView: View {
     @State var weekOrder = [
         DayOfWeekDTO(name: "Segunda - Feira", nameAbbreviation: "Seg"),
         DayOfWeekDTO(name: "Terça - Feira", nameAbbreviation:"Ter"),
@@ -53,6 +53,7 @@ struct OnboardingDelimiteTime: View {
                 ForEach($weekOrder, id: \.name) { $day in
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width)
                 }
+                
                 HStack {
                     Spacer()
                     Button {
@@ -74,37 +75,5 @@ struct OnboardingDelimiteTime: View {
 }
 
 #Preview {
-    OnboardingDelimiteTime()
-}
-
-struct OnboardingCustomSliderComponent: View {
-    @Binding var dayOfWeek: DayOfWeekDTO
-    @State var rating: Int = 0
-    
-    let width: CGFloat
-    var body: some View {
-        HStack(spacing: width * 0.03) {
-            Text(dayOfWeek.nameAbbreviation)
-                .font(.system(size: 16))
-                .fontWeight(.medium)
-                .frame(width: width * 0.091, alignment: .leading)
-            
-            VStack {
-                FreeTimeSlider(rating: $rating)
-                HStack {
-                    Text(dayOfWeek.name)
-                        .font(.system(size: 14))
-                        .fontWeight(.medium)
-                    Text(dayOfWeek.freeTime.rawValue)
-                        .font(.system(size: 14))
-                        .fontWeight(.light)
-                    Spacer()
-                }
-                .foregroundStyle(.delimiteTimeTextComponent)
-            }
-        }
-        .onChange(of: rating) {
-            dayOfWeek.freeTime = FreeTimeEnum(rating)
-        }
-    }
+    EighthOnboardingView()
 }

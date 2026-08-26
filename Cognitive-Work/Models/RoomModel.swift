@@ -24,7 +24,7 @@ struct RoomModel: CloudKitSyncable {
     var name: String?
 
     /// References to the ``ChoreModel`` records that belong to this room.
-    var relatedChores: [CKRecord.Reference]?
+    private var relatedChores: [CKRecord.Reference]?
 
     /// The house this room belongs to.
     var house: CKRecord.Reference?
@@ -89,5 +89,12 @@ struct RoomModel: CloudKitSyncable {
             record["house"] = house
         }
         record["roomColor"] = color.rawValue
+    }
+    
+    func fertchRelatedChores() async -> [ChoreModel] {
+        if self.relatedChores == nil {
+            return []
+        }
+        return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: self.relatedChores!) ?? []
     }
 }
