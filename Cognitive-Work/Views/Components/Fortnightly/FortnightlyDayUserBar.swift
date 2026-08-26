@@ -12,6 +12,7 @@ struct FortnightlyDayUserBar: View {
     var day: Date
     var entries: [DailyUsageEntry]
     var users: [UserModel]
+    var onSelect: (DailyUsageEntry) -> Void
 
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -38,10 +39,10 @@ struct FortnightlyDayUserBar: View {
 
                             FortnightlyUserBar(
                                 maxBarHeight: 50,
-                                durationMinutes: entry.minutes,
-                                maxMinutes: 120.0,
+                                tier: entry.tier,
                                 barColor: userColor,
-                                choreName: entry.choreName
+                                choreName: entry.choreName,
+                                onTap: { onSelect(entry) }
                             )
                         }
                     }
@@ -55,6 +56,8 @@ struct FortnightlyDayUserBar: View {
 #Preview {
     let user1ID = CKRecord.ID(recordName: "user-1")
     let user2ID = CKRecord.ID(recordName: "user-2")
+    let chore1ID = CKRecord.ID(recordName: "chore-1")
+    let chore2ID = CKRecord.ID(recordName: "chore-2")
 
     var user1 = UserModel(name: "Você", tier: .tier1)
     user1.recordID = user1ID
@@ -62,15 +65,15 @@ struct FortnightlyDayUserBar: View {
     user2.recordID = user2ID
 
     let mockEntries: [DailyUsageEntry] = [
-        DailyUsageEntry(day: Date(), userID: user1ID, minutes: 45.0, choreName: "Lavar a louça"),
-        DailyUsageEntry(day: Date(), userID: user2ID, minutes: 120.0, choreName: "Limpar a casa"),
-        DailyUsageEntry(day: Date(), userID: user1ID, minutes: 30.0, choreName: "Lavar a roupa")
+        DailyUsageEntry(day: Date(), userID: user1ID, choreID: chore1ID, minutes: 15.0, choreName: "Lavar a louça"),
+        DailyUsageEntry(day: Date(), userID: user2ID, choreID: chore2ID, minutes: 90.0, choreName: "Limpar a casa")
     ]
 
     return FortnightlyDayUserBar(
         day: Date(),
         entries: mockEntries,
-        users: [user1, user2]
+        users: [user1, user2],
+        onSelect: { entry in print("Selected: \(entry.choreName)") }
     )
     .padding()
 }

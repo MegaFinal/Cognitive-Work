@@ -8,14 +8,21 @@
 import SwiftUI
 
 struct ChoreCardTitle: View {
+    let choreName: String
+    let roomName: String
+
     var body: some View {
-        VStack{
-            Text("Banheiro da suíte")
-            Text("Lavar banheiro")
+        VStack {
+            Text(roomName)
+                .fontWeight(.regular)
+                .font(.headline)
+            Text(choreName)
+                .bold()
+                .font(.title)
         }
     }
 }
 
 #Preview {
-    ChoreCardTitle()
+    ChoreCardTitle(choreName: "Lavar banheiro", roomName: "Banheiro da suíte")
 }

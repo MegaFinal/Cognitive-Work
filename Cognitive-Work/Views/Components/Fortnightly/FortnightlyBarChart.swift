@@ -12,6 +12,7 @@ struct FortnightlyBarChart: View {
     var users: [UserModel]
     var entries: [DailyUsageEntry]
     var startDate: Date = Date()
+    var onSelect: (DailyUsageEntry) -> Void
 
     var body: some View {
         let calendar = Calendar.current
@@ -22,7 +23,12 @@ struct FortnightlyBarChart: View {
                 ForEach(0..<14, id: \.self) { dayOffset in
                     if let day = calendar.date(byAdding: .day, value: dayOffset, to: adjustedStartDate) {
                         let dayEntries = entries.filter { calendar.isDate($0.day, inSameDayAs: day) }
-                        FortnightlyDayUserBar(day: day, entries: dayEntries, users: users)
+                        FortnightlyDayUserBar(
+                            day: day,
+                            entries: dayEntries,
+                            users: users,
+                            onSelect: onSelect
+                        )
                     }
                 }
             }
@@ -39,6 +45,8 @@ struct FortnightlyBarChart: View {
 #Preview {
     let user1ID = CKRecord.ID(recordName: "user-1")
     let user2ID = CKRecord.ID(recordName: "user-2")
+    let chore1ID = CKRecord.ID(recordName: "chore-1")
+    let chore2ID = CKRecord.ID(recordName: "chore-2")
 
     var user1 = UserModel(name: "Você", tier: .tier1)
     user1.recordID = user1ID
@@ -49,14 +57,14 @@ struct FortnightlyBarChart: View {
     let calendar = Calendar.current
 
     let mockEntries: [DailyUsageEntry] = [
-        DailyUsageEntry(day: today, userID: user1ID, minutes: 45.0, choreName: "Lavar a louça"),
-        DailyUsageEntry(day: calendar.date(byAdding: .day, value: 1, to: today)!, userID: user2ID, minutes: 120.0, choreName: "Limpar a casa"),
-        DailyUsageEntry(day: today, userID: user1ID, minutes: 30.0, choreName: "Lavar a roupa")
+        DailyUsageEntry(day: today, userID: user1ID, choreID: chore1ID, minutes: 15.0, choreName: "Lavar a louça"),
+        DailyUsageEntry(day: calendar.date(byAdding: .day, value: 1, to: today)!, userID: user2ID, choreID: chore2ID, minutes: 90.0, choreName: "Limpar a casa")
     ]
 
     return FortnightlyBarChart(
         users: [user1, user2],
         entries: mockEntries,
-        startDate: today
+        startDate: today,
+        onSelect: { entry in print("Selected: \(entry.choreName)") }
     )
 }
