@@ -26,7 +26,7 @@ struct CarouselCardFrame: View {
             ChoreCardFrontFace(viewModel: viewModel)
                 .opacity(isShowingBack ? 0 : 1)
 
-            ChoreCardBackFace(viewModel: viewModel)
+            ChoreDetails(viewModel: viewModel)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(isShowingBack ? 1 : 0)
         }

@@ -16,7 +16,7 @@ struct PriorityDurationTag: View {
             .font(.caption)
             .foregroundColor(.white)
             .padding(.horizontal)
-            .padding(.vertical, 2.5)
+            .padding(.vertical, 1.5)
             .background(color)
             .clipShape(Capsule())
     }

@@ -85,6 +85,12 @@ class ChoreViewModel: Identifiable {
         }
     }
     
+    func completeChore() async {
+        await MainActor.run { chore.isDone = true }
+        
+        await CloudKitManager.shared.update(chore)
+    }
+    
     static func mock(
         chore: ChoreModel,
         roomName: String,

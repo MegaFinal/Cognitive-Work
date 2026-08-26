@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ChecklistItemButton: View {
     @Binding var item: CheckItemModel
+    var width = UIScreen.main.bounds.width
         
     var body: some View {
         Button {
