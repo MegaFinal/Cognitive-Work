@@ -9,16 +9,17 @@ import SwiftUI
 import CloudKit
 
 struct ShareHouseButton: View {
+    let viewModel: OnboardingViewModel
+
     var width: CGFloat = UIScreen.main.bounds.width * 0.5
     var height: CGFloat = UIScreen.main.bounds.height * 0.06
     
-    let share: CKShare?
-    let viewModel: ContentViewModel
-    
+    @Binding var share: CKShare?
     @Binding var shareURL: URL?
     @Binding var showSheet: Bool
-    
+
     @State private var isLoading = false
+    
     
     var body: some View {
         

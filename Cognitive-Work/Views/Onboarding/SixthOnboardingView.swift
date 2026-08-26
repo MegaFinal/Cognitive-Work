@@ -8,11 +8,14 @@
 import SwiftUI
 
 struct SixthOnboardingView: View {
+    @Environment(OnboardingViewModel.self) var viewModel
+
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
     var body: some View {
-        
+        @Bindable var bindableViewModel = viewModel
+
         VStack(spacing: 16) {
             Spacer()
 
@@ -36,7 +39,7 @@ struct SixthOnboardingView: View {
             }
             
             OnboardingProgressButton(text: "Continuar", action: {})
-            OnboardingSkipButton(action: {})
+            OnboardingSkipButton(action: {viewModel.onboardingFinished = true})
 
         }
         .frame(width: width * 0.8)

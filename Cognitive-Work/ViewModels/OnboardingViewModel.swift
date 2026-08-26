@@ -47,6 +47,8 @@ class OnboardingViewModel {
     var navigateToThird: Bool = false
     var navigateToFourth: Bool = false
     var navigateToFifth: Bool = false
+    var navigateToSixth: Bool = false
+//    var navigateToSeventh: Bool = false
     var onboardingFinished: Bool = false
     
     /// The CloudKit user record created during onboarding
@@ -81,7 +83,6 @@ class OnboardingViewModel {
         
         if let savedUser = await CloudKitManager.shared.create(newUser) {
             self.currentUser = savedUser
-            navigateToThird = true
         } else {
             errorMessage = "Erro ao criar usuário."
         }
@@ -123,7 +124,6 @@ class OnboardingViewModel {
             }
             
             isLoading = false
-            navigateToFourth = true
         } else {
             errorMessage = "Erro ao criar a casa."
             isLoading = false
@@ -166,8 +166,8 @@ class OnboardingViewModel {
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
         var savedRoomReferences: [CKRecord.Reference] = []
-        let houseReference = CKRecord.Reference(recordID: houseID, action: .deleteSelf)
-        
+        let houseReference = CKRecord.Reference(recordID: houseID, action: .none)
+
         for draft in selectedDrafts {
             let roomModel = RoomModel(name: draft.name, house: houseReference, color: draft.color)
             if let savedRoom = await CloudKitManager.shared.create(roomModel, parent: houseReference),
@@ -175,18 +175,17 @@ class OnboardingViewModel {
                 savedRoomReferences.append(CKRecord.Reference(recordID: roomID, action: .none))
             }
         }
-        
+
         var updatedHouse = house
         updatedHouse.rooms = (updatedHouse.rooms ?? []) + savedRoomReferences
         let success = await CloudKitManager.shared.update(updatedHouse)
-        
+
         if success {
             self.currentHouse = updatedHouse
-            self.onboardingFinished = true 
         } else {
             errorMessage = "Erro ao atrelar cômodos."
         }
-        
+
         isLoading = false
     }
 }

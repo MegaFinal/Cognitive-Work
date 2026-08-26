@@ -29,6 +29,8 @@ struct FourthOnboardingView: View {
     var columns = [GridItem(), GridItem()]
     
     var body: some View {
+        @Bindable var bindableViewModel = viewModel
+
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 OnboardingHeader(
@@ -57,6 +59,7 @@ struct FourthOnboardingView: View {
                 OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading) {
                     Task {
                         await viewModel.saveSelectedRooms()
+                        viewModel.navigateToFifth = true
                     }
                 }
             }
