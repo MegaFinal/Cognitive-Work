@@ -15,10 +15,12 @@ import SwiftUI
 ///
 /// Used throughout the onboarding flow as the primary "continue" action
 struct OnboardingProgressButton: View {
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
-    
+    var width: CGFloat = UIScreen.main.bounds.width * 0.6
+    var height: CGFloat = UIScreen.main.bounds.height * 0.06
+   
     var text: String
+    var isSystemImage: Bool = false
+
     var isLoading: Bool = false
     var isDisabled: Bool = false
     var action: () -> Void
@@ -31,10 +33,15 @@ struct OnboardingProgressButton: View {
                 if isLoading {
                     ProgressView().tint(.white)
                 } else {
-                    Text(text)
+                    if isSystemImage {
+                        Image(systemName: text)
+                            .font(.system(size: height * 0.4))
+                    } else {
+                        Text(text)
+                    }
                 }
             }
-            .frame(width: width * 0.5, height: height * 0.05)
+            .frame(width: width, height: height)
             .foregroundColor(.white)
             .fontWeight(.medium)
             .background(
@@ -48,5 +55,5 @@ struct OnboardingProgressButton: View {
 }
 
 #Preview {
-    OnboardingProgressButton(text: "Continuar", action: {})
+    OnboardingProgressButton( text: "Continuar", action: {})
 }
