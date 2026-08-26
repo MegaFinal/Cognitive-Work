@@ -82,13 +82,13 @@ struct FirstOnboardingView: View {
                 }
             }
             .navigationDestination(isPresented: $viewModel.navigateToSecond) {
-                SecondOnboardingView()
+                CreateProfileOnboardingView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToThird) {
-                ThirdOnboardingView()
+                CreateOrEnterHouseOnboardingView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToFourth) {
-                FourthOnboardingView()
+                SelectRoomsOnboardingView()
             }
         }
         .environment(viewModel)

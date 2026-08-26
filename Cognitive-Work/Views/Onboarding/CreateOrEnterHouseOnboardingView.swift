@@ -10,7 +10,7 @@ import SwiftUI
 /// The step where the user chooses whether to join an existing house
 /// or create a new one
 /// On success the flow advances to ``FourthOnboardingView``
-struct ThirdOnboardingView: View {
+struct CreateOrEnterHouseOnboardingView: View {
     /// The shared onboarding view model, read from the environment
     @Environment(OnboardingViewModel.self) var viewModel
     
@@ -84,12 +84,12 @@ struct ThirdOnboardingView: View {
         }
         .navigationBarBackButtonHidden(viewModel.isLoading)
         .navigationDestination(isPresented: $bindableViewModel.navigateToFourth) {
-            FourthOnboardingView()
+            SelectRoomsOnboardingView()
         }
     }
 }
 
 #Preview {
-    ThirdOnboardingView()
+    CreateOrEnterHouseOnboardingView()
         .environment(OnboardingViewModel())
 }

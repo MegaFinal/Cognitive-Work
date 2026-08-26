@@ -22,7 +22,7 @@ import SwiftUI
 /// > Since ``ChoreDTO`` is a reference type, selecting a chore in one room also
 /// > selects it in the others. Give each room its own list before replacing the
 /// > mock with real data.
-struct SeventhOnboardingView: View {
+struct SelectChoresOnboardingView: View {
 
     // MARK: - Constants
 
@@ -226,5 +226,5 @@ struct SeventhOnboardingView: View {
 }
 
 #Preview {
-    SeventhOnboardingView()
+    SelectChoresOnboardingView()
 }

@@ -8,7 +8,7 @@
 import SwiftUI
 import PhotosUI
 
-struct SecondOnboardingView: View {
+struct CreateProfileOnboardingView: View {
     @Environment(OnboardingViewModel.self) var vm
     
     @State private var usernameText: String = ""
@@ -41,7 +41,7 @@ struct SecondOnboardingView: View {
         }
         .navigationBarBackButtonHidden()
         .navigationDestination(isPresented: $bindableViewModel.navigateToThird) {
-            ThirdOnboardingView()
+            CreateOrEnterHouseOnboardingView()
         }
         .padding()
         .onChange(of: selectedItem) { _, newItem in
@@ -60,7 +60,7 @@ struct SecondOnboardingView: View {
 }
 
 #Preview {
-    SecondOnboardingView()
+    CreateProfileOnboardingView()
         .environment(OnboardingViewModel())
 }
  
