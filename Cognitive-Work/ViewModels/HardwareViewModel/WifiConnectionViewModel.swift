@@ -48,7 +48,7 @@ class WifiConnectionViewModel {
 
     /// A função prepareForEPaper recebe uma imagem, escalona para caber na tela, cria um buffer origem
     /// com essa imagem escalonada em RGBA (32 bits por pixel) e utiliza desse buffer para criar um
-    /// segundo buffer origem com apenas BP (1 bit por pixel) verificando a claridade de cada pixel do
+    /// segundo buffer destino com apenas BP (1 bit por pixel) verificando a claridade de cada pixel do
     /// buffer origem.
     ///
     /// Um bitmap (ou mapa de bits) é uma matriz de pontos que define a cor de cada pixel em uma imagem digital.
