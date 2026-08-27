@@ -8,15 +8,6 @@
 import SwiftUI
 import CloudKit
 
-struct RoomDTO: Identifiable {
-    let id = UUID()
-    var name: String
-    var symbol: String
-    var isSelected: Bool = false
-    var isAddButton: Bool = false
-    var color: RoomColor = .blue
-}
-
 /// The shared state and business logic for the entire onboarding flow.
 ///
 /// `OnboardingViewModel` is created once by ``FirstOnboardingView`` and injected into
@@ -31,6 +22,8 @@ struct RoomDTO: Identifiable {
 class OnboardingViewModel {
     /// The name entered by the user for their profile
     var userName: String = ""
+    
+    var userProfilePicture: UIImage?
     /// The name of the house being created
     var houseName: String = "Minha Casa"
     /// A short description of the house being created
@@ -44,6 +37,9 @@ class OnboardingViewModel {
     var navigateToSecond: Bool = false
     var navigateToThird: Bool = false
     var navigateToFourth: Bool = false
+    var navigateToFifth: Bool = false
+    var navigateToSixth: Bool = false
+//    var navigateToSeventh: Bool = false
     var onboardingFinished: Bool = false
     
     /// The CloudKit user record created during onboarding
@@ -72,16 +68,22 @@ class OnboardingViewModel {
         isLoading = true
         errorMessage = nil
         
-        let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, tier: .tier1)
+        let imageData = userProfilePicture?.jpegData(compressionQuality: 0.8)
+        
+        let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageData, tier: .tier1)
         
         if let savedUser = await CloudKitManager.shared.create(newUser) {
             self.currentUser = savedUser
-            isLoading = false
-            navigateToThird = true
         } else {
             errorMessage = "Erro ao criar usuário."
-            isLoading = false
         }
+        isLoading = false
+    }
+    
+    /// Updates the profile image with the image received from the keyboard.
+    /// - Parameter image: The image selected by the user.
+    func updateProfileImage(_ image: UIImage) {
+        userProfilePicture = image
     }
     
     /// Creates a new house record and links the current user to it, then advances to room selection
@@ -113,7 +115,6 @@ class OnboardingViewModel {
             }
             
             isLoading = false
-            navigateToFourth = true
         } else {
             errorMessage = "Erro ao criar a casa."
             isLoading = false
@@ -156,8 +157,8 @@ class OnboardingViewModel {
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
         var savedRoomReferences: [CKRecord.Reference] = []
-        let houseReference = CKRecord.Reference(recordID: houseID, action: .deleteSelf)
-        
+        let houseReference = CKRecord.Reference(recordID: houseID, action: .none)
+
         for draft in selectedDrafts {
             let roomModel = RoomModel(name: draft.name, house: houseReference, color: draft.color)
             if let savedRoom = await CloudKitManager.shared.create(roomModel, parent: houseReference),
@@ -165,18 +166,17 @@ class OnboardingViewModel {
                 savedRoomReferences.append(CKRecord.Reference(recordID: roomID, action: .none))
             }
         }
-        
+
         var updatedHouse = house
         updatedHouse.rooms = (updatedHouse.rooms ?? []) + savedRoomReferences
         let success = await CloudKitManager.shared.update(updatedHouse)
-        
+
         if success {
             self.currentHouse = updatedHouse
-            self.onboardingFinished = true 
         } else {
             errorMessage = "Erro ao atrelar cômodos."
         }
-        
+
         isLoading = false
     }
 }

@@ -1,0 +1,76 @@
+//
+//  DashboardDayUserBar.swift
+//  Cognitive-Work
+//
+//  Created by anshu Li on 24/08/26.
+//
+
+import SwiftUI
+import CloudKit
+
+struct FortnightlyDayUserBar: View {
+    var day: Date
+    var entries: [DailyUsageEntry]
+    var users: [UserModel]
+    var onSelect: (DailyUsageEntry) -> Void
+    
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.dateFormat = "EEE"
+        return formatter
+    }
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            Spacer(minLength: 0)
+            let formattedDay = dateFormatter.string(from: day).replacingOccurrences(of: ".", with: "")
+            Text(formattedDay.capitalized)
+                .font(.system(size: 16.35))
+                .fontWeight(.medium)
+            
+            if !entries.isEmpty {
+                VStack(spacing: 4) {
+                    ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
+                        let userIndex = users.firstIndex(where: { $0.recordID == entry.userID }) ?? (index % users.count)
+                        let userColor = UserColorPalette.color(for: userIndex)
+                        
+                        FortnightlyUserBar(
+                            maxBarHeight: 100,
+                            tier: entry.tier,
+                            barColor: userColor,
+                            choreName: entry.choreName,
+                            onTap: { onSelect(entry) }
+                        )
+                    }
+                }
+            }
+        }
+        .frame(width: 50)
+    }
+}
+
+#Preview {
+    let user1ID = CKRecord.ID(recordName: "user-1")
+    let user2ID = CKRecord.ID(recordName: "user-2")
+    let chore1ID = CKRecord.ID(recordName: "chore-1")
+    let chore2ID = CKRecord.ID(recordName: "chore-2")
+    
+    var user1 = UserModel(name: "Você", tier: .tier1)
+    user1.recordID = user1ID
+    var user2 = UserModel(name: "Alice", tier: .tier1)
+    user2.recordID = user2ID
+    
+    let mockEntries: [DailyUsageEntry] = [
+        DailyUsageEntry(day: Date(), userID: user1ID, choreID: chore1ID, minutes: 15.0, choreName: "Lavar a louça"),
+        DailyUsageEntry(day: Date(), userID: user2ID, choreID: chore2ID, minutes: 90.0, choreName: "Limpar a casa")
+    ]
+    
+    return FortnightlyDayUserBar(
+        day: Date(),
+        entries: mockEntries,
+        users: [user1, user2],
+        onSelect: { entry in print("Selected: \(entry.choreName)") }
+    )
+    .padding()
+}

@@ -19,9 +19,9 @@ struct OnboardingHeader: View {
                 .bold()
             
             Text(description)
-                .foregroundColor(.gray)
+                .foregroundColor(.subTitleGray)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(.top, 20)
         .padding(.horizontal, 30)
     }

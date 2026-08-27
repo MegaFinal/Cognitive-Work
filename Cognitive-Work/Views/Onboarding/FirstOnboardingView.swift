@@ -90,6 +90,12 @@ struct FirstOnboardingView: View {
             .navigationDestination(isPresented: $viewModel.navigateToFourth) {
                 FourthOnboardingView()
             }
+            .navigationDestination(isPresented: $viewModel.navigateToFifth) {
+                FifthOnboardingView()
+            }
+            .navigationDestination(isPresented: $viewModel.navigateToSixth) {
+                SixthOnboardingView()
+            }
         }
         .environment(viewModel)
     }
