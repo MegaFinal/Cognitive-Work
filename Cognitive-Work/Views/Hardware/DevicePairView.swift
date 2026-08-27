@@ -11,7 +11,6 @@ struct DevicePairView: View {
     @Bindable var viewModel: WifiConnectionViewModel
     let image1 = UIImage(named: "fish")
     let image2 = UIImage(named: "emoji")
-//    var imageSenderViewModel = ImageSenderViewModel()
     
     var body: some View {
         @Bindable var viewModel = viewModel
@@ -48,7 +47,7 @@ struct DevicePairView: View {
                     try await viewModel.prepareImageForESP32()
                 }
             } label: {
-                Image(uiImage: image1!)
+                Image(uiImage: image1 ?? UIImage())
             }
         }
         .padding()

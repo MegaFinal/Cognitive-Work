@@ -15,16 +15,16 @@ struct SendWifiCredentialsButton: View {
         Button {
             if viewModel.userWifiName != "" && viewModel.userWifiPassord != "" && viewModel.deviceIP != "" {
                 Task {
-//                    do {
-                        try? await viewModel.sendWifiCredentials()
+                    do {
+                        try await viewModel.sendWifiCredentials()
                         action()
-//                    } catch APIErrors.invalidURL {
-//                        viewModel.errorMessage = "IP inválido. Verifique e tente de novo."
-//                    } catch let apiError as APIErrors {
-//                        viewModel.errorMessage = apiError.errorDescription
-//                    } catch {
-//                        viewModel.errorMessage = "Erro inesperado: \(error.localizedDescription)"
-//                    }
+                    } catch APIErrors.invalidURL {
+                        viewModel.errorMessage = "IP inválido. Verifique e tente de novo."
+                    } catch let apiError as APIErrors {
+                        viewModel.errorMessage = apiError.errorDescription
+                    } catch {
+                        viewModel.errorMessage = "Erro inesperado: \(error.localizedDescription)"
+                    }
                 }
             }
         } label: {
