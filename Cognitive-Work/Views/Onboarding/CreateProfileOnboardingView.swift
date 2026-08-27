@@ -35,14 +35,12 @@ struct CreateProfileOnboardingView: View {
             OnboardingProgressButton(text: "Continuar",isLoading: vm.isLoading,isDisabled: vm.userName.trimmingCharacters(in: .whitespaces).isEmpty,  action: {
                 Task {
                     await vm.createUser()
+                    vm.navigateToThird = true
                 }
             })
             
         }
         .navigationBarBackButtonHidden()
-        .navigationDestination(isPresented: $bindableViewModel.navigateToThird) {
-            CreateOrEnterHouseOnboardingView()
-        }
         .padding()
         .onChange(of: selectedItem) { _, newItem in
             Task {

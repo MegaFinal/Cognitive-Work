@@ -52,6 +52,7 @@ struct CreateOrEnterHouseOnboardingView: View {
                 Button {
                     Task {
                         await viewModel.createHouseAndLinkUser()
+                        viewModel.navigateToFourth = true
                     }
                 } label: {
                     VStack (spacing: 40){
@@ -82,10 +83,7 @@ struct CreateOrEnterHouseOnboardingView: View {
                 .disabled(viewModel.isLoading)
             }
         }
-        .navigationBarBackButtonHidden(viewModel.isLoading)
-        .navigationDestination(isPresented: $bindableViewModel.navigateToFourth) {
-            SelectRoomsOnboardingView()
-        }
+        .navigationBarBackButtonHidden()
     }
 }
 

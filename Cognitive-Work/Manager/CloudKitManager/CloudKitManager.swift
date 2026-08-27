@@ -98,6 +98,29 @@ class CloudKitManager {
             return nil
         }
     }
+    
+    func resolveShare(for houseModel: HouseModel) async -> CKShare? {
+        guard let house = await fetchRecord(for: houseModel)
+        else {
+            return nil
+        }
+        
+        if let existing = await fetchShare(for: house) {
+            return existing
+        }
+
+        let share = CKShare(rootRecord: house)
+        share[CKShare.SystemFieldKey.title] = house["name"] as? String
+        share.publicPermission = .readWrite
+
+        do {
+            _ = try await privateDB.modifyRecords(saving: [house, share], deleting: [])
+            return share
+        } catch {
+            self.errorMessage = "Failed to create share: \(error.localizedDescription)"
+            return nil
+        }
+    }
 
     /// Fetches the share associated with a house.
     ///
