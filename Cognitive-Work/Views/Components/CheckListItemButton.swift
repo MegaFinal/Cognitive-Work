@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ChecklistItemButton: View {
     @Binding var item: CheckItemModel
+    var width = UIScreen.main.bounds.width
         
     var body: some View {
         Button {
@@ -23,7 +24,7 @@ struct ChecklistItemButton: View {
                 Text(item.name)
                     .strikethrough(item.isDone, color: .gray)
                     .foregroundColor(item.isDone ? .gray : .black)
-                    .font(.caption)
+                    .font(.footnote)
                     .multilineTextAlignment(.leading)
             }
         }

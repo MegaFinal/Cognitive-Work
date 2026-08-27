@@ -10,6 +10,8 @@ import SwiftUI
 /// Controls the state and mathematical rendering of the carousel.
 @Observable
 class CarouselViewModel {
+    var layoutMode: CardLayoutMode = .grid
+    
     var snappedItem:  Double = 0
     var draggingItem: Double = 0
     var activeIndex:  Int    = 0
@@ -17,6 +19,9 @@ class CarouselViewModel {
     /// The chores currently loaded into the carousel
     var cardViewModels: [ChoreViewModel] = []
     var isLoading: Bool = false
+    var hasFocusedCard: Bool {
+        focusedIndex != nil
+    }
     
     private let flipDuration: Double = 0.6
     private var flippedIndices: Set<Int> = []
@@ -26,6 +31,10 @@ class CarouselViewModel {
     private var focusedIndex: Int? = nil
     private let focusSpringResponse: Double = 0.4
     private let focusSpringDamping: Double = 0.75
+    
+    func toggleLayout() {
+        layoutMode = layoutMode == .grid ? .list : .grid
+    }
     
     // MARK: - CloudKit Fetch
     
@@ -45,6 +54,12 @@ class CarouselViewModel {
     /// The only card currently allowed to respond to a flip tap
     func isFocused(_ index: Int) -> Bool {
         focusedIndex == index
+    }
+    
+    func focusImmediately(_ index: Int) {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            focusedIndex = index
+        }
     }
     
     func focus(_ index: Int) {
@@ -71,9 +86,29 @@ class CarouselViewModel {
         }
     }
     
+    func focusAndFlip(_ index: Int) {
+        if let old = focusedIndex, old != index {
+            if flippedIndices.contains(old) {
+                flip(old)
+            }
+        }
+        
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            snappedItem = Double(index)
+            draggingItem = Double(index)
+            activeIndex = index
+            focusedIndex = index
+        }
+        
+        flip(index)
+    }
+    
     func clearFocus() {
-        if focusedIndex != nil {
-            withAnimation(.easeOut(duration: 0.15)) {
+        if let old = focusedIndex {
+            if flippedIndices.contains(old) {
+                flip(old)
+            }
+            withAnimation(.easeOut(duration: 0.2)) {
                 focusedIndex = nil
             }
         }
@@ -135,7 +170,7 @@ class CarouselViewModel {
         let fixedVisualCount: Double = 5.0
         let angle = (Double.pi * 2 / fixedVisualCount) * distance(index)
         
-        let fixedRadius: Double = 160.0
+        let fixedRadius: Double = 130.0
         
         return sin(angle) * fixedRadius
     }
@@ -154,14 +189,15 @@ class CarouselViewModel {
     func scaleEffect(_ index: Int) -> Double {
         let dist = abs(distance(index))
         let base = max(1 - dist * 0.18, 0.7)
-        return isFocused(index) ? base * 1.12 : base
+        
+        return base
     }
     
     /// 2D tilt
     func rotationEffect(_ index: Int) -> Double {
         let dist = distance(index)
         
-        let dynamicSideTilt = dist * 15
+        let dynamicSideTilt = dist * 22
         return dynamicSideTilt
     }
     

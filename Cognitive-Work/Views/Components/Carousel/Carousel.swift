@@ -11,15 +11,19 @@ import SwiftUI
 /// `Apply this component on a ZStack bellow the rest of the view's content`
 struct Carousel: View {
     @Bindable var viewModel: CarouselViewModel
+    var isBackgroundClear: Bool
+    let onSwipeDown: () -> Void
+    let namespace: Namespace.ID
     
     var body: some View {
         ZStack {
-            // Clear background that occupies the whole screen to allow
-            // clearing the focus state by tapping the empty space
-            Color.white
-                .onTapGesture {
-                    viewModel.clearFocus()
-                }
+            // Clearing the focus state by tapping the empty space
+            if !isBackgroundClear {
+                Color.white
+                    .onTapGesture {
+                        viewModel.clearFocus()
+                    }
+            }
             
             if viewModel.isLoading {
                 ProgressView("Carregando tarefas")
@@ -35,6 +39,9 @@ struct Carousel: View {
                 ForEach(Array(viewModel.cardViewModels.enumerated()), id: \.element.id) { index, cardVM in
                     CarouselCardFrame(
                         viewModel: cardVM,
+                        carouselViewModel: viewModel,
+                        namespace: namespace,
+                        isFocused: viewModel.isFocused(index),
                         rotation: viewModel.flipRotation(index),
                         isShowingBack: viewModel.isShowingBack(index)
                     )
@@ -48,9 +55,9 @@ struct Carousel: View {
                     .opacity(viewModel.opacity(index))
                     .onTapGesture {
                         if viewModel.isFocused(index) {
-                            viewModel.flip(index)
+                            viewModel.clearFocus()
                         } else {
-                            viewModel.focus(index)
+                            viewModel.focusAndFlip(index)
                         }
                     }
                 }
@@ -65,6 +72,32 @@ struct Carousel: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .onSwipeDown(action: onSwipeDown)
+        .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
     }
+}
+
+#Preview {
+    @Previewable @Namespace var namespace
+    let mockVM = CarouselViewModel()
+    
+    let chore1 = ChoreModel(name: "Lavar Banheiro", description: "Limpar espelhos e chão", frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent)
+    
+    let chore2 = ChoreModel(name: "Varrer Sala", description: "Limpar espelhos e chão", frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent)
+    
+    let chore3 = ChoreModel(name: "Lavar a Louça", description: "Secar e guardar também", frequency: .daily, duration: 900, isPublic: true, priorityTag: .low)
+    
+    let card1 = ChoreViewModel.mock(chore: chore1, roomName: "Banheiro da Suíte", color: .blue)
+    card1.cardSymbol = "toilet"
+    
+    let card2 = ChoreViewModel.mock(chore: chore2, roomName: "Sala", color: .yellow)
+    card2.cardSymbol = "sofa"
+    
+    let card3 = ChoreViewModel.mock(chore: chore3, roomName: "Cozinha", color: .red)
+    card3.cardSymbol = "fork.knife"
+    
+    mockVM.cardViewModels = [card1, card2, card3]
+    
+    return Carousel(viewModel: mockVM, isBackgroundClear: true, onSwipeDown: {}, namespace: namespace)
 }
