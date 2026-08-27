@@ -9,6 +9,7 @@ import SwiftUI
 
 struct UserProfilePictureTag: View {
     @Binding var user: UserModel
+    @Namespace private var cardAnimation
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height

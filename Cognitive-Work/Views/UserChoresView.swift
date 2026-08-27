@@ -7,14 +7,28 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct UserChoresView: View {
     @State var carouselVM = CarouselViewModel()
+    var height = UIScreen.main.bounds.width
     
     var body: some View {
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .top) {
+                if carouselVM.layoutMode == .grid {
+                    Carousel(
+                        viewModel: carouselVM,
+                        isBackgroundClear: true,
+                        onSwipeDown: carouselVM.toggleLayout
+                    )
+                    .frame(maxHeight: .infinity, alignment: .center)
+                } else {
+                    ChoreListLayout(
+                        viewModel: carouselVM,
+                        onSwipeDown: carouselVM.toggleLayout
+                    )
+                    .padding(.top, height * 0.42)
+                }
+                
                 VStack(spacing: 15) {
                     HStack {
                         Text("Suas Tarefas")
@@ -24,28 +38,21 @@ struct UserChoresView: View {
                             .padding(.top, 20)
                         
                         Spacer()
+                        
+                        LayoutToggleButton(viewModel: carouselVM)
+                            .padding(.top, 20)
+                            .padding(.trailing, 30)
                     }
                     
-                    HStack (spacing: 10){
-                        ProgressIndicatorCard(
-                            title: "Tempo médio",
-                            data: "1h 30min"
-                        )
-                        
-                        ProgressIndicatorCard(
-                            title: "Tempo médio",
-                            data: "1h 30min"
-                        )
-                        
-                        ProgressIndicatorCard(
-                            title: "Tempo médio",
-                            data: "1h 30min"
-                        )
+                    if !carouselVM.hasFocusedCard {
+                        HStack(spacing: 10) {
+                            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min")
+                            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min")
+                            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min")
+                        }
+                        .padding(.horizontal, 30)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                
-                Carousel(viewModel: carouselVM, isBackgroundClear: true)
             }
             .background(
                 Color(.white)
@@ -55,12 +62,9 @@ struct UserChoresView: View {
                     }
             )
             .task {
-                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-                    return
-                }
+                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
                 
                 await carouselVM.fetchChores()
-                
                 await withTaskGroup(of: Void.self) { group in
                     for cardVM in carouselVM.cardViewModels {
                         group.addTask {

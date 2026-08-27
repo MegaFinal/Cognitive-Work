@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct ChoreCardListStyle: View {
-    @Bindable var viewModel: ChoreViewModel
+    var viewModel: ChoreViewModel
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -21,11 +21,12 @@ struct ChoreCardListStyle: View {
                 tabWidth: 90,
                 topCutoutHeight: 38
             )
-            .fill(.yellow)
+            .fill(viewModel.roomColor)
             
             HStack(spacing: 35) {
                 Image(systemName: viewModel.cardSymbol)
                     .resizable()
+                    .scaledToFit()
                     .frame(width: width * 0.1, height: height * 0.08)
                     .fontWeight(.thin)
                 
@@ -92,7 +93,7 @@ struct ChoreCardListStyle: View {
         color: Color.blue
     )
     
-    mockVM.cardSymbol = "toilet"
+    mockVM.cardSymbol = "sofa"
     
     mockVM.checklistItems = [
         CheckItemModel(name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit", isDone: true),

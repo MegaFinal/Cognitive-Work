@@ -12,6 +12,7 @@ import SwiftUI
 struct Carousel: View {
     @Bindable var viewModel: CarouselViewModel
     var isBackgroundClear: Bool
+    let onSwipeDown: () -> Void
     
     var body: some View {
         ZStack {
@@ -70,5 +71,12 @@ struct Carousel: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onSwipeDown(action: onSwipeDown)
+        .transition(
+            .asymmetric(
+                insertion: .move(edge: .top) .combined(with: .opacity),
+                removal: .move(edge: .top) .combined(with: .opacity)
+            )
+        )
     }
 }

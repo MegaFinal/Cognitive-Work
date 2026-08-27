@@ -10,6 +10,8 @@ import SwiftUI
 /// Controls the state and mathematical rendering of the carousel.
 @Observable
 class CarouselViewModel {
+    var layoutMode: CardLayoutMode = .grid
+    
     var snappedItem:  Double = 0
     var draggingItem: Double = 0
     var activeIndex:  Int    = 0
@@ -17,6 +19,9 @@ class CarouselViewModel {
     /// The chores currently loaded into the carousel
     var cardViewModels: [ChoreViewModel] = []
     var isLoading: Bool = false
+    var hasFocusedCard: Bool {
+        focusedIndex != nil
+    }
     
     private let flipDuration: Double = 0.6
     private var flippedIndices: Set<Int> = []
@@ -26,6 +31,10 @@ class CarouselViewModel {
     private var focusedIndex: Int? = nil
     private let focusSpringResponse: Double = 0.4
     private let focusSpringDamping: Double = 0.75
+    
+    func toggleLayout() {
+        layoutMode = layoutMode == .grid ? .list : .grid
+    }
     
     // MARK: - CloudKit Fetch
     
@@ -45,6 +54,12 @@ class CarouselViewModel {
     /// The only card currently allowed to respond to a flip tap
     func isFocused(_ index: Int) -> Bool {
         focusedIndex == index
+    }
+    
+    func focusImmediately(_ index: Int) {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            focusedIndex = index
+        }
     }
     
     func focus(_ index: Int) {
