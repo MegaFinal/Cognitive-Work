@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ChoreCardFrontFace: View {
     let viewModel: ChoreViewModel
-    
+    let namespace: Namespace.ID
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
@@ -28,10 +28,12 @@ struct ChoreCardFrontFace: View {
         .background(viewModel.roomColor)
         .clipShape(RoundedRectangle(cornerRadius: 31))
         .shadow(color: .black.opacity(0.14), radius: 16.84883, x: 0, y: 4.79682)
+        .transition(.identity)
     }
 }
 
 #Preview {
+    @Previewable @Namespace var namespace
     let mockChore = ChoreModel(
         name: "Lavar o Banheiro",
         description: "Esfregar o chão e limpar o espelho",
@@ -49,5 +51,5 @@ struct ChoreCardFrontFace: View {
     
     mockVM.cardSymbol = "toilet"
     
-    return ChoreCardFrontFace(viewModel: mockVM)
+    return ChoreCardFrontFace(viewModel: mockVM, namespace: namespace)
 }

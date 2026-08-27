@@ -13,15 +13,15 @@ struct ChoreDetailsHeader: View {
     var height: CGFloat
     
     var body: some View {
-        VStack(spacing: 13) {
+        VStack(spacing: 10) {
             Image(systemName: viewModel.cardSymbol)
                 .resizable()
                 .scaledToFit()
-                .frame(width: width * 0.2, height: height * 0.1)
-                .fontWeight(.ultraLight)
+                .frame(width: width * 0.19, height: height * 0.09)
+                .fontWeight(.thin)
             
             Text(viewModel.chore.name)
-                .font(.title2)
+                .font(.title)
                 .fontWeight(.semibold)
             
             HStack(spacing: 12) {
@@ -41,7 +41,6 @@ struct ChoreDetailsHeader: View {
                 )
             }
         }
-        .foregroundColor(.white)
-        .padding(.top, 15)
+        .foregroundColor(.black)
     }
 }

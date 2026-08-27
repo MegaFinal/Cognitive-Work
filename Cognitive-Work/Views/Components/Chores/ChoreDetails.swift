@@ -16,22 +16,23 @@ struct ChoreDetails: View {
     
     var body: some View {
         ZStack {
-            VStack(spacing: 10) {
+            VStack(spacing: 0) {
                 ChoreDetailsHeader(viewModel: viewModel, width: width, height: height)
                 
                 ChoreDetailsInfo(viewModel: viewModel, width: width, height: height)
                 
-                VStack(spacing: 10) {
+                VStack {
                     ChoreDetailsPostponeButtons(viewModel: viewModel, width: width)
                     
-                    SwipeToCompleteButton {
+                    SwipeToCompleteButton(action:  {
                         Task {
                             await viewModel.completeChore()
                         }
-                    }
-                    .padding(.horizontal, 23)
+                    }, color: viewModel.roomColor)
+                    .padding(.horizontal, 30)
                 }
             }
+            .padding(.top, 8)
             
             HStack {
                 Button {
@@ -41,18 +42,24 @@ struct ChoreDetails: View {
                     Image(systemName: "xmark")
                         .foregroundColor(.black)
                 }
-                .padding(8)
+                .padding(12)
                 .clipShape(Circle())
                 .glassEffect()
                 
                 Spacer()
+                
+                if viewModel.responsibleUsers.count == 1 {
+                    UserProfilePictureTag(user: $viewModel.responsibleUsers.first!)
+                } else {
+                    UserProfilePictureList(viewModel: viewModel)
+                }
                 
                 Button {}
                 label: {
                     Image(systemName: "pencil")
                         .foregroundColor(.white)
                 }
-                .padding(8)
+                .padding(12)
                 .background(.blue)
                 .clipShape(Circle())
                 .glassEffect()
@@ -61,24 +68,8 @@ struct ChoreDetails: View {
             .padding(.top)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(width: width * 0.88, height: height * 0.63)
-        .background(
-            LinearGradient(
-                stops: [
-                    Gradient.Stop(
-                        color: viewModel.roomColor,
-                        location: 0.04
-                    ),
-                    
-                    Gradient.Stop(
-                        color: .white,
-                        location: 1.00
-                    ),
-                ],
-                startPoint: UnitPoint(x: 0.5, y: 0),
-                endPoint: UnitPoint(x: 0.5, y: 0.6)
-            )
-        )
+        .frame(width: width * 0.88, height: height * 0.599)
+        .background(.white)
         .clipShape(RoundedRectangle(cornerRadius: 31))
         .shadow(color: .black.opacity(0.14), radius: 20.39595, x: 0, y: 5.80668)
     }
@@ -89,7 +80,7 @@ struct ChoreDetails: View {
     
     let mockChore = ChoreModel(
         name: "Lavar Banheiro",
-        description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        description: "Lorem ipsum dolor sit amet, consectetur adipisc ing eliLorem ipsum dolor sit amet, conse ctetur adipiscing eli",
         frequency: .weekly,
         duration: 1800,
         isPublic: true,
@@ -105,12 +96,20 @@ struct ChoreDetails: View {
     mockVM.cardSymbol = "toilet"
     
     mockVM.checklistItems = [
-        CheckItemModel(name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit", isDone: true),
+        CheckItemModel(name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", isDone: true),
         CheckItemModel(name: "Lorem ipsum dolor sit amet", isDone: false),
         CheckItemModel(name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", isDone: false),
     ]
     
     mockVM.responsibleUsers = [
+        UserModel(
+            name: "Dayô",
+            profilePicture: mockImageData, tier: .tier1
+        ),
+        UserModel(
+            name: "Dayô",
+            profilePicture: mockImageData, tier: .tier1
+        ),
         UserModel(
             name: "Dayô",
             profilePicture: mockImageData, tier: .tier1

@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ChoreCardListStyle: View {
     var viewModel: ChoreViewModel
+    let namespace: Namespace.ID
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -72,10 +73,13 @@ struct ChoreCardListStyle: View {
             .padding(.top)
         }
         .frame(width: width * 0.92, height: height * 0.14)
+//        .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
+        .transition(.identity)
     }
 }
 
 #Preview {
+    @Previewable @Namespace var namespace
     let mockImageData = UIImage(named: "defaultUser")?.pngData()
     
     let mockChore = ChoreModel(
@@ -108,5 +112,5 @@ struct ChoreCardListStyle: View {
         )
     ]
     
-    return ChoreCardListStyle(viewModel: mockVM)
+    return ChoreCardListStyle(viewModel: mockVM, namespace: namespace)
 }

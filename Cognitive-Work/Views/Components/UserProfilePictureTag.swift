@@ -9,7 +9,6 @@ import SwiftUI
 
 struct UserProfilePictureTag: View {
     @Binding var user: UserModel
-    @Namespace private var cardAnimation
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -20,7 +19,7 @@ struct UserProfilePictureTag: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: width * 0.04)
+                    .frame(width: width * 0.045)
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
@@ -28,7 +27,7 @@ struct UserProfilePictureTag: View {
                     .foregroundStyle(.gray.opacity(0.5))
             }
         }
-        .padding(5)
+        .padding(7)
         .background(.gray)
         .clipShape(Circle())
     }

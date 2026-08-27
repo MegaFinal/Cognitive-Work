@@ -14,6 +14,7 @@ import SwiftUI
 struct CarouselCardFrame: View {
     let viewModel: ChoreViewModel
     let carouselViewModel: CarouselViewModel
+    let namespace: Namespace.ID
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -25,7 +26,7 @@ struct CarouselCardFrame: View {
     
     var body: some View {
         ZStack {
-            ChoreCardFrontFace(viewModel: viewModel)
+            ChoreCardFrontFace(viewModel: viewModel, namespace: namespace)
                 .opacity(isShowingBack ? 0 : 1)
                 .scaleEffect(
                     x: isFocused ? (0.88 / 0.72) : 1.0,
@@ -35,6 +36,7 @@ struct CarouselCardFrame: View {
             ChoreDetails(viewModel: viewModel, carouselViewModel: carouselViewModel)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(isShowingBack ? 1 : 0)
+                .frame(width: 0, height: 0)
                 .scaleEffect(
                     x: isFocused ? 1.0 : (0.72 / 0.88),
                     y: isFocused ? 1.0 : (0.47 / 0.65)
@@ -47,6 +49,7 @@ struct CarouselCardFrame: View {
 }
 
 #Preview {
+    @Previewable @Namespace var namespace
     let mockChore = ChoreModel(
         name: "Lavar o Banheiro",
         description: "Esfregar o chão e limpar o espelho",
@@ -64,5 +67,5 @@ struct CarouselCardFrame: View {
     
     mockVM.cardSymbol = "toilet"
     
-    return ChoreCardFrontFace(viewModel: mockVM)
+    return ChoreCardFrontFace(viewModel: mockVM, namespace: namespace)
 }

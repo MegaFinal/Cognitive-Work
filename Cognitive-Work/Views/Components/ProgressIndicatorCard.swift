@@ -18,7 +18,7 @@ struct ProgressIndicatorCard: View {
             Text(title)
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(.gray.opacity(0.7))
+                .foregroundColor(.gray)
                 .padding(.top, 10)
             
             Spacer()
@@ -29,7 +29,7 @@ struct ProgressIndicatorCard: View {
                 .padding(.bottom, 25)
         }
         .frame(width: width * 0.28, height: height * 0.088)
-        .background(.gray.opacity(0.15))
+        .background(.gray)
         .clipShape(RoundedRectangle(cornerRadius: 21))
     }
 }

@@ -24,7 +24,7 @@ struct ChecklistItemButton: View {
                 Text(item.name)
                     .strikethrough(item.isDone, color: .gray)
                     .foregroundColor(item.isDone ? .gray : .black)
-                    .font(.caption)
+                    .font(.footnote)
                     .multilineTextAlignment(.leading)
             }
         }

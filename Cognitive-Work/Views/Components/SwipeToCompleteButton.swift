@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SwipeToCompleteButton: View {
     var action: () -> Void
+    var color: Color = .black
     
     @State private var dragOffset: CGFloat = 0
     @State private var isCompleted: Bool = false
@@ -24,7 +25,7 @@ struct SwipeToCompleteButton: View {
             
             ZStack(alignment: .leading) {
                 Capsule()
-                    .foregroundColor(.gray.opacity(0.3))
+                    .foregroundColor(color.opacity(0.2))
                 
                 Text(isCompleted ? "Concluído" : "Deslize para concluir")
                     .foregroundColor(.black)
@@ -33,11 +34,11 @@ struct SwipeToCompleteButton: View {
                     .opacity(isCompleted ? 1.0 : Double(1.0 - (dragOffset / (maxDrag * 0.8))))
                 
                 Circle()
-                    .fill(Color.black)
+                    .fill(color)
                     .frame(width: circleWidth, height: circleWidth)
                     .overlay(
                         Image(systemName: "checkmark")
-                            .font(.title2)
+                            .font(.title3)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                     )

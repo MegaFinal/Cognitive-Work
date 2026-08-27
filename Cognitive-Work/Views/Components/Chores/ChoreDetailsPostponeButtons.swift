@@ -19,12 +19,12 @@ struct ChoreDetailsPostponeButtons: View {
                 }
             } label: {
                 Text("Adiar 1 semana")
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundColor(.black)
             }
-            .padding(.horizontal, 35)
+            .padding(.horizontal, 30)
             .padding(.vertical, 10)
-            .background(.gray.opacity(0.3))
+            .background(.gray.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 22))
             
             Spacer()
@@ -35,14 +35,15 @@ struct ChoreDetailsPostponeButtons: View {
                 }
             } label: {
                 Text("Adiar 1 dia")
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundColor(.black)
             }
-            .padding(.horizontal, 35)
+            .padding(.horizontal, 32)
             .padding(.vertical, 10)
-            .background(.gray.opacity(0.3))
+            .background(.gray.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 22))
         }
-        .frame(width: width * 0.75)
+        .padding(.top, 10)
+        .frame(width: width * 0.72)
     }
 }

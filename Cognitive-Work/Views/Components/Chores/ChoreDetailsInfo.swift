@@ -14,31 +14,32 @@ struct ChoreDetailsInfo: View {
     
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 15) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text(viewModel.chore.description)
-                    .font(.caption)
+                    .font(.footnote)
                     .frame(width: width * 0.75, alignment: .leading)
                 
                 HStack {
                     Text("Cômodo")
-                        .font(.headline)
+                        .font(.subheadline)
                         .fontWeight(.medium)
                     
                     Spacer()
                     
                     Text(viewModel.roomName)
-                        .font(.caption2)
+                        .font(.footnote)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(viewModel.roomColor)
                         .clipShape(Capsule())
+                        .foregroundColor(.white)
                 }
                 
                 Text("Checklist")
-                    .font(.headline)
+                    .font(.subheadline)
                     .fontWeight(.medium)
                 
-                VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: 5) {
                     ForEach($viewModel.checklistItems, id: \.id) { $item in
                         ChecklistItemButton(item: $item)
                     }
