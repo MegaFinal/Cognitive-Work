@@ -14,14 +14,33 @@ struct DailyAssignmentModel : CloudKitSyncable{
     var recordID: CKRecord.ID?
     var day: Date
     var isCompleted: Bool
-    var user: CKRecord.Reference?
-    var chore: CKRecord.Reference?
+    
+    private var userReference: CKRecord.Reference?
+    private var choreReference: CKRecord.Reference?
+    
+    var user: UserModel? {
+        get async {
+            if let userReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [userReference])?.first
+            }
+            return nil
+        }
+    }
+
+    var chore: ChoreModel? {
+        get async {
+            if let choreReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: [choreReference])?.first
+            }
+            return nil
+        }
+    }
 
     init(day: Date, isCompleted: Bool = false, user: CKRecord.Reference? = nil, chore: CKRecord.Reference? = nil) {
         self.day = Calendar.current.startOfDay(for: day)
         self.isCompleted = isCompleted
-        self.user = user
-        self.chore = chore
+        self.userReference = user
+        self.choreReference = chore
     }
     
     init?(record: CKRecord) {
@@ -35,18 +54,18 @@ struct DailyAssignmentModel : CloudKitSyncable{
         self.recordID = record.recordID
         self.isCompleted = isCompleted
         self.day = day
-        self.user = record["user"] as? CKRecord.Reference
-        self.chore = record["chore"] as? CKRecord.Reference
+        self.userReference = record["user"] as? CKRecord.Reference
+        self.choreReference = record["chore"] as? CKRecord.Reference
     }
     
     func populate(record: CKRecord) {
         record["isCompleted"] = isCompleted
         record["day"] = day
-        if let user {
-            record["user"] = user
+        if let userReference {
+            record["user"] = userReference
         }
-        if let chore {
-            record["chore"] = chore
+        if let choreReference {
+            record["chore"] = choreReference
         }
     }
 }

@@ -43,7 +43,7 @@ struct TaskSchedulerEngine {
         // Filter out recurring chores that need to be scheduled
         // Condition: not done, recurring frequency, and do not yet have generated daily assignment records
         let recurringChores = chores.filter {
-            !$0.isDone && recurringFrequencies.contains($0.frequency) && ($0.dailyAssignments ?? []).isEmpty
+            !$0.isDone && recurringFrequencies.contains($0.frequency) && ($0.dailyAssignmentsReference ?? []).isEmpty
         }
         
         // Filter all unfinished chores with no set due date, excluding monthly tasks from this window
@@ -57,9 +57,9 @@ struct TaskSchedulerEngine {
         
         // Divide the sorted chores into two categories:
         // - Chores that already have a specific assigned responsible user
-        let assignedChores = sortedChores.filter { $0.currentResponsible != nil }
+        let assignedChores = sortedChores.filter { $0.currentResponsibleReference != nil }
         // - "Free" chores without a defined responsible person, requiring automatic system assignment
-        let freeChores = sortedChores.filter { $0.currentResponsible == nil }
+        let freeChores = sortedChores.filter { $0.currentResponsibleReference == nil }
         
         // Initialize remaining capacity and minutes already assigned to each user
         var remainingCapacity = context.initialRemainingCapacity()

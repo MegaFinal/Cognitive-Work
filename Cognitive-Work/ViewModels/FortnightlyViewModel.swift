@@ -18,29 +18,20 @@ struct DailyUsageEntry {
 
 @Observable
 class FortnightlyViewModel {
-    let houseModel: HouseModel?
+    var houseModel: HouseModel?
     var users: [UserModel] = []
     var chores: [ChoreModel] = []
     var dailyAssignments: [DailyAssignmentModel] = []
-    var roomNameByChoreID: [CKRecord.ID: String] = [:]
     var startDate: Date = Date()
     var isLoading: Bool = false
     var errorMessage: String?
-    
-    init() async {
+
+    func setup() async {
         self.houseModel = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
         self.users = await CloudKitManager.shared.fetchAll(UserModel.self)
         self.chores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         self.dailyAssignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
-        self.startDate = startDate
-        self.isLoading = isLoading
-        self.errorMessage = errorMessage
     }
-    
-    func roomName(for chore: ChoreModel) -> String {
-            guard let choreID = chore.recordID else { return "" }
-            return roomNameByChoreID[choreID] ?? ""
-        }
     
     func loadFortnightlyData(houseReference: CKRecord.Reference) async {
         isLoading = true
@@ -56,7 +47,7 @@ class FortnightlyViewModel {
 
         var allChores: [ChoreModel] = []
         for user in fetchedUsers {
-            guard let choreRefs = user.chores, !choreRefs.isEmpty else { continue }
+            guard let choreRefs = user.choresReference, !choreRefs.isEmpty else { continue }
             let userChores = await CloudKitManager.shared.fetchRecordsByRecordReference(
                 for: ChoreModel.self,
                 recordReferences: choreRefs
@@ -72,7 +63,7 @@ class FortnightlyViewModel {
         }
         allChores = Array(uniqueChores.values)
 
-        let allAssignmentRefs = allChores.flatMap { $0.dailyAssignments ?? [] }
+        let allAssignmentRefs = allChores.flatMap { $0.dailyAssignmentsReference ?? [] }
         let allAssignments = allAssignmentRefs.isEmpty ? [] : (await CloudKitManager.shared.fetchRecordsByRecordReference(
             for: DailyAssignmentModel.self,
             recordReferences: allAssignmentRefs
@@ -95,7 +86,7 @@ class FortnightlyViewModel {
         for chore in chores {
             guard let choreID = chore.recordID else { continue }
 
-            if let refs = chore.dailyAssignments, !refs.isEmpty {
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
                 let relatedAssignments = dailyAssignments.filter { assignment in
                     refs.contains { $0.recordID == assignment.recordID }
                 }
@@ -110,7 +101,7 @@ class FortnightlyViewModel {
                     ))
                 }
             } else {
-                guard let dueDate = chore.dueDate, let userID = chore.currentResponsible?.recordID else { continue }
+                guard let dueDate = chore.dueDate, let userID = chore.currentResponsibleReference?.recordID else { continue }
                 entries.append(DailyUsageEntry(
                     day: dueDate,
                     userID: userID,
@@ -259,7 +250,7 @@ extension FortnightlyViewModel {
             washDishesAssignments.append(assignment)
             washDishesRefs.append(CKRecord.Reference(recordID: assignment.recordID!, action: .none))
         }
-        choreWashDishes.dailyAssignments = washDishesRefs
+        choreWashDishes.dailyAssignmentsReference = washDishesRefs
 
         var waterPlantsAssignments: [DailyAssignmentModel] = []
         var waterPlantsRefs: [CKRecord.Reference] = []
@@ -275,7 +266,7 @@ extension FortnightlyViewModel {
             waterPlantsAssignments.append(assignment)
             waterPlantsRefs.append(CKRecord.Reference(recordID: assignment.recordID!, action: .none))
         }
-        choreWaterPlants.dailyAssignments = waterPlantsRefs
+        choreWaterPlants.dailyAssignmentsReference = waterPlantsRefs
 
         self.chores = [
             choreWashDishes,

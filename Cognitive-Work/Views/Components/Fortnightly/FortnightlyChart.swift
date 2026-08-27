@@ -9,8 +9,7 @@ import SwiftUI
 import CloudKit
 
 struct FortnightlyChart: View {
-    var viewModel: FortnightlyViewModel
-    let house: HouseModel?
+    @State var viewModel = FortnightlyViewModel()
     @State private var selectedEntry: DailyUsageEntry?
 
     var body: some View {
@@ -30,24 +29,19 @@ struct FortnightlyChart: View {
                     .padding(.bottom)
 
                 if let entry = selectedEntry,
-                   let chore = viewModel.chores.first(where: { $0.recordID == entry.choreID }),
-                   let matchedUser = viewModel.users.first(where: { $0.recordID == entry.userID }) {
+                   let chore = viewModel.chores.first(where: { $0.recordID == entry.choreID }) {
                     ChoreCard(
-                        chore: chore,
-                        roomName: viewModel.roomName(for: chore),
-                        user: userBinding(for: matchedUser)
+                        chore: chore
                     )
                 }
             }
         }
         .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
         .task {
-            if let houseID = house?.recordID, viewModel.users.isEmpty {
-                let houseRef = CKRecord.Reference(recordID: houseID, action: .none)
-                await viewModel.loadFortnightlyData(houseReference: houseRef)
-            }
+            viewModel.setup()
         }
     }
+    
 
     private func userBinding(for user: UserModel) -> Binding<UserModel> {
         Binding(
@@ -64,9 +58,5 @@ struct FortnightlyChart: View {
 }
 
 #Preview {
-    let previewVM = FortnightlyViewModel()
-    previewVM.loadMockData()
-    
-    return FortnightlyChart(viewModel: previewVM, house: nil)
-            .padding()
+    FortnightlyChart()
 }

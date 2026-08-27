@@ -31,7 +31,7 @@ func buildScheduleContext(
     // Iterate through each user
     for user in users {
         // Ensure the user's recordID exists and that they have available time slot references
-        guard let userID = user.recordID, let refs = user.availableTime else { continue }
+        guard let userID = user.recordID, let refs = user.availableTimeReference else { continue }
         // Fetch all available time slot records for this user from CloudKit, or default to an empty array if it fails
         let slots = await CloudKitManager.shared.fetchRecordsByRecordReference(
             for: AvailableTimeModel.self,
@@ -55,7 +55,7 @@ func buildScheduleContext(
     // Iterate through each chore
     for chore in chores {
         // Ensure the chore has a current responsible reference and a chore ID
-        guard let ref = chore.currentResponsible, let choreID = chore.recordID else { continue }
+        guard let ref = chore.currentResponsibleReference, let choreID = chore.recordID else { continue }
 
         // If the corresponding user is found in the locally loaded users array, reuse it directly to avoid unnecessary CloudKit network requests
         if let local = users.first(where: { $0.recordID == ref.recordID }) {
@@ -312,7 +312,7 @@ func scheduleFreeChores(
 
         // If there are no available combinations, clear the responsible user and due date, and return
         guard !distributable.isEmpty else {
-            updatable.currentResponsible = nil
+            updatable.currentResponsibleReference = nil
             updatable.dueDate = nil
             results.append(ScheduleResult(chore: updatable))
             continue
@@ -336,24 +336,24 @@ func scheduleFreeChores(
             if a1 != a2 { return a1 < a2 }
             return o1.slot.day < o2.slot.day
         }), let chosenUserID = chosen.user.recordID, let slotID = chosen.slot.recordID else {
-            updatable.currentResponsible = nil
+            updatable.currentResponsibleReference = nil
             updatable.dueDate = nil
             results.append(ScheduleResult(chore: updatable))
             continue
         }
 
         // Set the selected user as the current responsible person for the chore
-        updatable.currentResponsible = CKRecord.Reference(
+        updatable.currentResponsibleReference = CKRecord.Reference(
             recordID: chosenUserID,
             action: CKRecord.ReferenceAction.none
         )
 
         // Update the historical responsible rotation list (allResponsibleUsers), ensuring no duplicate additions
-        var rotation = updatable.allResponsibleUsers ?? []
+        var rotation = updatable.allResponsibleUsersReference ?? []
         if !rotation.contains(where: { $0.recordID == chosenUserID }) {
             rotation.append(CKRecord.Reference(recordID: chosenUserID, action: CKRecord.ReferenceAction.none))
         }
-        updatable.allResponsibleUsers = rotation
+        updatable.allResponsibleUsersReference = rotation
 
         // Set the due date of the chore
         updatable.dueDate = chosen.slot.day
@@ -394,7 +394,7 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel]) asyn
         var updatableChore = result.chore
         updatableChore.recordID = choreID
         if !savedRefs.isEmpty {
-            updatableChore.dailyAssignments = (updatableChore.dailyAssignments ?? []) + savedRefs
+            updatableChore.dailyAssignmentsReference = (updatableChore.dailyAssignmentsReference ?? []) + savedRefs
         }
         await CloudKitManager.shared.update(updatableChore)
     }
@@ -408,7 +408,7 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel]) asyn
 
         // Collect all user IDs involved in this chore
         var userIDs = Set<CKRecord.ID>()
-        if let responsibleID = result.chore.currentResponsible?.recordID {
+        if let responsibleID = result.chore.currentResponsibleReference?.recordID {
             userIDs.insert(responsibleID)
         }
         for assignment in result.newAssignments {
@@ -431,13 +431,13 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel]) asyn
 
         var updatableUser = user
 
-        let existingRefs = updatableUser.chores ?? []
+        let existingRefs = updatableUser.choresReference ?? []
         let existingIDs = Set(existingRefs.map { $0.recordID })
         let dedupedNewRefs = newRefs.filter { !existingIDs.contains($0.recordID) }
 
         guard !dedupedNewRefs.isEmpty else { continue }
 
-        updatableUser.chores = existingRefs + dedupedNewRefs
+        updatableUser.choresReference = existingRefs + dedupedNewRefs
         await CloudKitManager.shared.update(updatableUser)
     }
 }

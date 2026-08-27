@@ -171,7 +171,7 @@ class OnboardingViewModel {
         }
 
         var updatedHouse = house
-        updatedHouse.rooms = (updatedHouse.rooms ?? []) + savedRoomReferences
+        updatedHouse.roomsReference = (updatedHouse.roomsReference ?? []) + savedRoomReferences
         let success = await CloudKitManager.shared.update(updatedHouse)
 
         if success {

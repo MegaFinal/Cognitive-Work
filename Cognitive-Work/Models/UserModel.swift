@@ -14,43 +14,71 @@ struct UserModel: CloudKitSyncable, Hashable, Identifiable {
     
     /// CloudKit record type backing this model.
     static var recordType: String = "UserModel"
-
+    
     /// Identifier of the stored record, or `nil` before the user is saved.
     var recordID: CKRecord.ID?
-
+    
     /// Display name shown to other members.
     var name: String
-
+    
     /// Optional avatar image.
     var profilePicture: Data?
-
+    
     /// Progression level reached by the user.
     var tier: Tier
-
+    
     /// Currency available to redeem coupons.
     var coins: Int
-
+    
     /// Score accumulated from completed chores.
     var points: Int
-
+    
     /// References to the badges the user has earned.
-    var badges: [CKRecord.Reference]?
-
+    var badgesReference: [CKRecord.Reference]?
+    
     /// References to the chores assigned to the user.
-    var chores: [CKRecord.Reference]?
-
+    var choresReference: [CKRecord.Reference]?
+    
     /// References to the user's declared availability slots.
-    var availableTime: [CKRecord.Reference]?
-
+    var availableTimeReference: [CKRecord.Reference]?
+    
     /// The house the user belongs to.
-    var house: CKRecord.Reference?
-
+    var houseReference: CKRecord.Reference?
+    
     /// References to the coupons the user currently holds.
-    var coupons: [CKRecord.Reference]?
-
+    var couponsReference: [CKRecord.Reference]?
+    
     /// Maximum number of coupons the user may hold at once.
     var couponLimit: Int
-
+    
+    var chores: [ChoreModel] {
+        get async {
+            if let choresReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: choresReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    var availableTime: [AvailableTimeModel] {
+        get async {
+            if let availableTimeReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: AvailableTimeModel.self, recordReferences: availableTimeReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    var house: HouseModel? {
+        get async {
+            if let houseReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: HouseModel.self, recordReferences: [houseReference])?.first
+            }
+            return nil
+        }
+    }
+    // TODO: badges and coupon
+    
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
@@ -67,7 +95,7 @@ struct UserModel: CloudKitSyncable, Hashable, Identifiable {
         else {
             return nil
         }
-
+        
         self.recordID = record.recordID
         self.name = name
         self.coins = coins
@@ -75,13 +103,13 @@ struct UserModel: CloudKitSyncable, Hashable, Identifiable {
         self.couponLimit = couponLimit
         self.tier = Tier(rawValue: record["tier"] as? String ?? "") ?? .tier1
         self.profilePicture = record["profilePicture"] as? Data
-        self.badges = record["badges"] as? [CKRecord.Reference] ?? []
-        self.chores = record["chores"] as? [CKRecord.Reference] ?? []
-        self.availableTime = record["availableTime"] as? [CKRecord.Reference]
-        self.coupons = record["coupons"] as? [CKRecord.Reference]
-        self.house = record["house"] as? CKRecord.Reference
+        self.badgesReference = record["badges"] as? [CKRecord.Reference] ?? []
+        self.choresReference = record["chores"] as? [CKRecord.Reference] ?? []
+        self.availableTimeReference = record["availableTime"] as? [CKRecord.Reference]
+        self.couponsReference = record["coupons"] as? [CKRecord.Reference]
+        self.houseReference = record["house"] as? CKRecord.Reference
     }
-
+    
     /// Creates a new, unsaved user.
     ///
     /// Relationship parameters are usually filled in after the related records exist.
@@ -104,14 +132,14 @@ struct UserModel: CloudKitSyncable, Hashable, Identifiable {
         self.tier = tier
         self.coins = coins
         self.points = points
-        self.badges = badges
-        self.chores = tasks
-        self.availableTime = availableTime
-        self.house = house
-        self.coupons = coupons
+        self.badgesReference = badges
+        self.choresReference = tasks
+        self.availableTimeReference = availableTime
+        self.houseReference = house
+        self.couponsReference = coupons
         self.couponLimit = couponLimit
     }
-
+    
     /// Writes this model's values into a CloudKit record.
     ///
     /// - Parameter record: The record to populate.
@@ -124,20 +152,20 @@ struct UserModel: CloudKitSyncable, Hashable, Identifiable {
         record["tier"] = tier.rawValue
         record["coins"] = coins
         record["points"] = points
-        if let badges {
-            record["badges"] = badges
+        if let badgesReference {
+            record["badges"] = badgesReference
         }
-        if let chores {
-            record["chores"] = chores
+        if let choresReference {
+            record["chores"] = choresReference
         }
-        if let house {
-            record["house"] = house
+        if let houseReference {
+            record["house"] = houseReference
         }
-        if let availableTime {
-            record["availableTime"] = availableTime
+        if let availableTimeReference {
+            record["availableTime"] = availableTimeReference
         }
-        if let coupons {
-            record["coupons"] = coupons
+        if let couponsReference {
+            record["coupons"] = couponsReference
         }
         record["couponLimit"] = couponLimit
     }

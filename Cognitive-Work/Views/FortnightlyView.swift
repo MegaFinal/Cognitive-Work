@@ -12,14 +12,7 @@ struct FortnightlyView: View {
         Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível.
         Clique nas tarefas para saber mais.
         """
-    
-    @State private var viewModel = FortnightlyViewModel()
-    
-    init(house: HouseModel?, viewModel: FortnightlyViewModel = FortnightlyViewModel()) {
-            self.house = house
-            _viewModel = State(wrappedValue: viewModel)
-        }
-    
+
     var body: some View {
         VStack{
             OnboardingHeader(
@@ -28,7 +21,7 @@ struct FortnightlyView: View {
             )
             .padding(.bottom)
 //            ScrollView{
-                FortnightlyChart(viewModel: viewModel, house: house)
+                FortnightlyChart()
 //            }
             Spacer()
         }
@@ -36,8 +29,5 @@ struct FortnightlyView: View {
 }
 
 #Preview {
-    let previewVM = FortnightlyViewModel()
-    previewVM.loadMockData()
-    
-    return FortnightlyView(house: nil, viewModel: previewVM)
+    return FortnightlyView()
 }

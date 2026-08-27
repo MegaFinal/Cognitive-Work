@@ -22,19 +22,49 @@ struct HouseModel: CloudKitSyncable {
     var name: String
 
     /// Free-form details about the house.
-    var description: String
+    private var description: String
 
     /// References to the ``ChoreModel`` records belonging to this house.
-    var chores: [CKRecord.Reference]?
+    private var choresReference: [CKRecord.Reference]?
 
     /// References to the ``UserModel`` records that are members of this house.
-    var users: [CKRecord.Reference]?
+    private var usersReference: [CKRecord.Reference]?
 
     /// References to the shopping list entries of this house.
-    var shopListItem: [CKRecord.Reference]?
+    private var shopListItemReference: [CKRecord.Reference]?
 
     /// References to the ``RoomModel`` records belonging to this house.
-    var rooms: [CKRecord.Reference]?
+    private var roomsReference: [CKRecord.Reference]?
+    
+    var chores: [ChoreModel] {
+        get async {
+            if let choresReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: choresReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    var users: [UserModel] {
+        get async {
+            if let usersReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: usersReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    // TODO: ShopListItem
+    
+    var room: [RoomModel] {
+        get async {
+            if let roomsReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: roomsReference) ?? []
+            }
+            return []
+        }
+    }
+    
 
     /// Creates a model from a CloudKit record.
     ///
@@ -51,10 +81,10 @@ struct HouseModel: CloudKitSyncable {
         self.recordID = record.recordID
         self.name = name
         self.description = description
-        self.chores = record["chores"] as? [CKRecord.Reference]
-        self.users = record["users"] as? [CKRecord.Reference]
-        self.shopListItem = record["shopListItem"] as? [CKRecord.Reference]
-        self.rooms = record["rooms"] as? [CKRecord.Reference]
+        self.choresReference = record["chores"] as? [CKRecord.Reference]
+        self.usersReference = record["users"] as? [CKRecord.Reference]
+        self.shopListItemReference = record["shopListItem"] as? [CKRecord.Reference]
+        self.roomsReference = record["rooms"] as? [CKRecord.Reference]
     }
 
     /// Creates a new, unsaved house.
@@ -79,10 +109,10 @@ struct HouseModel: CloudKitSyncable {
         self.recordID = nil
         self.name = name
         self.description = description
-        self.chores = chores
-        self.users = users
-        self.shopListItem = shopListItem
-        self.rooms = rooms
+        self.choresReference = chores
+        self.usersReference = users
+        self.shopListItemReference = shopListItem
+        self.roomsReference = rooms
     }
 
     /// Writes this model's values into a CloudKit record.
@@ -95,9 +125,9 @@ struct HouseModel: CloudKitSyncable {
     func populate(record: CKRecord) {
         record["name"] = name
         record["description"] = description
-        record["chores"] = chores
-        record["users"] = users
-        record["shopListItem"] = shopListItem
-        record["rooms"] = rooms
+        record["chores"] = choresReference
+        record["users"] = usersReference
+        record["shopListItem"] = shopListItemReference
+        record["rooms"] = roomsReference
     }
 }

@@ -6,10 +6,13 @@
 //
 
 import Foundation
+import SwiftUI
 import CloudKit
 
 /// A household task assigned to one or more users and belonging to a room.
-struct ChoreModel: CloudKitSyncable {
+struct ChoreModel: CloudKitSyncable, Identifiable {
+    var id: UUID = UUID()
+    
 
     /// CloudKit record type backing this model.
     static let recordType = "ChoreModel"
@@ -22,6 +25,7 @@ struct ChoreModel: CloudKitSyncable {
 
     /// Free-form details about how the chore should be done.
     var description: String
+    
     
     var isDone: Bool
 
@@ -50,19 +54,65 @@ struct ChoreModel: CloudKitSyncable {
     var image: Data?
 
     /// References to the chore's ``CheckItemModel`` entries.
-    var checkList: [CKRecord.Reference]?
+    private var checkListReference: [CKRecord.Reference]?
 
     /// The user currently responsible for the chore.
-    var currentResponsible: CKRecord.Reference?
+    private var currentResponsibleReference: CKRecord.Reference?
 
     /// Every user in the rotation for this chore.
-    var allResponsibleUsers: [CKRecord.Reference]?
+    private var allResponsibleUsersReference: [CKRecord.Reference]?
 
     /// The room this chore belongs to.
-    var room: CKRecord.Reference?
+    private var roomReference: CKRecord.Reference?
     
-    var dailyAssignments: [CKRecord.Reference]?
+    var dailyAssignmentsReference: [CKRecord.Reference]?
+    
+    
+    var checkList: [CheckItemModel] {
+        get async {
+            if let checkListReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: CheckItemModel.self, recordReferences: checkListReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    var currentResponsible: UserModel? {
+        get async {
+            if let currentResponsibleReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [currentResponsibleReference])?.first
+            }
+            return nil
+        }
+    }
+    
+    var allResponsibleUsers: [UserModel] {
+        get async {
+            if let allResponsibleUsersReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: allResponsibleUsersReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    var room: RoomModel? {
+        get async {
+            if let roomReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [roomReference])?.first
+            }
+            return nil
+        }
+    }
 
+    var dailyAssignments: [DailyAssignmentModel] {
+        get async {
+            if let dailyAssignmentsReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: DailyAssignmentModel.self, recordReferences: dailyAssignmentsReference) ?? []
+            }
+            return []
+        }
+    }
+    
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
@@ -86,6 +136,7 @@ struct ChoreModel: CloudKitSyncable {
         }
 
         self.recordID = record.recordID
+        
         self.name = name
         self.description = description
         self.isDone = isDone
@@ -97,11 +148,11 @@ struct ChoreModel: CloudKitSyncable {
         self.weight = weight
         self.priorityTag = priorityTag
         self.image = record["image"] as? Data
-        self.checkList = record["checkList"] as? [CKRecord.Reference]
-        self.currentResponsible = record["currentResponsible"] as? CKRecord.Reference
-        self.allResponsibleUsers = record["allResponsibleUsers"] as? [CKRecord.Reference]
-        self.room = record["room"] as? CKRecord.Reference
-        self.dailyAssignments = record["dailyAssignment"] as? [CKRecord.Reference]
+        self.checkListReference = record["checkList"] as? [CKRecord.Reference]
+        self.currentResponsibleReference = record["currentResponsible"] as? CKRecord.Reference
+        self.allResponsibleUsersReference = record["allResponsibleUsers"] as? [CKRecord.Reference]
+        self.roomReference = record["room"] as? CKRecord.Reference
+        self.dailyAssignmentsReference = record["dailyAssignment"] as? [CKRecord.Reference]
     }
 
     /// Creates a new, unsaved chore.
@@ -137,11 +188,11 @@ struct ChoreModel: CloudKitSyncable {
         self.weight = weight
         self.priorityTag = priorityTag
         self.image = image
-        self.checkList = checkList
-        self.currentResponsible = currentResponsible
-        self.allResponsibleUsers = allResponsibleUsers
-        self.room = room
-        self.dailyAssignments = dailyAssignment
+        self.checkListReference = checkList
+        self.currentResponsibleReference = currentResponsible
+        self.allResponsibleUsersReference = allResponsibleUsers
+        self.roomReference = room
+        self.dailyAssignmentsReference = dailyAssignment
     }
     
     func updateCheckItem(_ item: CheckItemModel) async {
@@ -166,18 +217,28 @@ struct ChoreModel: CloudKitSyncable {
         record["weight"] = weight
         record["priorityTag"] = priorityTag.rawValue
         record["image"] = image
-        if let checkList {
-            record["checkList"] = checkList
+        if let checkListReference {
+            record["checkList"] = checkListReference
         }
-        record["currentResponsible"] = currentResponsible
-        if let allResponsibleUsers {
-            record["allResponsibleUsers"] = allResponsibleUsers
+        record["currentResponsible"] = currentResponsibleReference
+        if let allResponsibleUsersReference {
+            record["allResponsibleUsers"] = allResponsibleUsersReference
         }
-        if let room {
-            record["room"] = room
+        if let roomReference {
+            record["room"] = roomReference
         }
-        if let dailyAssignments {
-            record["dailyAssignment"] = dailyAssignments
+        if let dailyAssignmentsReference {
+            record["dailyAssignment"] = dailyAssignmentsReference
+        }
+    }
+    
+    mutating func postpone(byDays days: Int) async {
+        let currentDate = self.dueDate ?? Date()
+        
+        if let newDate = Calendar.current.date(byAdding: .day, value: days, to: currentDate) {
+            self.dueDate = newDate
+            
+            await CloudKitManager.shared.update(self)
         }
     }
 }
