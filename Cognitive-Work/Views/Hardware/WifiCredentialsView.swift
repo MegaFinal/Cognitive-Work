@@ -45,11 +45,11 @@ struct WifiCredentialsView: View {
             .navigationDestination(isPresented: $viewModel.navigateToParingView) {
                 DevicePairView(viewModel: viewModel)
             }
-            .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") { viewModel.errorMessage = nil }
-            } message: {
-                Text(viewModel.errorMessage ?? "Deu algum erro.")
-            }
+//            .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
+//                Button("OK") { viewModel.errorMessage = nil }
+//            } message: {
+//                Text(viewModel.errorMessage ?? "Deu algum erro.")
+//            }
         }
     }
 }

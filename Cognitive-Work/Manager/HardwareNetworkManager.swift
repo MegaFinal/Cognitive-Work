@@ -7,11 +7,6 @@
 
 import Foundation
 
-struct ImageToSend: Codable {
-    let hash: String
-    let imageData: Data
-}
-
 @Observable
 class DeviceConnectionService {
     var ip: String = ""
@@ -139,9 +134,7 @@ class DeviceConnectionService {
     func sendImageToDevice(imageData: Data) async throws {
         let route = "/send_image"
         let endpoint = self.base + self.ip + route
-        
-        let imageToSend = ImageToSend(hash: self.hash, imageData: imageData)
-        
+                
         guard let url = URL(string: endpoint) else {
             print("erro: URL linha")
             throw APIErrors.invalidURL
@@ -149,15 +142,9 @@ class DeviceConnectionService {
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        do {
-           let jsonData = try JSONEncoder().encode(imageToSend)
-           request.httpBody = jsonData
-        } catch {
-            print("erro: encode de data - Imagem")
-            throw APIErrors.unableToEncode
-        }
+        request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
+        request.setValue(self.hash, forHTTPHeaderField: "X-Auth-Hash") //hash vai pelo cabeçalho
+        request.httpBody = imageData.base64EncodedString().data(using: .utf8)
         
         let (data, response) = try await session.shared.data(for: request)
         
