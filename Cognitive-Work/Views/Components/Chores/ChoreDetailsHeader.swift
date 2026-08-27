@@ -14,16 +14,17 @@ struct ChoreDetailsHeader: View {
     
     var body: some View {
         VStack(spacing: 13) {
-            Text(viewModel.chore.name)
-                .font(.title2)
-            
             Image(systemName: viewModel.cardSymbol)
                 .resizable()
                 .scaledToFit()
                 .frame(width: width * 0.2, height: height * 0.1)
                 .fontWeight(.ultraLight)
             
-            HStack {
+            Text(viewModel.chore.name)
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            HStack(spacing: 12) {
                 PriorityDurationTag(
                     text: viewModel.chore.priorityTag.rawValue,
                     color: viewModel.chore.priorityTag.color
@@ -33,7 +34,14 @@ struct ChoreDetailsHeader: View {
                     text: viewModel.chore.priorityTag.rawValue,
                     color: viewModel.chore.priorityTag.color
                 )
+                
+                PriorityDurationTag(
+                    text: viewModel.chore.frequency.rawValue,
+                    color: viewModel.chore.priorityTag.color
+                )
             }
         }
+        .foregroundColor(.white)
+        .padding(.top, 15)
     }
 }

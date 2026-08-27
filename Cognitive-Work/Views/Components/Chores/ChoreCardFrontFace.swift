@@ -14,18 +14,20 @@ struct ChoreCardFrontFace: View {
     var height = UIScreen.main.bounds.height
     
     var body: some View {
-        VStack(spacing: 40) {
+        VStack {
             Text(viewModel.chore.name)
                 .font(.title)
             
             Image(systemName: viewModel.cardSymbol)
                 .resizable()
                 .scaledToFit()
-                .frame(width: width * 0.3, height: height * 0.15)
+                .frame(width: width * 0.3, height: height * 0.3)
+                .fontWeight(.ultraLight)
         }
-        .frame(width: width * 0.72, height: height * 0.47)
+        .frame(width: width * 0.7, height: height * 0.43)
         .background(viewModel.roomColor)
         .clipShape(RoundedRectangle(cornerRadius: 31))
+        .shadow(color: .black.opacity(0.14), radius: 16.84883, x: 0, y: 4.79682)
     }
 }
 

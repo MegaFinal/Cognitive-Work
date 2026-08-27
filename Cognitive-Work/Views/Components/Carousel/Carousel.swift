@@ -11,15 +11,17 @@ import SwiftUI
 /// `Apply this component on a ZStack bellow the rest of the view's content`
 struct Carousel: View {
     @Bindable var viewModel: CarouselViewModel
+    var isBackgroundClear: Bool
     
     var body: some View {
         ZStack {
-            // Clear background that occupies the whole screen to allow
-            // clearing the focus state by tapping the empty space
-            Color.white
-                .onTapGesture {
-                    viewModel.clearFocus()
-                }
+            // Clearing the focus state by tapping the empty space
+            if !isBackgroundClear {
+                Color.white
+                    .onTapGesture {
+                        viewModel.clearFocus()
+                    }
+            }
             
             if viewModel.isLoading {
                 ProgressView("Carregando tarefas")
@@ -35,6 +37,8 @@ struct Carousel: View {
                 ForEach(Array(viewModel.cardViewModels.enumerated()), id: \.element.id) { index, cardVM in
                     CarouselCardFrame(
                         viewModel: cardVM,
+                        carouselViewModel: viewModel,
+                        isFocused: viewModel.isFocused(index),
                         rotation: viewModel.flipRotation(index),
                         isShowingBack: viewModel.isShowingBack(index)
                     )
@@ -48,9 +52,9 @@ struct Carousel: View {
                     .opacity(viewModel.opacity(index))
                     .onTapGesture {
                         if viewModel.isFocused(index) {
-                            viewModel.flip(index)
+                            viewModel.clearFocus()
                         } else {
-                            viewModel.focus(index)
+                            viewModel.focusAndFlip(index)
                         }
                     }
                 }

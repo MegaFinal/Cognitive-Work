@@ -9,31 +9,76 @@ import SwiftUI
 
 struct ChoreDetails: View {
     @Bindable var viewModel: ChoreViewModel
+    @Bindable var carouselViewModel: CarouselViewModel
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
     var body: some View {
-        VStack(spacing: 20) {
-            
-            ChoreDetailsHeader(viewModel: viewModel, width: width, height: height)
-            
-            ChoreDetailsInfo(viewModel: viewModel, width: width, height: height)
-            
+        ZStack {
             VStack(spacing: 10) {
-                ChoreDetailsPostponeButtons(viewModel: viewModel, width: width)
+                ChoreDetailsHeader(viewModel: viewModel, width: width, height: height)
                 
-                SwipeToCompleteButton {
-                    Task {
-                        await viewModel.completeChore()
+                ChoreDetailsInfo(viewModel: viewModel, width: width, height: height)
+                
+                VStack(spacing: 10) {
+                    ChoreDetailsPostponeButtons(viewModel: viewModel, width: width)
+                    
+                    SwipeToCompleteButton {
+                        Task {
+                            await viewModel.completeChore()
+                        }
                     }
+                    .padding(.horizontal, 23)
                 }
-                .padding(.horizontal, 30)
             }
             
+            HStack {
+                Button {
+                    carouselViewModel.clearFocus()
+                }
+                label: {
+                    Image(systemName: "xmark")
+                        .foregroundColor(.black)
+                }
+                .padding(8)
+                .clipShape(Circle())
+                .glassEffect()
+                
+                Spacer()
+                
+                Button {}
+                label: {
+                    Image(systemName: "pencil")
+                        .foregroundColor(.white)
+                }
+                .padding(8)
+                .background(.blue)
+                .clipShape(Circle())
+                .glassEffect()
+            }
+            .padding(.horizontal)
+            .padding(.top)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(width: width * 0.88, height: height * 0.65)
-        .background(.white)
+        .frame(width: width * 0.88, height: height * 0.63)
+        .background(
+            LinearGradient(
+                stops: [
+                    Gradient.Stop(
+                        color: viewModel.roomColor,
+                        location: 0.04
+                    ),
+                    
+                    Gradient.Stop(
+                        color: .white,
+                        location: 1.00
+                    ),
+                ],
+                startPoint: UnitPoint(x: 0.5, y: 0),
+                endPoint: UnitPoint(x: 0.5, y: 0.6)
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: 31))
         .shadow(color: .black.opacity(0.14), radius: 20.39595, x: 0, y: 5.80668)
     }
@@ -72,5 +117,7 @@ struct ChoreDetails: View {
         )
     ]
     
-    return ChoreDetails(viewModel: mockVM)
+    var carouselVM = CarouselViewModel()
+    
+    return ChoreDetails(viewModel: mockVM, carouselViewModel: carouselVM)
 }

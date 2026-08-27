@@ -14,15 +14,46 @@ struct UserChoresView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading) {
-                Text("Suas Tarefas")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 30)
-                    .padding(.top, 20)
+            ZStack {
+                VStack(spacing: 15) {
+                    HStack {
+                        Text("Suas Tarefas")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 30)
+                            .padding(.top, 20)
+                        
+                        Spacer()
+                    }
+                    
+                    HStack (spacing: 10){
+                        ProgressIndicatorCard(
+                            title: "Tempo médio",
+                            data: "1h 30min"
+                        )
+                        
+                        ProgressIndicatorCard(
+                            title: "Tempo médio",
+                            data: "1h 30min"
+                        )
+                        
+                        ProgressIndicatorCard(
+                            title: "Tempo médio",
+                            data: "1h 30min"
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 
-                Carousel(viewModel: carouselVM)
+                Carousel(viewModel: carouselVM, isBackgroundClear: true)
             }
+            .background(
+                Color(.white)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        carouselVM.clearFocus()
+                    }
+            )
             .task {
                 if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
                     return

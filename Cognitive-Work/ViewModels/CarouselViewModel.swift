@@ -71,9 +71,29 @@ class CarouselViewModel {
         }
     }
     
+    func focusAndFlip(_ index: Int) {
+        if let old = focusedIndex, old != index {
+            if flippedIndices.contains(old) {
+                flip(old)
+            }
+        }
+        
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            snappedItem = Double(index)
+            draggingItem = Double(index)
+            activeIndex = index
+            focusedIndex = index
+        }
+        
+        flip(index)
+    }
+    
     func clearFocus() {
-        if focusedIndex != nil {
-            withAnimation(.easeOut(duration: 0.15)) {
+        if let old = focusedIndex {
+            if flippedIndices.contains(old) {
+                flip(old)
+            }
+            withAnimation(.easeOut(duration: 0.2)) {
                 focusedIndex = nil
             }
         }
@@ -135,7 +155,7 @@ class CarouselViewModel {
         let fixedVisualCount: Double = 5.0
         let angle = (Double.pi * 2 / fixedVisualCount) * distance(index)
         
-        let fixedRadius: Double = 160.0
+        let fixedRadius: Double = 130.0
         
         return sin(angle) * fixedRadius
     }
@@ -154,14 +174,15 @@ class CarouselViewModel {
     func scaleEffect(_ index: Int) -> Double {
         let dist = abs(distance(index))
         let base = max(1 - dist * 0.18, 0.7)
-        return isFocused(index) ? base * 1.12 : base
+        
+        return base
     }
     
     /// 2D tilt
     func rotationEffect(_ index: Int) -> Double {
         let dist = distance(index)
         
-        let dynamicSideTilt = dist * 15
+        let dynamicSideTilt = dist * 22
         return dynamicSideTilt
     }
     

@@ -43,6 +43,6 @@ struct ChoreDetailsPostponeButtons: View {
             .background(.gray.opacity(0.3))
             .clipShape(RoundedRectangle(cornerRadius: 22))
         }
-        .frame(width: width * 0.73)
+        .frame(width: width * 0.75)
     }
 }
