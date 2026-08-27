@@ -69,7 +69,7 @@ struct SelectRoomsOnboardingView: View {
                 .environment(viewModel)
                 .presentationDetents([.medium])
         }
-        .navigationBarBackButtonHidden(viewModel.isLoading)
+        .navigationBarBackButtonHidden()
     }
 }
 

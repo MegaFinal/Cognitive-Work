@@ -39,7 +39,10 @@ class OnboardingViewModel {
     var navigateToFourth: Bool = false
     var navigateToFifth: Bool = false
     var navigateToSixth: Bool = false
-//    var navigateToSeventh: Bool = false
+    var navigateToSeventh: Bool = false
+    var navigateToEighth: Bool = false
+    var navigateToNineth: Bool = false
+    var navigateToTenth: Bool = false
     var onboardingFinished: Bool = false
     
     /// The CloudKit user record created during onboarding

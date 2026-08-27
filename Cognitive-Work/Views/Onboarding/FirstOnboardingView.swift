@@ -91,11 +91,23 @@ struct FirstOnboardingView: View {
                 SelectRoomsOnboardingView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToFifth) {
-                FifthOnboardingView()
+                InviteUsersOnboardingView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToSixth) {
-                SixthOnboardingView()
+                StartChoreDivisionOnboardingView()
             }
+            .navigationDestination(isPresented: $viewModel.navigateToSeventh) {
+                SelectChoresOnboardingView()
+            }
+            .navigationDestination(isPresented: $viewModel.navigateToEighth) {
+                SelectFreeTimeOnboardingView()
+            }
+            .navigationDestination(isPresented: $viewModel.navigateToNineth) {
+                WaitingAlgorithmView()
+            }
+//            .navigationDestination(isPresented: $viewModel.navigateToTenth) {
+//                FortnightlyView()
+//            }
         }
         .environment(viewModel)
     }

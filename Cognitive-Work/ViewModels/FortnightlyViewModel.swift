@@ -18,6 +18,7 @@ struct DailyUsageEntry {
 
 @Observable
 class FortnightlyViewModel {
+    let houseModel: HouseModel?
     var users: [UserModel] = []
     var chores: [ChoreModel] = []
     var dailyAssignments: [DailyAssignmentModel] = []
@@ -25,6 +26,16 @@ class FortnightlyViewModel {
     var startDate: Date = Date()
     var isLoading: Bool = false
     var errorMessage: String?
+    
+    init() async {
+        self.houseModel = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
+        self.users = await CloudKitManager.shared.fetchAll(UserModel.self)
+        self.chores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        self.dailyAssignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
+        self.startDate = startDate
+        self.isLoading = isLoading
+        self.errorMessage = errorMessage
+    }
     
     func roomName(for chore: ChoreModel) -> String {
             guard let choreID = chore.recordID else { return "" }

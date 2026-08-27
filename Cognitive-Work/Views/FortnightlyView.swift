@@ -13,7 +13,6 @@ struct FortnightlyView: View {
         Clique nas tarefas para saber mais.
         """
     
-    let house: HouseModel?
     @State private var viewModel = FortnightlyViewModel()
     
     init(house: HouseModel?, viewModel: FortnightlyViewModel = FortnightlyViewModel()) {
