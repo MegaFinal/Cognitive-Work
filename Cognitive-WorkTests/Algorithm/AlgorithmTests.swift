@@ -101,7 +101,7 @@ struct AlgorithmTests {
             chores: [
                 ChoreModel(name: "tarefa1", description: "description1", frequency: .daily, duration: 20, isPublic: true, priorityTag: .low),
                 ChoreModel(name: "tarefa2", description: "description2", frequency: .fortnightly, duration: 40, isPublic: true, priorityTag: .medium),
-                ChoreModel(name: "tarefa3", description: "description3", frequency: .montly, duration: 30, isPublic: true, priorityTag: .high),
+                ChoreModel(name: "tarefa3", description: "description3", frequency: .monthly, duration: 30, isPublic: true, priorityTag: .high),
                 ChoreModel(name: "tarefa4", description: "description4", frequency: .none, duration: 10, isPublic: true, priorityTag: .urgent),
                 ChoreModel(name: "tarefa5", description: "description5", frequency: .weekly, duration: 15, isPublic: true, priorityTag: .low),
             ]
@@ -129,7 +129,7 @@ struct AlgorithmTests {
                 ChoreModel(name: "tarefa2", description: "description2", frequency: .fortnightly, duration: 40, isPublic: true, priorityTag: .medium),
                 ChoreModel(name: "tarefa3", description: "description1", frequency: .none, duration: 20, isPublic: true, priorityTag: .low),
                 ChoreModel(name: "tarefa4", description: "description2", frequency: .fortnightly, duration: 40, isPublic: true, priorityTag: .medium),
-                ChoreModel(name: "tarefa5", description: "description3", frequency: .montly, duration: 30, isPublic: true, priorityTag: .high),
+                ChoreModel(name: "tarefa5", description: "description3", frequency: .monthly, duration: 30, isPublic: true, priorityTag: .high),
                 ChoreModel(name: "tarefa6", description: "description4", frequency: .daily, duration: 10, isPublic: true, priorityTag: .urgent),
                 ChoreModel(name: "tarefa7", description: "description5", frequency: .weekly, duration: 15, isPublic: true, priorityTag: .low),
             ]
