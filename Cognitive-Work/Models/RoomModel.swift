@@ -23,7 +23,7 @@ struct RoomModel: CloudKitSyncable {
     /// Name shown to the user.
     /// > Note: Declared optional, but both initializers always assign a value. Consider making
     /// > it non-optional.
-    var name: String?
+    var name: String
     
     /// References to the ``ChoreModel`` records that belong to this room.
     private var relatedChoresReference: [CKRecord.Reference]?
