@@ -199,42 +199,6 @@ struct SelectChoresOnboardingView: View {
             }
         }
     }
-
-    /// Builds the trailing button that confirms the selection and advances.
-    /// - Parameter height: Container height reported by `GeometryReader`, in points.
-    /// - Returns: The circular advance button aligned to the trailing edge.
-    private func buildAdvanceButton(height: CGFloat) -> some View {
-        HStack {
-            Spacer()
-
-            Button {
-                // TODO: Persist `selectedChores` as ChoreModel records and push the next onboarding step. Blocked until the CloudKit save flow is ready.
-                advanceToNextStep()
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: Layout.advanceIconFontSize, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: Layout.advanceButtonSize, height: Layout.advanceButtonSize)
-                    .background(Color.accentColor, in: Circle())
-                    .shadow(
-                        color: .black.opacity(Layout.advanceButtonShadowOpacity),
-                        radius: Layout.advanceButtonShadowRadius,
-                        y: Layout.advanceButtonShadowOffsetY
-                    )
-            }
-        }
-        .padding(.bottom, height * Layout.advanceButtonBottomRatio)
-    }
-
-    // MARK: - Helpers
-
-    /// Confirms the current selection and moves on to the next onboarding step.
-    ///
-    /// > Note: Not implemented yet. Kept as a named entry point so the button
-    /// > label stays free of business logic.
-    private func advanceToNextStep() {
-        // TODO: Implement once the onboarding navigation flow is defined.
-    }
 }
 
 #Preview {
