@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct SelectFreeTimeOnboardingView: View {
+    @Environment(OnboardingViewModel.self) var viewModel
+    
     @State var weekOrder = [
         DayOfWeekDTO(name: "Segunda - Feira", nameAbbreviation: "Seg"),
         DayOfWeekDTO(name: "Terça - Feira", nameAbbreviation:"Ter"),
@@ -19,6 +21,8 @@ struct SelectFreeTimeOnboardingView: View {
     ]
     
     var body: some View {
+        @Bindable var bindableViewModel = viewModel
+        
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height
@@ -54,22 +58,16 @@ struct SelectFreeTimeOnboardingView: View {
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width)
                 }
                 
-                HStack {
-                    Spacer()
-                    Button {
-                        // TODO ação: avançar e salvar
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Color.accentColor, in: Circle())
-                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                    }
-                    
+                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
+                    viewModel.navigateToNineth = true
                 }
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                
+                
             }
             .padding(.horizontal, width * 0.0865)
+            .navigationBarBackButtonHidden()
         }
     }
 }

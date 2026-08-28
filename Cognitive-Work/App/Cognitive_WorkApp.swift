@@ -14,7 +14,8 @@ struct Cognitive_WorkApp: App {
     
     var body: some Scene {
         WindowGroup {
-            WifiCredentialsView()
+//            WifiCredentialsView()
+            ContentView()
         }
     }
 }

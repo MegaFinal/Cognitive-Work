@@ -103,7 +103,7 @@ struct FirstOnboardingView: View {
                 SelectFreeTimeOnboardingView()
             }
             .navigationDestination(isPresented: $viewModel.navigateToNineth) {
-                WaitingAlgorithmView()
+                FortnightlyScheduleView()
             }
 //            .navigationDestination(isPresented: $viewModel.navigateToTenth) {
 //                FortnightlyView()
