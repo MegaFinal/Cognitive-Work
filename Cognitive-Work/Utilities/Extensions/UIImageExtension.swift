@@ -21,10 +21,9 @@ extension UIImage {
     /// - Parameters:
     ///   - image: The image to be converted to the panel's format.
     /// - Returns: Main function that returns the Data object of 4,736 bytes (3 Colors).
-    func blackAndWhiteBitmap() -> Data? {
+    func levelBitmap() -> Data? {
 
         // ------------------------------------- Setup variables -------------------------------------
-        var image: UIImage = self
         
         let ePaperWidth = 296 //pixels
         let ePaperHeight = 128 //pixels
@@ -72,20 +71,20 @@ extension UIImage {
         UIRectFill(CGRect(x: 0, y: 0, width: ePaperWidth, height: ePaperHeight))
 
         // Chooses the smallest ratio from the proportions between the frame and the image
-        let aspectWidth = CGFloat(ePaperWidth) / image.size.width
-        let aspectHeight = CGFloat(ePaperHeight) / image.size.height
+        let aspectWidth = CGFloat(ePaperWidth) / self.size.width
+        let aspectHeight = CGFloat(ePaperHeight) / self.size.height
         let ratio = min(aspectWidth, aspectHeight)
 
         // New height and width based on the ratio
-        let newWidth = image.size.width * ratio
-        let newHeight = image.size.height * ratio
+        let newWidth = self.size.width * ratio
+        let newHeight = self.size.height * ratio
 
         // Centers the image
         let xOffset = (CGFloat(ePaperWidth) - newWidth) / 2.0
         let yOffset = (CGFloat(ePaperHeight) - newHeight) / 2.0
 
         // Draws the image with the new dimensions at the x and y determined to center it
-        image.draw(in: CGRect(x: xOffset, y: yOffset, width: newWidth, height: newHeight))
+        self.draw(in: CGRect(x: xOffset, y: yOffset, width: newWidth, height: newHeight))
 
         // Pops UIKit's context
         UIGraphicsPopContext()
@@ -140,5 +139,138 @@ extension UIImage {
         }
 
         return Data(blackBuffer) // Returns exactly 4,736 bytes
+    }
+    
+    
+    
+    // MARK: - E-Paper Image Preparation with Dithering
+
+    /// The ditheringBitmap function does the same job as prepareForEPaper — it turns a UIImage into
+    /// the 1 bit per pixel buffer the panel expects — but instead of deciding each pixel in isolation,
+    /// it applies Floyd-Steinberg error diffusion.
+    ///
+    /// A plain threshold throws away everything between black and white, so gradients turn into flat
+    /// blotches. Error diffusion carries the rounding error of each pixel over to its neighbours, so a
+    /// mid-gray area becomes a mix of black and white dots whose density reads as gray from a distance.
+    ///
+    /// - Parameters:
+    ///   - image: The image to be converted to the panel's format.
+    /// - Returns: The Data object of 4,736 bytes (black plane only).
+    func ditheringBitmap() -> Data? {
+
+        // ------------------------------------- Setup variables -------------------------------------
+        // Identical to levelBitmap — see that function for the details.
+
+        let ePaperWidth = 296
+        let ePaperHeight = 128
+        let bytesPerLayer = (ePaperWidth * ePaperHeight) / 8
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        guard let context = CGContext(data: nil, width: ePaperWidth, height: ePaperHeight,
+                                      bitsPerComponent: 8, bytesPerRow: ePaperWidth * 4,
+                                      space: colorSpace, bitmapInfo: bitmapInfo) else {
+            return nil
+        }
+
+        context.translateBy(x: 0, y: CGFloat(ePaperHeight))
+        context.scaleBy(x: 1, y: -1)
+
+        UIGraphicsPushContext(context)
+        UIColor.white.setFill()
+        UIRectFill(CGRect(x: 0, y: 0, width: ePaperWidth, height: ePaperHeight))
+
+        // Chooses the smallest ratio from the proportions between the frame and the image
+        let aspectWidth = CGFloat(ePaperWidth) / self.size.width
+        let aspectHeight = CGFloat(ePaperHeight) / self.size.height
+        let ratio = min(aspectWidth, aspectHeight)
+
+        // New height and width based on the ratio
+        let newWidth = self.size.width * ratio
+        let newHeight = self.size.height * ratio
+
+        // Centers the image
+        let xOffset = (CGFloat(ePaperWidth) - newWidth) / 2.0
+        let yOffset = (CGFloat(ePaperHeight) - newHeight) / 2.0
+
+        // Draws the image with the new dimensions at the x and y determined to center it
+        self.draw(in: CGRect(x: xOffset, y: yOffset, width: newWidth, height: newHeight))
+        UIGraphicsPopContext()
+
+        guard let pixelBuffer = context.data else { return nil }
+        let data = pixelBuffer.bindMemory(to: UInt8.self, capacity: ePaperWidth * ePaperHeight * 4)
+
+        // ------------------------------------- Grayscale pass -------------------------------------
+        // DIFFERENT: prepareForEPaper computes the brightness and decides the bit in the same step.
+        // Here the brightness of every pixel is stored first, because error diffusion needs to go back
+        // and modify neighbours that haven't been visited yet.
+        // Float instead of Int because the accumulated error can push a value past 255 or below 0.
+
+        var gray = [Float](repeating: 0, count: ePaperWidth * ePaperHeight)
+        for y in 0..<ePaperHeight {
+            for x in 0..<ePaperWidth {
+                // One entry per pixel here, against 4 bytes per pixel in the source buffer
+                let grayIndex = y * ePaperWidth + x
+                let pixelIndex = grayIndex * 4
+
+                let r = Float(data[pixelIndex])
+                let g = Float(data[pixelIndex + 1])
+                let b = Float(data[pixelIndex + 2])
+
+                // Same ITU-R BT.601 luma, written as fractions instead of the /1000 integer form
+                let brightness = r * 0.299 + g * 0.587 + b * 0.114
+                gray[grayIndex] = brightness
+            }
+        }
+
+        var blackBuffer = [UInt8](repeating: 0, count: bytesPerLayer)
+
+        // ------------------------------------- Floyd-Steinberg -------------------------------------
+        // Creates the illusion of gray through the density of black pixels.
+
+        for y in 0..<ePaperHeight {
+            for x in 0..<ePaperWidth {
+                let grayIndex = y * ePaperWidth + x
+
+                // The value read here already carries the error pushed by the pixels visited before it
+                let oldPixel = gray[grayIndex]
+                let isWhite = oldPixel > 128
+                let newPixel: Float = isWhite ? 255 : 0
+
+                // How much brightness was lost by rounding to pure black or pure white.
+                // Positive means the pixel was darkened too much, negative the opposite.
+                let error = oldPixel - newPixel
+
+                // DIFFERENT: spreads the error over the neighbours that haven't been decided yet,
+                // using the Floyd-Steinberg kernel:
+                //
+                //           X    7/16
+                //    3/16  5/16  1/16
+                //
+                // The bounds checks stop the error from wrapping around the edges of the image.
+                if x + 1 < ePaperWidth {
+                    gray[grayIndex + 1] += error * 7.0 / 16.0
+                }
+                if y + 1 < ePaperHeight {
+                    if x > 0 {
+                        gray[grayIndex + ePaperWidth - 1] += error * 3.0 / 16.0
+                    }
+                    gray[grayIndex + ePaperWidth] += error * 5.0 / 16.0
+                    if x + 1 < ePaperWidth {
+                        gray[grayIndex + ePaperWidth + 1] += error * 1.0 / 16.0
+                    }
+                }
+
+                // DIFFERENT: only writes when the pixel is dark, instead of OR-ing a bitColor that
+                // would be 0 anyway. Same result — the buffer starts zeroed, so white is a no-op.
+                if !isWhite {
+                    let byteIndex = (y * (ePaperWidth / 8)) + (x / 8)
+                    let bitPosition = 7 - (x % 8)
+                    blackBuffer[byteIndex] |= (1 << bitPosition)
+                }
+            }
+        }
+
+        return Data(blackBuffer)
     }
 }

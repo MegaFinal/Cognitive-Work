@@ -36,11 +36,29 @@ class WifiConnectionViewModel {
     }
     
     func prepareImageForESP32() async throws {
-        guard let image = UIImage(named: "fish"), let imageData = image.blackAndWhiteBitmap() else {
+        guard let image = UIImage(named: "fish"), let imageData = image.levelBitmap() else {
             print("Imagem não encontrada!")
             return
         }
         
         try await deviceConnectionService.sendImageToDevice(imageData: imageData)
     }
+    
+    @MainActor func sendChartToESP32(values: [CGFloat], labels: [String], title: String) async throws {
+            let chartView = BarChartView(values: values, labels: labels, title: title)
+            
+            let renderer = ImageRenderer(content: chartView)
+            renderer.scale = 1.0
+            
+            guard let image = renderer.uiImage else {
+                print("Falha ao renderizar o gráfico")
+                return
+            }
+        guard let imageData = image.ditheringBitmap() else {
+                print("Falha ao converter gráfico para o formato do e-paper")
+                return
+            }
+            
+            try await deviceConnectionService.sendImageToDevice(imageData: imageData)
+        }
 }
