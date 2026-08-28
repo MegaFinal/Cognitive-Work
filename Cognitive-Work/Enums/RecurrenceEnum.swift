@@ -5,10 +5,22 @@
 //  Created by Dayô Araújo on 12/08/26.
 //
 
-enum Recurrence: String {
+import SwiftUI
+
+enum Recurrence: String, CaseIterable, Hashable {
     case none = "none"
     case daily = "daily"
     case weekly = "weekly"
     case fortnightly = "fortnightly"
     case monthly = "monthly"
+    
+    var color: Color {
+        switch self {
+        case .none: return .gray
+        case .daily: return .green
+        case .weekly: return .yellow
+        case .fortnightly: return .orange
+        case .monthly: return .indigo
+        }
+    }
 }

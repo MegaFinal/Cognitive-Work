@@ -1,5 +1,5 @@
 //
-//  PriorityDurationTag.swift
+//  CapsuleTag.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 25/08/26.
@@ -7,17 +7,17 @@
 
 import SwiftUI
 
-struct PriorityDurationTag: View {
-    var text: String
-    var color: Color
+struct CapsuleTag: View {
+    var tagName: String
+    var tagColor: Color
     
     var body: some View {
-        Text(text)
+        Text(tagName)
             .font(.footnote)
             .foregroundColor(.white)
             .padding(.horizontal)
             .padding(.vertical, 1.5)
-            .background(color)
+            .background(tagColor)
             .clipShape(Capsule())
     }
 }

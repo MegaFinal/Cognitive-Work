@@ -14,7 +14,6 @@ import CloudKit
 class ChoreModel: CloudKitSyncable, Identifiable {
     var id: UUID = UUID()
     
-
     /// CloudKit record type backing this model.
     static let recordType = "ChoreModel"
 
@@ -53,7 +52,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// Optional illustrative image.
     var image: Data?
     
-    var symbolName: String = "bus"
+    var symbolName: String = "toilet"
 
     /// References to the chore's ``CheckItemModel`` entries.
     var checkListReference: [CKRecord.Reference]?
@@ -68,7 +67,6 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     var roomReference: CKRecord.Reference?
     
     var dailyAssignmentsReference: [CKRecord.Reference]?
-    
     
     var checkList: [CheckItemModel] {
         get async {

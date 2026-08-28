@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-import SwiftUI
-
 enum RoomColor: String, CaseIterable, Identifiable {
     case red = "red"
     case orange = "orange"

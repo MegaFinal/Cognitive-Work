@@ -25,19 +25,19 @@ struct ChoreDetailsHeader: View {
                 .fontWeight(.semibold)
             
             HStack(spacing: 12) {
-                PriorityDurationTag(
-                    text: chore.priorityTag.rawValue,
-                    color: chore.priorityTag.color
+                CapsuleTag(
+                    tagName: chore.priorityTag.rawValue,
+                    tagColor: chore.priorityTag.color
                 )
                 
-                PriorityDurationTag(
-                    text: chore.priorityTag.rawValue,
-                    color: chore.priorityTag.color
+                CapsuleTag(
+                    tagName: chore.priorityTag.rawValue,
+                    tagColor: chore.priorityTag.color
                 )
                 
-                PriorityDurationTag(
-                    text: chore.frequency.rawValue,
-                    color: chore.priorityTag.color
+                CapsuleTag(
+                    tagName: chore.frequency.rawValue,
+                    tagColor: chore.frequency.color
                 )
             }
         }

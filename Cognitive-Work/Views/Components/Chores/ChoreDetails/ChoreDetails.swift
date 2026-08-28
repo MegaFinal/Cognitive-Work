@@ -81,19 +81,19 @@ struct ChoreDetails: View {
     }
 }
 
-#Preview {
-    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    
+#Preview("ChoreDetails") {
     let mockChore = ChoreModel(
-        name: "Lavar Banheiro",
-        description: "Lorem ipsum dolor sit amet, consectetur adipisc ing eliLorem ipsum dolor sit amet, conse ctetur adipiscing eli",
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Tarefa essencial para manter a higiene da suíte.",
+        isDone: false,
         frequency: .weekly,
         duration: 1800,
         isPublic: true,
         priorityTag: .urgent
     )
+    mockChore.symbolName = "toilet"
     
-    var carouselVM = CarouselViewModel()
+    let carouselVM = CarouselViewModel()
     
-    ChoreDetails(chore: mockChore, carouselViewModel: carouselVM)
+    return ChoreDetails(chore: mockChore, carouselViewModel: carouselVM)
 }

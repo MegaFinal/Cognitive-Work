@@ -29,13 +29,10 @@ struct ChoreDetailsInfo: View {
                     
                     Spacer()
                     
-                    Text(room?.name ?? "Unnamed room")
-                        .font(.footnote)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(room?.color.uiColor ?? .gray)
-                        .clipShape(Capsule())
-                        .foregroundColor(.white)
+                    CapsuleTag(
+                        tagName: room?.name ?? "Unnamed room",
+                        tagColor: room?.color.uiColor ?? .gray
+                    )
                 }
                 
                 Text("Checklist")

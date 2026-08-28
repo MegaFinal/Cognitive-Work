@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum PriorityTag: String {
+enum PriorityTag: String, CaseIterable, Hashable {
     case low = "low"
     case medium = "medium"
     case high = "high"
@@ -24,7 +24,7 @@ enum PriorityTag: String {
     
     var color: Color {
         switch self {
-        case .low: return .gray
+        case .low: return .green
         case .medium: return .yellow
         case .high: return .orange
         case .urgent: return .red
