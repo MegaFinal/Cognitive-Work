@@ -9,7 +9,8 @@ import Foundation
 import CloudKit
 
 /// A room inside a house, grouping the chores that happen there.
-struct RoomModel: CloudKitSyncable {
+struct RoomModel: CloudKitSyncable, Identifiable {
+    var id = UUID()
     
     /// CloudKit record type backing this model.
     static var recordType: String = "RoomModel"

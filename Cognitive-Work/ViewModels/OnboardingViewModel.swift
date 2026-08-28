@@ -60,6 +60,8 @@ class OnboardingViewModel {
         RoomDTO(name: "Outro", symbol: "plus", isAddButton: true)
     ]
     
+    var selectedChores: [ChoreDTO] = []
+    
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
     ///
@@ -178,5 +180,9 @@ class OnboardingViewModel {
         }
 
         isLoading = false
+    }
+    
+    func fetchRooms() async -> [RoomModel] {
+        return await CloudKitManager.shared.fetchAll(RoomModel.self)
     }
 }
