@@ -35,23 +35,20 @@ struct InviteUsersOnboardingView: View {
             HStack {
                 if resolvendoShare {
                     ProgressView("Preparando chaves de acesso...")
+                        .frame(width: width, height: height)
                 } else {
                     if shareURL != nil {
                         ShareLink(item: shareURL!){
-                            ZStack {
-                                
-                                Text("Compartilhar Convite")
-                                    .font(.system(size: 17))
-                                
-                            }
-                            .frame(width: width, height: height, alignment: .center)
-                            .foregroundColor(.white)
-//                            .background(Capsule().foregroundColor(.blue))
-                            .background(
-                                Capsule()
-                                    .foregroundColor(.blue)
-                                    .glassEffect()
-                            )
+                            Text("Compartilhar Convite")
+                                .font(.system(size: 17))
+                            
+                                .frame(width: width, height: height, alignment: .center)
+                                .foregroundColor(.white)
+                                .background(
+                                    Capsule()
+                                        .foregroundColor(.blue)
+                                        .glassEffect()
+                                )
                         }
                         
                     }
@@ -62,7 +59,7 @@ struct InviteUsersOnboardingView: View {
                         }
                         .foregroundColor(.white)
                         .background(Capsule().foregroundStyle(.gray))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                        .frame(width: width, height: height)
                     }
                 }
                 
