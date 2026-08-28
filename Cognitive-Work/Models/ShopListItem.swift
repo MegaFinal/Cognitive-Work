@@ -15,7 +15,7 @@ struct ShopListItem: CloudKitSyncable {
     
     var name: String
     var description: String
-    var value: Double
+    var value: Double?
     var quantity: Int
     var unitMeasuremente: UnitMeasurement
     var priorityTag: PriorityTag
@@ -53,12 +53,12 @@ struct ShopListItem: CloudKitSyncable {
         }
     }
     
-    var tagsReference: [TagModel] {
+    var tags: [TagModel] {
         get async {
             if let tagsReference {
                 return await CloudKitManager.shared.fetchRecordsByRecordReference(for: TagModel.self, recordReferences: tagsReference) ?? []
             }
-            return nil
+            return []
         }
     }
     
@@ -90,6 +90,26 @@ struct ShopListItem: CloudKitSyncable {
         self.tagsReference = record["tags"] as? [CKRecord.Reference]
     }
     
+    init(
+        name: String,
+        description: String,
+        value: Double?,
+        quantity: Int,
+        unitMeasuremente: UnitMeasurement,
+        priorityTag: PriorityTag,
+        isBought: Bool = false,
+        recordID: CKRecord.ID? = nil
+    ) {
+        self.name = name
+        self.description = description
+        self.value = value
+        self.quantity = quantity
+        self.unitMeasuremente = unitMeasuremente
+        self.priorityTag = priorityTag
+        self.isBought = isBought
+        self.recordID = recordID
+    }
+    
     func populate(record: CKRecord) {
         record["name"] = self.name
         record["description"] = self.description
@@ -98,16 +118,16 @@ struct ShopListItem: CloudKitSyncable {
         record["unitMeasuremente"] = self.unitMeasuremente.rawValue
         record["priorityTag"] = self.priorityTag.rawValue
         record["isBought"] = self.isBought
-        if let perceptiveUserReference {
+        if perceptiveUserReference != nil {
             record["perceptiveUser"] = self.perceptiveUserReference
         }
-        if let percharserUserReference {
+        if percharserUserReference != nil {
             record["percharserUser"] = self.percharserUserReference
         }
-        if let relatedUsersReference {
+        if relatedUsersReference != nil {
             record["relatedUsers"] = self.relatedUsersReference
         }
-        if let tagsReference {
+        if tagsReference != nil {
             record["tags"] = self.tagsReference
         }
     }
