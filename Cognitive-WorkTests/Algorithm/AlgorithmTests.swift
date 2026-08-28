@@ -71,7 +71,7 @@ struct AlgorithmTests {
         bob = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: bobPredicate).first!
         
         for chore in chores {
-            var uniqueChore = chore
+            let uniqueChore = chore
             uniqueChore.name = "\(chore.name)-\(runID)"
             self.chores.append(await CloudKitManager.shared.create(uniqueChore)!)
         }
@@ -101,7 +101,7 @@ struct AlgorithmTests {
             chores: [
                 ChoreModel(name: "tarefa1", description: "description1", frequency: .daily, duration: 20, isPublic: true, priorityTag: .low),
                 ChoreModel(name: "tarefa2", description: "description2", frequency: .fortnightly, duration: 40, isPublic: true, priorityTag: .medium),
-                ChoreModel(name: "tarefa3", description: "description3", frequency: .montly, duration: 30, isPublic: true, priorityTag: .high),
+                ChoreModel(name: "tarefa3", description: "description3", frequency: .monthly, duration: 30, isPublic: true, priorityTag: .high),
                 ChoreModel(name: "tarefa4", description: "description4", frequency: .none, duration: 10, isPublic: true, priorityTag: .urgent),
                 ChoreModel(name: "tarefa5", description: "description5", frequency: .weekly, duration: 15, isPublic: true, priorityTag: .low),
             ]
@@ -129,7 +129,7 @@ struct AlgorithmTests {
                 ChoreModel(name: "tarefa2", description: "description2", frequency: .fortnightly, duration: 40, isPublic: true, priorityTag: .medium),
                 ChoreModel(name: "tarefa3", description: "description1", frequency: .none, duration: 20, isPublic: true, priorityTag: .low),
                 ChoreModel(name: "tarefa4", description: "description2", frequency: .fortnightly, duration: 40, isPublic: true, priorityTag: .medium),
-                ChoreModel(name: "tarefa5", description: "description3", frequency: .montly, duration: 30, isPublic: true, priorityTag: .high),
+                ChoreModel(name: "tarefa5", description: "description3", frequency: .monthly, duration: 30, isPublic: true, priorityTag: .high),
                 ChoreModel(name: "tarefa6", description: "description4", frequency: .daily, duration: 10, isPublic: true, priorityTag: .urgent),
                 ChoreModel(name: "tarefa7", description: "description5", frequency: .weekly, duration: 15, isPublic: true, priorityTag: .low),
             ]
@@ -151,7 +151,7 @@ struct AlgorithmTests {
                     recordReferences: chore.dailyAssignmentsReference!
                 )
                 
-                for d in (dailyAssignments ?? []).filter({ $0.user?.recordID == alice.recordID }) {
+                for d in (dailyAssignments ?? []).filter({ $0.userReference?.recordID == alice.recordID }) {
                     print("     daily date: \(d.day)")
                 }
             }
@@ -180,7 +180,7 @@ struct AlgorithmTests {
                     for: DailyAssignmentModel.self,
                     recordReferences: chore.dailyAssignmentsReference!
                 )
-                for d in (dailyAssignments ?? []).filter({ $0.user?.recordID == alice.recordID }) {
+                for d in (dailyAssignments ?? []).filter({ $0.userReference?.recordID == alice.recordID }) {
                     print("     daily date: \(d.day)")
                 }
             }
@@ -200,7 +200,7 @@ struct AlgorithmTests {
                     for: DailyAssignmentModel.self,
                     recordReferences: chore.dailyAssignmentsReference!
                 )
-                for d in (dailyAssignments ?? []).filter({ $0.user?.recordID == bob.recordID }) {
+                for d in (dailyAssignments ?? []).filter({ $0.userReference?.recordID == bob.recordID }) {
                     print("     daily date: \(d.day)")
                 }
             }
@@ -270,7 +270,7 @@ struct AlgorithmTests {
             await setup(chores: [aliceChore])
             
             let choreRef = CKRecord.Reference(recordID: chores[0].recordID!, action: .none)
-            var savedChore = (await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: [choreRef]))!.first!
+            let savedChore = (await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: [choreRef]))!.first!
             savedChore.currentResponsibleReference = CKRecord.Reference(recordID: alice.recordID!, action: .none)
             
             _ = await CloudKitManager.shared.update(savedChore)

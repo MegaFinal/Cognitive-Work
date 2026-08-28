@@ -36,7 +36,7 @@ class CheckItemModel: CloudKitSyncable, Identifiable {
     /// - Returns: `nil` when a required field is missing or has the wrong type.
     required init?(record: CKRecord) {
         guard
-            let name = record["checkItemName"] as? String,
+            let name = record["name"] as? String,
             let isDone = record["isDone"] as? Bool
         else {
             return nil
@@ -61,7 +61,7 @@ class CheckItemModel: CloudKitSyncable, Identifiable {
     ///
     /// - Parameter record: The record to populate.
     func populate(record: CKRecord) {
-        record["checkItemName"] = name
+        record["name"] = name
         record["isDone"] = isDone
     }
     
