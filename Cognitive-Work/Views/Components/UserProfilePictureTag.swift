@@ -8,18 +8,18 @@
 import SwiftUI
 
 struct UserProfilePictureTag: View {
-    @Binding var user: UserModel
-    
+    let imageData: Data?
+
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
     var body: some View {
         Group {
-            if let imageData = user.profilePicture, let uiImage = UIImage(data: imageData) {
+            if let imageData, let uiImage = UIImage(data: imageData) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: width * 0.04)
+                    .frame(width: width * 0.045)
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
@@ -27,7 +27,7 @@ struct UserProfilePictureTag: View {
                     .foregroundStyle(.gray.opacity(0.5))
             }
         }
-        .padding(5)
+        .padding(7)
         .background(.gray)
         .clipShape(Circle())
     }
@@ -36,10 +36,10 @@ struct UserProfilePictureTag: View {
 #Preview {
     let mockImageData = UIImage(named: "defaultUser")?.pngData()
     
-    let mockUser = UserModel(
+    var mockUser = UserModel(
         name: "Dayô",
         profilePicture: mockImageData, tier: .tier1
     )
     
-    UserProfilePictureTag(user: .constant(mockUser))
+    UserProfilePictureTag(imageData: mockUser.profilePicture)
 }

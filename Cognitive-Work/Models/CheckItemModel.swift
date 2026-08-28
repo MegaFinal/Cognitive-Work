@@ -9,7 +9,8 @@ import Foundation
 import CloudKit
 
 /// A single entry in a chore's checklist.
-struct CheckItemModel: CloudKitSyncable, Identifiable {
+@Observable
+class CheckItemModel: CloudKitSyncable, Identifiable {
     var id: String {
         recordID?.recordName ?? UUID().uuidString
     }
@@ -33,7 +34,7 @@ struct CheckItemModel: CloudKitSyncable, Identifiable {
     ///
     /// - Parameter record: The record to decode.
     /// - Returns: `nil` when a required field is missing or has the wrong type.
-    init?(record: CKRecord) {
+    required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
             let isDone = record["isDone"] as? Bool
@@ -62,5 +63,10 @@ struct CheckItemModel: CloudKitSyncable, Identifiable {
     func populate(record: CKRecord) {
         record["name"] = name
         record["isDone"] = isDone
+    }
+    
+    func toggle() async {
+        self.isDone.toggle()
+        await CloudKitManager.shared.update(self)
     }
 }

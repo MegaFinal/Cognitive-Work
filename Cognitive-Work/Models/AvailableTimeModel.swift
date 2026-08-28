@@ -14,12 +14,22 @@ struct AvailableTimeModel: CloudKitSyncable {
     var recordID: CKRecord.ID?
     var capacityMinutes: Int
     var day: Date
-    var user: CKRecord.Reference?
+    
+    private var userReference: CKRecord.Reference?
+    
+    var user: UserModel? {
+        get async {
+            if let userReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [userReference])?.first
+            }
+            return nil
+        }
+    }
     
     init(capacityMinutes: Int, day: Date, user: CKRecord.Reference? = nil) {
         self.capacityMinutes = capacityMinutes
         self.day = Calendar.current.startOfDay(for: day)
-        self.user = user
+        self.userReference = user
     }
     
     init?(record: CKRecord) {
@@ -33,14 +43,14 @@ struct AvailableTimeModel: CloudKitSyncable {
         self.recordID = record.recordID
         self.capacityMinutes = capacityMinutes
         self.day = day
-        self.user = record["user"] as? CKRecord.Reference
+        self.userReference = record["user"] as? CKRecord.Reference
     }
     
     func populate(record: CKRecord) {
         record["capacityMinutes"] = capacityMinutes
         record["day"] = day
-        if let user {
-            record["user"] = user
+        if let userReference {
+            record["user"] = userReference
         }
     }
 }

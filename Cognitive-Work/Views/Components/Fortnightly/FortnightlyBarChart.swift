@@ -48,10 +48,8 @@ struct FortnightlyBarChart: View {
     let chore1ID = CKRecord.ID(recordName: "chore-1")
     let chore2ID = CKRecord.ID(recordName: "chore-2")
 
-    var user1 = UserModel(name: "Você", tier: .tier1)
-    user1.recordID = user1ID
-    var user2 = UserModel(name: "Alice", tier: .tier1)
-    user2.recordID = user2ID
+    var user1 = UserModel(name: "Você", tier: .tier1, recordID: user1ID)
+    var user2 = UserModel(name: "Alice", tier: .tier1, recordID: user2ID)
 
     let today = Date()
     let calendar = Calendar.current
@@ -61,7 +59,7 @@ struct FortnightlyBarChart: View {
         DailyUsageEntry(day: calendar.date(byAdding: .day, value: 1, to: today)!, userID: user2ID, choreID: chore2ID, minutes: 90.0, choreName: "Limpar a casa")
     ]
 
-    return FortnightlyBarChart(
+    FortnightlyBarChart(
         users: [user1, user2],
         entries: mockEntries,
         startDate: today,

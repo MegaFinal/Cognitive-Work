@@ -11,30 +11,37 @@ import SwiftUI
 /// `Apply this component on a ZStack bellow the rest of the view's content`
 struct Carousel: View {
     @Bindable var viewModel: CarouselViewModel
+    var isBackgroundClear: Bool
+    let onSwipeDown: () -> Void
+    let namespace: Namespace.ID
     
     var body: some View {
         ZStack {
-            // Clear background that occupies the whole screen to allow
-            // clearing the focus state by tapping the empty space
-            Color.white
-                .onTapGesture {
-                    viewModel.clearFocus()
-                }
+            // Clearing the focus state by tapping the empty space
+            if !isBackgroundClear {
+                Color.white
+                    .onTapGesture {
+                        viewModel.clearFocus()
+                    }
+            }
             
             if viewModel.isLoading {
                 ProgressView("Carregando tarefas")
                     .foregroundStyle(.white)
             }
-            else if viewModel.cardViewModels.isEmpty {
+            else if viewModel.cardModels.isEmpty {
                 Text("Nenhuma tarefa no momento")
                     .font(.headline)
                     .foregroundStyle(.black)
             }
             else {
                 // Card loop
-                ForEach(Array(viewModel.cardViewModels.enumerated()), id: \.element.id) { index, cardVM in
+                ForEach(Array(viewModel.cardModels.enumerated()), id: \.element.id) { index, chore in
                     CarouselCardFrame(
-                        viewModel: cardVM,
+                        chore: chore,
+                        carouselViewModel: viewModel,
+                        namespace: namespace,
+                        isFocused: viewModel.isFocused(index),
                         rotation: viewModel.flipRotation(index),
                         isShowingBack: viewModel.isShowingBack(index)
                     )
@@ -48,9 +55,9 @@ struct Carousel: View {
                     .opacity(viewModel.opacity(index))
                     .onTapGesture {
                         if viewModel.isFocused(index) {
-                            viewModel.flip(index)
+                            viewModel.clearFocus()
                         } else {
-                            viewModel.focus(index)
+                            viewModel.focusAndFlip(index)
                         }
                     }
                 }
@@ -65,6 +72,15 @@ struct Carousel: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .onSwipeDown(action: onSwipeDown)
+        .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
     }
+}
+
+#Preview {
+    @Previewable @Namespace var namespace
+    let mockVM = CarouselViewModel()
+    
+    Carousel(viewModel: mockVM, isBackgroundClear: true, onSwipeDown: {}, namespace: namespace)
 }
