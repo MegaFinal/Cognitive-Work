@@ -8,7 +8,7 @@
 import SwiftUI
 import CloudKit
 
-struct FifthOnboardingView: View {
+struct InviteUsersOnboardingView: View {
     @Environment(OnboardingViewModel.self) var viewModel
     
     @State private var houseShare: CKShare? = nil
@@ -27,11 +27,12 @@ struct FifthOnboardingView: View {
             OnboardingHeader(title: "Adicione seus roomies!", description: "Envie o convite para os outros moradores da sua casa se juntarem com você no app!")
             
             Text("Assim que todos os moradores estiverem no app, clique em continuar. ")
+                .frame(width: width * 1.5)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.gray)
             
             
-            HStack(alignment: .center) {
+            HStack {
                 if resolvendoShare {
                     ProgressView("Preparando chaves de acesso...")
                 } else {
@@ -43,7 +44,7 @@ struct FifthOnboardingView: View {
                                     .font(.system(size: 17))
                                 
                             }
-                            .frame(width: width, height: height)
+                            .frame(width: width, height: height, alignment: .center)
                             .foregroundColor(.white)
                             .background(Capsule().foregroundColor(.blue))
                         }
@@ -68,6 +69,7 @@ struct FifthOnboardingView: View {
             OnboardingSkipButton(action: {viewModel.onboardingFinished = true})
             
         }
+        .navigationBarBackButtonHidden()
         .onAppear {
             
             Task {
@@ -92,6 +94,6 @@ struct FifthOnboardingView: View {
     }
 }
 #Preview {
-    FifthOnboardingView()
+    InviteUsersOnboardingView()
         .environment(OnboardingViewModel())
 }

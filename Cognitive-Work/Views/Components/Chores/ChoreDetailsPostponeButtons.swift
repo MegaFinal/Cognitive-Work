@@ -8,14 +8,14 @@
 import SwiftUI
 
 struct ChoreDetailsPostponeButtons: View {
-    var viewModel: ChoreViewModel
+    var chore: ChoreModel
     var width: CGFloat
     
     var body: some View {
         HStack {
             Button {
                 Task {
-                    await viewModel.postpone(byDays: 7)
+                    await chore.postpone(byDays: 7)
                 }
             } label: {
                 Text("Adiar 1 semana")
@@ -31,7 +31,7 @@ struct ChoreDetailsPostponeButtons: View {
             
             Button {
                 Task {
-                    await viewModel.postpone(byDays: 1)
+                    await chore.postpone(byDays: 1)
                 }
             } label: {
                 Text("Adiar 1 dia")

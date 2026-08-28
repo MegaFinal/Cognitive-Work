@@ -8,14 +8,14 @@
 import SwiftUI
 
 struct UserProfilePictureTag: View {
-    @Binding var user: UserModel
-    
+    let imageData: Data?
+
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
     var body: some View {
         Group {
-            if let imageData = user.profilePicture, let uiImage = UIImage(data: imageData) {
+            if let imageData, let uiImage = UIImage(data: imageData) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFit()
@@ -36,10 +36,10 @@ struct UserProfilePictureTag: View {
 #Preview {
     let mockImageData = UIImage(named: "defaultUser")?.pngData()
     
-    let mockUser = UserModel(
+    var mockUser = UserModel(
         name: "Dayô",
         profilePicture: mockImageData, tier: .tier1
     )
     
-    UserProfilePictureTag(user: .constant(mockUser))
+    UserProfilePictureTag(imageData: mockUser.profilePicture)
 }

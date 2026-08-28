@@ -8,14 +8,17 @@
 import SwiftUI
 
 struct UserProfilePictureList: View {
-    @Bindable var viewModel: ChoreViewModel
-    
+    @Bindable var chore: ChoreModel
+    @State var responsibleUsers: [UserModel] = []
     var body: some View {
         HStack(spacing: -20) {
-            ForEach($viewModel.responsibleUsers, id: \.id) { user in
-                UserProfilePictureTag(user: user)
+            ForEach($responsibleUsers, id: \.recordID) { $user in
+                UserProfilePictureTag(imageData: user.profilePicture)
                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
             }
+        }
+        .task {
+            responsibleUsers = await chore.allResponsibleUsers
         }
     }
 }
@@ -32,26 +35,5 @@ struct UserProfilePictureList: View {
         priorityTag: .urgent
     )
     
-    let mockVM = ChoreViewModel.mock(
-        chore: mockChore,
-        roomName: "Banheiro da Suíte",
-        color: Color.blue
-    )
-        
-    mockVM.responsibleUsers = [
-        UserModel(
-            name: "Dayô",
-            profilePicture: mockImageData, tier: .tier1
-        ),
-        UserModel(
-            name: "Dayô",
-            profilePicture: mockImageData, tier: .tier1
-        ),
-        UserModel(
-            name: "Dayô",
-            profilePicture: mockImageData, tier: .tier1
-        )
-    ]
-    
-    return UserProfilePictureList(viewModel: mockVM)
+    return UserProfilePictureList(chore: mockChore)
 }

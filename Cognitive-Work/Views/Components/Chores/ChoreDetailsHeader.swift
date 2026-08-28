@@ -8,36 +8,36 @@
 import SwiftUI
 
 struct ChoreDetailsHeader: View {
-    var viewModel: ChoreViewModel
+    var chore: ChoreModel
     var width: CGFloat
     var height: CGFloat
     
     var body: some View {
         VStack(spacing: 10) {
-            Image(systemName: viewModel.cardSymbol)
+            Image(systemName: chore.symbolName)
                 .resizable()
                 .scaledToFit()
                 .frame(width: width * 0.19, height: height * 0.09)
                 .fontWeight(.thin)
             
-            Text(viewModel.chore.name)
+            Text(chore.name)
                 .font(.title)
                 .fontWeight(.semibold)
             
             HStack(spacing: 12) {
                 PriorityDurationTag(
-                    text: viewModel.chore.priorityTag.rawValue,
-                    color: viewModel.chore.priorityTag.color
+                    text: chore.priorityTag.rawValue,
+                    color: chore.priorityTag.color
                 )
                 
                 PriorityDurationTag(
-                    text: viewModel.chore.priorityTag.rawValue,
-                    color: viewModel.chore.priorityTag.color
+                    text: chore.priorityTag.rawValue,
+                    color: chore.priorityTag.color
                 )
                 
                 PriorityDurationTag(
-                    text: viewModel.chore.frequency.rawValue,
-                    color: viewModel.chore.priorityTag.color
+                    text: chore.frequency.rawValue,
+                    color: chore.priorityTag.color
                 )
             }
         }

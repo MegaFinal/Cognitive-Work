@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct ChoreDetails: View {
-    @Bindable var viewModel: ChoreViewModel
+    @State var room: RoomModel? = nil
+    @State var allResponsibleUsers: [UserModel] = []
+    @Bindable var chore: ChoreModel
     @Bindable var carouselViewModel: CarouselViewModel
     
     var width = UIScreen.main.bounds.width
@@ -17,18 +19,18 @@ struct ChoreDetails: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                ChoreDetailsHeader(viewModel: viewModel, width: width, height: height)
+                ChoreDetailsHeader(chore: chore, width: width, height: height)
                 
-                ChoreDetailsInfo(viewModel: viewModel, width: width, height: height)
+                ChoreDetailsInfo(chore: chore, width: width, height: height)
                 
                 VStack {
-                    ChoreDetailsPostponeButtons(viewModel: viewModel, width: width)
+                    ChoreDetailsPostponeButtons(chore: chore, width: width)
                     
                     SwipeToCompleteButton(action:  {
                         Task {
-                            await viewModel.completeChore()
+                            await chore.toggle()
                         }
-                    }, color: viewModel.roomColor)
+                    }, color: room?.color.uiColor ?? .gray)
                     .padding(.horizontal, 30)
                 }
             }
@@ -48,10 +50,10 @@ struct ChoreDetails: View {
                 
                 Spacer()
                 
-                if viewModel.responsibleUsers.count == 1 {
-                    UserProfilePictureTag(user: $viewModel.responsibleUsers.first!)
+                if allResponsibleUsers.count == 1 {
+                    UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture)
                 } else {
-                    UserProfilePictureList(viewModel: viewModel)
+                    UserProfilePictureList(chore: chore)
                 }
                 
                 Button {}
@@ -67,6 +69,10 @@ struct ChoreDetails: View {
             .padding(.horizontal)
             .padding(.top)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .task {
+            room = await chore.room
+            allResponsibleUsers = await chore.allResponsibleUsers
         }
         .frame(width: width * 0.88, height: height * 0.599)
         .background(.white)
@@ -87,36 +93,7 @@ struct ChoreDetails: View {
         priorityTag: .urgent
     )
     
-    let mockVM = ChoreViewModel.mock(
-        chore: mockChore,
-        roomName: "Banheiro da Suíte",
-        color: Color.blue
-    )
-    
-    mockVM.cardSymbol = "toilet"
-    
-    mockVM.checklistItems = [
-        CheckItemModel(name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", isDone: true),
-        CheckItemModel(name: "Lorem ipsum dolor sit amet", isDone: false),
-        CheckItemModel(name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", isDone: false),
-    ]
-    
-    mockVM.responsibleUsers = [
-        UserModel(
-            name: "Dayô",
-            profilePicture: mockImageData, tier: .tier1
-        ),
-        UserModel(
-            name: "Dayô",
-            profilePicture: mockImageData, tier: .tier1
-        ),
-        UserModel(
-            name: "Dayô",
-            profilePicture: mockImageData, tier: .tier1
-        )
-    ]
-    
     var carouselVM = CarouselViewModel()
     
-    return ChoreDetails(viewModel: mockVM, carouselViewModel: carouselVM)
+    ChoreDetails(chore: mockChore, carouselViewModel: carouselVM)
 }

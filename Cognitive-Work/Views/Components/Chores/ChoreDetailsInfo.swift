@@ -8,14 +8,17 @@
 import SwiftUI
 
 struct ChoreDetailsInfo: View {
-    @Bindable var viewModel: ChoreViewModel
+    @Bindable var chore: ChoreModel
+    @State var room: RoomModel? = nil
+    @State var checkList: [CheckItemModel] = []
+    
     var width: CGFloat
     var height: CGFloat
     
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(viewModel.chore.description)
+                Text(chore.description)
                     .font(.footnote)
                     .frame(width: width * 0.75, alignment: .leading)
                 
@@ -26,11 +29,11 @@ struct ChoreDetailsInfo: View {
                     
                     Spacer()
                     
-                    Text(viewModel.roomName)
+                    Text(room?.name ?? "Unnamed room")
                         .font(.footnote)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(viewModel.roomColor)
+                        .background(room?.color.uiColor ?? .gray)
                         .clipShape(Capsule())
                         .foregroundColor(.white)
                 }
@@ -40,11 +43,15 @@ struct ChoreDetailsInfo: View {
                     .fontWeight(.medium)
                 
                 VStack(alignment: .leading, spacing: 5) {
-                    ForEach($viewModel.checklistItems, id: \.id) { $item in
+                    ForEach($checkList, id: \.id) { $item in
                         ChecklistItemButton(item: $item)
                     }
                 }
             }
+        }
+        .task {
+            room = await chore.room
+            checkList = await chore.checkList
         }
         .frame(width: width * 0.75, height: height * 0.24)
         .padding(.top)

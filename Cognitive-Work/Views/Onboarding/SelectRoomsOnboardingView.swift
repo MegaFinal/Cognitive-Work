@@ -18,7 +18,7 @@ import SwiftUI
 ///
 ///  Confirming the selection persists the chosen rooms via
 /// ``OnboardingViewModel/saveSelectedRooms()``.
-struct FourthOnboardingView: View {
+struct SelectRoomsOnboardingView: View {
     /// The shared onboarding view model, read from the environment
     @Environment(OnboardingViewModel.self) var viewModel
     
@@ -69,13 +69,13 @@ struct FourthOnboardingView: View {
                 .environment(viewModel)
                 .presentationDetents([.medium])
         }
-        .navigationBarBackButtonHidden(viewModel.isLoading)
+        .navigationBarBackButtonHidden()
     }
 }
 
 #Preview {
     let mockViewModel = OnboardingViewModel()
     
-    return FourthOnboardingView()
+    return SelectRoomsOnboardingView()
         .environment(mockViewModel)
 }

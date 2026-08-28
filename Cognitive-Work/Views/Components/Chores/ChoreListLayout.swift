@@ -15,8 +15,8 @@ struct ChoreListLayout: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                ForEach(Array(viewModel.cardViewModels.enumerated()), id: \.element.id) { index, cardVM in
-                    ChoreCardListStyle(viewModel: cardVM, namespace: namespace)
+                ForEach(Array(viewModel.cardModels.enumerated()), id: \.element.id) { index, chore in
+                    ChoreCardListStyle(chore: chore, namespace: namespace)
                 }
             }
             .padding(.top, 8)

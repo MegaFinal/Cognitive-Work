@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ChorePriority: View {
     let chore: ChoreModel
-    @Binding var user: UserModel
+    @State var user: UserModel?
 
     var body: some View {
         HStack {
@@ -17,21 +17,15 @@ struct ChorePriority: View {
                 .frame(width: 2)
 
             VStack(alignment: .leading) {
-                UserProfilePictureTag(user: $user)
-                PriorityDurationTag(text: priorityText, color: .subTitleGray)
+                UserProfilePictureTag(imageData: user?.profilePicture)
+                PriorityDurationTag(text: chore.priorityTag.rawValue, color: .subTitleGray)
                 PriorityDurationTag(text: tier.displayText, color: .titleGray)
             }
         }
-        .frame(height: 100)
-    }
-
-    private var priorityText: String {
-        switch chore.priorityTag {
-        case .urgent: return "urgente"
-        case .high: return "alta"
-        case .medium: return "média"
-        case .low: return "baixa"
+        .task {
+            user = await chore.currentResponsible ?? nil
         }
+        .frame(height: 100)
     }
 
     private var tier: ChoreDurationTier {
@@ -41,7 +35,6 @@ struct ChorePriority: View {
 
 #Preview {
     let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    let mockUser = UserModel(name: "Dayô", profilePicture: mockImageData, tier: .tier1)
 
     let mockChore = ChoreModel(
         name: "Lavar banheiro",
@@ -52,5 +45,5 @@ struct ChorePriority: View {
         priorityTag: .urgent
     )
 
-    return ChorePriority(chore: mockChore, user: .constant(mockUser))
+    ChorePriority(chore: mockChore)
 }

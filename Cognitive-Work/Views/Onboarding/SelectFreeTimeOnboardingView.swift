@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EighthOnboardingView: View {
+struct SelectFreeTimeOnboardingView: View {
     @State var weekOrder = [
         DayOfWeekDTO(name: "Segunda - Feira", nameAbbreviation: "Seg"),
         DayOfWeekDTO(name: "Terça - Feira", nameAbbreviation:"Ter"),
@@ -75,5 +75,5 @@ struct EighthOnboardingView: View {
 }
 
 #Preview {
-    EighthOnboardingView()
+    SelectFreeTimeOnboardingView()
 }

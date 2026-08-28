@@ -9,7 +9,8 @@ import Foundation
 import SwiftUI
 
 struct ChoreCardListStyle: View {
-    var viewModel: ChoreViewModel
+    @State var chore: ChoreModel
+    @State var room: RoomModel? = nil
     let namespace: Namespace.ID
     
     var width = UIScreen.main.bounds.width
@@ -22,10 +23,10 @@ struct ChoreCardListStyle: View {
                 tabWidth: 90,
                 topCutoutHeight: 38
             )
-            .fill(viewModel.roomColor)
+            .fill(room?.color.uiColor ?? .gray)
             
             HStack(spacing: 35) {
-                Image(systemName: viewModel.cardSymbol)
+                Image(systemName: chore.symbolName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.1, height: height * 0.08)
@@ -34,22 +35,22 @@ struct ChoreCardListStyle: View {
                 VStack(alignment: .leading) {
                     HStack {
                         PriorityDurationDotTag(
-                            text: viewModel.chore.priorityTag.rawValue,
-                            color: viewModel.chore.priorityTag.color
+                            text: chore.priorityTag.rawValue,
+                            color: chore.priorityTag.color
                         )
                         
                         PriorityDurationDotTag(
-                            text: viewModel.chore.priorityTag.rawValue,
-                            color: viewModel.chore.priorityTag.color
+                            text: chore.priorityTag.rawValue,
+                            color: chore.priorityTag.color
                         )
                     }
                     
                     HStack {
                         VStack(alignment: .leading) {
-                            Text(viewModel.roomName)
+                            Text(room?.name ?? "Room not founded")
                                 .font(.caption)
                             
-                            Text(viewModel.chore.name)
+                            Text(chore.name)
                                 .font(.title2)
                                 .bold()
                         }
@@ -57,14 +58,13 @@ struct ChoreCardListStyle: View {
                         Spacer()
                         
                         Button {
-                            viewModel.chore.isDone = true
                             Task {
-                                await viewModel.completeChore()
+                                await chore.toggle()
                             }
                         } label: {
                             Circle()
                                 .frame(width: width * 0.06, height: height * 0.1)
-                                .foregroundColor(viewModel.chore.isDone ? .green : .white)
+                                .foregroundColor(chore.isDone ? .green : .white)
                         }
                     }
                 }
@@ -72,8 +72,11 @@ struct ChoreCardListStyle: View {
             .padding(.horizontal, 25)
             .padding(.top)
         }
+        .task {
+            room = await chore.room
+        }
         .frame(width: width * 0.92, height: height * 0.14)
-//        .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
+        //        .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
         .transition(.identity)
     }
 }
@@ -91,26 +94,5 @@ struct ChoreCardListStyle: View {
         priorityTag: .urgent
     )
     
-    let mockVM = ChoreViewModel.mock(
-        chore: mockChore,
-        roomName: "Banheiro da Suíte",
-        color: Color.blue
-    )
-    
-    mockVM.cardSymbol = "sofa"
-    
-    mockVM.checklistItems = [
-        CheckItemModel(name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit", isDone: true),
-        CheckItemModel(name: "Lorem ipsum dolor sit amet", isDone: false),
-        CheckItemModel(name: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", isDone: false),
-    ]
-    
-    mockVM.responsibleUsers = [
-        UserModel(
-            name: "Dayô",
-            profilePicture: mockImageData, tier: .tier1
-        )
-    ]
-    
-    return ChoreCardListStyle(viewModel: mockVM, namespace: namespace)
+    return ChoreCardListStyle(chore: mockChore, namespace: namespace)
 }

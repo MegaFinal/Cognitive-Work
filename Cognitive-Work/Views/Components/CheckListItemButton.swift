@@ -13,8 +13,9 @@ struct ChecklistItemButton: View {
         
     var body: some View {
         Button {
-            item.isDone.toggle()
-            
+            Task {
+                await item.toggle()
+            }
         } label: {
             HStack {
                 Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")

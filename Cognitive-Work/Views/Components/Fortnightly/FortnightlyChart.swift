@@ -9,10 +9,10 @@ import SwiftUI
 import CloudKit
 
 struct FortnightlyChart: View {
-    var viewModel: FortnightlyViewModel
-    let house: HouseModel?
+    @State var viewModel = FortnightlyViewModel()
     @State private var selectedEntry: DailyUsageEntry?
-
+    @State private var usageEntries: [DailyUsageEntry] = []
+    
     var body: some View {
         VStack(spacing: 16) {
             if viewModel.isLoading {
@@ -22,7 +22,7 @@ struct FortnightlyChart: View {
             } else {
                 FortnightlyBarChart(
                     users: viewModel.users,
-                    entries: viewModel.usageEntries,
+                    entries: usageEntries,
                     startDate: viewModel.startDate,
                     onSelect: { entry in selectedEntry = entry }
                 )
@@ -30,24 +30,18 @@ struct FortnightlyChart: View {
                     .padding(.bottom)
 
                 if let entry = selectedEntry,
-                   let chore = viewModel.chores.first(where: { $0.recordID == entry.choreID }),
-                   let matchedUser = viewModel.users.first(where: { $0.recordID == entry.userID }) {
-                    ChoreCard(
-                        chore: chore,
-                        roomName: viewModel.roomName(for: chore),
-                        user: userBinding(for: matchedUser)
-                    )
+                   let chore = viewModel.chores.first(where: { $0.recordID == entry.choreID }) {
+                    ChoreCard(chore: chore)
                 }
             }
         }
         .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
         .task {
-            if let houseID = house?.recordID, viewModel.users.isEmpty {
-                let houseRef = CKRecord.Reference(recordID: houseID, action: .none)
-                await viewModel.loadFortnightlyData(houseReference: houseRef)
-            }
+            await viewModel.setup()
+            usageEntries = await viewModel.usageEntries
         }
     }
+    
 
     private func userBinding(for user: UserModel) -> Binding<UserModel> {
         Binding(
@@ -64,9 +58,5 @@ struct FortnightlyChart: View {
 }
 
 #Preview {
-    let previewVM = FortnightlyViewModel()
-    previewVM.loadMockData()
-    
-    return FortnightlyChart(viewModel: previewVM, house: nil)
-            .padding()
+    FortnightlyChart()
 }

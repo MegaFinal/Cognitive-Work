@@ -12,8 +12,7 @@ struct ChoreCard: View {
     var height = UIScreen.main.bounds.height
 
     let chore: ChoreModel
-    let roomName: String
-    @Binding var user: UserModel
+    @State var roomName: String = ""
 
     var body: some View {
         VStack {
@@ -27,7 +26,12 @@ struct ChoreCard: View {
                     .padding(.horizontal)
 
 
-                ChorePriority(chore: chore, user: $user)
+                ChorePriority(chore: chore)
+            }
+        }
+        .task {
+            if let room = await chore.room {
+                roomName = room.name
             }
         }
         .background(
@@ -40,7 +44,6 @@ struct ChoreCard: View {
 
 #Preview {
     let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    let mockUser = UserModel(name: "Dayô", profilePicture: mockImageData, tier: .tier1)
 
     let mockChore = ChoreModel(
         name: "Lavar banheiro",
@@ -51,5 +54,5 @@ struct ChoreCard: View {
         priorityTag: .urgent
     )
 
-    return ChoreCard(chore: mockChore, roomName: "Banheiro da suíte", user: .constant(mockUser))
+    ChoreCard(chore: mockChore)
 }

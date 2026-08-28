@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SixthOnboardingView: View {
+struct StartChoreDivisionOnboardingView: View {
     @Environment(OnboardingViewModel.self) var viewModel
 
     var width = UIScreen.main.bounds.width
@@ -49,5 +49,5 @@ struct SixthOnboardingView: View {
     }
 }
 #Preview {
-    SixthOnboardingView()
+    StartChoreDivisionOnboardingView()
 }
