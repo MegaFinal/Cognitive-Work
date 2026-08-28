@@ -35,36 +35,42 @@ struct InviteUsersOnboardingView: View {
             HStack {
                 if resolvendoShare {
                     ProgressView("Preparando chaves de acesso...")
+                        .frame(width: width, height: height)
                 } else {
                     if shareURL != nil {
                         ShareLink(item: shareURL!){
-                            ZStack {
-                                
-                                Text("Compartilhar Convite")
-                                    .font(.system(size: 17))
-                                
-                            }
-                            .frame(width: width, height: height, alignment: .center)
-                            .foregroundColor(.white)
-                            .background(Capsule().foregroundColor(.blue))
+                            Text("Compartilhar Convite")
+                                .font(.system(size: 17))
+                            
+                                .frame(width: width, height: height, alignment: .center)
+                                .foregroundColor(.white)
+                                .background(
+                                    Capsule()
+                                        .foregroundColor(.blue)
+                                        .glassEffect()
+                                )
                         }
+                        
                     }
                     else {
                         Button {
                         } label: {
                             ProgressView().tint(.white)
                         }
-                        .frame(width: width, height: height)
                         .foregroundColor(.white)
                         .background(Capsule().foregroundStyle(.gray))
+                        .frame(width: width, height: height)
                     }
                 }
+                
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
                     viewModel.navigateToSixth = true
                 }
                 .multilineTextAlignment(.trailing)
                 
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .centerLastTextBaseline)
+            .padding(.bottom)
             
             OnboardingSkipButton(action: {viewModel.onboardingFinished = true})
             

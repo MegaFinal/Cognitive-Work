@@ -63,6 +63,7 @@ struct SelectRoomsOnboardingView: View {
                     }
                 }
             }
+            Spacer()
         }
         .sheet(isPresented: $isShowingCustomRoomSheet) {
             NewRoomSheet()

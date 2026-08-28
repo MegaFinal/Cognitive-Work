@@ -23,36 +23,6 @@ import SwiftUI
 /// > selects it in the others. Give each room its own list before replacing the
 /// > mock with real data.
 struct SelectChoresOnboardingView: View {
-    // MARK: - Constants
-
-    /// Layout values shared by the screen, kept here to avoid magic numbers.
-    ///
-    /// Ratio constants are multiplied by the width or height reported by
-    /// `GeometryReader`; the remaining values are absolute, in points.
-    private enum Layout {
-        /// Font size of the screen title.
-
-        /// Font size of each room name.
-        static let roomNameFontSize: CGFloat = 24
-
-        /// Font size of the chevron inside the advance button.
-        static let advanceIconFontSize: CGFloat = 22
-
-        /// Diameter of the circular advance button.
-        static let advanceButtonSize: CGFloat = 56
-
-        /// Blur radius of the advance button shadow.
-        static let advanceButtonShadowRadius: CGFloat = 8
-
-        /// Vertical offset of the advance button shadow.
-        static let advanceButtonShadowOffsetY: CGFloat = 4
-
-        /// Opacity of the advance button shadow.
-        static let advanceButtonShadowOpacity: CGFloat = 0.2
-    }
-
-    // MARK: - Properties
-    
     @Environment(OnboardingViewModel.self) var viewModel
 
     /// Rooms listed on the screen, each holding its own expansion state.
@@ -68,10 +38,14 @@ struct SelectChoresOnboardingView: View {
     private var selectedChores: [ChoreDTO] {
         choresDTO.filter { $0.isSelected }
     }
+    
+    @State private var isLoading = true
 
     // MARK: - Body
 
     var body: some View {
+        @Bindable var bindableViewModel = viewModel
+
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height
@@ -99,13 +73,15 @@ struct SelectChoresOnboardingView: View {
                             .padding(.bottom, height * 0.07)
                         }
                     }
+                
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
                     viewModel.navigateToEighth = true
                 }
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
-            .padding(.horizontal, width *  0.086)
+            .padding(.horizontal, width * 0.086)
+            .navigationBarBackButtonHidden()
         }
         .task {
             rooms = await viewModel.fetchRooms()
