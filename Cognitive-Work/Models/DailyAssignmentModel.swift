@@ -15,8 +15,8 @@ struct DailyAssignmentModel : CloudKitSyncable{
     var day: Date
     var isCompleted: Bool
     
-    private var userReference: CKRecord.Reference?
-    private var choreReference: CKRecord.Reference?
+    var userReference: CKRecord.Reference?
+    var choreReference: CKRecord.Reference?
     
     var user: UserModel? {
         get async {
