@@ -175,4 +175,147 @@ class WifiConnectionViewModel {
 
         return Data(blackBuffer) // Retorna exatamente 4.736 bytes
     }
+    
+    func prepareGrayscaleEPaper(image: UIImage) -> Data? {
+
+        let ePaperWidth = 296
+
+        let ePaperHeight = 128
+
+        let bytesPerLayer = (ePaperWidth * ePaperHeight) / 8
+     
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+     
+        guard let context = CGContext(data: nil, width: ePaperWidth, height: ePaperHeight,
+
+                                      bitsPerComponent: 8, bytesPerRow: ePaperWidth * 4,
+
+                                      space: colorSpace, bitmapInfo: bitmapInfo) else {
+
+            return nil
+
+        }
+     
+        context.translateBy(x: 0, y: CGFloat(ePaperHeight))
+
+        context.scaleBy(x: 1, y: -1)
+     
+        UIGraphicsPushContext(context)
+
+        UIColor.white.setFill()
+
+        UIRectFill(CGRect(x: 0, y: 0, width: ePaperWidth, height: ePaperHeight))
+
+        image.draw(in: CGRect(x: 0, y: 0, width: ePaperWidth, height: ePaperHeight))
+
+        UIGraphicsPopContext()
+     
+        guard let pixelBuffer = context.data else { return nil }
+
+        let data = pixelBuffer.bindMemory(to: UInt8.self, capacity: ePaperWidth * ePaperHeight * 4)
+     
+        // Converte para escala de cinza (float, pra poder acumular erro)
+
+        var gray = [Float](repeating: 0, count: ePaperWidth * ePaperHeight)
+
+        for y in 0..<ePaperHeight {
+
+            for x in 0..<ePaperWidth {
+
+                let idx = y * ePaperWidth + x
+
+                let pixelIndex = idx * 4
+
+                let r = Float(data[pixelIndex])
+
+                let g = Float(data[pixelIndex + 1])
+
+                let b = Float(data[pixelIndex + 2])
+
+                gray[idx] = r * 0.299 + g * 0.587 + b * 0.114
+
+            }
+
+        }
+     
+        var blackBuffer = [UInt8](repeating: 0, count: bytesPerLayer)
+     
+        // Floyd-Steinberg — cria a ilusão de cinza através da densidade de pixels pretos
+
+        for y in 0..<ePaperHeight {
+
+            for x in 0..<ePaperWidth {
+
+                let idx = y * ePaperWidth + x
+
+                let oldPixel = gray[idx]
+
+                let isWhite = oldPixel > 128
+
+                let newPixel: Float = isWhite ? 255 : 0
+
+                let error = oldPixel - newPixel
+     
+                if x + 1 < ePaperWidth {
+
+                    gray[idx + 1] += error * 7.0 / 16.0
+
+                }
+
+                if y + 1 < ePaperHeight {
+
+                    if x > 0 {
+
+                        gray[idx + ePaperWidth - 1] += error * 3.0 / 16.0
+
+                    }
+
+                    gray[idx + ePaperWidth] += error * 5.0 / 16.0
+
+                    if x + 1 < ePaperWidth {
+
+                        gray[idx + ePaperWidth + 1] += error * 1.0 / 16.0
+
+                    }
+
+                }
+     
+                if !isWhite {
+
+                    let byteIndex = (y * (ePaperWidth / 8)) + (x / 8)
+
+                    let bitPosition = 7 - (x % 8)
+
+                    blackBuffer[byteIndex] |= (1 << bitPosition)
+
+                }
+
+            }
+
+        }
+     
+        return Data(blackBuffer)
+
+    }
+     
+    
+    @MainActor func sendChartToESP32(values: [CGFloat], labels: [String], title: String) async throws {
+            let chartView = BarChartView(values: values, labels: labels, title: title)
+            
+            let renderer = ImageRenderer(content: chartView)
+            renderer.scale = 1.0
+            
+            guard let image = renderer.uiImage else {
+                print("Falha ao renderizar o gráfico")
+                return
+            }
+            guard let imageData = prepareForEPaper(image: image) else {
+                print("Falha ao converter gráfico para o formato do e-paper")
+                return
+            }
+            
+            try await deviceConnectionService.sendImageToDevice(imageData: imageData)
+        }
 }

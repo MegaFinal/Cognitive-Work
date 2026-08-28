@@ -42,12 +42,33 @@ struct DevicePairView: View {
                 }
             }.padding(.bottom, 20)
             
-            Button {
-                Task {
-                    try await viewModel.prepareImageForESP32()
+            VStack{
+                Divider()
+                BarChartView(
+                    values: [0.4, 0.9, 0.6, 0.3, 0.7],
+                    labels: ["Seg", "Ter", "Qua", "Qui", "Sex"],
+                    title: "Tarefa da semana"
+                )
+                
+                Button {
+                    Task {
+                        try await viewModel.sendChartToESP32(
+                            values: [0.4, 0.9, 0.6, 0.3, 0.7],
+                            labels: ["Seg", "Ter", "Qua", "Qui", "Sex"],
+                            title: "Tarefas da semana"
+                        )
+                    }
+                } label: {
+                    
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 20)
+                            .frame(width: 150, height: 44)
+                            .foregroundStyle(.orange)
+                        Text("Enviar gráfico")
+                            .foregroundStyle(.white)
+                            .padding()
+                    }
                 }
-            } label: {
-                Image(uiImage: image1 ?? UIImage())
             }
         }
         .padding()
