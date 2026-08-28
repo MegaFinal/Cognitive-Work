@@ -9,5 +9,16 @@ import Foundation
 import CloudKit
 
 struct TagModel: CloudKitSyncable {
+    //TODO: implement the class diagram
+    static var recordType: String = "TagModel"
     
+    var recordID: CKRecord.ID?
+    
+    func populate(record: CKRecord) {
+        
+    }
+    
+    init?(record: CKRecord) {
+        
+    }
 }
