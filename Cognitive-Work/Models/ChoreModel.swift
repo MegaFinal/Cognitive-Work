@@ -10,7 +10,8 @@ import SwiftUI
 import CloudKit
 
 /// A household task assigned to one or more users and belonging to a room.
-struct ChoreModel: CloudKitSyncable, Identifiable {
+@Observable
+class ChoreModel: CloudKitSyncable, Identifiable {
     var id: UUID = UUID()
     
 
@@ -25,7 +26,6 @@ struct ChoreModel: CloudKitSyncable, Identifiable {
 
     /// Free-form details about how the chore should be done.
     var description: String
-    
     
     var isDone: Bool
 
@@ -52,18 +52,20 @@ struct ChoreModel: CloudKitSyncable, Identifiable {
 
     /// Optional illustrative image.
     var image: Data?
+    
+    var symbolName: String = "bus"
 
     /// References to the chore's ``CheckItemModel`` entries.
-    private var checkListReference: [CKRecord.Reference]?
+    var checkListReference: [CKRecord.Reference]?
 
     /// The user currently responsible for the chore.
-    private var currentResponsibleReference: CKRecord.Reference?
+    var currentResponsibleReference: CKRecord.Reference?
 
     /// Every user in the rotation for this chore.
-    private var allResponsibleUsersReference: [CKRecord.Reference]?
+    var allResponsibleUsersReference: [CKRecord.Reference]?
 
     /// The room this chore belongs to.
-    private var roomReference: CKRecord.Reference?
+    var roomReference: CKRecord.Reference?
     
     var dailyAssignmentsReference: [CKRecord.Reference]?
     
@@ -118,7 +120,7 @@ struct ChoreModel: CloudKitSyncable, Identifiable {
     /// - Parameter record: The record to decode.
     /// - Returns: `nil` when a required field is missing, has the wrong type, or holds an
     ///   unknown ``Recurrence`` or ``PriorityTag`` value.
-    init?(record: CKRecord) {
+    required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
             let description = record["description"] as? String,
@@ -232,7 +234,7 @@ struct ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
-    mutating func postpone(byDays days: Int) async {
+    func postpone(byDays days: Int) async {
         let currentDate = self.dueDate ?? Date()
         
         if let newDate = Calendar.current.date(byAdding: .day, value: days, to: currentDate) {
@@ -240,5 +242,10 @@ struct ChoreModel: CloudKitSyncable, Identifiable {
             
             await CloudKitManager.shared.update(self)
         }
+    }
+
+    func toggle() async {
+        self.isDone.toggle()
+        await CloudKitManager.shared.update(self)
     }
 }

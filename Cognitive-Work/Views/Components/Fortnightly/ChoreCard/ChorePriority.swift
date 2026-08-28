@@ -17,7 +17,7 @@ struct ChorePriority: View {
                 .frame(width: 2)
 
             VStack(alignment: .leading) {
-                UserProfilePictureTag(user: $user)
+                UserProfilePictureTag(imageData: user?.profilePicture)
                 PriorityDurationTag(text: chore.priorityTag.rawValue, color: .subTitleGray)
                 PriorityDurationTag(text: tier.displayText, color: .titleGray)
             }

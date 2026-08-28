@@ -11,7 +11,8 @@ import CloudKit
 struct FortnightlyChart: View {
     @State var viewModel = FortnightlyViewModel()
     @State private var selectedEntry: DailyUsageEntry?
-
+    @State private var usageEntries: [DailyUsageEntry] = []
+    
     var body: some View {
         VStack(spacing: 16) {
             if viewModel.isLoading {
@@ -21,7 +22,7 @@ struct FortnightlyChart: View {
             } else {
                 FortnightlyBarChart(
                     users: viewModel.users,
-                    entries: viewModel.usageEntries,
+                    entries: usageEntries,
                     startDate: viewModel.startDate,
                     onSelect: { entry in selectedEntry = entry }
                 )
@@ -30,15 +31,14 @@ struct FortnightlyChart: View {
 
                 if let entry = selectedEntry,
                    let chore = viewModel.chores.first(where: { $0.recordID == entry.choreID }) {
-                    ChoreCard(
-                        chore: chore
-                    )
+                    ChoreCard(chore: chore)
                 }
             }
         }
         .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
         .task {
-            viewModel.setup()
+            await viewModel.setup()
+            usageEntries = await viewModel.usageEntries
         }
     }
     

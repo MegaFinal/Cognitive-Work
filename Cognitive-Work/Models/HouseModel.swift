@@ -10,7 +10,8 @@ import CloudKit
 ///
 /// The house is the record that gets shared, so its zone determines which database the
 /// related chores, rooms, and users live in.
-struct HouseModel: CloudKitSyncable {
+@Observable
+class HouseModel: CloudKitSyncable {
 
     /// CloudKit record type backing this model.
     static var recordType: String = "HouseModel"
@@ -70,7 +71,7 @@ struct HouseModel: CloudKitSyncable {
     ///
     /// - Parameter record: The record to decode.
     /// - Returns: `nil` when `name` or `description` is missing or has the wrong type.
-    init?(record: CKRecord) {
+    required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
             let description = record["description"] as? String
@@ -129,5 +130,24 @@ struct HouseModel: CloudKitSyncable {
         record["users"] = usersReference
         record["shopListItem"] = shopListItemReference
         record["rooms"] = roomsReference
+    }
+    
+    @discardableResult
+    func appendRoom(rooms: [RoomModel]) async -> Bool{
+        for room in rooms {
+            if let recordID = room.recordID {
+                let roomReference = CKRecord.Reference(recordID: recordID, action: .none)
+                roomsReference?.append(roomReference)
+            }
+        }
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    func reference(action: CKRecord.ReferenceAction) -> CKRecord.Reference? {
+        if let recordID {
+            return CKRecord.Reference(recordID: recordID, action: .none)
+        }
+        print("House dont have an recordID")
+        return nil
     }
 }

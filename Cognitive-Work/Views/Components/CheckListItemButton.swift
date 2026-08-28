@@ -9,11 +9,13 @@ import SwiftUI
 
 struct ChecklistItemButton: View {
     @Binding var item: CheckItemModel
+    var width = UIScreen.main.bounds.width
         
     var body: some View {
         Button {
-            item.isDone.toggle()
-            
+            Task {
+                await item.toggle()
+            }
         } label: {
             HStack {
                 Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
@@ -23,7 +25,7 @@ struct ChecklistItemButton: View {
                 Text(item.name)
                     .strikethrough(item.isDone, color: .gray)
                     .foregroundColor(item.isDone ? .gray : .black)
-                    .font(.caption)
+                    .font(.footnote)
                     .multilineTextAlignment(.leading)
             }
         }

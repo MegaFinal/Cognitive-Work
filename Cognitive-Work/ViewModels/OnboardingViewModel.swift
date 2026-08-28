@@ -155,27 +155,24 @@ class OnboardingViewModel {
     /// - Requires ``currentHouse`` to already be set.
     @MainActor
     func saveSelectedRooms() async {
-        guard let house = currentHouse, let houseID = house.recordID else { return }
+        guard let house = currentHouse else { return }
         isLoading = true
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
-        var savedRoomReferences: [CKRecord.Reference] = []
-        let houseReference = CKRecord.Reference(recordID: houseID, action: .none)
+        var savedRooms: [RoomModel] = []
 
         for draft in selectedDrafts {
-            let roomModel = RoomModel(name: draft.name, house: houseReference, color: draft.color)
-            if let savedRoom = await CloudKitManager.shared.create(roomModel, parent: houseReference),
-               let roomID = savedRoom.recordID {
-                savedRoomReferences.append(CKRecord.Reference(recordID: roomID, action: .none))
+            let roomModel = RoomModel(name: draft.name,
+                                      house: house.reference(action: .deleteSelf),
+                                      color: draft.color)
+            if let savedRoom = await CloudKitManager.shared.create(roomModel,parent: house.reference(action: .none)) {
+                savedRooms.append(savedRoom)
             }
         }
-
-        var updatedHouse = house
-        updatedHouse.roomsReference = (updatedHouse.roomsReference ?? []) + savedRoomReferences
-        let success = await CloudKitManager.shared.update(updatedHouse)
-
+        let success = await house.appendRoom(rooms: savedRooms)
+        
         if success {
-            self.currentHouse = updatedHouse
+            self.currentHouse = house
         } else {
             errorMessage = "Erro ao atrelar cômodos."
         }

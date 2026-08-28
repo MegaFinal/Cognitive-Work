@@ -10,13 +10,18 @@ import SwiftUI
 /// Controls the state and mathematical rendering of the carousel.
 @Observable
 class CarouselViewModel {
+    var layoutMode: CardLayoutMode = .grid
+    
     var snappedItem:  Double = 0
     var draggingItem: Double = 0
     var activeIndex:  Int    = 0
     
     /// The chores currently loaded into the carousel
-    var cardViewModels: [ChoreViewModel] = []
+    var cardModels: [ChoreModel] = []
     var isLoading: Bool = false
+    var hasFocusedCard: Bool {
+        focusedIndex != nil
+    }
     
     private let flipDuration: Double = 0.6
     private var flippedIndices: Set<Int> = []
@@ -27,17 +32,18 @@ class CarouselViewModel {
     private let focusSpringResponse: Double = 0.4
     private let focusSpringDamping: Double = 0.75
     
+    func toggleLayout() {
+        layoutMode = layoutMode == .grid ? .list : .grid
+    }
+    
     // MARK: - CloudKit Fetch
     
     func fetchChores() async {
         await MainActor.run { isLoading = true }
         
-        let fetchedChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        cardModels = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         
-        await MainActor.run {
-            self.cardViewModels = fetchedChores.map { ChoreViewModel(chore: $0) }
-            self.isLoading = false
-        }
+        await MainActor.run { self.isLoading = false }
     }
     
     // MARK: - Focus
@@ -45,6 +51,12 @@ class CarouselViewModel {
     /// The only card currently allowed to respond to a flip tap
     func isFocused(_ index: Int) -> Bool {
         focusedIndex == index
+    }
+    
+    func focusImmediately(_ index: Int) {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            focusedIndex = index
+        }
     }
     
     func focus(_ index: Int) {
@@ -71,9 +83,29 @@ class CarouselViewModel {
         }
     }
     
+    func focusAndFlip(_ index: Int) {
+        if let old = focusedIndex, old != index {
+            if flippedIndices.contains(old) {
+                flip(old)
+            }
+        }
+        
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            snappedItem = Double(index)
+            draggingItem = Double(index)
+            activeIndex = index
+            focusedIndex = index
+        }
+        
+        flip(index)
+    }
+    
     func clearFocus() {
-        if focusedIndex != nil {
-            withAnimation(.easeOut(duration: 0.15)) {
+        if let old = focusedIndex {
+            if flippedIndices.contains(old) {
+                flip(old)
+            }
+            withAnimation(.easeOut(duration: 0.2)) {
                 focusedIndex = nil
             }
         }
@@ -126,8 +158,8 @@ class CarouselViewModel {
     
     /// Determines how far away an item is from the current focal point of the carousel
     func distance(_ index: Int) -> Double {
-        guard !cardViewModels.isEmpty else { return 0 }
-        return (draggingItem - Double(index)).remainder(dividingBy: Double(cardViewModels.count))
+        guard !cardModels.isEmpty else { return 0 }
+        return (draggingItem - Double(index)).remainder(dividingBy: Double(cardModels.count))
     }
     
     /// Calculates the horizontal displacement
@@ -135,7 +167,7 @@ class CarouselViewModel {
         let fixedVisualCount: Double = 5.0
         let angle = (Double.pi * 2 / fixedVisualCount) * distance(index)
         
-        let fixedRadius: Double = 160.0
+        let fixedRadius: Double = 130.0
         
         return sin(angle) * fixedRadius
     }
@@ -154,14 +186,15 @@ class CarouselViewModel {
     func scaleEffect(_ index: Int) -> Double {
         let dist = abs(distance(index))
         let base = max(1 - dist * 0.18, 0.7)
-        return isFocused(index) ? base * 1.12 : base
+        
+        return base
     }
     
     /// 2D tilt
     func rotationEffect(_ index: Int) -> Double {
         let dist = distance(index)
         
-        let dynamicSideTilt = dist * 15
+        let dynamicSideTilt = dist * 22
         return dynamicSideTilt
     }
     
@@ -191,13 +224,13 @@ class CarouselViewModel {
     
     func onDragEnded(value: DragGesture.Value) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-            guard !cardViewModels.isEmpty else { return }
+            guard !cardModels.isEmpty else { return }
             
             let velocity = value.predictedEndTranslation.width - value.translation.width
             let nudge = min(max(velocity / 200, -1), 1)
             
             // Snap from where the finger actually left the carousel plus a small velocity nudge for quick flicks
-            let count = cardViewModels.count
+            let count = cardModels.count
             draggingItem = (draggingItem + nudge)
                 .rounded()
                 .remainder(dividingBy: Double(count))

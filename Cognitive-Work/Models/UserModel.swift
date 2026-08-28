@@ -124,9 +124,10 @@ struct UserModel: CloudKitSyncable, Hashable, Identifiable {
         availableTime: [CKRecord.Reference]? = nil,
         house: CKRecord.Reference? = nil,
         coupons: [CKRecord.Reference]? = nil,
-        couponLimit: Int = 0
+        couponLimit: Int = 0,
+        recordID: CKRecord.ID? = nil
     ) {
-        self.recordID = nil
+        self.recordID = recordID
         self.name = name
         self.profilePicture = profilePicture
         self.tier = tier

@@ -13,10 +13,10 @@ struct PriorityDurationTag: View {
     
     var body: some View {
         Text(text)
-            .font(.caption)
+            .font(.footnote)
             .foregroundColor(.white)
             .padding(.horizontal)
-            .padding(.vertical, 2.5)
+            .padding(.vertical, 1.5)
             .background(color)
             .clipShape(Capsule())
     }
