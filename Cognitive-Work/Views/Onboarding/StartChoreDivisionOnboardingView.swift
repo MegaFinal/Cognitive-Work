@@ -38,7 +38,8 @@ struct StartChoreDivisionOnboardingView: View {
                 Text("Assim que todos os moradores preencherem enviaremos uma notificação avisando que a escala de tarefas foi dividida de uma forma justa por todos da casa!\n")
             }
             
-            OnboardingProgressButton(text: "Continuar", action: {})
+            OnboardingProgressButton(text: "Continuar", action: { viewModel.navigateToSeventh = true})
+            
             OnboardingSkipButton(action: {viewModel.onboardingFinished = true})
 
         }
@@ -46,6 +47,7 @@ struct StartChoreDivisionOnboardingView: View {
         .foregroundColor(.gray)
         .padding(.horizontal, 30)
         .transition(.opacity)
+        .navigationBarBackButtonHidden()
     }
 }
 #Preview {

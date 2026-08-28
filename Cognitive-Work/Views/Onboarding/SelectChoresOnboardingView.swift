@@ -23,6 +23,7 @@ import SwiftUI
 /// > selects it in the others. Give each room its own list before replacing the
 /// > mock with real data.
 struct SelectChoresOnboardingView: View {
+    @Environment(OnboardingViewModel.self) var viewModel
 
     // MARK: - Constants
 
@@ -101,10 +102,14 @@ struct SelectChoresOnboardingView: View {
     private var selectedChores: [ChoreDTO] {
         mockedChores.filter { $0.isSelected }
     }
+    
+    @State private var isLoading = true
 
     // MARK: - Body
 
     var body: some View {
+        @Bindable var bindableViewModel = viewModel
+
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height
@@ -119,10 +124,18 @@ struct SelectChoresOnboardingView: View {
                         }
                     }
                 }
+                
+                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
+                    viewModel.navigateToEighth = true
+                }
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                
 
-                buildAdvanceButton(height: height)
+//                buildAdvanceButton(height: height)
             }
             .padding(.horizontal, width * Layout.horizontalMarginRatio)
+            .navigationBarBackButtonHidden()
         }
     }
 
@@ -195,8 +208,7 @@ struct SelectChoresOnboardingView: View {
             Spacer()
 
             Button {
-                // TODO: Persist `selectedChores` as ChoreModel records and push the
-                // next onboarding step. Blocked until the CloudKit save flow is ready.
+                // TODO: Persist `selectedChores` as ChoreModel records and push the next onboarding step. Blocked until the CloudKit save flow is ready.
                 advanceToNextStep()
             } label: {
                 Image(systemName: "chevron.right")

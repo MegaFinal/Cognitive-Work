@@ -46,25 +46,34 @@ struct InviteUsersOnboardingView: View {
                             }
                             .frame(width: width, height: height, alignment: .center)
                             .foregroundColor(.white)
-                            .background(Capsule().foregroundColor(.blue))
+//                            .background(Capsule().foregroundColor(.blue))
+                            .background(
+                                Capsule()
+                                    .foregroundColor(.blue)
+                                    .glassEffect()
+                            )
                         }
+                        
                     }
                     else {
                         Button {
                         } label: {
                             ProgressView().tint(.white)
                         }
-                        .frame(width: width, height: height)
                         .foregroundColor(.white)
                         .background(Capsule().foregroundStyle(.gray))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     }
                 }
+                
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
                     viewModel.navigateToSixth = true
                 }
                 .multilineTextAlignment(.trailing)
                 
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .centerLastTextBaseline)
+            .padding(.bottom)
             
             OnboardingSkipButton(action: {viewModel.onboardingFinished = true})
             
