@@ -1,0 +1,129 @@
+//
+//  ChoreTagPicker.swift
+//  Cognitive-Work
+//
+//  Created by Dayô Araújo on 28/08/26.
+//
+
+import SwiftUI
+import CloudKit
+
+/// A menu-based picker configured to select core attributes associated with a chore.
+struct ChoreTagPicker: View {
+    
+    /// The mutable configuration state governing the selected options.
+    @Bindable var chore: ChoreDTO
+    
+    /// Defines the attribute mode this picker will govern.
+    var type: TagPickerType
+    
+    /// Internal collection utilized exclusively when the type maps to `.room`.
+    var availableRooms: [RoomModel] = []
+    
+    /// Selected contextual room model derived from the `chore.roomReference`.
+    @State private var currentRoom: RoomModel? = nil
+    
+    var body: some View {
+        Menu {
+            switch type {
+            case .priority:
+                Picker("Prioridade", selection: $chore.priorityTag) {
+                    ForEach(PriorityTag.allCases, id: \.self) { tag in
+                        ColorIconTagLabel(title: tag.rawValue.capitalized, color: tag.color)
+                            .tag(tag)
+                    }
+                }
+                
+            case .frequency:
+                Picker("Frequência", selection: $chore.frequency) {
+                    ForEach(Recurrence.allCases, id: \.self) { freq in
+                        ColorIconTagLabel(title: freq.rawValue.capitalized, color: freq.color)
+                            .tag(freq)
+                    }
+                }
+                
+            case .duration:
+                Picker("Duração", selection: durationTierBinding) {
+                    ForEach(ChoreDurationTier.allCases, id: \.self) { tier in
+                        ColorIconTagLabel(title: tier.displayText.capitalized, color: tier.color)
+                            .tag(tier)
+                    }
+                }
+                
+            case .room:
+                Picker("Cômodo", selection: $currentRoom) {
+                    Text("Sem Cômodo").tag(RoomModel?(nil))
+                    
+                    ForEach(availableRooms, id: \.self) { room in
+                        ColorIconTagLabel(title: room.name.capitalized, color: room.color.uiColor)
+                            .tag(RoomModel?(room))
+                    }
+                }
+            }
+        } label: {
+            HStack {
+                CapsuleTag(
+                    tagName: type.labelName(for: chore, currentRoom: currentRoom),
+                    tagColor: type.labelColor(for: chore, currentRoom: currentRoom),
+                    horizontalPadding: 10.0,
+                    verticalPadding: 1.5
+                )
+                
+                Image(systemName: "chevron.up.chevron.down")
+                    .foregroundColor(.black)
+                    .imageScale(.small)
+            }
+        }
+        .task {
+            if type == .room, let roomReference = chore.roomReference {
+                currentRoom = await CloudKitManager.shared
+                    .fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [roomReference])?
+                    .first
+            }
+        }
+        .onChange(of: currentRoom) { _, newRoom in
+            if let recordID = newRoom?.recordID {
+                chore.roomReference = CKRecord.Reference(recordID: recordID, action: .none)
+            } else {
+                chore.roomReference = nil
+            }
+        }
+    }
+    
+    /// Maps raw numerical duration intervals into standard UX tiers for editing purposes.
+    private var durationTierBinding: Binding<ChoreDurationTier> {
+        Binding(
+            get: {
+                let minutes = chore.duration / 60
+                return ChoreDurationTier.from(minutes: minutes)
+            },
+            set: { newTier in
+                switch newTier {
+                case .muitoRapido: chore.duration = 5 * 60
+                case .rapido: chore.duration = 15 * 60
+                case .moderado: chore.duration = 30 * 60
+                case .demorado: chore.duration = 60 * 60
+                case .muitoDemorado: chore.duration = 120 * 60
+                }
+            }
+        )
+    }
+}
+
+extension UIImage {
+    
+    /// Dynamically constructs an image rendering a colored circle for icon substitution.
+    static func coloredCircle(color: Color) -> UIImage {
+        let uiColor = UIColor(color)
+        let size = CGSize(width: 24, height: 24)
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+        uiColor.setFill()
+        let rect = CGRect(x: 5, y: 5, width: 14, height: 14)
+        UIBezierPath(ovalIn: rect).fill()
+        
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return image ?? UIImage()
+    }
+}

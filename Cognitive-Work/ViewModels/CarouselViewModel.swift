@@ -111,6 +111,41 @@ class CarouselViewModel {
         }
     }
     
+    // MARK: - List Mode Details
+    
+    /// The chore whose details card should currently be shown, driven by whichever card is
+    /// focused — whether that focus came from the carousel or from a list-mode tap.
+    var focusedChoreForDetails: ChoreModel? {
+        guard let focusedIndex, cardModels.indices.contains(focusedIndex) else { return nil }
+        return cardModels[focusedIndex]
+    }
+    
+    /// Shows `index`'s details card right away, without the multi-stage flip animation the
+    /// carousel uses. Used when a list-mode card is tapped: the details card should simply grow
+    /// into view instead of flipping.
+    func focusDetailsImmediately(_ index: Int) {
+        flippedIndices.insert(index)
+        backVisibleIndices.insert(index)
+        
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            focusedIndex = index
+        }
+    }
+    
+    /// Closes a details card opened by `focusDetailsImmediately`, clearing the flip state
+    /// directly instead of animating a flip back — the details card's own removal transition
+    /// handles the "shrink away" instead.
+    func clearFocusedDetails() {
+        if let index = focusedIndex {
+            flippedIndices.remove(index)
+            backVisibleIndices.remove(index)
+        }
+        
+        withAnimation(.easeOut(duration: 0.2)) {
+            focusedIndex = nil
+        }
+    }
+    
     // MARK: - Flip
     
     /// Horizontal flip rotation for the card at `index`: 0° at

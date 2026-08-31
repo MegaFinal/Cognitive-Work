@@ -26,14 +26,14 @@ struct CarouselCardFrame: View {
     
     var body: some View {
         ZStack {
-            ChoreCardFrontFace(chore: chore, namespace: namespace)
+            ChoreCarouselCard(chore: chore, namespace: namespace)
                 .opacity(isShowingBack ? 0 : 1)
                 .scaleEffect(
                     x: isFocused ? (0.88 / 0.72) : 1.0,
                     y: isFocused ? (0.65 / 0.47) : 1.0
                 )
             
-            ChoreDetails(chore: chore, carouselViewModel: carouselViewModel)
+            ChoreDetailsCard(chore: chore, carouselViewModel: carouselViewModel)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(isShowingBack ? 1 : 0)
                 .frame(width: 0, height: 0)
@@ -59,5 +59,5 @@ struct CarouselCardFrame: View {
         priorityTag: .urgent
     )
     
-    return ChoreCardFrontFace(chore: mockChore, namespace: namespace)
+    return ChoreCarouselCard(chore: mockChore, namespace: namespace)
 }

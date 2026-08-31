@@ -78,9 +78,49 @@ struct Carousel: View {
     }
 }
 
-#Preview {
+#Preview("Carousel") {
     @Previewable @Namespace var namespace
     let mockVM = CarouselViewModel()
+
+    let chore1 = ChoreModel(
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão do box e limpar os espelhos.",
+        isDone: false,
+        frequency: .weekly,
+        duration: 1800,
+        isPublic: true,
+        priorityTag: .urgent
+    )
+    chore1.symbolName = "toilet"
+
+    let chore2 = ChoreModel(
+        name: "Varrer a Sala",
+        description: "Afastar os móveis e passar pano úmido.",
+        isDone: false,
+        frequency: .weekly,
+        duration: 1200,
+        isPublic: true,
+        priorityTag: .urgent
+    )
+    chore2.symbolName = "sofa"
     
-    Carousel(viewModel: mockVM, isBackgroundClear: true, onSwipeDown: {}, namespace: namespace)
+    let chore3 = ChoreModel(
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão do box e limpar os espelhos.",
+        isDone: false,
+        frequency: .weekly,
+        duration: 1800,
+        isPublic: true,
+        priorityTag: .urgent
+    )
+    chore3.symbolName = "toilet"
+
+    mockVM.cardModels = [chore1, chore2, chore3]
+
+    return Carousel(
+        viewModel: mockVM,
+        isBackgroundClear: true,
+        onSwipeDown: {},
+        namespace: namespace
+    )
 }

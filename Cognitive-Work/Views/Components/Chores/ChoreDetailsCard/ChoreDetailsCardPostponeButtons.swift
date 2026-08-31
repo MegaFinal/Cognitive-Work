@@ -1,5 +1,5 @@
 //
-//  ChoreDetailsPostponeButtons.swift
+//  ChoreDetailsCardPostponeButtons.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 26/08/26.
@@ -7,7 +7,10 @@
 
 import SwiftUI
 
-struct ChoreDetailsPostponeButtons: View {
+/// Provides quick actions to delay a chore's deadline directly from the details card.
+struct ChoreDetailsCardPostponeButtons: View {
+    
+    /// The chore to be postponed.
     var chore: ChoreModel
     var width: CGFloat
     
