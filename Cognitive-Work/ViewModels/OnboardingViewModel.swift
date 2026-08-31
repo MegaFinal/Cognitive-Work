@@ -190,9 +190,20 @@ class OnboardingViewModel {
         return await CloudKitManager.shared.fetchAll(RoomModel.self, predicate: predicate)
     }
     
-    func creatDefoultChores(){
+    func creatDefoultChores() async {
         for chore in selectedChores {
-            let newChore = ChoreModel(name: chore.name, description: chore.description, frequency: chore.frequency, duration: chore.duration, isPublic: true, priorityTag: chore.priorityTag)
+            await CloudKitManager.shared.create(
+                ChoreModel(
+                    name: chore.name,
+                    description: chore.description,
+                    frequency: chore.frequency,
+                    duration: chore.duration,
+                    isPublic: true,
+                    priorityTag: chore.priorityTag
+                ),
+                parent: chore.roomReference
+            )
         }
+        
     }
 }

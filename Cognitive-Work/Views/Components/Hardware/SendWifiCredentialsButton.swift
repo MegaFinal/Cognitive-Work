@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SendWifiCredentialsButton: View {
-    @Bindable var viewModel: WifiConnectionViewModel
+    @Bindable var viewModel: HardwareViewModel
     var action: () -> Void
     
     var body: some View {
@@ -42,5 +42,5 @@ struct SendWifiCredentialsButton: View {
 }
 
 #Preview {
-    SendWifiCredentialsButton(viewModel: WifiConnectionViewModel(), action: {})
+    SendWifiCredentialsButton(viewModel: HardwareViewModel(), action: {})
 }
