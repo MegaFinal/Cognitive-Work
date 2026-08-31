@@ -62,6 +62,7 @@ struct SelectChoreListItem: View {
                             
                             Spacer()
                         }
+                        .foregroundStyle(chore.isSelected ? .blue : .black)
                     }
                 }
             }

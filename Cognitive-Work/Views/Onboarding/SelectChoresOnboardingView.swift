@@ -85,6 +85,8 @@ struct SelectChoresOnboardingView: View {
         }
         .task {
             rooms = await viewModel.fetchRooms()
+            //TODO: remove print
+            print(rooms)
         }
     }
 }
