@@ -19,7 +19,7 @@ struct ChecklistItemButton: View {
         } label: {
             HStack {
                 Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(item.isDone ? .green : .gray)
+                    .foregroundColor(item.isDone ? .black : .gray)
                     .font(.headline)
                 
                 Text(item.name)

@@ -246,4 +246,44 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.isDone.toggle()
         await CloudKitManager.shared.update(self)
     }
+    
+    /// Applies the edits made in `DTO` to this chore and persists everything to CloudKit.
+    ///
+    /// The chore is saved first (if it doesn't exist yet) so it has a `recordID` before its
+    /// checklist items are created. On failure at any step, the method returns early and
+    /// leaves ``CloudKitManager/errorMessage`` set with the reason.
+    ///
+    /// - Parameter choreDTO: The edited values collected by the create/edit screen.
+    func save(from choreDTO: ChoreDTO) async {
+        applyEditableFields(from: choreDTO)
+
+        if recordID == nil {
+            guard let createdChore = await CloudKitManager.shared.create(self) else { return }
+            recordID = createdChore.recordID
+        }
+
+        guard let choreRecordID = recordID else { return }
+
+        // `.deleteSelf` makes every checklist item that adopts this as its CloudKit parent get
+        // removed automatically when the chore itself is deleted.
+        let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .deleteSelf)
+        checkListReference = await CheckItemModel.sync(from: choreDTO.checklist, parent: choreReference)
+
+        await CloudKitManager.shared.update(self)
+    }
+    
+    /// Copies every user-editable field from `choreDTO` onto this chore.
+    private func applyEditableFields(from choreDTO: ChoreDTO) {
+        name = choreDTO.name
+        description = choreDTO.description
+        frequency = choreDTO.frequency
+        duration = choreDTO.duration
+        priorityTag = choreDTO.priorityTag
+        isPublic = choreDTO.isPublic
+        symbolName = choreDTO.symbolName
+        roomReference = choreDTO.roomReference
+        allResponsibleUsersReference = choreDTO.responsibleUsers.compactMap { responsibleUser in
+            responsibleUser.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+        }
+    }
 }

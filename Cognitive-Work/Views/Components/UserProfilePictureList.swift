@@ -10,6 +10,7 @@ import SwiftUI
 struct UserProfilePictureList: View {
     @Bindable var chore: ChoreModel
     @State var responsibleUsers: [UserModel] = []
+    
     var body: some View {
         HStack(spacing: -20) {
             ForEach($responsibleUsers, id: \.recordID) { $user in

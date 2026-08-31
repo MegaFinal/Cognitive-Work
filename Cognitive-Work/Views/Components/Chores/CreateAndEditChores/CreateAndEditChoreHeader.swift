@@ -8,9 +8,7 @@
 import SwiftUI
 
 struct CreateAndEditChoreHeader: View {
-    @State var room: RoomModel? = nil
-    @Bindable var chore: ChoreModel
-    @State private var choreName: String = ""
+    @Bindable var chore: ChoreDTO
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -30,11 +28,11 @@ struct CreateAndEditChoreHeader: View {
                 VStack(spacing: 2) {
                     TextField(
                         "",
-                        text: $choreName,
+                        text: $chore.name,
                         prompt: Text("Nome da Tarefa")
                             .foregroundStyle(.black)
                     )
-                    .font(.title2)
+                    .font(.title)
                     .bold()
                     
                     Capsule()

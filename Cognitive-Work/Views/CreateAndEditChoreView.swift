@@ -6,151 +6,168 @@
 //
 
 import SwiftUI
+import CloudKit
 
 struct CreateAndEditChoreView: View {
-    @State var room: RoomModel? = nil
-    @State var allResponsibleUsers: [UserModel] = []
-    @Bindable var chore: ChoreModel
+
+    /// Persisted chore being edited, or an unsaved chore when creating a new one.
+    var originalModel: ChoreModel
+
+    /// Every user in the house
+    @State var availableHouseUsers: [UserModel]
+
+    /// Copy of the chore's editable fields
+    @State private var choreDTO = ChoreDTO()
     
-    @State private var choreName: String = ""
-    @State private var choreDescription: String = ""
-    
-    @State private var hasChecklist = false
-    @State private var localChecklist: [CheckItemDTO] = []
-    
+    /// Determines if the user is trying to save the changes.
+    @State private var isSaving = false
+
+    @Environment(\.dismiss) private var dismiss
+
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
+    // MARK: - Main Body
+    
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 40) {
-                CreateAndEditChoreHeader(chore: chore)
-                
-                VStack(spacing: 15) {
+            VStack(alignment: .leading, spacing: 25) {
+                CreateAndEditChoreHeader(chore: choreDTO)
+
+                VStack(spacing: 10) {
                     HStack {
-                        Text("Prioridade").bold()
+                        Text("Prioridade")
                         Spacer()
-                        TagPicker(chore: chore, type: .priority)
+                        TagPicker(chore: choreDTO, type: .priority)
                     }
-                    
+
                     HStack {
-                        Text("Duração").bold()
+                        Text("Duração")
                         Spacer()
-                        TagPicker(chore: chore, type: .duration)
+                        TagPicker(chore: choreDTO, type: .duration)
                     }
-                    
+
                     HStack {
-                        Text("Frequência").bold()
+                        Text("Frequência")
                         Spacer()
-                        TagPicker(chore: chore, type: .frequency)
+                        TagPicker(chore: choreDTO, type: .frequency)
                     }
                 }
-                
+                .font(.subheadline)
+                .fontWeight(.semibold)
+
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Descrição").bold()
+                    Text("Descrição")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                     
-                    TextField("Descrição da Tarefa", text: $choreDescription, axis: .vertical)
+                    TextField("Descrição da Tarefa", text: $choreDTO.description, axis: .vertical)
+                        .font(.body)
+                        .foregroundColor(.gray)
                 }
-                
-                HStack {
-                    Text("Checklist")
-                        .bold()
+
+                ChecklistSection(choreDTO: choreDTO, width: width)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Responsáveis")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                     
-                    Spacer()
-                    
-                    Toggle("", isOn: $hasChecklist)
-                        .toggleStyle(.switch)
-                        .onChange(of: hasChecklist) { _, isOn in
-                            if isOn && localChecklist.isEmpty {
-                                localChecklist.append(CheckItemDTO(name: "", isDone: false))
-                            }
-                        }
-                        .padding(.trailing, 3)
+                    ResponsibleUserPicker(availableUsers: availableHouseUsers, selectedUsers: $choreDTO.responsibleUsers)
                 }
-                .frame(width: width * 0.9)
-                
-                if hasChecklist {
-                    VStack(alignment: .leading, spacing: 16) {
-                        ForEach($localChecklist) { $item in
-                            HStack {
-                                Button {
-                                    item.isDone.toggle()
-                                } label: {
-                                    Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(item.isDone ? .green : .gray)
-                                        .font(.headline)
-                                }
-                                
-                                TextField("Novo item", text: $item.name)
-                                    .strikethrough(item.isDone, color: .gray)
-                                    .foregroundColor(item.isDone ? .gray : .black)
-                                    .font(.footnote)
-                                
-                                Spacer()
-                                
-                                Button {
-                                    localChecklist.removeAll { $0.id == item.id }
-                                    if localChecklist.isEmpty {
-                                        hasChecklist = false
-                                    }
-                                } label: {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundColor(.red)
-                                }
-                            }
-                        }
-                        
-                        Button {
-                            localChecklist.append(CheckItemDTO(name: "", isDone: false))
-                        } label: {
-                            HStack {
-                                Image(systemName: "plus.circle.fill")
-                                Text("Adicionar item")
-                                    .font(.footnote)
-                            }
-                            .foregroundColor(.blue)
-                            .padding(.top, 5)
-                        }
+
+                PublicToggleSection(choreDTO: choreDTO, width: width)
+
+                Spacer()
+
+                ConfirmButtonSection(
+                    isSaving: isSaving,
+                    isDisabled: choreDTO.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving,
+                    width: width,
+                    height: height,
+                    action: {
+                        Task { await confirmAndSave() }
                     }
-                }
-                
-                Spacer(minLength: 40)
-                
-                HStack {
-                    Spacer()
-                    Button {
-                        // TODO: Salvar
-                    } label: {
-                        Text("Confirmar")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
-                            .frame(width: width * 0.8, height: height * 0.06)
-                            .background(Color.blue)
-                            .clipShape(Capsule())
-                    }
-                    Spacer()
-                }
+                )
             }
             .padding(.vertical)
             .frame(width: width * 0.9)
         }
         .task {
-            let savedItems = await chore.checkList
-            if !savedItems.isEmpty {
-                self.localChecklist = savedItems.map { CheckItemDTO(name: $0.name, isDone: $0.isDone) }
-                self.hasChecklist = true
-            }
+            await loadDraftIfNeeded()
         }
+    }
+    
+    // MARK: - Methods
+
+    /// Method that persists the draft onto `originalModel` and closes the screen
+    /// once saving completes.
+    private func confirmAndSave() async {
+        isSaving = true
+        await originalModel.save(from: choreDTO)
+        isSaving = false
+        dismiss()
+    }
+
+    /// A new chore keeps the empty draft created by `ChoreDTO()`.
+    private func loadDraftIfNeeded() async {
+        guard originalModel.recordID != nil else { return }
+
+        async let checklistModels = originalModel.checkList
+        async let responsibleUsers = originalModel.allResponsibleUsers
+        async let room = originalModel.room
+
+        let (savedChecklist, savedResponsibleUsers, savedRoom) = await (checklistModels, responsibleUsers, room)
+
+        choreDTO = ChoreDTO(
+            from: originalModel,
+            users: savedResponsibleUsers,
+            checklist: savedChecklist.map(CheckItemDTO.init(from:)),
+            room: savedRoom
+        )
     }
 }
 
-fileprivate class MockChoreModel: ChoreModel { }
+// MARK: - Mock for Preview
+fileprivate class MockChoreModel: ChoreModel {
+    var mockUsers: [UserModel] = []
+    var mockChecklist: [CheckItemModel] = []
+    var mockRoom: RoomModel? = nil
+    
+    override var allResponsibleUsers: [UserModel] { get async { mockUsers } }
+    override var checkList: [CheckItemModel] { get async { mockChecklist } }
+    override var room: RoomModel? { get async { mockRoom } }
+}
 
 #Preview {
+    let user1 = UserModel(name: "Dayô", tier: .tier1, recordID: CKRecord.ID(recordName: "user1"))
+    let user2 = UserModel(name: "João", tier: .tier1, recordID: CKRecord.ID(recordName: "user2"))
+    let user3 = UserModel(name: "Maria", tier: .tier2, recordID: CKRecord.ID(recordName: "user3"))
+    let allUsers = [user1, user2, user3]
+    
+    let check1 = CheckItemModel(name: "Limpar o espelho", isDone: true)
+    check1.recordID = CKRecord.ID(recordName: "check1")
+    let check2 = CheckItemModel(name: "Lavar o chão", isDone: false)
+    check2.recordID = CKRecord.ID(recordName: "check2")
+    
     let mockChore = MockChoreModel(
         name: "Lavar Banheiro",
-        description: "Deixar tudo brilhando",
-        isDone: false, frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent
+        description: "Deixar tudo brilhando e cheiroso",
+        isDone: false,
+        frequency: .weekly,
+        duration: 1800,
+        isPublic: false,
+        priorityTag: .urgent
     )
-    return CreateAndEditChoreView(chore: mockChore)
+    
+    mockChore.recordID = CKRecord.ID(recordName: "chore_existente")
+    mockChore.mockUsers = [user1, user2]
+    mockChore.mockChecklist = [check1, check2]
+    
+    return NavigationStack {
+        CreateAndEditChoreView(
+            originalModel: mockChore,
+            availableHouseUsers: allUsers
+        )
+    }
 }

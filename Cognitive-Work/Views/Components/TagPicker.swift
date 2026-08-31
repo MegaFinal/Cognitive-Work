@@ -9,7 +9,7 @@ import SwiftUI
 import CloudKit
 
 struct TagPicker: View {
-    @Bindable var chore: ChoreModel
+    @Bindable var chore: ChoreDTO
     var type: TagPickerType
     
     var availableRooms: [RoomModel] = []
@@ -66,8 +66,10 @@ struct TagPicker: View {
             }
         }
         .task {
-            if type == .room {
-                currentRoom = await chore.room
+            if type == .room, let roomReference = chore.roomReference {
+                currentRoom = await CloudKitManager.shared
+                    .fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [roomReference])?
+                    .first
             }
         }
         .onChange(of: currentRoom) { _, newRoom in

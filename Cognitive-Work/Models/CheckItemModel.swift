@@ -69,4 +69,56 @@ class CheckItemModel: CloudKitSyncable, Identifiable {
         self.isDone.toggle()
         await CloudKitManager.shared.update(self)
     }
+    
+    /// Persists a checklist DTO, creating or updating each item as needed.
+    ///
+    /// Every new item is created inside the same record zone as `parentReference` and adopts it
+    /// as its CloudKit parent, so a checklist item never outlives the chore that owns it.
+    ///
+    /// - Parameters:
+    ///   - draftItems: The checklist as currently edited in the UI. Items with a blank name are
+    ///     skipped, since they represent rows the user started but never filled in.
+    ///   - parentReference: Reference to the owning chore, expected to use `action: .deleteSelf`
+    ///     so deleting the chore cascades to every checklist item that references it.
+    /// - Returns: A reference to every checklist item that saved successfully, suitable for
+    ///   storing on `ChoreModel.checkListReference`. Items that failed to save are omitted rather
+    ///   than failing the whole sync; check ``CloudKitManager/errorMessage`` for details.
+    static func sync(
+        from draftItems: [CheckItemDTO],
+        parent parentReference: CKRecord.Reference
+    ) async -> [CKRecord.Reference] {
+        var savedItemReferences: [CKRecord.Reference] = []
+
+        for draftItem in draftItems {
+            let trimmedName = draftItem.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedName.isEmpty else { continue }
+
+            if let existingRecordID = draftItem.originalRecordID {
+                let updatedCheckItem = CheckItemModel(name: trimmedName, isDone: draftItem.isDone)
+                updatedCheckItem.recordID = existingRecordID
+
+                guard await CloudKitManager.shared.update(updatedCheckItem) else { continue }
+                savedItemReferences.append(
+                    CKRecord.Reference(recordID: existingRecordID, action: .none)
+                )
+            } else {
+                let newCheckItem = CheckItemModel(name: trimmedName, isDone: draftItem.isDone)
+
+                guard
+                    let createdCheckItem = await CloudKitManager.shared.create(
+                        newCheckItem,
+                        zoneID: parentReference.recordID.zoneID,
+                        parent: parentReference
+                    ),
+                    let createdRecordID = createdCheckItem.recordID
+                else { continue }
+
+                savedItemReferences.append(
+                    CKRecord.Reference(recordID: createdRecordID, action: .none)
+                )
+            }
+        }
+
+        return savedItemReferences
+    }
 }

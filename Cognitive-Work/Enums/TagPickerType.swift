@@ -14,7 +14,7 @@ enum TagPickerType {
     case duration
     case room
         
-    func labelName(for chore: ChoreModel, currentRoom: RoomModel?) -> String {
+    func labelName(for chore: ChoreDTO, currentRoom: RoomModel?) -> String {
         switch self {
         case .priority:
             return chore.priorityTag.rawValue.capitalized
@@ -28,7 +28,7 @@ enum TagPickerType {
         }
     }
     
-    func labelColor(for chore: ChoreModel, currentRoom: RoomModel?) -> Color {
+    func labelColor(for chore: ChoreDTO, currentRoom: RoomModel?) -> Color {
         switch self {
         case .priority:
             return chore.priorityTag.color
