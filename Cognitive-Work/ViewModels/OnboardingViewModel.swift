@@ -60,6 +60,8 @@ class OnboardingViewModel {
         RoomDTO(name: "Outro", symbol: "plus", isAddButton: true)
     ]
     
+    var selectedChores: [ChoreDTO] = []
+    
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
     ///
@@ -178,5 +180,19 @@ class OnboardingViewModel {
         }
 
         isLoading = false
+    }
+    
+    @MainActor
+    func fetchRooms() async -> [RoomModel] {
+        guard let houseID = currentHouse?.recordID else { return [] }
+        let reference = CKRecord.Reference(recordID: houseID, action: .deleteSelf)
+        let predicate = NSPredicate(format: "house == %@", reference)
+        return await CloudKitManager.shared.fetchAll(RoomModel.self, predicate: predicate)
+    }
+    
+    func creatDefoultChores(){
+        for chore in selectedChores {
+            let newChore = ChoreModel(name: chore.name, description: chore.description, frequency: chore.frequency, duration: chore.duration, isPublic: true, priorityTag: chore.priorityTag)
+        }
     }
 }
