@@ -14,7 +14,7 @@ import UIKit
 
 
 @Observable
-class WifiConnectionViewModel {
+class HardwareViewModel {
     var deviceIP = ""
     var userWifiName = ""
     var userWifiPassord = ""

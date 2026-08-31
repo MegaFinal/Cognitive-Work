@@ -21,12 +21,14 @@ struct FortnightlyScheduleView: View {
             if scheduleViewModel.isLoading {
                 WaitingAlgorithmView()
             } else {
-                FortnightlyView()
+                FortnightlyView(users: scheduleViewModel.users, chores: scheduleViewModel.chores)
             }
         }
         
         .task {
             await scheduleViewModel.generateSchedule()
+        }
+        .onAppear{
         }
     }
 }

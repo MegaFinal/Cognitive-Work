@@ -23,11 +23,13 @@ struct OnboardingProgressButton: View {
 
     var isLoading: Bool = false
     var isDisabled: Bool = false
-    var action: () -> Void
+    var action: () async -> Void
     
     var body: some View {
         Button {
-            action()
+            Task {
+                await action()
+            }
         } label: {
             ZStack {
                 if isLoading {

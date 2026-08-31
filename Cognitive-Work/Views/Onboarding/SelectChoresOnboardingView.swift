@@ -75,6 +75,7 @@ struct SelectChoresOnboardingView: View {
                     }
                 
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
+                    await viewModel.creatDefoultChores()
                     viewModel.navigateToEighth = true
                 }
                 .multilineTextAlignment(.trailing)

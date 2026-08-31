@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct DevicePairView: View {
-    @Bindable var viewModel: WifiConnectionViewModel
+    @Bindable var viewModel: HardwareViewModel
     let image1 = UIImage(named: "fish")
     let image2 = UIImage(named: "emoji")
     
@@ -76,5 +76,5 @@ struct DevicePairView: View {
 }
 
 #Preview {
-    DevicePairView(viewModel: WifiConnectionViewModel())
+    DevicePairView(viewModel: HardwareViewModel())
 }
