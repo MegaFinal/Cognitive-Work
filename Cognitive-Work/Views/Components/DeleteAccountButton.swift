@@ -26,11 +26,20 @@ struct DeleteAccountButton: View {
             if isDeleting {
                 ProgressView()
             } else {
-                Text("Apagar conta")
+//                Text("Apagar conta")
+                Image(systemName: "trash")
+                    .font(.subheadline)
+                    .padding(16)
+
+                   
             }
         }
+//        .glassEffect(
+//            .regular.interactive(),
+//            in: .circle
+//        )
         .disabled(isDeleting)
-        .confirmationDialog( "Tem certeza que deseja apagar sua conta? Ao deletar a conta você será removido das casas a que pertence", isPresented: $showConfirmation, titleVisibility: .visible
+        .confirmationDialog( "Tem certeza que deseja apagar sua conta?\nAo deletar a conta você será removido das casas a que pertence", isPresented: $showConfirmation, titleVisibility: .visible
         ) {
             Button("Apagar conta", role: .destructive) {
                 Task { await deleteAccount() }

@@ -21,7 +21,7 @@ struct CreateProfileOnboardingView: View {
             OnboardingHeaderText(titleText: "Para começarmos...", descriptionText: "Escolha um Memoji e um nome para utilizar no seu app")
             
             PhotosPicker(selection: $selectedItem, matching: .images) {
-                ProfileImage(image: vm.userProfilePicture)
+                ProfileImage(image: vm.userProfilePicture, isEditing: true)
             }
             .layoutPriority(1)
             

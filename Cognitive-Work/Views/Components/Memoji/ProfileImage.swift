@@ -10,6 +10,7 @@ import Photos
 
 struct ProfileImage: View {
     let image: UIImage?
+    let isEditing: Bool
     
     var body: some View {
         Group {
@@ -25,7 +26,7 @@ struct ProfileImage: View {
                     .fill(Color(.systemGray5))
                     .frame(width: 285, height: 285)
                     .overlay {
-                        Image(systemName: "person.fill.badge.plus")
+                        Image(systemName: isEditing ? "person.fill.badge.plus" : "person.fill")
                             .font(.system(size: 65))
                             .foregroundStyle(.gray)
                     }
