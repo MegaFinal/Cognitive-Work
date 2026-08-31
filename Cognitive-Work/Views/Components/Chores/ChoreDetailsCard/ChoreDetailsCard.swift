@@ -1,5 +1,5 @@
 //
-//  ChoreCardBackFace.swift
+//  ChoreDetailsCard.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 18/08/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChoreDetails: View {
+struct ChoreDetailsCard: View {
     @State var room: RoomModel? = nil
     @State var allResponsibleUsers: [UserModel] = []
     @Bindable var chore: ChoreModel
@@ -19,12 +19,12 @@ struct ChoreDetails: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                ChoreDetailsHeader(chore: chore, width: width, height: height)
+                ChoreDetailsCardHeader(chore: chore, width: width, height: height)
                 
-                ChoreDetailsInfo(chore: chore, width: width, height: height)
+                ChoreDetailsCardInfo(chore: chore, width: width, height: height)
                 
                 VStack {
-                    ChoreDetailsPostponeButtons(chore: chore, width: width)
+                    ChoreDetailsCardPostponeButtons(chore: chore, width: width)
                     
                     SwipeToCompleteButton(action:  {
                         Task {
@@ -51,12 +51,17 @@ struct ChoreDetails: View {
                 Spacer()
                 
                 if allResponsibleUsers.count == 1 {
-                    UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture)
+                    UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.05)
                 } else {
                     UserProfilePictureList(chore: chore)
                 }
                 
-                Button {}
+                NavigationLink {
+                    CreateAndEditChoreView(
+                        originalModel: chore,
+                        availableHouseUsers: allResponsibleUsers
+                    )
+                }
                 label: {
                     Image(systemName: "pencil")
                         .foregroundColor(.white)
@@ -95,5 +100,5 @@ struct ChoreDetails: View {
     
     let carouselVM = CarouselViewModel()
     
-    return ChoreDetails(chore: mockChore, carouselViewModel: carouselVM)
+    return ChoreDetailsCard(chore: mockChore, carouselViewModel: carouselVM)
 }

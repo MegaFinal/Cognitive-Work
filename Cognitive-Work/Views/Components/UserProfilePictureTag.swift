@@ -11,6 +11,7 @@ struct UserProfilePictureTag: View {
     let imageData: Data?
 
     var width = UIScreen.main.bounds.width
+    var widthMultiplier: Double
     
     var body: some View {
         Group {
@@ -18,13 +19,13 @@ struct UserProfilePictureTag: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: width * 0.05)
+                    .frame(width: width * widthMultiplier)
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
                     .scaledToFit()
                     .foregroundStyle(.gray.opacity(0.5))
-                    .frame(width: width * 0.05)
+                    .frame(width: width * widthMultiplier)
             }
         }
         .padding(7)
@@ -41,5 +42,5 @@ struct UserProfilePictureTag: View {
         profilePicture: mockImageData, tier: .tier1
     )
     
-    UserProfilePictureTag(imageData: mockUser.profilePicture)
+    UserProfilePictureTag(imageData: mockUser.profilePicture, widthMultiplier: 0.05)
 }

@@ -1,5 +1,5 @@
 //
-//  ChoreDetailsHeader.swift
+//  ChoreDetailsCardHeader.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 26/08/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChoreDetailsHeader: View {
+struct ChoreDetailsCardHeader: View {
     var chore: ChoreModel
     var width: CGFloat
     var height: CGFloat
@@ -27,17 +27,23 @@ struct ChoreDetailsHeader: View {
             HStack(spacing: 12) {
                 CapsuleTag(
                     tagName: chore.priorityTag.rawValue,
-                    tagColor: chore.priorityTag.color
+                    tagColor: chore.priorityTag.color,
+                    horizontalPadding: 10.0,
+                    verticalPadding: 1.5
                 )
                 
                 CapsuleTag(
                     tagName: chore.priorityTag.rawValue,
-                    tagColor: chore.priorityTag.color
+                    tagColor: chore.priorityTag.color,
+                    horizontalPadding: 10.0,
+                    verticalPadding: 1.5
                 )
                 
                 CapsuleTag(
                     tagName: chore.frequency.rawValue,
-                    tagColor: chore.frequency.color
+                    tagColor: chore.frequency.color,
+                    horizontalPadding: 10.0,
+                    verticalPadding: 1.5
                 )
             }
         }

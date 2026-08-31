@@ -10,13 +10,15 @@ import SwiftUI
 struct CapsuleTag: View {
     var tagName: String
     var tagColor: Color
+    var horizontalPadding: Double
+    var verticalPadding: Double
     
     var body: some View {
         Text(tagName)
             .font(.footnote)
             .foregroundColor(.white)
-            .padding(.horizontal)
-            .padding(.vertical, 1.5)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .background(tagColor)
             .clipShape(Capsule())
     }

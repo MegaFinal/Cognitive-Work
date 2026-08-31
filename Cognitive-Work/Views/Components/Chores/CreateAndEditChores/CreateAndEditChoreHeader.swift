@@ -45,7 +45,7 @@ struct CreateAndEditChoreHeader: View {
                     
                     Spacer()
                     
-                    TagPicker(chore: chore, type: .room)
+                    ChoreTagPicker(chore: chore, type: .room)
                 }
             }
             .frame(width: width * 0.65)

@@ -16,7 +16,9 @@ struct ChoreListLayout: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 ForEach(Array(viewModel.cardModels.enumerated()), id: \.element.id) { index, chore in
-                    ChoreCardListStyle(chore: chore, namespace: namespace)
+                    ChoreCardListStyle(chore: chore, namespace: namespace) {
+                        viewModel.focusDetailsImmediately(index)
+                    }
                 }
             }
             .padding(.top, 8)

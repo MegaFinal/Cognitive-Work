@@ -1,5 +1,5 @@
 //
-//  ChoreDetailsInfo.swift
+//  ChoreDetailsCardInfo.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 26/08/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChoreDetailsInfo: View {
+struct ChoreDetailsCardInfo: View {
     @Bindable var chore: ChoreModel
     @State var room: RoomModel? = nil
     @State var checkList: [CheckItemModel] = []
@@ -31,7 +31,9 @@ struct ChoreDetailsInfo: View {
                     
                     CapsuleTag(
                         tagName: room?.name ?? "Unnamed room",
-                        tagColor: room?.color.uiColor ?? .gray
+                        tagColor: room?.color.uiColor ?? .gray,
+                        horizontalPadding: 0.0,
+                        verticalPadding: 1.5
                     )
                 }
                 

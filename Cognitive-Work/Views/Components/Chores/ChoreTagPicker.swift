@@ -1,5 +1,5 @@
 //
-//  TagPicker.swift
+//  ChoreTagPicker.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 28/08/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 import CloudKit
 
-struct TagPicker: View {
+struct ChoreTagPicker: View {
     @Bindable var chore: ChoreDTO
     var type: TagPickerType
     
@@ -57,7 +57,9 @@ struct TagPicker: View {
             HStack {
                 CapsuleTag(
                     tagName: type.labelName(for: chore, currentRoom: currentRoom),
-                    tagColor: type.labelColor(for: chore, currentRoom: currentRoom)
+                    tagColor: type.labelColor(for: chore, currentRoom: currentRoom),
+                    horizontalPadding: 0.0,
+                    verticalPadding: 1.5
                 )
                 
                 Image(systemName: "chevron.up.chevron.down")

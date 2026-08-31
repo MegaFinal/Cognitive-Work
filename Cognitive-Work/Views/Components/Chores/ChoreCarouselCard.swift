@@ -1,5 +1,5 @@
 //
-//  ChoreCardFrontFace.swift
+//  ChoreCarouselCard.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 18/08/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChoreCardFrontFace: View {
+struct ChoreCarouselCard: View {
     let chore: ChoreModel
     @State var room: RoomModel? = nil
     let namespace: Namespace.ID
@@ -47,5 +47,5 @@ struct ChoreCardFrontFace: View {
         priorityTag: .urgent
     )
     
-    return ChoreCardFrontFace(chore: mockChore, namespace: namespace)
+    return ChoreCarouselCard(chore: mockChore, namespace: namespace)
 }

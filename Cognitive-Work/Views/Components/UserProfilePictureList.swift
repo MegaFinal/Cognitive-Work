@@ -14,7 +14,7 @@ struct UserProfilePictureList: View {
     var body: some View {
         HStack(spacing: -20) {
             ForEach($responsibleUsers, id: \.recordID) { $user in
-                UserProfilePictureTag(imageData: user.profilePicture)
+                UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: 0.05)
                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
             }
         }

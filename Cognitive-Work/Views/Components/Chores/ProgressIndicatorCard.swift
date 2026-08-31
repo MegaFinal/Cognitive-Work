@@ -10,6 +10,8 @@ import SwiftUI
 struct ProgressIndicatorCard: View {
     var title: String
     var data: String
+    var color: Color = .gray
+    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
@@ -18,18 +20,19 @@ struct ProgressIndicatorCard: View {
             Text(title)
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.8))
                 .padding(.top, 10)
             
             Spacer()
             
             Text(data)
                 .font(.subheadline)
-                .fontWeight(.medium)
+                .fontWeight(.bold)
                 .padding(.bottom, 25)
+                .foregroundColor(.white)
         }
         .frame(width: width * 0.28, height: height * 0.088)
-        .background(.gray)
+        .background(color)
         .clipShape(RoundedRectangle(cornerRadius: 21))
     }
 }

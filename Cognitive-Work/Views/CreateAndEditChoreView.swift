@@ -30,7 +30,7 @@ struct CreateAndEditChoreView: View {
     // MARK: - Main Body
     
     var body: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 25) {
                 CreateAndEditChoreHeader(chore: choreDTO)
 
@@ -38,19 +38,19 @@ struct CreateAndEditChoreView: View {
                     HStack {
                         Text("Prioridade")
                         Spacer()
-                        TagPicker(chore: choreDTO, type: .priority)
+                        ChoreTagPicker(chore: choreDTO, type: .priority)
                     }
 
                     HStack {
                         Text("Duração")
                         Spacer()
-                        TagPicker(chore: choreDTO, type: .duration)
+                        ChoreTagPicker(chore: choreDTO, type: .duration)
                     }
 
                     HStack {
                         Text("Frequência")
                         Spacer()
-                        TagPicker(chore: choreDTO, type: .frequency)
+                        ChoreTagPicker(chore: choreDTO, type: .frequency)
                     }
                 }
                 .font(.subheadline)

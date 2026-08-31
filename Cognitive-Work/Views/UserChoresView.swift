@@ -6,67 +6,115 @@
 //
 
 import SwiftUI
+import CloudKit
 
 struct UserChoresView: View {
     @State var carouselVM = CarouselViewModel()
-    var height = UIScreen.main.bounds.width
+    @State private var activeRoomColor: Color = .gray
+    
     @Namespace private var cardAnimation
+    
+    var width = UIScreen.main.bounds.width
+    var height = UIScreen.main.bounds.height
     
     var body: some View {
         NavigationStack {
             ZStack {
                 VStack(spacing: 15) {
-                    HStack {
-                        Text("Suas Tarefas")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .padding(.horizontal, 30)
-                            .padding(.top, 20)
-    
-                        Spacer()
-    
-                        LayoutToggleButton(viewModel: carouselVM)
-                            .padding(.top, 20)
-                            .padding(.trailing, 30)
-                    }
+                    ChoresViewHeader(carouselVM: $carouselVM)
                     
-                    HStack(spacing: 10) {
-                        ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min")
-                        ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min")
-                        ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min")
+                    if carouselVM.layoutMode == .grid {
+                        ChoresViewProgressSection(activeRoomColor: activeRoomColor)
+                    } else {
+                        ChoresViewProgressSection(activeRoomColor: .black)
                     }
-                    .padding(.horizontal, 30)
                     
                     Spacer()
-                    .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
+                        .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
                     
                     if carouselVM.layoutMode != .grid {
-                       ChoreListLayout(
-                           viewModel: carouselVM,
-                           onSwipeDown: carouselVM.toggleLayout, namespace: cardAnimation
-                       )
-                       .zIndex(1000)
-                   }
+                        ChoreListLayout(
+                            viewModel: carouselVM,
+                            onSwipeDown: carouselVM.toggleLayout, namespace: cardAnimation
+                        )
+                        .zIndex(1000)
+                    }
+                    
+                    ChoresViewButtonsSection()
+                }
+                
+                if carouselVM.hasFocusedCard {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .zIndex(1)
+                        .transition(.opacity)
+                        .onTapGesture {
+                            dismissFocusedCard()
+                        }
                 }
                 
                 if carouselVM.layoutMode == .grid {
-                    Spacer()
-                    Carousel(
-                        viewModel: carouselVM,
-                        isBackgroundClear: true,
-                        onSwipeDown: carouselVM.toggleLayout, namespace: cardAnimation
-                    )
-                    Spacer()
-                    
+                    VStack {
+                        Spacer()
+                        Carousel(
+                            viewModel: carouselVM,
+                            isBackgroundClear: true,
+                            onSwipeDown: carouselVM.toggleLayout, namespace: cardAnimation
+                        )
+                        Spacer()
+                    }
+                    .zIndex(2)
+                } else if let focusedChore = carouselVM.focusedChoreForDetails {
+                    VStack {
+                        Spacer()
+                        CarouselCardFrame(
+                            chore: focusedChore,
+                            carouselViewModel: carouselVM,
+                            namespace: cardAnimation,
+                            isFocused: true,
+                            rotation: 180,
+                            isShowingBack: true
+                        )
+                        Spacer()
+                    }
+                    .zIndex(2)
+                    .transition(.scale)
                 }
             }
             .background(
                 Color(.white)
                     .ignoresSafeArea()
                     .onTapGesture {
-                        carouselVM.clearFocus()
+                        dismissFocusedCard()
                     }
             )
+        }
+        .task(id: [carouselVM.activeIndex, carouselVM.cardModels.count]) {
+            await updateActiveRoomColor()
+        }
+    }
+    
+    private func dismissFocusedCard() {
+        if carouselVM.layoutMode == .grid {
+            carouselVM.clearFocus()
+        } else {
+            carouselVM.clearFocusedDetails()
+        }
+    }
+    
+    private func updateActiveRoomColor() async {
+        guard !carouselVM.cardModels.isEmpty,
+              carouselVM.cardModels.indices.contains(carouselVM.activeIndex) else {
+            activeRoomColor = .gray
+            return
+        }
+        
+        let centeredChore = carouselVM.cardModels[carouselVM.activeIndex]
+        
+        if let room = await centeredChore.room {
+            activeRoomColor = room.color.uiColor
+        } else {
+            activeRoomColor = .gray
         }
     }
 }
@@ -91,7 +139,7 @@ fileprivate class MockChoreModel: ChoreModel {
     let room1 = RoomModel(name: "Banheiro", color: .blue)
     let room2 = RoomModel(name: "Cozinha", color: .red)
     let room3 = RoomModel(name: "Sofa", color: .yellow)
-
+    
     let mockVM = CarouselViewModel()
     
     let chore1 = MockChoreModel(
@@ -100,6 +148,7 @@ fileprivate class MockChoreModel: ChoreModel {
         isDone: false, frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent
     )
     chore1.symbolName = "toilet"
+    chore1.recordID = CKRecord.ID(recordName: "chore_1")
     chore1.mockUsers = [user1, user2]
     chore1.mockChecklist = [
         CheckItemModel(name: "Lavar o vaso sanitário", isDone: true),
@@ -114,6 +163,7 @@ fileprivate class MockChoreModel: ChoreModel {
         isDone: false, frequency: .weekly, duration: 1200, isPublic: true, priorityTag: .urgent
     )
     chore2.symbolName = "sofa"
+    chore2.recordID = CKRecord.ID(recordName: "chore_2")
     chore2.mockUsers = [user3]
     chore2.mockChecklist = [
         CheckItemModel(name: "Afastar o sofá", isDone: true),
@@ -127,6 +177,7 @@ fileprivate class MockChoreModel: ChoreModel {
         isDone: false, frequency: .daily, duration: 2400, isPublic: true, priorityTag: .low
     )
     chore3.symbolName = "frying.pan"
+    chore3.recordID = CKRecord.ID(recordName: "chore_3")
     chore3.mockUsers = [user1, user2, user3]
     chore3.mockChecklist = [
         CheckItemModel(name: "Cortar legumes", isDone: true),

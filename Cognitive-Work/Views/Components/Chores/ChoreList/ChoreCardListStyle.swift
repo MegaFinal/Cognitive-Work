@@ -11,7 +11,12 @@ import SwiftUI
 struct ChoreCardListStyle: View {
     @State var chore: ChoreModel
     @State var room: RoomModel? = nil
+    @State var allResponsibleUsers: [UserModel] = []
     let namespace: Namespace.ID
+    
+    /// Called when the card is tapped. Used by the parent list to bring up this chore's
+    /// details card.
+    var onTap: () -> Void = {}
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -24,6 +29,7 @@ struct ChoreCardListStyle: View {
                 topCutoutHeight: 38
             )
             .fill(room?.color.uiColor ?? .gray)
+            .shadow(color: .black.opacity(0.21), radius: 3.35, x: 0, y: 5)
             
             HStack(spacing: 35) {
                 Image(systemName: chore.symbolName)
@@ -32,67 +38,86 @@ struct ChoreCardListStyle: View {
                     .frame(width: width * 0.1, height: height * 0.08)
                     .fontWeight(.thin)
                 
-                VStack(alignment: .leading) {
-                    HStack {
-                        PriorityDurationDotTag(
-                            text: chore.priorityTag.rawValue,
-                            color: chore.priorityTag.color
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack(spacing: 5) {
+                        if allResponsibleUsers.count == 1 {
+                            UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.01)
+                            
+                        } else {
+                            UserProfilePictureList(chore: chore)
+                        }
+                        
+                        CapsuleTag(
+                            tagName: chore.priorityTag.rawValue,
+                            tagColor: chore.priorityTag.color,
+                            horizontalPadding: 7.0,
+                            verticalPadding: 1.0
                         )
                         
-                        PriorityDurationDotTag(
-                            text: chore.priorityTag.rawValue,
-                            color: chore.priorityTag.color
+                        CapsuleTag(
+                            tagName: chore.frequency.rawValue,
+                            tagColor: chore.frequency.color,
+                            horizontalPadding: 7.0,
+                            verticalPadding: 1.0
                         )
                     }
                     
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(room?.name ?? "Room not founded")
-                                .font(.caption)
-                            
-                            Text(chore.name)
-                                .font(.title2)
-                                .bold()
-                        }
-                        
-                        Spacer()
-                        
-                        Button {
-                            Task {
-                                await chore.toggle()
+                    VStack {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(room?.name ?? "Room not found")
+                                    .font(.caption)
+                                
+                                Text(chore.name)
+                                    .font(.title2)
+                                    .bold()
                             }
-                        } label: {
-                            Circle()
-                                .frame(width: width * 0.06, height: height * 0.1)
-                                .foregroundColor(chore.isDone ? .green : .white)
+                            
+                            Spacer()
+                            
+                            Button {
+                                Task {
+                                    await chore.toggle()
+                                }
+                            } label: {
+                                ZStack {
+                                    Circle()
+                                        .foregroundColor(.white)
+                                        .frame(width: width * 0.05)
+                                    
+                                    Image(systemName: chore.isDone ? "checkmark.circle.fill" : "circle.fill")
+                                        .foregroundColor(chore.isDone ? .black : .white)
+                                        .font(.title)
+                                }
+                            }
                         }
                     }
                 }
+                .padding(.bottom, 25)
             }
             .padding(.horizontal, 25)
-            .padding(.top)
         }
         .task {
             room = await chore.room
         }
         .frame(width: width * 0.92, height: height * 0.14)
-        //        .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
+        .onTapGesture(perform: onTap)
         .transition(.identity)
     }
 }
 
-#Preview {
-    @Previewable @Namespace var namespace
-    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    
-    let mockChore = ChoreModel(
-        name: "Lavar Banheiro",
-        description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-        frequency: .weekly,
-        duration: 1800,
-        isPublic: true,
-        priorityTag: .urgent
-    )
-    
-    return ChoreCardListStyle(chore: mockChore, namespace: namespace)
-}
+//#Preview {
+//    @Previewable @Namespace var namespace
+//    let mockImageData = UIImage(named: "defaultUser")?.pngData()
+//    
+//    let mockChore = ChoreModel(
+//        name: "Lavar Banheiro",
+//        description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+//        frequency: .weekly,
+//        duration: 1800,
+//        isPublic: true,
+//        priorityTag: .urgent
+//    )
+//    
+//    return ChoreCardListStyle(chore: mockChore, namespace: namespace)
+//}

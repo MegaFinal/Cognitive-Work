@@ -1,5 +1,5 @@
 //
-//  ChoreDetailsPostponeButtons.swift
+//  ChoreDetailsCardPostponeButtons.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 26/08/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChoreDetailsPostponeButtons: View {
+struct ChoreDetailsCardPostponeButtons: View {
     var chore: ChoreModel
     var width: CGFloat
     

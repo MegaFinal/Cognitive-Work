@@ -26,7 +26,7 @@ struct ResponsibleUserPicker: View {
     var body: some View {
         HStack(spacing: 10) {
             ForEach(selectedUsers) { selectedUser in
-                UserProfilePictureTag(imageData: selectedUser.profilePicture)
+                UserProfilePictureTag(imageData: selectedUser.profilePicture, widthMultiplier: 0.05)
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
                     .onTapGesture {
                         selectedUsers.removeAll { $0.id == selectedUser.id }
