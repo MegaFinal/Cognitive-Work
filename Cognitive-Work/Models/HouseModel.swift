@@ -23,7 +23,7 @@ class HouseModel: CloudKitSyncable {
     var name: String
 
     /// Free-form details about the house.
-    private var description: String
+    var description: String
 
     /// References to the ``ChoreModel`` records belonging to this house.
     private var choresReference: [CKRecord.Reference]?
@@ -66,7 +66,6 @@ class HouseModel: CloudKitSyncable {
         }
     }
     
-
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
@@ -133,7 +132,7 @@ class HouseModel: CloudKitSyncable {
     }
     
     @discardableResult
-    func appendRoom(rooms: [RoomModel]) async -> Bool{
+    func appendRoom(rooms: [RoomModel]) async -> Bool {
         for room in rooms {
             if let recordID = room.recordID {
                 let roomReference = CKRecord.Reference(recordID: recordID, action: .none)
@@ -147,7 +146,35 @@ class HouseModel: CloudKitSyncable {
         if let recordID {
             return CKRecord.Reference(recordID: recordID, action: .none)
         }
-        print("House dont have an recordID")
+        print("House doesn't have a recordID")
         return nil
+    }
+    
+    // MARK: - Authorization
+    
+    /// Whether the user is the one who created this house.
+    func isAdmin() async -> Bool? {
+        guard let recordID = self.recordID else { return nil }
+        return await CloudKitManager.shared.isOwner(HouseModel.self, recordID: recordID)
+    }
+    
+    // MARK: - Update
+    //
+    /// Renames the house and/or updates its description, persisting the change to CloudKit.
+    ///
+    /// Only the user referenced by ``adminReference`` may succeed here
+    ///
+    /// - Parameters:
+    ///   - name: New name for the house.
+    ///   - description: New description for the house.
+    ///   - requesterID: `recordID` of the ``UserModel`` attempting the change.
+    /// - Throws: ``CloudKitErrors/notAuthorized`` if `requesterID` isn't the admin.
+    @discardableResult
+    func update(name: String, description: String, requesterID: CKRecord.ID) async -> Bool {
+        guard await isAdmin() == true else { return false }
+        
+        self.name = name
+        self.description = description
+        return await CloudKitManager.shared.update(self)
     }
 }
