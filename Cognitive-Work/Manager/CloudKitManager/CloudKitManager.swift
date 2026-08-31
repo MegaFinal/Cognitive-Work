@@ -135,8 +135,8 @@ class CloudKitManager {
         }
 
         let database = house.recordID.zoneID.ownerName == CKCurrentUserDefaultName
-            ? privateDB
-            : sharedDB
+            ? privateDB // dono
+            : sharedDB // convidado
 
         do {
             return try await database.record(

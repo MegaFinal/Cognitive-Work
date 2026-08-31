@@ -16,7 +16,7 @@ struct ProfileImage: View {
             if let image {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFill() // Mudado para fill para preencher o círculo perfeitamente
+                    .scaledToFill()
                     .frame(width: 285, height: 285)
                     .background(Color(.systemBackground))
             }
