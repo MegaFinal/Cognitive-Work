@@ -7,7 +7,12 @@
 
 import SwiftUI
 
+/// The upper header section of the `ChoreDetailsCard`.
+///
+/// Displays the chore's primary icon, name, and status tags (priority, frequency).
 struct ChoreDetailsCardHeader: View {
+    
+    /// The chore model providing header data.
     var chore: ChoreModel
     var width: CGFloat
     var height: CGFloat

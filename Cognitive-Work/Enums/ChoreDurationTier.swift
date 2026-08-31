@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+/// Abstract tier categorizing length constraints mapping expected completion difficulty.
 enum ChoreDurationTier: Int, CaseIterable, Hashable {
     case muitoRapido = 0
     case rapido = 1
@@ -15,6 +16,7 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     case demorado = 3
     case muitoDemorado = 4
 
+    /// Resolves an exact minute value into an abstracted layout representation.
     static func from(minutes: Double) -> ChoreDurationTier {
         switch minutes {
         case ..<10:
@@ -30,6 +32,7 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         }
     }
 
+    /// Derives proportion scaling specific to a visual representation logic sequence.
     var heightRatio: Double {
         switch self {
         case .muitoRapido: return 0.1
@@ -40,6 +43,7 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         }
     }
 
+    /// Localized structural string.
     var displayText: String {
         switch self {
         case .muitoRapido: return "muito rápido"
@@ -50,6 +54,7 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         }
     }
     
+    /// Color schema context representation dictating visual complexity.
     var color: Color {
         switch self {
         case .muitoRapido: return .green

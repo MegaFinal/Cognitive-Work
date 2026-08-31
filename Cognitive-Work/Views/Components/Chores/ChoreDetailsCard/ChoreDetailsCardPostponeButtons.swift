@@ -7,7 +7,10 @@
 
 import SwiftUI
 
+/// Provides quick actions to delay a chore's deadline directly from the details card.
 struct ChoreDetailsCardPostponeButtons: View {
+    
+    /// The chore to be postponed.
     var chore: ChoreModel
     var width: CGFloat
     

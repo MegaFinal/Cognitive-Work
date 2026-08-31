@@ -8,6 +8,7 @@
 import Foundation
 import CloudKit
 
+/// A generic data transfer object for buffering an unsaved checklist item edit operation.
 struct CheckItemDTO: Identifiable {
     let id = UUID()
     var name: String

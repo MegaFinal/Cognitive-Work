@@ -8,18 +8,22 @@
 import SwiftUI
 import CloudKit
 
+/// A form view utilized to create a new chore or edit an existing one.
+///
+/// This view isolates the user's edits in a `ChoreDTO`. The underlying `originalModel`
+/// is only modified and persisted to CloudKit when the user explicitly confirms the changes.
 struct CreateAndEditChoreView: View {
 
-    /// Persisted chore being edited, or an unsaved chore when creating a new one.
+    /// The persisted chore being edited, or an unsaved chore instance when creating a new one.
     var originalModel: ChoreModel
 
-    /// Every user in the house
+    /// The list of all available users in the current house.
     @State var availableHouseUsers: [UserModel]
 
-    /// Copy of the chore's editable fields
+    /// A local copy of the chore's editable fields to prevent wrong modifications.
     @State private var choreDTO = ChoreDTO()
     
-    /// Determines if the user is trying to save the changes.
+    /// Indicates whether an asynchronous save operation is currently in progress.
     @State private var isSaving = false
 
     @Environment(\.dismiss) private var dismiss
@@ -28,12 +32,12 @@ struct CreateAndEditChoreView: View {
     var height = UIScreen.main.bounds.height
     
     // MARK: - Main Body
-    
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 25) {
                 CreateAndEditChoreHeader(chore: choreDTO)
 
+                // MARK: - Pickers
                 VStack(spacing: 10) {
                     HStack {
                         Text("Prioridade")
@@ -56,6 +60,7 @@ struct CreateAndEditChoreView: View {
                 .font(.subheadline)
                 .fontWeight(.semibold)
 
+                // MARK: - Description
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Descrição")
                         .font(.subheadline)
@@ -66,8 +71,10 @@ struct CreateAndEditChoreView: View {
                         .foregroundColor(.gray)
                 }
 
+                // MARK: - Checklist
                 ChecklistSection(choreDTO: choreDTO, width: width)
 
+                // MARK: - Responsible Users
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Responsáveis")
                         .font(.subheadline)
@@ -76,10 +83,12 @@ struct CreateAndEditChoreView: View {
                     ResponsibleUserPicker(availableUsers: availableHouseUsers, selectedUsers: $choreDTO.responsibleUsers)
                 }
 
+                // MARK: - Visibility Toggle
                 PublicToggleSection(choreDTO: choreDTO, width: width)
 
                 Spacer()
 
+                // MARK: - Confirmation Button
                 ConfirmButtonSection(
                     isSaving: isSaving,
                     isDisabled: choreDTO.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving,
@@ -99,9 +108,7 @@ struct CreateAndEditChoreView: View {
     }
     
     // MARK: - Methods
-
-    /// Method that persists the draft onto `originalModel` and closes the screen
-    /// once saving completes.
+    /// Persists the modifications from the local copy onto `originalModel` and dismisses the view.
     private func confirmAndSave() async {
         isSaving = true
         await originalModel.save(from: choreDTO)
@@ -109,7 +116,8 @@ struct CreateAndEditChoreView: View {
         dismiss()
     }
 
-    /// A new chore keeps the empty draft created by `ChoreDTO()`.
+    /// Pre-populates the local copy if editing an existing chore.
+    /// A new chore maintains the empty default copy provided by `ChoreDTO()`.
     private func loadDraftIfNeeded() async {
         guard originalModel.recordID != nil else { return }
 

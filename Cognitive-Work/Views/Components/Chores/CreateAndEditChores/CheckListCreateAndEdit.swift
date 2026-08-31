@@ -7,8 +7,13 @@
 
 import SwiftUI
 
+/// An interactive list allowing users to add, edit, or remove sub-items within a chore's checklist.
 struct CheckListCreateAndEdit: View {
+    
+    /// Binding dictating whether the checklist feature is currently active for this chore.
     @Binding var hasChecklist: Bool
+    
+    /// A draft array of `CheckItemDTO` items backing the visual list.
     @Binding var localChecklist: [CheckItemDTO]
     
     var body: some View {

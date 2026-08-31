@@ -7,18 +7,19 @@
 
 import SwiftUI
 
-/// Lets the user pick which house members are responsible for a chore.
+/// Lets the user visually pick which house members are responsible for a chore.
 ///
-/// Selected users are shown as a stack of overlapping avatars; tapping one removes it from the
-/// selection. The trailing "+" button opens a menu listing every user still available to add.
+/// Selected users are presented as a stack of overlapping avatars. Tapping an avatar removes it from the
+/// active selection. The trailing "+" button invokes a `Menu` listing every available user to add.
 struct ResponsibleUserPicker: View {
     
     /// Every user in the house that can be assigned to the chore.
     let availableUsers: [UserModel]
     
-    /// Users currently assigned to the chore.
+    /// The collection of users currently bound to the chore.
     @Binding var selectedUsers: [UserModel]
 
+    /// Evaluates if a given user is already present in the active selection.
     private func isSelected(_ user: UserModel) -> Bool {
         selectedUsers.contains { $0.id == user.id }
     }

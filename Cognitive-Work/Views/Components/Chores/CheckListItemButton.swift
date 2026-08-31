@@ -7,7 +7,12 @@
 
 import SwiftUI
 
+/// A button representing a single, actionable checklist item.
+///
+/// Tap interactions directly instruct the `CheckItemModel` to asynchronously toggle its completion state.
 struct ChecklistItemButton: View {
+    
+    /// The checklist item model corresponding to this entry.
     @Binding var item: CheckItemModel
     var width = UIScreen.main.bounds.width
         

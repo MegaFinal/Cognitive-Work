@@ -7,9 +7,12 @@
 
 import SwiftUI
 
+/// A sub-section for the creation view that encapsulates the toggle and inline editor for a chore's checklist.
 struct ChecklistSection: View {
+    
+    /// The draft data object containing checklist status and items.
     @Bindable var choreDTO: ChoreDTO
-    let width: CGFloat
+    var width: CGFloat
     
     var body: some View {
         VStack {

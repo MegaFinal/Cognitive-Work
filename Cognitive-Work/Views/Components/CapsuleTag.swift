@@ -7,10 +7,19 @@
 
 import SwiftUI
 
+/// Forms a textual UI element encapsulated within a pill shape.
 struct CapsuleTag: View {
+    
+    /// Central display string.
     var tagName: String
+    
+    /// Defines background aesthetics.
     var tagColor: Color
+    
+    /// External layout horizontal constraints.
     var horizontalPadding: Double
+    
+    /// External layout vertical constraints.
     var verticalPadding: Double
     
     var body: some View {

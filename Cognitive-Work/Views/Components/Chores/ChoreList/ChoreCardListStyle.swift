@@ -8,14 +8,22 @@
 import Foundation
 import SwiftUI
 
+/// A compact row representation of a chore, utilized in the vertical list layout mode.
 struct ChoreCardListStyle: View {
+    
+    /// The chore represented by this list item.
     @State var chore: ChoreModel
+    
+    /// The room mapped to the current chore.
     @State var room: RoomModel? = nil
+    
+    /// The users designated to execute this chore.
     @State var allResponsibleUsers: [UserModel] = []
+    
+    /// Namespace required for layout morphing transitions.
     let namespace: Namespace.ID
     
-    /// Called when the card is tapped. Used by the parent list to bring up this chore's
-    /// details card.
+    /// Closure triggered when the list item is tapped, typically to open the detail view.
     var onTap: () -> Void = {}
     
     var width = UIScreen.main.bounds.width
@@ -39,6 +47,7 @@ struct ChoreCardListStyle: View {
                     .fontWeight(.thin)
                 
                 VStack(alignment: .leading, spacing: 20) {
+                    // MARK: - Responsible users and tags
                     HStack(spacing: 5) {
                         if allResponsibleUsers.count == 1 {
                             UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.01)
@@ -62,6 +71,7 @@ struct ChoreCardListStyle: View {
                         )
                     }
                     
+                    // MARK: - Room name, chore name and completion button
                     VStack {
                         HStack {
                             VStack(alignment: .leading) {
@@ -75,6 +85,7 @@ struct ChoreCardListStyle: View {
                             
                             Spacer()
                             
+                            // Completion button
                             Button {
                                 Task {
                                     await chore.toggle()
@@ -105,19 +116,3 @@ struct ChoreCardListStyle: View {
         .transition(.identity)
     }
 }
-
-//#Preview {
-//    @Previewable @Namespace var namespace
-//    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-//    
-//    let mockChore = ChoreModel(
-//        name: "Lavar Banheiro",
-//        description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-//        frequency: .weekly,
-//        duration: 1800,
-//        isPublic: true,
-//        priorityTag: .urgent
-//    )
-//    
-//    return ChoreCardListStyle(chore: mockChore, namespace: namespace)
-//}

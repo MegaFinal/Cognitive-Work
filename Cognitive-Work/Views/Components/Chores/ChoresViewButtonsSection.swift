@@ -7,7 +7,10 @@
 
 import SwiftUI
 
+/// Defines the overlay layout region containing core chore action buttons
 struct ChoresViewButtonsSection: View {
+    
+    /// Background cache of all house members used specifically to populate the creation view.
     @State private var houseUsers: [UserModel] = []
     
     var body: some View {
@@ -15,6 +18,7 @@ struct ChoresViewButtonsSection: View {
             Spacer()
             
             Button {
+                // TODO: - Get task from list of unasigned tasks
             } label: {
                 Image(systemName: "hand.rays")
                     .font(.title)
@@ -27,6 +31,7 @@ struct ChoresViewButtonsSection: View {
                 in: .circle
             )
             
+            // MARK: - Navigation to create a new task
             NavigationLink {
                 CreateAndEditChoreView(
                     originalModel: ChoreModel(

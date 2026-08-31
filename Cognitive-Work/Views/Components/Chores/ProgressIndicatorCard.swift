@@ -7,9 +7,16 @@
 
 import SwiftUI
 
+/// Renders statistics paired with a title tag.
 struct ProgressIndicatorCard: View {
+    
+    /// Short label indicating the metric meaning.
     var title: String
+    
+    /// Formatted data result (e.g., "1h 30m").
     var data: String
+    
+    /// Visual thematic backdrop color applying depth over UI layouts.
     var color: Color = .gray
     
     var width = UIScreen.main.bounds.width

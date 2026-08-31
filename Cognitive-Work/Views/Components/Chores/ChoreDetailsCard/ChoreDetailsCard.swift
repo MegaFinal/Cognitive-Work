@@ -7,10 +7,22 @@
 
 import SwiftUI
 
+/// Represents the detailed back-face view of a chore card.
+///
+/// This view is revealed when the user flips or taps a card, providing full details, checklist progress,
+/// postponement actions, and a completion swipe toggle.
 struct ChoreDetailsCard: View {
+    
+    /// The room associated with the current chore.
     @State var room: RoomModel? = nil
+    
+    /// All users designated as responsible for this chore.
     @State var allResponsibleUsers: [UserModel] = []
+    
+    /// The core data model of the chore being displayed.
     @Bindable var chore: ChoreModel
+    
+    /// The view model governing the carousel's state.
     @Bindable var carouselViewModel: CarouselViewModel
     
     var width = UIScreen.main.bounds.width
@@ -39,8 +51,7 @@ struct ChoreDetailsCard: View {
             HStack {
                 Button {
                     carouselViewModel.clearFocus()
-                }
-                label: {
+                } label: {
                     Image(systemName: "xmark")
                         .foregroundColor(.black)
                 }
@@ -61,8 +72,7 @@ struct ChoreDetailsCard: View {
                         originalModel: chore,
                         availableHouseUsers: allResponsibleUsers
                     )
-                }
-                label: {
+                } label: {
                     Image(systemName: "pencil")
                         .foregroundColor(.white)
                 }

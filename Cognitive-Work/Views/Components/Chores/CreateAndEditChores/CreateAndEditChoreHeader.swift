@@ -7,7 +7,12 @@
 
 import SwiftUI
 
+/// The uppermost structural component of the chore creation form.
+///
+/// Contains the dynamic iconography, chore name text field, and room selection.
 struct CreateAndEditChoreHeader: View {
+    
+    /// The draft data object linked directly to the form inputs.
     @Bindable var chore: ChoreDTO
     
     var width = UIScreen.main.bounds.width

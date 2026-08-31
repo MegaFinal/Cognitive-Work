@@ -7,9 +7,16 @@
 
 import SwiftUI
 
+/// A vertical scroll view rendering the chores in a list format.
 struct ChoreListLayout: View {
+    
+    /// The carousel view model controlling the global collection of chores.
     @Bindable var viewModel: CarouselViewModel
+    
+    /// Closure triggered to dismiss or toggle the layout context.
     let onSwipeDown: () -> Void
+    
+    /// Namespace required for geometric transitions into the grid view.
     let namespace: Namespace.ID
     
     var body: some View {

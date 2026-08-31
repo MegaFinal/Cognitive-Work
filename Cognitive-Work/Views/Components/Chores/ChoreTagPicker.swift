@@ -8,12 +8,19 @@
 import SwiftUI
 import CloudKit
 
+/// A menu-based picker configured to select core attributes associated with a chore.
 struct ChoreTagPicker: View {
+    
+    /// The mutable configuration state governing the selected options.
     @Bindable var chore: ChoreDTO
+    
+    /// Defines the attribute mode this picker will govern.
     var type: TagPickerType
     
+    /// Internal collection utilized exclusively when the type maps to `.room`.
     var availableRooms: [RoomModel] = []
     
+    /// Selected contextual room model derived from the `chore.roomReference`.
     @State private var currentRoom: RoomModel? = nil
     
     var body: some View {
@@ -58,7 +65,7 @@ struct ChoreTagPicker: View {
                 CapsuleTag(
                     tagName: type.labelName(for: chore, currentRoom: currentRoom),
                     tagColor: type.labelColor(for: chore, currentRoom: currentRoom),
-                    horizontalPadding: 0.0,
+                    horizontalPadding: 10.0,
                     verticalPadding: 1.5
                 )
                 
@@ -83,6 +90,7 @@ struct ChoreTagPicker: View {
         }
     }
     
+    /// Maps raw numerical duration intervals into standard UX tiers for editing purposes.
     private var durationTierBinding: Binding<ChoreDurationTier> {
         Binding(
             get: {
@@ -103,6 +111,8 @@ struct ChoreTagPicker: View {
 }
 
 extension UIImage {
+    
+    /// Dynamically constructs an image rendering a colored circle for icon substitution.
     static func coloredCircle(color: Color) -> UIImage {
         let uiColor = UIColor(color)
         let size = CGSize(width: 24, height: 24)

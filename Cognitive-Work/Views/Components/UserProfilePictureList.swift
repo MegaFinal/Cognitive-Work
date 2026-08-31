@@ -7,8 +7,13 @@
 
 import SwiftUI
 
+/// Visually renders a tight horizontal overlap grouping of target user avatars.
 struct UserProfilePictureList: View {
+    
+    /// Target chore managing assigned users.
     @Bindable var chore: ChoreModel
+    
+    /// Internally fetches active assignees representing the picture data points.
     @State var responsibleUsers: [UserModel] = []
     
     var body: some View {

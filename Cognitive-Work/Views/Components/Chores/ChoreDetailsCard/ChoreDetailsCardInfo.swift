@@ -7,9 +7,18 @@
 
 import SwiftUI
 
+/// The central information scroll view of the `ChoreDetailsCard`.
+///
+/// Contains the textual description of the chore, the associated room tag, and the interactive checklist.
 struct ChoreDetailsCardInfo: View {
+    
+    /// The core data model of the chore being displayed.
     @Bindable var chore: ChoreModel
+    
+    /// The room associated with the current chore.
     @State var room: RoomModel? = nil
+    
+    /// The sub-items defining the chore's checklist.
     @State var checkList: [CheckItemModel] = []
     
     var width: CGFloat
@@ -32,7 +41,7 @@ struct ChoreDetailsCardInfo: View {
                     CapsuleTag(
                         tagName: room?.name ?? "Unnamed room",
                         tagColor: room?.color.uiColor ?? .gray,
-                        horizontalPadding: 0.0,
+                        horizontalPadding: 10.0,
                         verticalPadding: 1.5
                     )
                 }

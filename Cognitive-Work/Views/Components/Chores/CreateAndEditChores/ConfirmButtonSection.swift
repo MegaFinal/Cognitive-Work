@@ -7,11 +7,19 @@
 
 import SwiftUI
 
+/// A reusable bottom-anchored button for confirming actions, featuring an embedded loading state.
 struct ConfirmButtonSection: View {
+    
+    /// Toggles the replacement of the label text with an indeterminate progress view.
     let isSaving: Bool
+    
+    /// Disables user interaction and optionally dims the visual state.
     let isDisabled: Bool
-    let width: CGFloat
-    let height: CGFloat
+    
+    var width: CGFloat
+    var height: CGFloat
+    
+    /// The closure to execute upon receiving a tap.
     let action: () -> Void
     
     var body: some View {

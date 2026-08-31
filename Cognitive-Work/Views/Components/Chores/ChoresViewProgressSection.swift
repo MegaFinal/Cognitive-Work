@@ -7,7 +7,10 @@
 
 import SwiftUI
 
+/// An informational layout segment displaying metric-based progress cards.
 struct ChoresViewProgressSection: View {
+    
+    /// Injects the active color state into the backgrounds of the generated statistical cards.
     var activeRoomColor: Color = .gray
     
     var body: some View {

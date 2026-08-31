@@ -7,9 +7,12 @@
 
 import SwiftUI
 
+/// Contains the switch for deciding whether a chore should be public to the household.
 struct PublicToggleSection: View {
+    
+    /// The active data transfer object storing the public state constraint.
     @Bindable var choreDTO: ChoreDTO
-    let width: CGFloat
+    var width: CGFloat
     
     var body: some View {
         VStack {

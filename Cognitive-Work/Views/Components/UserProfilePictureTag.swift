@@ -7,10 +7,15 @@
 
 import SwiftUI
 
+/// Singular isolated component to portray an explicit image string into an aligned circle badge.
 struct UserProfilePictureTag: View {
+    
+    /// Encoded PNG string data mapping back into a UIImage context.
     let imageData: Data?
 
     var width = UIScreen.main.bounds.width
+    
+    /// Scaling parameter controlling absolute size derivations.
     var widthMultiplier: Double
     
     var body: some View {

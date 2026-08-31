@@ -8,12 +8,14 @@
 import SwiftUI
 import CloudKit
 
+/// Denotes logical behavior variations internally differentiating dynamic forms instances constraints.
 enum TagPickerType {
     case priority
     case frequency
     case duration
     case room
         
+    /// Decodes a relevant identifier label given an overarching DTO reference constraints object point.
     func labelName(for chore: ChoreDTO, currentRoom: RoomModel?) -> String {
         switch self {
         case .priority:
@@ -28,6 +30,7 @@ enum TagPickerType {
         }
     }
     
+    /// Identifies specific coloring schema contextualizing active selection behaviors.
     func labelColor(for chore: ChoreDTO, currentRoom: RoomModel?) -> Color {
         switch self {
         case .priority:

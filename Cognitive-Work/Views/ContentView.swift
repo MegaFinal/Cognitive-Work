@@ -13,22 +13,22 @@ struct ContentView: View {
     var body: some View {
 //        FirstOnboardingView()
         TabView {
-            UserChoresView()
+            ChoresView()
                 .tabItem {
                     Label("Tarefas", systemImage: "checklist")
                 }
              
-            UserChoresView()
+            ChoresView()
                 .tabItem {
                     Label("Compras", systemImage: "basket")
                 }
 
-            UserChoresView()
+            ChoresView()
                 .tabItem {
                     Label("Progresso", systemImage: "figure.2")
                 }
             
-            UserChoresView()
+            ChoresView()
                 .tabItem {
                     Label("Perfil", systemImage: "person.fill")
                 }

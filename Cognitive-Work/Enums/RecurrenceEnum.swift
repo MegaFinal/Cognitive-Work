@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// Defines chronological pattern constraints assigned to repeatable chore data points.
 enum Recurrence: String, CaseIterable, Hashable {
     case none = "none"
     case daily = "daily"
@@ -14,6 +15,7 @@ enum Recurrence: String, CaseIterable, Hashable {
     case fortnightly = "fortnightly"
     case monthly = "monthly"
     
+    /// Layout schema applying unique visual signatures per recurring timeframe constraint.
     var color: Color {
         switch self {
         case .none: return .gray

@@ -8,10 +8,19 @@
 import SwiftUI
 import CloudKit
 
-struct UserChoresView: View {
+/// The primary view for displaying and managing the user's chores.
+///
+/// `ChoresView` coordinates the display of chores in either a carousel (grid) or a vertical list format.
+/// It integrates a progress section, layout toggles, and floating action buttons for creating new chores.
+struct ChoresView: View {
+    
+    /// The view model controlling the state and data of the chores carousel.
     @State var carouselVM = CarouselViewModel()
+    
+    /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .gray
     
+    /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
     var width = UIScreen.main.bounds.width
@@ -20,13 +29,16 @@ struct UserChoresView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VStack(spacing: 15) {
-                    ChoresViewHeader(carouselVM: $carouselVM)
-                    
-                    if carouselVM.layoutMode == .grid {
-                        ChoresViewProgressSection(activeRoomColor: activeRoomColor)
-                    } else {
-                        ChoresViewProgressSection(activeRoomColor: .black)
+                // MARK: - Header, progress cards and action buttons
+                VStack(spacing: 3) {
+                    VStack(spacing: 15) {
+                        ChoresViewHeader(carouselVM: $carouselVM)
+                        
+                        if carouselVM.layoutMode == .grid {
+                            ChoresViewProgressSection(activeRoomColor: activeRoomColor)
+                        } else {
+                            ChoresViewProgressSection(activeRoomColor: .black)
+                        }
                     }
                     
                     Spacer()
@@ -43,6 +55,7 @@ struct UserChoresView: View {
                     ChoresViewButtonsSection()
                 }
                 
+                // MARK: - Darkening the view if there's a focused card
                 if carouselVM.hasFocusedCard {
                     Color.black.opacity(0.3)
                         .ignoresSafeArea()
@@ -53,6 +66,7 @@ struct UserChoresView: View {
                         }
                 }
                 
+                // MARK: - Chore Card layout conditionals
                 if carouselVM.layoutMode == .grid {
                     VStack {
                         Spacer()
@@ -94,6 +108,7 @@ struct UserChoresView: View {
         }
     }
     
+    /// Dismisses the currently focused card based on the active layout mode.
     private func dismissFocusedCard() {
         if carouselVM.layoutMode == .grid {
             carouselVM.clearFocus()
@@ -102,6 +117,7 @@ struct UserChoresView: View {
         }
     }
     
+    /// Updates the background color of the progress section to match the focused chore's room color.
     private func updateActiveRoomColor() async {
         guard !carouselVM.cardModels.isEmpty,
               carouselVM.cardModels.indices.contains(carouselVM.activeIndex) else {
@@ -189,5 +205,5 @@ fileprivate class MockChoreModel: ChoreModel {
     
     mockVM.cardModels = [chore1, chore2, chore3]
     
-    return UserChoresView(carouselVM: mockVM)
+    return ChoresView(carouselVM: mockVM)
 }
