@@ -17,9 +17,21 @@ struct ChorePriority: View {
                 .frame(width: 2)
 
             VStack(alignment: .leading) {
-                UserProfilePictureTag(imageData: user?.profilePicture)
-                PriorityDurationTag(text: chore.priorityTag.rawValue, color: .subTitleGray)
-                PriorityDurationTag(text: tier.displayText, color: .titleGray)
+                UserProfilePictureTag(imageData: user?.profilePicture, widthMultiplier: 0.05)
+                
+                CapsuleTag(
+                    tagName: chore.priorityTag.rawValue,
+                    tagColor: .subTitleGray,
+                    horizontalPadding: 0.0,
+                    verticalPadding: 1.5
+                )
+                
+                CapsuleTag(
+                    tagName: tier.displayText,
+                    tagColor: .titleGray,
+                    horizontalPadding: 0.0,
+                    verticalPadding: 1.5
+                )
             }
         }
         .task {

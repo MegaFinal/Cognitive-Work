@@ -1,5 +1,5 @@
 //
-//  ChoreCardBackFace.swift
+//  ChoreDetailsCard.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 18/08/26.
@@ -7,10 +7,22 @@
 
 import SwiftUI
 
-struct ChoreDetails: View {
+/// Represents the detailed back-face view of a chore card.
+///
+/// This view is revealed when the user flips or taps a card, providing full details, checklist progress,
+/// postponement actions, and a completion swipe toggle.
+struct ChoreDetailsCard: View {
+    
+    /// The room associated with the current chore.
     @State var room: RoomModel? = nil
+    
+    /// All users designated as responsible for this chore.
     @State var allResponsibleUsers: [UserModel] = []
+    
+    /// The core data model of the chore being displayed.
     @Bindable var chore: ChoreModel
+    
+    /// The view model governing the carousel's state.
     @Bindable var carouselViewModel: CarouselViewModel
     
     var width = UIScreen.main.bounds.width
@@ -19,12 +31,12 @@ struct ChoreDetails: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                ChoreDetailsHeader(chore: chore, width: width, height: height)
+                ChoreDetailsCardHeader(chore: chore, width: width, height: height)
                 
-                ChoreDetailsInfo(chore: chore, width: width, height: height)
+                ChoreDetailsCardInfo(chore: chore, width: width, height: height)
                 
                 VStack {
-                    ChoreDetailsPostponeButtons(chore: chore, width: width)
+                    ChoreDetailsCardPostponeButtons(chore: chore, width: width)
                     
                     SwipeToCompleteButton(action:  {
                         Task {
@@ -39,8 +51,7 @@ struct ChoreDetails: View {
             HStack {
                 Button {
                     carouselViewModel.clearFocus()
-                }
-                label: {
+                } label: {
                     Image(systemName: "xmark")
                         .foregroundColor(.black)
                 }
@@ -51,13 +62,17 @@ struct ChoreDetails: View {
                 Spacer()
                 
                 if allResponsibleUsers.count == 1 {
-                    UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture)
+                    UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.05)
                 } else {
                     UserProfilePictureList(chore: chore)
                 }
                 
-                Button {}
-                label: {
+                NavigationLink {
+                    CreateAndEditChoreView(
+                        originalModel: chore,
+                        availableHouseUsers: allResponsibleUsers
+                    )
+                } label: {
                     Image(systemName: "pencil")
                         .foregroundColor(.white)
                 }
@@ -81,19 +96,19 @@ struct ChoreDetails: View {
     }
 }
 
-#Preview {
-    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    
+#Preview("ChoreDetails") {
     let mockChore = ChoreModel(
-        name: "Lavar Banheiro",
-        description: "Lorem ipsum dolor sit amet, consectetur adipisc ing eliLorem ipsum dolor sit amet, conse ctetur adipiscing eli",
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Tarefa essencial para manter a higiene da suíte.",
+        isDone: false,
         frequency: .weekly,
         duration: 1800,
         isPublic: true,
         priorityTag: .urgent
     )
+    mockChore.symbolName = "toilet"
     
-    var carouselVM = CarouselViewModel()
+    let carouselVM = CarouselViewModel()
     
-    ChoreDetails(chore: mockChore, carouselViewModel: carouselVM)
+    return ChoreDetailsCard(chore: mockChore, carouselViewModel: carouselVM)
 }

@@ -1,5 +1,5 @@
 //
-//  ChoreDetailsInfo.swift
+//  ChoreDetailsCardInfo.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 26/08/26.
@@ -7,9 +7,18 @@
 
 import SwiftUI
 
-struct ChoreDetailsInfo: View {
+/// The central information scroll view of the `ChoreDetailsCard`.
+///
+/// Contains the textual description of the chore, the associated room tag, and the interactive checklist.
+struct ChoreDetailsCardInfo: View {
+    
+    /// The core data model of the chore being displayed.
     @Bindable var chore: ChoreModel
+    
+    /// The room associated with the current chore.
     @State var room: RoomModel? = nil
+    
+    /// The sub-items defining the chore's checklist.
     @State var checkList: [CheckItemModel] = []
     
     var width: CGFloat
@@ -29,13 +38,12 @@ struct ChoreDetailsInfo: View {
                     
                     Spacer()
                     
-                    Text(room?.name ?? "Unnamed room")
-                        .font(.footnote)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(room?.color.uiColor ?? .gray)
-                        .clipShape(Capsule())
-                        .foregroundColor(.white)
+                    CapsuleTag(
+                        tagName: room?.name ?? "Unnamed room",
+                        tagColor: room?.color.uiColor ?? .gray,
+                        horizontalPadding: 10.0,
+                        verticalPadding: 1.5
+                    )
                 }
                 
                 Text("Checklist")

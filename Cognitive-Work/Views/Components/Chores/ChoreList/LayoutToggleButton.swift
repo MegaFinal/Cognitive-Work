@@ -28,6 +28,11 @@ struct LayoutToggleButton: View {
             Image(systemName: viewModel.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
             .font(.title2)
             .foregroundColor(.black)
+            .padding(8)
         }
+        .glassEffect(
+            .regular.interactive(),
+            in: .circle
+        )
     }
 }

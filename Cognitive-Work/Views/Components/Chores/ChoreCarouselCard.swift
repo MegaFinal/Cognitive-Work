@@ -1,5 +1,5 @@
 //
-//  ChoreCardFrontFace.swift
+//  ChoreCarouselCard.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 18/08/26.
@@ -7,10 +7,20 @@
 
 import SwiftUI
 
-struct ChoreCardFrontFace: View {
+/// The distinct front-face representation of a chore inside the carousel layout.
+///
+/// Focuses strictly on prominent typography and large-scale iconography over the respective room color.
+struct ChoreCarouselCard: View {
+    
+    /// The underlying chore data.
     let chore: ChoreModel
+    
+    /// The dynamically fetched room data linked to this chore.
     @State var room: RoomModel? = nil
+    
+    /// The namespace assigned to drive smooth morphing geometries.
     let namespace: Namespace.ID
+    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
@@ -47,5 +57,5 @@ struct ChoreCardFrontFace: View {
         priorityTag: .urgent
     )
     
-    return ChoreCardFrontFace(chore: mockChore, namespace: namespace)
+    return ChoreCarouselCard(chore: mockChore, namespace: namespace)
 }
