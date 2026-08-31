@@ -6,14 +6,15 @@
 //
 
 import SwiftUI
+import CloudKit
 
-/// A chore as presented during onboarding, before it is persisted to CloudKit.
+/// A chore as presented during onboarding or editing, before it is persisted to CloudKit.
 ///
 /// This type carries only what the selection screens need, keeping the UI free
-/// from CloudKit references. Once the user confirms the selection, the picked
+/// from direct CloudKit mutations. Once the user confirms the selection, the picked
 /// instances are mapped into ``ChoreModel`` records.
 ///
-/// Declared as a class so ``isSelected`` can be mutated in place while the
+/// Declared as a class so ``isSelected`` and other properties can be mutated in place while the
 /// instance is shared by a list row, and marked `@Observable` so those
 /// mutations refresh the views observing it.
 ///
@@ -37,28 +38,91 @@ final class ChoreDTO: Identifiable {
     /// > Note: Generated locally instead of relying on ``name``, so two chores
     /// > sharing the same name never collapse into a single row.
     let id = UUID()
+    
+    /// Identifier of the original stored record, if this DTO is editing an existing chore.
+    var originalRecordID: CKRecord.ID?
 
     /// Name shown to the user.
-    let name: String
+    var name: String
 
     /// Short explanation of what the chore involves.
-    let description: String
+    var description: String
 
     /// How often the chore repeats.
-    let frequency: Recurrence
+    var frequency: Recurrence
 
     /// Estimated time to complete the chore, in minutes.
-    let duration: Double
+    var duration: Double
 
     /// Priority level used to sort and highlight the chore.
-    let priorityTag: PriorityTag
+    var priorityTag: PriorityTag
 
     /// Whether the user marked this chore to be split between the residents.
     ///
     /// Starts as `false` and is driven by the `Toggle` of the selection screen.
     var isSelected: Bool = false
+    
+    /// Whether every member of the house can see and claim the chore.
+    var isPublic: Bool
+    
+    /// The SF Symbol name used as the chore's icon.
+    var symbolName: String
+    
+    /// Reference to the room this chore belongs to.
+    var roomReference: CKRecord.Reference?
+    
+    /// Every user in the rotation for this chore.
+    var responsibleUsers: [UserModel] = []
+    
+    /// The checklist items for this chore.
+    var checklist: [CheckItemDTO] = []
+    
+    /// Whether the chore currently has a checklist enabled in the UI.
+    var hasChecklist: Bool = false
 
     // MARK: - Initialization
+    
+    /// Creates a new, empty chore draft for the creation flow.
+    init() {
+        self.name = ""
+        self.description = ""
+        self.frequency = .weekly
+        self.duration = 1800
+        self.priorityTag = .medium
+        self.isPublic = false
+        self.symbolName = "toilet"
+    }
+
+    /// Creates a chore draft from an existing ``ChoreModel`` for the editing flow.
+    ///
+    /// - Parameters:
+    ///   - model: The original chore model to copy data from.
+    ///   - users: The previously assigned responsible users.
+    ///   - checklist: The previously assigned checklist items.
+    ///   - room: The room this chore belongs to.
+    init(
+        from model: ChoreModel,
+        users: [UserModel],
+        checklist: [CheckItemDTO],
+        room: RoomModel?
+    ) {
+        self.originalRecordID = model.recordID
+        self.name = model.name
+        self.description = model.description
+        self.frequency = model.frequency
+        self.duration = model.duration
+        self.priorityTag = model.priorityTag
+        self.isPublic = model.isPublic
+        self.symbolName = model.symbolName
+        
+        self.responsibleUsers = users
+        self.checklist = checklist
+        self.hasChecklist = !checklist.isEmpty
+        
+        if let roomModel = room, let roomRecordID = roomModel.recordID {
+            self.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
+        }
+    }
 
     /// Creates a chore for the onboarding selection screens.
     ///
@@ -80,5 +144,7 @@ final class ChoreDTO: Identifiable {
         self.frequency = frequency
         self.duration = duration
         self.priorityTag = priorityTag
+        self.isPublic = false
+        self.symbolName = "toilet"
     }
 }
