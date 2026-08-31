@@ -11,28 +11,28 @@ import CloudKit
 
 struct ContentView: View {
     var body: some View {
-        FirstOnboardingView()
-//        TabView {
-//            UserChoresView()
-//                .tabItem {
-//                    Label("Tarefas", systemImage: "checklist")
-//                }
-//             
-//            UserChoresView()
-//                .tabItem {
-//                    Label("Compras", systemImage: "basket")
-//                }
-//
-//            UserChoresView()
-//                .tabItem {
-//                    Label("Progresso", systemImage: "figure.2")
-//                }
-//            
-//            UserChoresView()
-//                .tabItem {
-//                    Label("Perfil", systemImage: "person.fill")
-//                }
-//        }
+//        FirstOnboardingView()
+        TabView {
+            ChoresView()
+                .tabItem {
+                    Label("Tarefas", systemImage: "checklist")
+                }
+             
+            ChoresView()
+                .tabItem {
+                    Label("Compras", systemImage: "basket")
+                }
+
+            ChoresView()
+                .tabItem {
+                    Label("Progresso", systemImage: "figure.2")
+                }
+            
+            ChoresView()
+                .tabItem {
+                    Label("Perfil", systemImage: "person.fill")
+                }
+        }
     }
 }
 

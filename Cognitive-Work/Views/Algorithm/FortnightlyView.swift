@@ -10,6 +10,9 @@ import SwiftUI
 struct FortnightlyView: View {
     @Environment(OnboardingViewModel.self) var viewModel
 
+    let users: [UserModel]
+    let chores: [ChoreModel]
+    
     let description: String = """
         Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível.
         Clique nas tarefas para saber mais.
@@ -22,7 +25,7 @@ struct FortnightlyView: View {
             OnboardingHeader(title: "Escala quinzenal",description: description)
             .padding(.bottom)
             
-                FortnightlyChart()
+            FortnightlyChart(users: users, chores: chores)
             
             Spacer()
         }
@@ -32,5 +35,5 @@ struct FortnightlyView: View {
 }
 
 #Preview {
-    return FortnightlyView()
+    return FortnightlyView(users: [], chores: [])
 }

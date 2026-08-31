@@ -7,7 +7,12 @@
 
 import SwiftUI
 
+/// A custom interaction component requiring a continuous horizontal drag gesture to trigger.
+///
+/// Integrates progressive visual state changes alongside multiple tier haptic feedbacks verifying the intent.
 struct SwipeToCompleteButton: View {
+    
+    /// Task-enacting closure triggered upon a successful gesture validation.
     var action: () -> Void
     var color: Color = .black
     

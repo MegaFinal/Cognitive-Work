@@ -5,7 +5,6 @@
 //  Created by Jonas Fernando Nascimento Melo on 25/08/26.
 //
 
-
 enum FreeTimeEnum: String{
     case none = ""
     case thirtyMinutes = "Até 30 minutos"

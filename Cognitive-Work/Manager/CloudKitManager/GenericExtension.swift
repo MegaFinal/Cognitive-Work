@@ -246,4 +246,8 @@ extension CloudKitManager {
             return false
         }
     }
+    
+    func isOwner<T: CloudKitSyncable>(_ type: T.Type, recordID: CKRecord.ID) async -> Bool {
+        return recordID.zoneID.ownerName == CKCurrentUserDefaultName ? true : false
+    }
 }
