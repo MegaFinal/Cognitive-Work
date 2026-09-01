@@ -110,6 +110,27 @@ struct ChoreTagPicker: View {
     }
 }
 
+/// A UI label paired with a custom-rendered colored circular icon.
+///
+/// Used inside the picker menus to represent tagged properties visually.
+private struct ColorIconTagLabel: View {
+    
+    /// The string to be displayed next to the icon.
+    let title: String
+    
+    /// The background color for the circular icon shape.
+    let color: Color
+    
+    var body: some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(uiImage: .coloredCircle(color: color))
+                .renderingMode(.original)
+        }
+    }
+}
+
 extension UIImage {
     
     /// Dynamically constructs an image rendering a colored circle for icon substitution.

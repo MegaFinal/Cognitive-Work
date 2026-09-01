@@ -16,10 +16,11 @@ struct CreateProfileOnboardingView: View {
     
     var body: some View {
         VStack(alignment: .center, spacing: 58) {
-            OnboardingHeaderText(titleText: "Para começarmos...", descriptionText: "Escolha um Memoji e um nome para utilizar no seu app")
+            headerText
             
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 ProfileImage(image: viewModel.userProfilePicture, isEditing: true)
+//                profileImage
             }
             .layoutPriority(1)
             
@@ -53,6 +54,46 @@ struct CreateProfileOnboardingView: View {
             }
         }
     }
+    
+    // MARK: - Subviews
+    
+    /// Title and supporting copy for this onboarding step.
+    private var headerText: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Para começarmos...")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(.black.opacity(0.7))
+            
+            Text("Escolha um Memoji e um nome para utilizar no seu app")
+                .font(.callout)
+                .foregroundStyle(.gray)
+                .lineLimit(nil)
+        }
+    }
+    
+//    /// The circular avatar, falling back to a placeholder when no picture was chosen yet.
+//    private var profileImage: some View {
+//        Group {
+//            if let image = viewModel.userProfilePicture {
+//                Image(uiImage: image)
+//                    .resizable()
+//                    .scaledToFill()
+//                    .frame(width: 285, height: 285)
+//                    .background(Color(.systemBackground))
+//            } else {
+//                Circle()
+//                    .fill(Color(.systemGray5))
+//                    .frame(width: 285, height: 285)
+//                    .overlay {
+//                        Image(systemName: "person.fill.badge.plus")
+//                            .font(.system(size: 65))
+//                            .foregroundStyle(.gray)
+//                    }
+//            }
+//        }
+//        .clipShape(Circle())
+//        .shadow(radius: 5)
+//    }
 }
 
 #Preview {
