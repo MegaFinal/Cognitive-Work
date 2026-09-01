@@ -81,6 +81,7 @@ struct FilterOptionsMenu: View {
 
         }
         .frame(width: 250)
+        .padding()
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
     }
 }

@@ -22,8 +22,8 @@ struct FilterHeaderButton: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer()
-                Image(systemName: "chevron.down")
-                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                Image(systemName: "chevron.forward")
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 16)
