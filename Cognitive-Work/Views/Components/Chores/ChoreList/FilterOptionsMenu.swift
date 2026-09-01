@@ -28,6 +28,8 @@ struct FilterOptionsMenu: View {
                     }
                 )
             }
+            Divider()
+                .padding(.leading, 16)
             
             FilterHeaderButton(isExpanded: $isOptionExpanded[1], headerText: optionsName[1])
             if isOptionExpanded[1] {
@@ -39,6 +41,8 @@ struct FilterOptionsMenu: View {
                     await viewModel.addOrRemoveFilter(user: user)
                 })
             }
+            Divider()
+                .padding(.leading, 16)
             
             FilterHeaderButton(isExpanded: $isOptionExpanded[2], headerText: optionsName[2])
             if isOptionExpanded[2] {
@@ -50,6 +54,8 @@ struct FilterOptionsMenu: View {
                     await viewModel.addOrRemoveFilter(frequency: freq)
                     })
             }
+            Divider()
+                .padding(.leading, 16)
             
             FilterHeaderButton(isExpanded: $isOptionExpanded[3], headerText: optionsName[3])
             if isOptionExpanded[3] {
@@ -61,6 +67,8 @@ struct FilterOptionsMenu: View {
                         await viewModel.addOrRemoveFilter(state: state)
                     })
             }
+            Divider()
+                .padding(.leading, 16)
             
             Button {
                 viewModel.resetFilter()
