@@ -29,3 +29,7 @@ struct ChoresViewHeader: View {
         }
     }
 }
+
+#Preview {
+    return ChoresViewHeader(carouselVM: .constant(CarouselViewModel()))
+}

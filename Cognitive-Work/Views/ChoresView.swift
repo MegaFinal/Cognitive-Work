@@ -106,6 +106,11 @@ struct ChoresView: View {
         .task(id: [carouselVM.activeIndex, carouselVM.cardModels.count]) {
             await updateActiveRoomColor()
         }
+        .onAppear {
+            Task {
+                await carouselVM.fetchUsers()
+            }
+        }
     }
     
     /// Dismisses the currently focused card based on the active layout mode.
@@ -204,6 +209,7 @@ fileprivate class MockChoreModel: ChoreModel {
     chore3.mockRoom = room3
     
     mockVM.cardModels = [chore1, chore2, chore3]
+    mockVM.userModels = [user1, user2, user1]
     
     return ChoresView(carouselVM: mockVM)
 }

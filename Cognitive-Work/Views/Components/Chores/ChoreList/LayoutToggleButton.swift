@@ -17,22 +17,74 @@
 import SwiftUI
 
 struct LayoutToggleButton: View {
-    var viewModel: CarouselViewModel
-
+    @Bindable var viewModel: CarouselViewModel
+    
     var body: some View {
-        Button {
-            withAnimation(.spring(response: 0.55,dampingFraction: 0.78)) {
-                viewModel.toggleLayout()
+        HStack (spacing: 4) {
+            Button {
+                withAnimation(.spring(response: 0.55,dampingFraction: 0.78)) {
+                    viewModel.toggleLayout()
+                }
+            } label: {
+                Image(systemName: viewModel.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
+                    .font(.title2)
+                    .foregroundColor(.black)
+                    .padding(8)
             }
-        } label: {
-            Image(systemName: viewModel.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
-            .font(.title2)
-            .foregroundColor(.black)
-            .padding(8)
+            
+            if viewModel.layoutMode == .list {
+                Button {
+                    viewModel.isSelectingFilter = true
+                    
+                    //                Menu {
+                    //                    Button {
+                    //
+                    //                    } label: {
+                    //                        Text("Filtrar")
+                    //                    }
+                    //
+                    //                    Menu {
+                    //                        Button("Usuário") {
+                    //
+                    //                        }
+                    //                        Button("Data") { }
+                    //                        Menu("Prioridade") {
+                    //                            ForEach(PriorityTag.allCases, id: \.self) { tag in
+                    //                                Button {
+                    //                                    Task {
+                    //                                        await viewModel.addOrRemoveFilter(tag: tag)
+                    //                                    }
+                    //                                } label: {
+                    //                                    Label(tag.rawValue.capitalized, systemImage: viewModel.filterChoices.tags.contains(tag) ? "checkmark.circle.fill" : "circle")
+                    //                                }
+                    //                            }
+                    //                        }
+                    //                    } label: {
+                    //                        Label("Usuário", systemImage: "line.3.horizontal.decrease")
+                    //                    }
+                    
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(.title2)
+                        .foregroundColor(.black)
+                        .padding(8)
+                }
+                .popover(isPresented: $viewModel.isSelectingFilter) {
+                    FilterOptionsMenu(viewModel: viewModel)
+                        .frame(width: 250)
+                        .presentationCompactAdaptation(.popover)
+                }
+                
+            }
         }
+        
         .glassEffect(
             .regular.interactive(),
-            in: .circle
+            in: .capsule
         )
     }
+}
+
+#Preview {
+    LayoutToggleButton(viewModel: CarouselViewModel())
 }

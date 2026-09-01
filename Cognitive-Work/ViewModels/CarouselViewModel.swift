@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+struct ChoreFilters {
+    var users: [UserModel] = []
+    var tags: [PriorityTag] = []
+    var frequencies: [Recurrence] = []
+    var state: Bool? = nil
+}
+
 /// Controls the state and mathematical rendering of the carousel.
 @Observable
 class CarouselViewModel {
@@ -22,6 +29,13 @@ class CarouselViewModel {
     var hasFocusedCard: Bool {
         focusedIndex != nil
     }
+    
+    /// Some filter is applied into the chores
+    var userModels: [UserModel] = []
+    var isFilterOn: Bool = false
+    var isSelectingFilter = false
+    var filteredChards: [ChoreModel] = []
+    var filterChoices = ChoreFilters()
     
     private let flipDuration: Double = 0.6
     private var flippedIndices: Set<Int> = []
@@ -44,6 +58,87 @@ class CarouselViewModel {
         cardModels = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         
         await MainActor.run { self.isLoading = false }
+    }
+    
+    func fetchUsers() async {
+        await MainActor.run { isLoading = true }
+        
+        userModels = await CloudKitManager.shared.fetchAll(UserModel.self)
+        
+        await MainActor.run { self.isLoading = false }
+    }
+    
+    // MARK: - Filters
+    
+    @MainActor
+    func filterByUser() async {
+        var chores: [ChoreModel] = []
+        
+        if filterChoices.users != [] {
+            for user in filterChoices.users {
+                for chore in self.cardModels {
+                    if await chore.currentResponsible == user {
+                        chores.append(chore)
+                    }
+                }
+            }
+        }
+        
+        if filterChoices.tags != [] {
+            for tag in filterChoices.tags {
+                chores = chores.filter {$0.priorityTag == tag}
+            }
+        }
+        
+        if filterChoices.frequencies != [] {
+            for frequency in filterChoices.frequencies {
+                chores = chores.filter {$0.frequency == frequency}
+            }
+        }
+        
+        if let state = filterChoices.state {
+            chores = chores.filter {$0.isDone == state}
+        }
+        
+        self.filteredChards = chores
+        self.isFilterOn = true
+    }
+    
+    func addOrRemoveFilter(user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, state: Bool? = nil) async {
+        
+        if let user = user {
+            if !filterChoices.users.contains(user) {
+                filterChoices.users.append(user)
+            } else {
+                filterChoices.users.removeAll {$0 == user}
+            }
+        }
+        
+        if let tag = tag {
+            if !filterChoices.tags.contains(tag) {
+                filterChoices.tags.append(tag)
+            } else {
+                filterChoices.tags.removeAll {$0 == tag}
+            }
+        }
+        
+        if let frequency = frequency {
+            if !filterChoices.frequencies.contains(frequency) {
+                filterChoices.frequencies.append(frequency)
+            } else {
+                filterChoices.frequencies.removeAll {$0 == frequency}
+            }
+        }
+        
+        if let state = state {
+            if filterChoices.state != state {
+                filterChoices.state = state
+            } else {
+                filterChoices.state = nil
+            }
+        }
+        
+        await filterByUser()
     }
     
     // MARK: - Focus
