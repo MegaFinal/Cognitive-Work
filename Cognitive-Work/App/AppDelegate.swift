@@ -59,9 +59,3 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 }
-
-extension Notification.Name {
-    static let didAcceptShare = Notification.Name("didAcceptShare")
-    static let cloudKitDidChange = Notification.Name("cloudKitDidChange")
-    
-}

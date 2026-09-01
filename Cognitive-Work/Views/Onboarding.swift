@@ -16,6 +16,12 @@ struct Onboarding: View {
             .onChange(of: viewModel.isOnboardingSkipped) {
                 didOnboard = true
             }
+            .onReceive(NotificationCenter.default.publisher(for: .didAcceptShare)) { _ in
+                Task {
+                    await viewModel.fetchHouse()
+                    viewModel.stateMachine.flow = .invitedWithoutProfile
+                }
+            }
     }
     
     @ViewBuilder

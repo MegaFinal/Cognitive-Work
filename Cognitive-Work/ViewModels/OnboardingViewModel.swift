@@ -227,4 +227,8 @@ class OnboardingViewModel {
         
         await currentUser?.setAvailableTimes(availableTime)
     }
+    
+    func fetchHouse() async {
+        currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
+    }
 }
