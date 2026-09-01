@@ -18,20 +18,22 @@ struct ResponsibleUserPicker: View {
     
     /// The collection of users currently bound to the chore.
     @Binding var selectedUsers: [UserModel]
-
+    
     /// Evaluates if a given user is already present in the active selection.
     private func isSelected(_ user: UserModel) -> Bool {
         selectedUsers.contains { $0.id == user.id }
     }
     
     var body: some View {
-        HStack(spacing: 10) {
-            ForEach(selectedUsers) { selectedUser in
-                UserProfilePictureTag(imageData: selectedUser.profilePicture, widthMultiplier: 0.05)
-                    .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
-                    .onTapGesture {
-                        selectedUsers.removeAll { $0.id == selectedUser.id }
-                    }
+        HStack(spacing: 2) {
+            HStack(spacing: -10){
+                ForEach(selectedUsers) { selectedUser in
+                    UserProfilePictureTag(imageData: selectedUser.profilePicture, widthMultiplier: 0.15)
+                        .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
+                        .onTapGesture {
+                            selectedUsers.removeAll { $0.id == selectedUser.id }
+                        }
+                }
             }
             
             Menu {
