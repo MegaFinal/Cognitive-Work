@@ -61,6 +61,23 @@ struct FilterOptionsMenu: View {
                         await viewModel.addOrRemoveFilter(state: state)
                     })
             }
+            
+            Button {
+                viewModel.resetFilter()
+            } label: {
+                HStack {
+                    Text("Limpar filtro")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "eraser")
+                        .foregroundStyle(.secondary)
+                }
+                .foregroundStyle(.black)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
+            }
 
         }
         .frame(width: 250)

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 struct ChoreFilters {
     var users: [UserModel] = []
@@ -72,35 +73,38 @@ class CarouselViewModel {
     
     @MainActor
     func filterByUser() async {
-        var chores: [ChoreModel] = []
+        var totalChores: [ChoreModel] = []
         
-        if filterChoices.users != [] {
-            for user in filterChoices.users {
-                for chore in self.cardModels {
-                    if await chore.currentResponsible == user {
-                        chores.append(chore)
-                    }
-                }
-            }
+//        if filterChoices.users != [] {
+//            for user in filterChoices.users {
+//                for chore in self.cardModels {
+//                    if await chore.currentResponsible == user {
+//                        chores.append(chore)
+//                    }
+//                }
+//            }
+//        }
+        
+        if !filterChoices.tags.isEmpty {
+            totalChores += cardModels.filter {filterChoices.tags.contains($0.priorityTag)}
         }
         
-        if filterChoices.tags != [] {
-            for tag in filterChoices.tags {
-                chores = chores.filter {$0.priorityTag == tag}
-            }
-        }
-        
-        if filterChoices.frequencies != [] {
-            for frequency in filterChoices.frequencies {
-                chores = chores.filter {$0.frequency == frequency}
-            }
+        if !filterChoices.frequencies.isEmpty {
+            totalChores += cardModels.filter {filterChoices.frequencies.contains($0.frequency)}
         }
         
         if let state = filterChoices.state {
-            chores = chores.filter {$0.isDone == state}
+            totalChores += cardModels.filter {$0.isDone == state}
         }
         
-        self.filteredChards = chores
+        // To prevent duplicates itens
+        var seen = Set<CKRecord.ID>()
+        totalChores = totalChores.filter { chore in
+            guard let id = chore.recordID else { return true }
+            return seen.insert(id).inserted
+        }
+        
+        self.filteredChards = totalChores
         self.isFilterOn = true
     }
     
@@ -139,6 +143,13 @@ class CarouselViewModel {
         }
         
         await filterByUser()
+    }
+    
+    func resetFilter() {
+        isFilterOn = false
+        isSelectingFilter = false
+        filteredChards = []
+        filterChoices = ChoreFilters()
     }
     
     // MARK: - Focus
