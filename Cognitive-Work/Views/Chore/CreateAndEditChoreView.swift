@@ -35,7 +35,7 @@ struct CreateAndEditChoreView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 25) {
-                CreateAndEditChoreHeader(chore: choreDTO)
+                header
 
                 // MARK: - Pickers
                 VStack(spacing: 10) {
@@ -72,7 +72,7 @@ struct CreateAndEditChoreView: View {
                 }
 
                 // MARK: - Checklist
-                ChecklistSection(choreDTO: choreDTO, width: width)
+                checklistSection
 
                 // MARK: - Responsible Users
                 VStack(alignment: .leading, spacing: 10) {
@@ -84,20 +84,12 @@ struct CreateAndEditChoreView: View {
                 }
 
                 // MARK: - Visibility Toggle
-                PublicToggleSection(choreDTO: choreDTO, width: width)
+                publicToggleSection
 
                 Spacer()
 
                 // MARK: - Confirmation Button
-                ConfirmButtonSection(
-                    isSaving: isSaving,
-                    isDisabled: choreDTO.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving,
-                    width: width,
-                    height: height,
-                    action: {
-                        Task { await confirmAndSave() }
-                    }
-                )
+                confirmButton
             }
             .padding(.vertical)
             .frame(width: width * 0.9)
@@ -107,7 +99,129 @@ struct CreateAndEditChoreView: View {
         }
     }
     
+    // MARK: - Subviews
+    
+    /// The uppermost structural section of the form: iconography, chore name field and room selection.
+    private var header: some View {
+        HStack {
+            Image(systemName: choreDTO.symbolName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: width * 0.15)
+                .fontWeight(.thin)
+                .padding(.leading, 8)
+            
+            Spacer()
+            
+            VStack(spacing: 25) {
+                VStack(spacing: 2) {
+                    TextField(
+                        "",
+                        text: $choreDTO.name,
+                        prompt: Text("Nome da Tarefa")
+                            .foregroundStyle(.black)
+                    )
+                    .font(.title)
+                    .bold()
+                    
+                    Capsule()
+                        .frame(height: height * 0.0015)
+                }
+                
+                HStack {
+                    Text("Cômodo")
+                        .bold()
+                    
+                    Spacer()
+                    
+                    ChoreTagPicker(chore: choreDTO, type: .room)
+                }
+            }
+            .frame(width: width * 0.65)
+        }
+    }
+    
+    /// Encapsulates the toggle and the inline editor for the chore's checklist.
+    private var checklistSection: some View {
+        VStack {
+            HStack {
+                Text("Checklist")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Toggle("", isOn: $choreDTO.hasChecklist)
+                    .toggleStyle(.switch)
+                    .onChange(of: choreDTO.hasChecklist) { _, isOn in
+                        if isOn && choreDTO.checklist.isEmpty {
+                            choreDTO.checklist.append(CheckItemDTO(name: "", isDone: false))
+                        }
+                    }
+                    .padding(.trailing, 3)
+            }
+            .frame(width: width * 0.9)
+
+            if choreDTO.hasChecklist {
+                CheckListCreateAndEdit(hasChecklist: $choreDTO.hasChecklist, localChecklist: $choreDTO.checklist)
+            }
+        }
+    }
+    
+    /// Contains the switch for deciding whether the chore should be public to the household.
+    private var publicToggleSection: some View {
+        VStack {
+            HStack {
+                Text("Essa tarefa é para a casa?")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Toggle("", isOn: $choreDTO.isPublic)
+                    .toggleStyle(.switch)
+                    .padding(.trailing, 7)
+                    .frame(width: width * 0.37)
+            }
+            .frame(width: width * 0.9)
+
+            Text("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
+                .font(.subheadline)
+                .italic()
+                .foregroundColor(.gray)
+        }
+    }
+    
+    /// Bottom-anchored confirmation button, featuring an embedded loading state.
+    private var confirmButton: some View {
+        HStack {
+            Spacer()
+            
+            Button {
+                Task { await confirmAndSave() }
+            } label: {
+                Group {
+                    if isSaving {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Text("Confirmar")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                    }
+                }
+                .frame(width: width * 0.8, height: height * 0.06)
+                .background(Color.blue)
+                .clipShape(Capsule())
+            }
+            .disabled(choreDTO.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+            
+            Spacer()
+        }
+    }
+    
     // MARK: - Methods
+    
     /// Persists the modifications from the local copy onto `originalModel` and dismisses the view.
     private func confirmAndSave() async {
         isSaving = true

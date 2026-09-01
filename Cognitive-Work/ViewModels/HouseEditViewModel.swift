@@ -25,7 +25,10 @@ final class HouseEditViewModel {
     
     // MARK: - Authorization
     func checkAdminStatus() async {
-        guard let house = house else {
+        await fetchHouse()
+        
+        guard let house
+        else {
             isUserAdmin = false
             return
         }
@@ -40,16 +43,13 @@ final class HouseEditViewModel {
     // MARK: - Fetch
     
     /// Loads a single house by its record ID.
-    func fetchHouse(recordID: CKRecord.ID) async {
+    func fetchHouse() async {
         isLoading = true
         errorMessage = nil
         
         defer { isLoading = false }
         
-        let reference = CKRecord.Reference(recordID: recordID, action: .none)
-        guard let fetchedHouse = await CloudKitManager.shared
-            .fetchRecordsByRecordReference(for: HouseModel.self, recordReferences: [reference])?
-            .first
+        guard let fetchedHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
         else {
             errorMessage = "Failed to retrieve the record"
             return
