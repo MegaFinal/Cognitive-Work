@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SelectFreeTimeOnboardingView: View {
-    @Environment(OnboardingViewModel.self) var viewModel
+    @Binding var viewModel: OnboardingViewModel
     
     @State var weekOrder = [
         DayOfWeekDTO(name: "Segunda - Feira", nameAbbreviation: "Seg"),
@@ -21,8 +21,6 @@ struct SelectFreeTimeOnboardingView: View {
     ]
     
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-        
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height
@@ -59,12 +57,11 @@ struct SelectFreeTimeOnboardingView: View {
                 }
                 
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
-                    viewModel.navigateToNineth = true
+                    await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder)
+                    viewModel.goToNextView()
                 }
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                
-                
             }
             .padding(.horizontal, width * 0.0865)
             .navigationBarBackButtonHidden()
@@ -73,5 +70,6 @@ struct SelectFreeTimeOnboardingView: View {
 }
 
 #Preview {
-    SelectFreeTimeOnboardingView()
+    @Previewable @State var viewModel = OnboardingViewModel()
+    SelectFreeTimeOnboardingView(viewModel: $viewModel)
 }

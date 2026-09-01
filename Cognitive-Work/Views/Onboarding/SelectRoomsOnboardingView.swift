@@ -20,7 +20,7 @@ import SwiftUI
 /// ``OnboardingViewModel/saveSelectedRooms()``.
 struct SelectRoomsOnboardingView: View {
     /// The shared onboarding view model, read from the environment
-    @Environment(OnboardingViewModel.self) var viewModel
+    @Binding var viewModel: OnboardingViewModel
     
     /// Whether the sheet for creating a custom room is currently presented
     @State private var isShowingCustomRoomSheet = false
@@ -29,8 +29,6 @@ struct SelectRoomsOnboardingView: View {
     var columns = [GridItem(), GridItem()]
     
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 OnboardingHeader(
@@ -59,7 +57,7 @@ struct SelectRoomsOnboardingView: View {
                 OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading) {
                     Task {
                         await viewModel.saveSelectedRooms()
-                        viewModel.navigateToFifth = true
+                        viewModel.goToNextView()
                     }
                 }
             }
@@ -75,8 +73,6 @@ struct SelectRoomsOnboardingView: View {
 }
 
 #Preview {
-    let mockViewModel = OnboardingViewModel()
-    
-    return SelectRoomsOnboardingView()
-        .environment(mockViewModel)
+    @Previewable @State var viewModel = OnboardingViewModel()
+    return SelectRoomsOnboardingView(viewModel: $viewModel)
 }

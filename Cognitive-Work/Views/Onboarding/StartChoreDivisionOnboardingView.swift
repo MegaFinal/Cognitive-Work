@@ -8,14 +8,12 @@
 import SwiftUI
 
 struct StartChoreDivisionOnboardingView: View {
-    @Environment(OnboardingViewModel.self) var viewModel
+    @Binding var viewModel: OnboardingViewModel
 
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-
         VStack(spacing: 16) {
             Spacer()
 
@@ -38,9 +36,13 @@ struct StartChoreDivisionOnboardingView: View {
                 Text("Assim que todos os moradores preencherem enviaremos uma notificação avisando que a escala de tarefas foi dividida de uma forma justa por todos da casa!\n")
             }
             
-            OnboardingProgressButton(text: "Continuar", action: { viewModel.navigateToSeventh = true})
+            OnboardingProgressButton(text: "Continuar") {
+                viewModel.goToNextView()
+            }
             
-            OnboardingSkipButton(action: {viewModel.onboardingFinished = true})
+            OnboardingSkipButton() {
+                viewModel.finishOnboarding()
+            }
 
         }
         .frame(width: width * 0.8)
@@ -51,5 +53,6 @@ struct StartChoreDivisionOnboardingView: View {
     }
 }
 #Preview {
-    StartChoreDivisionOnboardingView()
+    @Previewable @State var viewModel = OnboardingViewModel()
+    StartChoreDivisionOnboardingView(viewModel: $viewModel)
 }

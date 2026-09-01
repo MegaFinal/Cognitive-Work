@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SelectChoreListItem: View {
-    @Environment(OnboardingViewModel.self) var viewModel
+    @Binding var viewModel: OnboardingViewModel
     
     @Binding var room: RoomModel
 
@@ -76,6 +76,7 @@ struct SelectChoreListItem: View {
 }
 
 #Preview {
+    @Previewable @State var viewModel = OnboardingViewModel()
     @Previewable @State var room = RoomModel(name: "Quarto", color: .blue)
-    SelectChoreListItem(room: $room, height: 852, width: 393)
+    SelectChoreListItem(viewModel: $viewModel,room: $room, height: 852, width: 393)
 }

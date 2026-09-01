@@ -23,7 +23,7 @@ import SwiftUI
 /// > selects it in the others. Give each room its own list before replacing the
 /// > mock with real data.
 struct SelectChoresOnboardingView: View {
-    @Environment(OnboardingViewModel.self) var viewModel
+    @Binding var viewModel: OnboardingViewModel
 
     /// Rooms listed on the screen, each holding its own expansion state.
     @State private var rooms: [RoomModel] = []
@@ -44,8 +44,6 @@ struct SelectChoresOnboardingView: View {
     // MARK: - Body
 
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height
@@ -68,7 +66,7 @@ struct SelectChoresOnboardingView: View {
                     VStack(alignment: .leading) {
                         ForEach($rooms) { $room in
                             HStack {
-                                SelectChoreListItem(room: $room, height: height, width: width)
+                                SelectChoreListItem(viewModel: $viewModel, room: $room, height: height, width: width)
                             }
                             .padding(.bottom, height * 0.07)
                         }
@@ -76,7 +74,7 @@ struct SelectChoresOnboardingView: View {
                 
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
                     await viewModel.creatDefoultChores()
-                    viewModel.navigateToEighth = true
+                    viewModel.goToNextView()
                 }
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
@@ -86,12 +84,11 @@ struct SelectChoresOnboardingView: View {
         }
         .task {
             rooms = await viewModel.fetchRooms()
-            //TODO: remove print
-            print(rooms)
         }
     }
 }
 
 #Preview {
-    SelectChoresOnboardingView()
+    @Previewable @State var viewModel = OnboardingViewModel()
+    SelectChoresOnboardingView(viewModel: $viewModel)
 }
