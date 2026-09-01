@@ -18,24 +18,27 @@ struct DailyUsageEntry {
 
 @Observable
 class FortnightlyViewModel {
-    var houseModel: HouseModel?
     var users: [UserModel] = []
     var chores: [ChoreModel] = []
     var dailyAssignments: [DailyAssignmentModel] = []
     var startDate: Date = Date()
-    var isLoading: Bool = false
+    var isLoading: Bool = true
     var errorMessage: String?
 
-    func setup() async {
-        self.houseModel = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
-        self.users = await CloudKitManager.shared.fetchAll(UserModel.self)
-        for user in users {
-            let chores = await user.chores
-            self.chores.append(contentsOf: chores)
-        }
-        for chore in chores {
-            dailyAssignments.append(contentsOf: await chore.dailyAssignments)
-        }
+    
+    func setup(users: [UserModel], chores: [ChoreModel]) async {
+        self.users = users
+        self.chores = chores
+        
+        dailyAssignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
+
+        let calendar = Calendar.current
+        let today = Date()
+        let weekday = calendar.component(.weekday, from: today)
+        let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
+        self.startDate = calendar.date(byAdding: .day, value: -daysToSubtract, to: today) ?? today
+
+        isLoading = false
     }
     
     var usageEntries: [DailyUsageEntry] {

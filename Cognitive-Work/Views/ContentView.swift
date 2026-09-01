@@ -6,17 +6,11 @@
 //
 
 import SwiftUI
-import SwiftData
 import CloudKit
 
 struct ContentView: View {
     var body: some View {
         TabView {
-            FirstOnboardingView() ///`Temporarily placed in TabView for testing
-                .tabItem{
-                    Label("Onboarding", systemImage: "house")
-                }
-            
             ChoresView()
                 .tabItem {
                     Label("Tarefas", systemImage: "checklist")

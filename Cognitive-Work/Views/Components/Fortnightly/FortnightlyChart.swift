@@ -13,6 +13,9 @@ struct FortnightlyChart: View {
     @State private var selectedEntry: DailyUsageEntry?
     @State private var usageEntries: [DailyUsageEntry] = []
     
+    let users: [UserModel]
+    let chores: [ChoreModel]
+    
     var body: some View {
         VStack(spacing: 16) {
             if viewModel.isLoading {
@@ -21,7 +24,7 @@ struct FortnightlyChart: View {
                 Text(errorMessage).foregroundColor(.red)
             } else {
                 FortnightlyBarChart(
-                    users: viewModel.users,
+                    users: users,
                     entries: usageEntries,
                     startDate: viewModel.startDate,
                     onSelect: { entry in selectedEntry = entry }
@@ -37,8 +40,11 @@ struct FortnightlyChart: View {
         }
         .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
         .task {
-            await viewModel.setup()
+            await viewModel.setup(users: users, chores: chores)
             usageEntries = await viewModel.usageEntries
+        }
+        .onAppear{
+            print("cheguei na chart")
         }
     }
     
@@ -57,6 +63,6 @@ struct FortnightlyChart: View {
     }
 }
 
-#Preview {
-    FortnightlyChart()
-}
+//#Preview {
+//    FortnightlyChart()
+//}

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WifiCredentialsView: View {
-    @State private var viewModel = WifiConnectionViewModel()
+    @State private var viewModel = HardwareViewModel()
     
     var body: some View {
         NavigationStack {

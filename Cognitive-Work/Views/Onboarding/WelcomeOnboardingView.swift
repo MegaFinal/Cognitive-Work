@@ -17,17 +17,17 @@ import SwiftUI
 /// The view owns the shared ``OnboardingViewModel`` for the onboarding flow
 /// and injects it into the environment so that subsequent screens can
 /// read and mutate it without it being passed down explicitly
-struct FirstOnboardingView: View {
+struct WelcomeOnboardingView: View {
     /// Whether the description panel is expanded, replacing the initial tagline
     @State private var isExpanded = false
     /// Whether the "swipe up" hint indicator is currently visible
     @State private var isSwipeVisible = false
     
     /// The shared view model for navigation and state across the onboarding flow
-    @State private var viewModel = OnboardingViewModel()
-    
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
+    @Binding var viewModel: OnboardingViewModel
+        
+    let width = UIScreen.main.bounds.width
+    let height = UIScreen.main.bounds.height
     
     var body: some View {
         NavigationStack {
@@ -48,7 +48,7 @@ struct FirstOnboardingView: View {
                             
                         } else {
                             OnboardingAppDescription {
-                                viewModel.navigateToSecond = true
+                                viewModel.goToNextView()
                             }
                         }
                     }
@@ -81,38 +81,12 @@ struct FirstOnboardingView: View {
                     }
                 }
             }
-            .navigationDestination(isPresented: $viewModel.navigateToSecond) {
-                CreateProfileOnboardingView()
-            }
-            .navigationDestination(isPresented: $viewModel.navigateToThird) {
-                CreateOrEnterHouseOnboardingView()
-            }
-            .navigationDestination(isPresented: $viewModel.navigateToFourth) {
-                SelectRoomsOnboardingView()
-            }
-            .navigationDestination(isPresented: $viewModel.navigateToFifth) {
-                InviteUsersOnboardingView()
-            }
-            .navigationDestination(isPresented: $viewModel.navigateToSixth) {
-                StartChoreDivisionOnboardingView()
-            }
-            .navigationDestination(isPresented: $viewModel.navigateToSeventh) {
-                SelectChoresOnboardingView()
-            }
-            .navigationDestination(isPresented: $viewModel.navigateToEighth) {
-                SelectFreeTimeOnboardingView()
-            }
-            .navigationDestination(isPresented: $viewModel.navigateToNineth) {
-                FortnightlyScheduleView()
-            }
-//            .navigationDestination(isPresented: $viewModel.navigateToTenth) {
-//                FortnightlyView()
-//            }
+
         }
-        .environment(viewModel)
     }
 }
 
 #Preview {
-    FirstOnboardingView()
+    @Previewable @State var viewModel = OnboardingViewModel()
+    WelcomeOnboardingView(viewModel: $viewModel)
 }

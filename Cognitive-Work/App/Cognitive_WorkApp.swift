@@ -11,11 +11,15 @@ import SwiftData
 @main
 struct Cognitive_WorkApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @State private var didOnboard = false
     
     var body: some Scene {
         WindowGroup {
-//            WifiCredentialsView()
-            ContentView()
+            if didOnboard {
+                ContentView()
+            } else {
+                Onboarding(didOnboard: $didOnboard)
+            }
         }
     }
 }

@@ -7,7 +7,7 @@ import Foundation
 import CloudKit
 
 /// A member of a house, including their gamification progress.
-struct UserModel: CloudKitSyncable, Hashable, Identifiable {
+class UserModel: CloudKitSyncable, Identifiable {
     var id: String {
         recordID?.recordName ?? UUID().uuidString
     }
@@ -86,7 +86,7 @@ struct UserModel: CloudKitSyncable, Hashable, Identifiable {
     ///
     /// Unknown or missing ``Tier`` values fall back to `.tier1`; missing collections decode as
     /// empty or `nil` rather than failing.
-    init?(record: CKRecord) {
+    required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
             let coins = record["coins"] as? Int,
@@ -169,5 +169,43 @@ struct UserModel: CloudKitSyncable, Hashable, Identifiable {
             record["coupons"] = couponsReference
         }
         record["couponLimit"] = couponLimit
+    }
+    
+    @discardableResult
+    func setAvailableTimes(_ times: [AvailableTimeModel]) async -> Bool {
+        guard let recordID else {
+            CloudKitManager.shared.errorMessage = "Failed to add availableTime: user missing recordID"
+            return false
+        }
+        let calendar: Calendar = .current
+        let userRef = CKRecord.Reference(recordID: recordID, action: .deleteSelf)
+        var newRefs: [CKRecord.Reference] = []
+        
+        for (offset,time) in times.enumerated() {
+            let linked = AvailableTimeModel(
+                capacityMinutes: time.capacityMinutes,
+                day: Date().weekdayInCurrentWeek(offset: offset, calendar: calendar),
+                user: userRef
+            )
+            
+            guard
+                let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID),
+                let savedID = saved.recordID
+            else {
+                return false
+            }
+
+            newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
+        }
+        
+        availableTimeReference = (availableTimeReference ?? []) + newRefs
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    @discardableResult
+    func setAvailableTime(capacityMinutes: Int, day: Date) async -> Bool {
+        await setAvailableTimes([
+            AvailableTimeModel(capacityMinutes: capacityMinutes, day: day)
+        ])
     }
 }
