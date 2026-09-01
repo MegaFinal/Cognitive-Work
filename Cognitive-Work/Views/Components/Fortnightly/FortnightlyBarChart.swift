@@ -42,6 +42,48 @@ struct FortnightlyBarChart: View {
     }
 }
 
+private struct FortnightlyDayUserBar: View {
+    var day: Date
+    var entries: [DailyUsageEntry]
+    var users: [UserModel]
+    var onSelect: (DailyUsageEntry) -> Void
+
+    private let maxBarHeight: Double = 100
+
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.dateFormat = "EEE"
+        return formatter
+    }
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Spacer(minLength: 0)
+            let formattedDay = dateFormatter.string(from: day).replacingOccurrences(of: ".", with: "")
+            Text(formattedDay.capitalized)
+                .font(.system(size: 16.35))
+                .fontWeight(.medium)
+
+            if !entries.isEmpty {
+                VStack(spacing: 4) {
+                    ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
+                        let userIndex = users.firstIndex(where: { $0.recordID == entry.userID }) ?? (index % users.count)
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(UserColorPalette.color(for: userIndex))
+                            .frame(width: 38, height: maxBarHeight * entry.tier.heightRatio)
+                            .onTapGesture {
+                                onSelect(entry)
+                            }
+                    }
+                }
+            }
+        }
+        .frame(width: 50)
+    }
+}
+
 #Preview {
     let user1ID = CKRecord.ID(recordName: "user-1")
     let user2ID = CKRecord.ID(recordName: "user-2")

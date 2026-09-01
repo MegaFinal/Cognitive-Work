@@ -32,24 +32,17 @@ struct ChoresView: View {
                 // MARK: - Header, progress cards and action buttons
                 VStack(spacing: 3) {
                     VStack(spacing: 15) {
-                        ChoresViewHeader(carouselVM: $carouselVM)
+                        header
                         
-                        if carouselVM.layoutMode == .grid {
-                            ChoresViewProgressSection(activeRoomColor: activeRoomColor)
-                        } else {
-                            ChoresViewProgressSection(activeRoomColor: .black)
-                        }
+                        progressSection
                     }
                     
                     Spacer()
                         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
                     
                     if carouselVM.layoutMode != .grid {
-                        ChoreListLayout(
-                            viewModel: carouselVM,
-                            onSwipeDown: carouselVM.toggleLayout, namespace: cardAnimation
-                        )
-                        .zIndex(1000)
+                        choreList
+                            .zIndex(1000)
                     }
                     
                     ChoresViewButtonsSection()
@@ -108,6 +101,69 @@ struct ChoresView: View {
         }
     }
     
+    // MARK: - Subviews
+
+    /// Page title alongside the layout toggle control.
+    private var header: some View {
+        HStack {
+            Text("Suas Tarefas")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .padding(.horizontal, 30)
+                .padding(.top, 20)
+            
+            Spacer()
+            
+            Button {
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
+                    carouselVM.toggleLayout()
+                }
+            } label: {
+                Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
+                    .font(.title2)
+                    .foregroundColor(.black)
+                    .padding(8)
+            }
+            .glassEffect(
+                .regular.interactive(),
+                in: .circle
+            )
+            .padding(.top, 20)
+            .padding(.trailing, 30)
+        }
+    }
+    
+    /// Informational segment displaying metric-based progress cards.
+    private var progressSection: some View {
+        let cardColor = carouselVM.layoutMode == .grid ? activeRoomColor : .black
+        
+        return HStack(spacing: 10) {
+            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min", color: cardColor)
+            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min", color: cardColor)
+            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min", color: cardColor)
+        }
+        .padding(.horizontal, 30)
+        .animation(.easeInOut, value: activeRoomColor)
+    }
+    
+    /// Vertical scroll view rendering the chores in a list format.
+    private var choreList: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                ForEach(Array(carouselVM.cardModels.enumerated()), id: \.element.id) { index, chore in
+                    ChoreCardListStyle(chore: chore, namespace: cardAnimation) {
+                        carouselVM.focusDetailsImmediately(index)
+                    }
+                }
+            }
+            .padding(.top, 8)
+        }
+        .onSwipeDown(action: carouselVM.toggleLayout)
+        .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
+    }
+    
+    // MARK: - Actions
+
     /// Dismisses the currently focused card based on the active layout mode.
     private func dismissFocusedCard() {
         if carouselVM.layoutMode == .grid {
@@ -132,6 +188,45 @@ struct ChoresView: View {
         } else {
             activeRoomColor = .gray
         }
+    }
+}
+
+// MARK: - Private subviews
+
+/// Renders statistics paired with a title tag.
+private struct ProgressIndicatorCard: View {
+    
+    /// Short label indicating the metric meaning.
+    var title: String
+    
+    /// Formatted data result (e.g., "1h 30m").
+    var data: String
+    
+    /// Visual thematic backdrop color applying depth over UI layouts.
+    var color: Color = .gray
+    
+    var width = UIScreen.main.bounds.width
+    var height = UIScreen.main.bounds.height
+    
+    var body: some View {
+        VStack {
+            Text(title)
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(.white.opacity(0.8))
+                .padding(.top, 10)
+            
+            Spacer()
+            
+            Text(data)
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .padding(.bottom, 25)
+                .foregroundColor(.white)
+        }
+        .frame(width: width * 0.28, height: height * 0.088)
+        .background(color)
+        .clipShape(RoundedRectangle(cornerRadius: 21))
     }
 }
 

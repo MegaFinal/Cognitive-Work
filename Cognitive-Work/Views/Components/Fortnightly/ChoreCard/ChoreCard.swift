@@ -16,7 +16,7 @@ struct ChoreCard: View {
 
     var body: some View {
         VStack {
-            ChoreCardTitle(choreName: chore.name, roomName: roomName)
+            title
 
             HStack {
                 Image(systemName: "toilet")
@@ -40,11 +40,58 @@ struct ChoreCard: View {
                 .frame(width: 345, height: 290)
         )
     }
+
+    private var title: some View {
+        VStack {
+            Text(roomName)
+                .fontWeight(.regular)
+                .font(.headline)
+            Text(chore.name)
+                .bold()
+                .font(.title)
+        }
+    }
+}
+
+private struct ChorePriority: View {
+    let chore: ChoreModel
+    @State var user: UserModel?
+
+    var body: some View {
+        HStack {
+            Rectangle()
+                .frame(width: 2)
+
+            VStack(alignment: .leading) {
+                UserProfilePictureTag(imageData: user?.profilePicture, widthMultiplier: 0.05)
+
+                CapsuleTag(
+                    tagName: chore.priorityTag.rawValue,
+                    tagColor: .subTitleGray,
+                    horizontalPadding: 0.0,
+                    verticalPadding: 1.5
+                )
+
+                CapsuleTag(
+                    tagName: tier.displayText,
+                    tagColor: .titleGray,
+                    horizontalPadding: 0.0,
+                    verticalPadding: 1.5
+                )
+            }
+        }
+        .task {
+            user = await chore.currentResponsible ?? nil
+        }
+        .frame(height: 100)
+    }
+
+    private var tier: ChoreDurationTier {
+        ChoreDurationTier.from(minutes: chore.duration)
+    }
 }
 
 #Preview {
-    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-
     let mockChore = ChoreModel(
         name: "Lavar banheiro",
         description: "Limpeza completa",
