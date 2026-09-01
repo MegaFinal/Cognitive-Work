@@ -154,6 +154,7 @@ class CloudKitManager {
     /// - Returns: `true` if the invitation was accepted successfully; otherwise `false`.
     ///
     /// If the operation fails, ``errorMessage`` contains the failure reason.
+    @discardableResult
     func acceptShare(metadata: CKShare.Metadata) async -> Bool {
         let operation = CKAcceptSharesOperation(
             shareMetadatas: [metadata]
