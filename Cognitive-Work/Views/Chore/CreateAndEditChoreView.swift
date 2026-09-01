@@ -35,7 +35,7 @@ struct CreateAndEditChoreView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 25) {
-                CreateAndEditChoreHeader(chore: choreDTO)
+                header
 
                 // MARK: - Pickers
                 VStack(spacing: 10) {
@@ -72,7 +72,7 @@ struct CreateAndEditChoreView: View {
                 }
 
                 // MARK: - Checklist
-                ChecklistSection(choreDTO: choreDTO, width: width)
+                checklistSection
 
                 // MARK: - Responsible Users
                 VStack(alignment: .leading, spacing: 10) {
@@ -80,24 +80,16 @@ struct CreateAndEditChoreView: View {
                         .font(.subheadline)
                         .fontWeight(.semibold)
                     
-                    ResponsibleUserPicker(availableUsers: availableHouseUsers, selectedUsers: $choreDTO.responsibleUsers)
+                    responsibleUserPicker
                 }
 
                 // MARK: - Visibility Toggle
-                PublicToggleSection(choreDTO: choreDTO, width: width)
+                publicToggleSection
 
                 Spacer()
 
                 // MARK: - Confirmation Button
-                ConfirmButtonSection(
-                    isSaving: isSaving,
-                    isDisabled: choreDTO.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving,
-                    width: width,
-                    height: height,
-                    action: {
-                        Task { await confirmAndSave() }
-                    }
-                )
+                confirmButton
             }
             .padding(.vertical)
             .frame(width: width * 0.9)
@@ -107,7 +99,176 @@ struct CreateAndEditChoreView: View {
         }
     }
     
+    // MARK: - Subviews
+    
+    /// The uppermost structural section of the form: iconography, chore name field and room selection.
+    private var header: some View {
+        HStack {
+            Image(systemName: choreDTO.symbolName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: width * 0.15)
+                .fontWeight(.thin)
+                .padding(.leading, 8)
+            
+            Spacer()
+            
+            VStack(spacing: 25) {
+                VStack(spacing: 2) {
+                    TextField(
+                        "",
+                        text: $choreDTO.name,
+                        prompt: Text("Nome da Tarefa")
+                            .foregroundStyle(.black)
+                    )
+                    .font(.title)
+                    .bold()
+                    
+                    Capsule()
+                        .frame(height: height * 0.0015)
+                }
+                
+                HStack {
+                    Text("Cômodo")
+                        .bold()
+                    
+                    Spacer()
+                    
+                    ChoreTagPicker(chore: choreDTO, type: .room)
+                }
+            }
+            .frame(width: width * 0.65)
+        }
+    }
+    
+    /// Encapsulates the toggle and the inline editor for the chore's checklist.
+    private var checklistSection: some View {
+        VStack {
+            HStack {
+                Text("Checklist")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Toggle("", isOn: $choreDTO.hasChecklist)
+                    .toggleStyle(.switch)
+                    .onChange(of: choreDTO.hasChecklist) { _, isOn in
+                        if isOn && choreDTO.checklist.isEmpty {
+                            choreDTO.checklist.append(CheckItemDTO(name: "", isDone: false))
+                        }
+                    }
+                    .padding(.trailing, 3)
+            }
+            .frame(width: width * 0.9)
+
+            if choreDTO.hasChecklist {
+                CheckListCreateAndEdit(hasChecklist: $choreDTO.hasChecklist, localChecklist: $choreDTO.checklist)
+            }
+        }
+    }
+    
+    /// Lets the user visually pick which house members are responsible for the chore.
+    ///
+    /// Selected users are presented as a stack of overlapping avatars. Tapping an avatar removes it from
+    /// the active selection. The trailing "+" button invokes a `Menu` listing every available user to add.
+    private var responsibleUserPicker: some View {
+        HStack(spacing: 10) {
+            ForEach(choreDTO.responsibleUsers) { selectedUser in
+                UserProfilePictureTag(imageData: selectedUser.profilePicture, widthMultiplier: 0.05)
+                    .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
+                    .onTapGesture {
+                        choreDTO.responsibleUsers.removeAll { $0.id == selectedUser.id }
+                    }
+            }
+            
+            Menu {
+                ForEach(availableHouseUsers) { user in
+                    Button {
+                        if isSelected(user) {
+                            choreDTO.responsibleUsers.removeAll { $0.id == user.id }
+                        } else {
+                            choreDTO.responsibleUsers.append(user)
+                        }
+                    } label: {
+                        if isSelected(user) {
+                            Label(user.name, systemImage: "checkmark")
+                        } else {
+                            Text(user.name)
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(width: 38, height: 38)
+                    .background(Color.blue)
+                    .clipShape(Circle())
+            }
+        }
+    }
+    
+    /// Contains the switch for deciding whether the chore should be public to the household.
+    private var publicToggleSection: some View {
+        VStack {
+            HStack {
+                Text("Essa tarefa é para a casa?")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Toggle("", isOn: $choreDTO.isPublic)
+                    .toggleStyle(.switch)
+                    .padding(.trailing, 7)
+                    .frame(width: width * 0.37)
+            }
+            .frame(width: width * 0.9)
+
+            Text("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
+                .font(.subheadline)
+                .italic()
+                .foregroundColor(.gray)
+        }
+    }
+    
+    /// Bottom-anchored confirmation button, featuring an embedded loading state.
+    private var confirmButton: some View {
+        HStack {
+            Spacer()
+            
+            Button {
+                Task { await confirmAndSave() }
+            } label: {
+                Group {
+                    if isSaving {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Text("Confirmar")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                    }
+                }
+                .frame(width: width * 0.8, height: height * 0.06)
+                .background(Color.blue)
+                .clipShape(Capsule())
+            }
+            .disabled(choreDTO.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+            
+            Spacer()
+        }
+    }
+    
     // MARK: - Methods
+    
+    /// Evaluates if a given user is already present in the active selection.
+    private func isSelected(_ user: UserModel) -> Bool {
+        choreDTO.responsibleUsers.contains { $0.id == user.id }
+    }
+    
     /// Persists the modifications from the local copy onto `originalModel` and dismisses the view.
     private func confirmAndSave() async {
         isSaving = true
@@ -133,6 +294,63 @@ struct CreateAndEditChoreView: View {
             checklist: savedChecklist.map(CheckItemDTO.init(from:)),
             room: savedRoom
         )
+    }
+}
+
+// MARK: - Private subviews
+
+/// An interactive list allowing users to add, edit, or remove sub-items within a chore's checklist.
+private struct CheckListCreateAndEdit: View {
+    
+    /// Binding dictating whether the checklist feature is currently active for this chore.
+    @Binding var hasChecklist: Bool
+    
+    /// A draft array of `CheckItemDTO` items backing the visual list.
+    @Binding var localChecklist: [CheckItemDTO]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach($localChecklist) { $item in
+                HStack {
+                    Button {
+                        item.isDone.toggle()
+                    } label: {
+                        Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(item.isDone ? .black : .gray)
+                            .font(.headline)
+                    }
+                    
+                    TextField("Novo item", text: $item.name)
+                        .strikethrough(item.isDone, color: .gray)
+                        .foregroundColor(item.isDone ? .gray : .black)
+                        .font(.subheadline)
+                    
+                    Spacer()
+                    
+                    Button {
+                        localChecklist.removeAll { $0.id == item.id }
+                        if localChecklist.isEmpty {
+                            hasChecklist = false
+                        }
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+            
+            Button {
+                localChecklist.append(CheckItemDTO(name: "", isDone: false))
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Adicionar item")
+                        .font(.subheadline)
+                }
+                .foregroundColor(.blue)
+                .padding(.top, 5)
+            }
+        }
     }
 }
 
