@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-// user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, state: Bool? = nil
-
 struct FilterOptionsMenu: View {
     @Bindable var viewModel: CarouselViewModel
     @State private var isOptionExpanded = [false, false, false, false]

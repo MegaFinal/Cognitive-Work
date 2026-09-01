@@ -33,18 +33,10 @@ class OnboardingViewModel {
     var isLoading: Bool = false
     /// A message describing the most recent error, if any
     var errorMessage: String? = nil
-
-    var navigateToSecond: Bool = false
-    var navigateToThird: Bool = false
-    var navigateToFourth: Bool = false
-    var navigateToFifth: Bool = false
-    var navigateToSixth: Bool = false
-    var navigateToSeventh: Bool = false
-    var navigateToEighth: Bool = false
-    var navigateToNineth: Bool = false
-    var navigateToTenth: Bool = false
-    var onboardingFinished: Bool = false
     
+    var stateMachine = OnboardingStateMachine()
+    
+    var isOnboardingSkipped: Bool = false
     /// The CloudKit user record created during onboarding
     var currentUser: UserModel?
     /// The CloudKit house record created during onboarding
@@ -59,6 +51,8 @@ class OnboardingViewModel {
         RoomDTO(name: "Banheiro", symbol: "toilet"),
         RoomDTO(name: "Outro", symbol: "plus", isAddButton: true)
     ]
+    
+    var selectedChores: [ChoreDTO] = []
     
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
@@ -77,6 +71,7 @@ class OnboardingViewModel {
         
         if let savedUser = await CloudKitManager.shared.create(newUser) {
             self.currentUser = savedUser
+            self.stateMachine.user = savedUser
         } else {
             errorMessage = "Erro ao criar usuário."
         }
@@ -108,9 +103,10 @@ class OnboardingViewModel {
         
         if let savedHouse = await CloudKitManager.shared.create(newHouse) {
             self.currentHouse = savedHouse
- 
+            self.stateMachine.house = savedHouse
+            
             guard let houseRecordID = savedHouse.recordID else { return }
-
+            
             if let userRecord = await CloudKitManager.shared.fetchRecord(for: savedUser) {
                 userRecord.parent = CKRecord.Reference(recordID: houseRecordID, action: .none)
                 userRecord["house"] = CKRecord.Reference(recordID: houseRecordID, action: .none)
@@ -160,7 +156,7 @@ class OnboardingViewModel {
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
         var savedRooms: [RoomModel] = []
-
+        
         for draft in selectedDrafts {
             let roomModel = RoomModel(name: draft.name,
                                       house: house.reference(action: .deleteSelf),
@@ -176,7 +172,63 @@ class OnboardingViewModel {
         } else {
             errorMessage = "Erro ao atrelar cômodos."
         }
-
+        
         isLoading = false
+    }
+    
+    @MainActor
+    func fetchRooms() async -> [RoomModel] {
+        guard let houseID = currentHouse?.recordID else { return [] }
+        let reference = CKRecord.Reference(recordID: houseID, action: .deleteSelf)
+        let predicate = NSPredicate(format: "house == %@", reference)
+        return await CloudKitManager.shared.fetchAll(RoomModel.self, predicate: predicate)
+    }
+    
+    func creatDefoultChores() async {
+        for chore in selectedChores {
+            await CloudKitManager.shared.create(
+                ChoreModel(
+                    name: chore.name,
+                    description: chore.description,
+                    frequency: chore.frequency,
+                    duration: chore.duration,
+                    isPublic: true,
+                    priorityTag: chore.priorityTag
+                ),
+                parent: chore.roomReference
+            )
+        }
+        
+    }
+    
+    func goToNextView() {
+        stateMachine.next()
+    }
+    
+    func goToPreviousView() {
+        stateMachine.back()
+    }
+    
+    func finishOnboarding() {
+        isOnboardingSkipped = true
+    }
+    
+    func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async {
+        var availableTime: [AvailableTimeModel] = []
+        
+        for dayOfWeek in daysOfWeekDTO {
+            availableTime.append(
+                AvailableTimeModel(
+                    capacityMinutes: Int(dayOfWeek.freeTime.timeInHours) * 60,
+                    day: Date()
+                )
+            )
+        }
+        
+        await currentUser?.setAvailableTimes(availableTime)
+    }
+    
+    func fetchHouse() async {
+        currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
     }
 }

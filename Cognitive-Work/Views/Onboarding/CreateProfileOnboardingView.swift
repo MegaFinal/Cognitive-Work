@@ -9,33 +9,31 @@ import SwiftUI
 import PhotosUI
 
 struct CreateProfileOnboardingView: View {
-    @Environment(OnboardingViewModel.self) var vm
+    @Binding var viewModel: OnboardingViewModel
     
     @State private var usernameText: String = ""
     @State private var selectedItem: PhotosPickerItem? = nil
     
     var body: some View {
-        @Bindable var bindableViewModel = vm
-        
         VStack(alignment: .center, spacing: 58) {
-            OnboardingHeaderText(titleText: "Para começarmos...", descriptionText: "Escolha um Memoji e um nome para utilizar no seu app")
+            headerText
             
             PhotosPicker(selection: $selectedItem, matching: .images) {
-                ProfileImage(image: vm.userProfilePicture)
+                profileImage
             }
             .layoutPriority(1)
             
-            TextField("Nome", text: $bindableViewModel.userName)
+            TextField("Nome", text: $viewModel.userName)
                 .textFieldStyle(.plain)
                 .font(.system(size: 43, weight: .bold))
                 .foregroundColor(.primary)
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
             
-            OnboardingProgressButton(text: "Continuar",isLoading: vm.isLoading,isDisabled: vm.userName.trimmingCharacters(in: .whitespaces).isEmpty,  action: {
+            OnboardingProgressButton(text: "Continuar",isLoading: viewModel.isLoading,isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty,  action: {
                 Task {
-                    await vm.createUser()
-                    vm.navigateToThird = true
+                    await viewModel.createUser()
+                    viewModel.goToNextView()
                 }
             })
             
@@ -49,16 +47,57 @@ struct CreateProfileOnboardingView: View {
                    let uiImage = UIImage(data: data) {
                     
                     await MainActor.run {
-                        vm.updateProfileImage(uiImage)
+                        viewModel.updateProfileImage(uiImage)
                     }
                 }
             }
         }
     }
+    
+    // MARK: - Subviews
+    
+    /// Title and supporting copy for this onboarding step.
+    private var headerText: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Para começarmos...")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(.black.opacity(0.7))
+            
+            Text("Escolha um Memoji e um nome para utilizar no seu app")
+                .font(.callout)
+                .foregroundStyle(.gray)
+                .lineLimit(nil)
+        }
+    }
+    
+    /// The circular avatar, falling back to a placeholder when no picture was chosen yet.
+    private var profileImage: some View {
+        Group {
+            if let image = viewModel.userProfilePicture {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 285, height: 285)
+                    .background(Color(.systemBackground))
+            } else {
+                Circle()
+                    .fill(Color(.systemGray5))
+                    .frame(width: 285, height: 285)
+                    .overlay {
+                        Image(systemName: "person.fill.badge.plus")
+                            .font(.system(size: 65))
+                            .foregroundStyle(.gray)
+                    }
+            }
+        }
+        .clipShape(Circle())
+        .shadow(radius: 5)
+    }
 }
 
 #Preview {
-    CreateProfileOnboardingView()
+    @Previewable @State var viewModel = OnboardingViewModel()
+    CreateProfileOnboardingView(viewModel: $viewModel)
         .environment(OnboardingViewModel())
 }
  

@@ -73,35 +73,29 @@ class CarouselViewModel {
     
     @MainActor
     func filterByUser() async {
-        var totalChores: [ChoreModel] = []
+        var totalChores: [ChoreModel] = cardModels
         
-//        if filterChoices.users != [] {
-//            for user in filterChoices.users {
-//                for chore in self.cardModels {
-//                    if await chore.currentResponsible == user {
-//                        chores.append(chore)
-//                    }
-//                }
-//            }
-//        }
+        if !filterChoices.users.isEmpty {
+            var userChores: [ChoreModel] = []
+            for chore in cardModels {
+                if let responsible = await chore.currentResponsible,
+                   filterChoices.users.contains(responsible) {
+                    userChores.append(chore)
+                }
+            }
+            totalChores = userChores
+        }
         
         if !filterChoices.tags.isEmpty {
-            totalChores += cardModels.filter {filterChoices.tags.contains($0.priorityTag)}
+            totalChores = totalChores.filter {filterChoices.tags.contains($0.priorityTag)}
         }
         
         if !filterChoices.frequencies.isEmpty {
-            totalChores += cardModels.filter {filterChoices.frequencies.contains($0.frequency)}
+            totalChores = totalChores.filter {filterChoices.frequencies.contains($0.frequency)}
         }
         
         if let state = filterChoices.state {
-            totalChores += cardModels.filter {$0.isDone == state}
-        }
-        
-        // To prevent duplicates itens
-        var seen = Set<CKRecord.ID>()
-        totalChores = totalChores.filter { chore in
-            guard let id = chore.recordID else { return true }
-            return seen.insert(id).inserted
+            totalChores = totalChores.filter {$0.isDone == state}
         }
         
         self.filteredChards = totalChores

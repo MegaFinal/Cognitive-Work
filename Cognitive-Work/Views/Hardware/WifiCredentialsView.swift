@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WifiCredentialsView: View {
-    @State private var viewModel = WifiConnectionViewModel()
+    @State private var viewModel = HardwareViewModel()
     
     var body: some View {
         NavigationStack {
@@ -35,10 +35,7 @@ struct WifiCredentialsView: View {
                             .foregroundColor(.gray)
                     }
                 }
-                SendWifiCredentialsButton(viewModel: viewModel) {
-                    viewModel.navigateToParingView = true
-                    print(viewModel.navigateToParingView)
-                }
+                sendCredentialsButton
             }
             .textFieldStyle(.roundedBorder)
             .padding()
@@ -49,6 +46,40 @@ struct WifiCredentialsView: View {
                 Button("OK") { viewModel.errorMessage = nil }
             } message: {
                 Text(viewModel.errorMessage ?? "Deu algum erro.")
+            }
+        }
+    }
+    
+    // MARK: - Subviews
+    
+    /// Sends the typed credentials to the device and navigates to the pairing step on success.
+    private var sendCredentialsButton: some View {
+        Button {
+            if viewModel.userWifiName != "" && viewModel.userWifiPassord != "" && viewModel.deviceIP != "" {
+                Task {
+                    do {
+                        try await viewModel.sendWifiCredentials()
+                        viewModel.navigateToParingView = true
+                        print(viewModel.navigateToParingView)
+                    } catch APIErrors.invalidURL {
+                        viewModel.errorMessage = "IP inválido. Verifique e tente de novo."
+                    } catch let apiError as APIErrors {
+                        viewModel.errorMessage = apiError.errorDescription
+                    } catch {
+                        viewModel.errorMessage = "Erro inesperado: \(error.localizedDescription)"
+                    }
+                }
+            }
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 20)
+                    .frame(width: 100, height: 44)
+                    .foregroundStyle(.indigo)
+                
+                Text("Enviar")
+                    .frame(width: 100, height: 44)
+                    .foregroundStyle(.white)
+                    .font(.title2)
             }
         }
     }

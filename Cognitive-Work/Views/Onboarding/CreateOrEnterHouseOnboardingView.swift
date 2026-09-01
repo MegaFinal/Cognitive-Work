@@ -12,14 +12,12 @@ import SwiftUI
 /// On success the flow advances to ``FourthOnboardingView``
 struct CreateOrEnterHouseOnboardingView: View {
     /// The shared onboarding view model, read from the environment
-    @Environment(OnboardingViewModel.self) var viewModel
+    @Binding var viewModel: OnboardingViewModel
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-        
         ZStack {
             OnboardingHeader(
                 title: "Moradia",
@@ -27,7 +25,10 @@ struct CreateOrEnterHouseOnboardingView: View {
             )
                         
             HStack(spacing: 15) {
-                Button { } label: {
+                Button {
+                    viewModel.stateMachine.flow = .invitedWithProfile
+                    viewModel.goToNextView()
+                } label: {
                     VStack (spacing: 40){
                         Image(systemName: "figure.walk.arrival")
                             .resizable()
@@ -52,7 +53,8 @@ struct CreateOrEnterHouseOnboardingView: View {
                 Button {
                     Task {
                         await viewModel.createHouseAndLinkUser()
-                        viewModel.navigateToFourth = true
+                        viewModel.stateMachine.flow = .houseCreator
+                        viewModel.goToNextView()
                     }
                 } label: {
                     VStack (spacing: 40){
@@ -88,6 +90,6 @@ struct CreateOrEnterHouseOnboardingView: View {
 }
 
 #Preview {
-    CreateOrEnterHouseOnboardingView()
-        .environment(OnboardingViewModel())
+    @Previewable @State var viewModel = OnboardingViewModel()
+    CreateOrEnterHouseOnboardingView(viewModel: $viewModel)
 }

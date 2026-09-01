@@ -23,84 +23,20 @@ import SwiftUI
 /// > selects it in the others. Give each room its own list before replacing the
 /// > mock with real data.
 struct SelectChoresOnboardingView: View {
-    @Environment(OnboardingViewModel.self) var viewModel
-
-    // MARK: - Constants
-
-    /// Layout values shared by the screen, kept here to avoid magic numbers.
-    ///
-    /// Ratio constants are multiplied by the width or height reported by
-    /// `GeometryReader`; the remaining values are absolute, in points.
-    private enum Layout {
-        /// Font size of the screen title.
-        static let titleFontSize: CGFloat = 32
-
-        /// Font size of the explanatory subtitle.
-        static let subtitleFontSize: CGFloat = 16
-
-        /// Font size of each room name.
-        static let roomNameFontSize: CGFloat = 24
-
-        /// Font size of the chevron inside the advance button.
-        static let advanceIconFontSize: CGFloat = 22
-
-        /// Fraction of the container height used as the title top padding.
-        static let titleTopRatio: CGFloat = 0.034
-
-        /// Absolute bottom padding of the title.
-        static let titleBottomPadding: CGFloat = 10
-
-        /// Fraction of the container height used as the subtitle bottom padding.
-        static let subtitleBottomRatio: CGFloat = 0.025
-
-        /// Fraction of the container height used as the room name bottom padding.
-        static let roomNameBottomRatio: CGFloat = 0.018
-
-        /// Fraction of the container height used as the divider thickness.
-        static let dividerHeightRatio: CGFloat = 0.001
-
-        /// Fraction of the container height reserved below the advance button.
-        static let advanceButtonBottomRatio: CGFloat = 0.07
-
-        /// Fraction of the container width used as the horizontal margin.
-        static let horizontalMarginRatio: CGFloat = 0.086
-
-        /// Diameter of the circular advance button.
-        static let advanceButtonSize: CGFloat = 56
-
-        /// Blur radius of the advance button shadow.
-        static let advanceButtonShadowRadius: CGFloat = 8
-
-        /// Vertical offset of the advance button shadow.
-        static let advanceButtonShadowOffsetY: CGFloat = 4
-
-        /// Opacity of the advance button shadow.
-        static let advanceButtonShadowOpacity: CGFloat = 0.2
-    }
-
-    // MARK: - Properties
+    @Binding var viewModel: OnboardingViewModel
 
     /// Rooms listed on the screen, each holding its own expansion state.
-    @State private var rooms: [RoomDTO] = [
-        RoomDTO(name: "Sala", symbol: ""),
-        RoomDTO(name: "Banheiro", symbol: ""),
-        RoomDTO(name: "Cozinha", symbol: ""),
-        RoomDTO(name: "Área de serviço", symbol: "")
-    ]
+    @State private var rooms: [RoomModel] = []
 
     /// Placeholder chores rendered inside every expanded room.
     ///
     /// > Note: Temporary stand-in for the chores fetched from CloudKit through
     /// > ``RoomModel/fetchRelatedChores()``.
-    @State private var mockedChores: [ChoreDTO] = [
-        ChoreDTO(name: "tarefa1", description: "descrição 1", frequency: .daily, duration: 10, priorityTag: .high),
-        ChoreDTO(name: "tarefa2", description: "descrição 2", frequency: .daily, duration: 10, priorityTag: .high),
-        ChoreDTO(name: "tarefa3", description: "descrição 3", frequency: .daily, duration: 10, priorityTag: .high)
-    ]
+    @State private var choresDTO: [ChoreDTO] = []
 
     /// Chores the user marked to be split between the residents.
     private var selectedChores: [ChoreDTO] {
-        mockedChores.filter { $0.isSelected }
+        choresDTO.filter { $0.isSelected }
     }
     
     @State private var isLoading = true
@@ -108,99 +44,123 @@ struct SelectChoresOnboardingView: View {
     // MARK: - Body
 
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height
 
             VStack(alignment: .leading) {
-                buildHeader(height: height)
+                
+                VStack(alignment: .leading) {
+                    Text("Selecione as tarefas")
+                        .bold()
+                        .font(.system(size: 32))
+                        .foregroundStyle(.titleGray)
+                        .padding(.top, height * 0.034)
+                        .padding(.bottom, 10)
 
-                ScrollView {
+                    Text("Escolha **apenas** as tarefas que serão divididas de maneira igual entre todos os moradores")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.subTitleGray)
+                        .padding(.bottom, height * 0.025)
+                }
                     VStack(alignment: .leading) {
                         ForEach($rooms) { $room in
-                            buildRoomSection(room: $room, height: height)
+                            HStack {
+                                SelectChoreListItem(viewModel: $viewModel, room: $room, height: height, width: width)
+                            }
+                            .padding(.bottom, height * 0.07)
                         }
                     }
-                }
                 
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
-                    viewModel.navigateToEighth = true
+                    await viewModel.creatDefoultChores()
+                    viewModel.goToNextView()
                 }
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                
-
-//                buildAdvanceButton(height: height)
             }
-            .padding(.horizontal, width * Layout.horizontalMarginRatio)
+            .padding(.horizontal, width * 0.086)
             .navigationBarBackButtonHidden()
         }
-    }
-
-    // MARK: - View Builders
-
-    /// Builds the title and the explanatory subtitle of the step.
-    /// - Parameter height: Container height reported by `GeometryReader`, in points.
-    /// - Returns: The stacked header texts.
-    private func buildHeader(height: CGFloat) -> some View {
-        VStack(alignment: .leading) {
-            Text("Selecione as tarefas")
-                .bold()
-                .font(.system(size: Layout.titleFontSize))
-                .foregroundStyle(.titleGray)
-                .padding(.top, height * Layout.titleTopRatio)
-                .padding(.bottom, Layout.titleBottomPadding)
-
-            Text("Escolha **apenas** as tarefas que serão divididas de maneira igual entre todos os moradores")
-                .font(.system(size: Layout.subtitleFontSize))
-                .foregroundStyle(.subTitleGray)
-                .padding(.bottom, height * Layout.subtitleBottomRatio)
+        .task {
+            rooms = await viewModel.fetchRooms()
         }
     }
+}
 
-    /// Builds a collapsible section for a single room.
-    ///
-    /// The chore toggles are rendered only while the room is expanded, so the
-    /// remaining sections keep their collapsed height.
-    ///
-    /// - Parameters:
-    ///   - room: Binding to the room being rendered, used to flip its expansion state.
-    ///   - height: Container height reported by `GeometryReader`, in points.
-    /// - Returns: The room header, its divider and, when expanded, its chores.
-    private func buildRoomSection(room: Binding<RoomDTO>, height: CGFloat) -> some View {
+// MARK: - Private subviews
+
+/// A collapsible room section listing the default chores the user can pick.
+private struct SelectChoreListItem: View {
+    @Binding var viewModel: OnboardingViewModel
+    
+    @Binding var room: RoomModel
+
+    @State var isExpanded: Bool = false
+    @State var defaultChores: [ChoreDTO] = []
+    
+    let height: CGFloat
+    let width: CGFloat
+    
+    var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                Text(room.wrappedValue.name)
-                    .font(.system(size: Layout.roomNameFontSize))
+                
+                Text(room.name)
+                    .font(.system(size: 24))
                     .bold()
-                    .padding(.bottom, height * Layout.roomNameBottomRatio)
-
+                    .padding(.bottom, height * 0.018)
+                
                 Spacer()
-
+                
                 Button {
-                    room.wrappedValue.isExpanded.toggle()
+                    isExpanded.toggle()
                 } label: {
-                    Image(systemName: room.wrappedValue.isExpanded ? "chevron.up" : "chevron.down")
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                 }
                 .fontWeight(.semibold)
                 .foregroundStyle(.black)
             }
-
+            
             Divider()
-                .frame(height: height * Layout.dividerHeightRatio)
-                .overlay(Color.black)
-
-            if room.wrappedValue.isExpanded {
-                ForEach($mockedChores) { $chore in
-                    Toggle(chore.name, isOn: $chore.isSelected)
+            .frame(height: height * 0.001)
+            .overlay(Color.black)
+            
+            if isExpanded {
+                ForEach($defaultChores) { $chore in
+                    Button {
+                        chore.isSelected.toggle()
+                        if chore.isSelected {
+                            viewModel.selectedChores.append(chore)
+                        }
+                        else {
+                            viewModel.selectedChores.removeAll { $0.name == chore.name }
+                        }
+                    } label: {
+                        HStack {
+                            Circle()
+                                .border(.black)
+                                .background(.clear)
+                                .frame(width: 15, height: 15)
+                                .padding(.trailing, 8)
+                            Text(chore.name)
+                            
+                            Spacer()
+                        }
+                        .foregroundStyle(chore.isSelected ? .blue : .black)
+                    }
                 }
+            }
+        }
+        .task {
+            if let defoultRoom = DefaultRoomsOnboarding(rawValue: room.name) {
+                defaultChores = defoultRoom.defaultChores
             }
         }
     }
 }
 
 #Preview {
-    SelectChoresOnboardingView()
+    @Previewable @State var viewModel = OnboardingViewModel()
+    SelectChoresOnboardingView(viewModel: $viewModel)
 }
