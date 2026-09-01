@@ -23,6 +23,7 @@ struct FortnightlyScheduleView: View {
                         OnboardingProgressButton(width: 50.0, height: 50.0, text: "xmark", isSystemImage: true) {
                             action()
                         }
+                        .padding(10)
                     }
             }
         }
