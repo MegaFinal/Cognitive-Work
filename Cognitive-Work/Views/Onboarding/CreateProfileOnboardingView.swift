@@ -18,11 +18,9 @@ struct CreateProfileOnboardingView: View {
         VStack(alignment: .center, spacing: 58) {
             headerText
             
-            PhotosPicker(selection: $selectedItem, matching: .images) {
-                ProfileImage(image: viewModel.userProfilePicture, isEditing: true)
-//                profileImage
-            }
-            .layoutPriority(1)
+                EditableProfileImage(image: viewModel.userProfilePicture, isEditing: true, selection: $selectedItem)
+                .layoutPriority(1)
+            
             
             TextField("Nome", text: $viewModel.userName)
                 .textFieldStyle(.plain)
@@ -70,30 +68,6 @@ struct CreateProfileOnboardingView: View {
                 .lineLimit(nil)
         }
     }
-    
-//    /// The circular avatar, falling back to a placeholder when no picture was chosen yet.
-//    private var profileImage: some View {
-//        Group {
-//            if let image = viewModel.userProfilePicture {
-//                Image(uiImage: image)
-//                    .resizable()
-//                    .scaledToFill()
-//                    .frame(width: 285, height: 285)
-//                    .background(Color(.systemBackground))
-//            } else {
-//                Circle()
-//                    .fill(Color(.systemGray5))
-//                    .frame(width: 285, height: 285)
-//                    .overlay {
-//                        Image(systemName: "person.fill.badge.plus")
-//                            .font(.system(size: 65))
-//                            .foregroundStyle(.gray)
-//                    }
-//            }
-//        }
-//        .clipShape(Circle())
-//        .shadow(radius: 5)
-//    }
 }
 
 #Preview {
