@@ -10,7 +10,7 @@ import CloudKit
 
 struct ContentView: View {
     @State var showEnviteAcceptAlert: Bool = false
-    @State var cloudMetadata: CKShare.Metadata? = nil
+    @State var shareMetadata: CKShare.Metadata? = nil
     
     var body: some View {
         TabView {
@@ -36,21 +36,13 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { cloudMetadata in
             showEnviteAcceptAlert = true
-            self.cloudMetadata = cloudMetadata.object as? CKShare.Metadata
+            self.shareMetadata = cloudMetadata.object as? CKShare.Metadata
         }
         .alert("Não é possivel estar em duas casas ao mesmo tempo", isPresented: $showEnviteAcceptAlert) {
             Button("Trocar de casa",role: .destructive) {
                 Task {
-                    if let actualHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self) {
-                        if let record = await actualHouse.fetchSelfRecord() {
-                            let actualShare = await CloudKitManager.shared.fetchShare(for: record)
-                            if let selfUser = actualShare?.currentUserParticipant {
-                                actualShare?.removeParticipant(selfUser)
-                                if let cloudMetadata {
-                                    await CloudKitManager.shared.acceptShare(metadata: cloudMetadata)
-                                }
-                            }
-                        }
+                    if let shareMetadata {
+                        await CloudKitManager.shared.switchHouse(to: shareMetadata)
                     }
                 }
             }
