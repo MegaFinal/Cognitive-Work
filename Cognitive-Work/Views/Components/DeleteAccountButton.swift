@@ -8,25 +8,18 @@
 import SwiftUI
 
 struct DeleteAccountButton: View {
-    let user: UserModel
-
-    /// Called after a successful deletion, so the parent view can handle sign-out/navigation.
-    var onDeleted: () -> Void
-
+    @Bindable var viewModel: UserProfileViewModel
+    
     @State private var showConfirmation = false
-    @State private var isDeleting = false
-    @State private var errorMessage: String?
 
     var body: some View {
-        
         Button(role: .destructive) {
             showConfirmation = true
             
         } label: {
-            if isDeleting {
+            if viewModel.isSaving {
                 ProgressView()
             } else {
-//                Text("Apagar conta")
                 Image(systemName: "trash")
                     .font(.subheadline)
                     .padding(16)
@@ -34,52 +27,38 @@ struct DeleteAccountButton: View {
                    
             }
         }
-//        .glassEffect(
-//            .regular.interactive(),
-//            in: .circle
-//        )
-        .disabled(isDeleting)
-        .confirmationDialog( "Tem certeza que deseja apagar sua conta?\nAo deletar a conta você será removido das casas a que pertence", isPresented: $showConfirmation, titleVisibility: .visible
+        .disabled(viewModel.isSaving || viewModel.user == nil)
+        .confirmationDialog(
+            "Tem certeza que deseja apagar sua conta?\nAo deletar a conta você será removido das casas a que pertence",
+            isPresented: $showConfirmation,
+            titleVisibility: .visible
         ) {
             Button("Apagar conta", role: .destructive) {
-                Task { await deleteAccount() }
+                Task { await viewModel.deleteAccount() }
             }
             
             Button("Cancelar", role: .cancel) {}
-            
-        } message: {
+        }
+        
+        message: {
             Text("Essa ação é permanente e não pode ser desfeita.")
         }
+        
+        // if error when deleting
         .alert("Não foi possível apagar a conta",
             isPresented: Binding(
-                get: { errorMessage != nil },
-                set: { if !$0 { errorMessage = nil } }
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
             )
         ) {
             Button("OK", role: .cancel) {}
-        } message: {
-            Text(errorMessage ?? "")
         }
-    }
-
-    private func deleteAccount() async {
-        isDeleting = true
-        defer { isDeleting = false }
-
-        let success = await CloudKitManager.shared.delete(user)
-
-        if success {
-            onDeleted()
-        } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+        message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
 }
 
-#Preview {
-    DeleteAccountButton(user: UserModel(name: "Usuário Teste",tier: .tier1),
-        onDeleted: {
-            print("Conta deletada com sucesso no Preview!")
-        }
-    )
-}
+//#Preview {
+//    DeleteAccountButton()
+//}

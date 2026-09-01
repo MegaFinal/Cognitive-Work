@@ -11,8 +11,12 @@ import CloudKit
 
 struct ContentView: View {
     var body: some View {
-//        FirstOnboardingView()
         TabView {
+            FirstOnboardingView() ///`Temporarily placed in TabView for testing
+                .tabItem{
+                    Label("Onboarding", systemImage: "house")
+                }
+            
             ChoresView()
                 .tabItem {
                     Label("Tarefas", systemImage: "checklist")
@@ -28,7 +32,7 @@ struct ContentView: View {
                     Label("Progresso", systemImage: "figure.2")
                 }
             
-            ChoresView()
+            UserProfileView()
                 .tabItem {
                     Label("Perfil", systemImage: "person.fill")
                 }
