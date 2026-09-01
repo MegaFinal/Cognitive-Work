@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct FortnightlyView: View {
-    @Environment(OnboardingViewModel.self) var viewModel
-
     let users: [UserModel]
     let chores: [ChoreModel]
     
@@ -19,10 +17,8 @@ struct FortnightlyView: View {
         """
 
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-
         VStack{
-            OnboardingHeader(title: "Escala quinzenal",description: description)
+            OnboardingHeader(title: "Escala quinzenal", description: description)
             .padding(.bottom)
             
             FortnightlyChart(users: users, chores: chores)

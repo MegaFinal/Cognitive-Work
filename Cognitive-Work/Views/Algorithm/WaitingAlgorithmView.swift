@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct WaitingAlgorithmView: View {
-    @Environment(OnboardingViewModel.self) var viewModel
-
     let description1: String = """
         Estamos ponderando, sorteando e 
     dividindo as tarefas entre os moradores 
@@ -26,8 +24,6 @@ struct WaitingAlgorithmView: View {
 //    var schedule: TaskSchedulerEngine
     
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-
         VStack(alignment: .center, spacing: 20) {
             Image(systemName: "circle.bottomrighthalf.pattern.checkered")
                 .resizable()

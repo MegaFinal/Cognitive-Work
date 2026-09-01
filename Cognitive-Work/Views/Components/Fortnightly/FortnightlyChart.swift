@@ -18,7 +18,7 @@ struct FortnightlyChart: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            if !viewModel.isLoading {
+            if viewModel.isLoading {
                 ProgressView("Carregando gráfico...")
             } else if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage).foregroundColor(.red)

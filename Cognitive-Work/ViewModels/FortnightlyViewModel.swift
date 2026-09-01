@@ -18,91 +18,28 @@ struct DailyUsageEntry {
 
 @Observable
 class FortnightlyViewModel {
-    var houseModel: HouseModel?
     var users: [UserModel] = []
     var chores: [ChoreModel] = []
     var dailyAssignments: [DailyAssignmentModel] = []
     var startDate: Date = Date()
-    var isLoading: Bool = false
+    var isLoading: Bool = true
     var errorMessage: String?
 
     
     func setup(users: [UserModel], chores: [ChoreModel]) async {
-        self.houseModel = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
-//        self.users = await CloudKitManager.shared.fetchAll(UserModel.self)
-//        for user in users {
-//            let chores = await user.chores
-//            self.chores.append(contentsOf: chores)
-//        }
         self.users = users
         self.chores = chores
         
-//        for chore in chores {
-//            if chore.dailyAssignmentsReference == nil { continue }
-//            dailyAssignments.append(contentsOf: await chore.dailyAssignments)
-//        }
-        
-//        let allAssignmentRefs = allChores.flatMap { $0.dailyAssignmentsReference ?? [] }
-        print("antes do fetch")
         dailyAssignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
-        print("depois do fetch")
 
-        
         let calendar = Calendar.current
         let today = Date()
         let weekday = calendar.component(.weekday, from: today)
         let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
         self.startDate = calendar.date(byAdding: .day, value: -daysToSubtract, to: today) ?? today
 
-        isLoading = true
-        
+        isLoading = false
     }
-//        func loadFortnightlyData() async {
-//            isLoading = true
-//            defer { isLoading = false }
-//
-////            let userPredicate = NSPredicate(format: "house == %@", houseReference)
-////            let fetchedUsers = await CloudKitManager.shared.fetchAll(UserModel.self, predicate: userPredicate)
-//
-//            guard !fetchedUsers.isEmpty else {
-//                errorMessage = "No users found"
-//                return
-//            }
-//
-//            var allChores: [ChoreModel] = []
-//            for user in fetchedUsers {
-//                guard let choreRefs = user.choresReference, !choreRefs.isEmpty else { continue }
-//                let userChores = await CloudKitManager.shared.fetchRecordsByRecordReference(
-//                    for: ChoreModel.self,
-//                    recordReferences: choreRefs
-//                ) ?? []
-//                allChores.append(contentsOf: userChores)
-//            }
-//
-//            var uniqueChores: [CKRecord.ID: ChoreModel] = [:]
-//            for chore in allChores {
-//                if let id = chore.recordID {
-//                    uniqueChores[id] = chore
-//                }
-//            }
-//            allChores = Array(uniqueChores.values)
-//
-//            let allAssignmentRefs = allChores.flatMap { $0.dailyAssignmentsReference ?? [] }
-//            let allAssignments = allAssignmentRefs.isEmpty ? [] : (await CloudKitManager.shared.fetchRecordsByRecordReference(
-//                for: DailyAssignmentModel.self,
-//                recordReferences: allAssignmentRefs
-//            ) ?? [])
-//
-//            let calendar = Calendar.current
-//            let today = Date()
-//            let weekday = calendar.component(.weekday, from: today)
-//            let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
-//
-//            self.users = fetchedUsers
-//            self.chores = allChores
-//            self.dailyAssignments = allAssignments
-//            self.startDate = calendar.date(byAdding: .day, value: -daysToSubtract, to: today) ?? today
-//        }
     
     var usageEntries: [DailyUsageEntry] {
         get async {

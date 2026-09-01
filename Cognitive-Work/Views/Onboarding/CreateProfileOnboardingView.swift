@@ -9,33 +9,31 @@ import SwiftUI
 import PhotosUI
 
 struct CreateProfileOnboardingView: View {
-    @Environment(OnboardingViewModel.self) var vm
+    @Binding var viewModel: OnboardingViewModel
     
     @State private var usernameText: String = ""
     @State private var selectedItem: PhotosPickerItem? = nil
     
     var body: some View {
-        @Bindable var bindableViewModel = vm
-        
         VStack(alignment: .center, spacing: 58) {
             OnboardingHeaderText(titleText: "Para começarmos...", descriptionText: "Escolha um Memoji e um nome para utilizar no seu app")
             
             PhotosPicker(selection: $selectedItem, matching: .images) {
-                ProfileImage(image: vm.userProfilePicture)
+                ProfileImage(image: viewModel.userProfilePicture)
             }
             .layoutPriority(1)
             
-            TextField("Nome", text: $bindableViewModel.userName)
+            TextField("Nome", text: $viewModel.userName)
                 .textFieldStyle(.plain)
                 .font(.system(size: 43, weight: .bold))
                 .foregroundColor(.primary)
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
             
-            OnboardingProgressButton(text: "Continuar",isLoading: vm.isLoading,isDisabled: vm.userName.trimmingCharacters(in: .whitespaces).isEmpty,  action: {
+            OnboardingProgressButton(text: "Continuar",isLoading: viewModel.isLoading,isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty,  action: {
                 Task {
-                    await vm.createUser()
-                    vm.navigateToThird = true
+                    await viewModel.createUser()
+                    viewModel.goToNextView()
                 }
             })
             
@@ -49,7 +47,7 @@ struct CreateProfileOnboardingView: View {
                    let uiImage = UIImage(data: data) {
                     
                     await MainActor.run {
-                        vm.updateProfileImage(uiImage)
+                        viewModel.updateProfileImage(uiImage)
                     }
                 }
             }
@@ -58,7 +56,8 @@ struct CreateProfileOnboardingView: View {
 }
 
 #Preview {
-    CreateProfileOnboardingView()
+    @Previewable @State var viewModel = OnboardingViewModel()
+    CreateProfileOnboardingView(viewModel: $viewModel)
         .environment(OnboardingViewModel())
 }
  

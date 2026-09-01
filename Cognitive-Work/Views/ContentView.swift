@@ -6,12 +6,10 @@
 //
 
 import SwiftUI
-import SwiftData
 import CloudKit
 
 struct ContentView: View {
     var body: some View {
-//        FirstOnboardingView()
         TabView {
             ChoresView()
                 .tabItem {

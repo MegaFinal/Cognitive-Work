@@ -9,7 +9,7 @@ import SwiftUI
 import CloudKit
 
 struct InviteUsersOnboardingView: View {
-    @Environment(OnboardingViewModel.self) var viewModel
+    @Binding var viewModel: OnboardingViewModel
     
     @State private var houseShare: CKShare? = nil
     @State private var showSheet = false
@@ -21,8 +21,6 @@ struct InviteUsersOnboardingView: View {
     var height: CGFloat = UIScreen.main.bounds.height * 0.06
     
     var body: some View {
-        @Bindable var bindableViewModel = viewModel
-        
         VStack{
             OnboardingHeader(title: "Adicione seus roomies!", description: "Envie o convite para os outros moradores da sua casa se juntarem com você no app!")
             
@@ -64,7 +62,7 @@ struct InviteUsersOnboardingView: View {
                 }
                 
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
-                    viewModel.navigateToSixth = true
+                    viewModel.goToNextView()
                 }
                 .multilineTextAlignment(.trailing)
                 
@@ -72,34 +70,35 @@ struct InviteUsersOnboardingView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .centerLastTextBaseline)
             .padding(.bottom)
             
-            OnboardingSkipButton(action: {viewModel.onboardingFinished = true})
+            OnboardingSkipButton() {
+                viewModel.finishOnboarding()
+            }
             
         }
         .navigationBarBackButtonHidden()
-        .onAppear {
+        .task {
+            print("currentHouse:", viewModel.currentHouse as Any)
+            print("recordID:", viewModel.currentHouse?.recordID as Any)
             
-            Task {
-                print("currentHouse:", viewModel.currentHouse as Any)
-                print("recordID:", viewModel.currentHouse?.recordID as Any)
-                
-                guard let house = viewModel.currentHouse else { return }
-                
-                houseShare = await CloudKitManager.shared.resolveShare(for: house)
-                print("share:", houseShare as Any)
-                
-                do {
-                    if let share = houseShare {
-                        let url = try await CloudKitManager.shared.generateShareLink(share: share)
-                        self.shareURL = url
-                    }
-                } catch {
-                    print("Erro ao gerar link: \(error.localizedDescription)")
+            guard let house = viewModel.currentHouse else { return }
+            
+            houseShare = await CloudKitManager.shared.resolveShare(for: house)
+            print("share:", houseShare as Any)
+            
+            do {
+                if let share = houseShare {
+                    let url = try await CloudKitManager.shared.generateShareLink(share: share)
+                    self.shareURL = url
                 }
+            } catch {
+                print("Erro ao gerar link: \(error.localizedDescription)")
             }
         }
     }
 }
+
 #Preview {
-    InviteUsersOnboardingView()
+    @Previewable @State var viewModel = OnboardingViewModel()
+    InviteUsersOnboardingView(viewModel: $viewModel)
         .environment(OnboardingViewModel())
 }
