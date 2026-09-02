@@ -7,11 +7,14 @@
 
 import SwiftUI
 
+/// A view that handles hardware device pairing via IP address and transmits rendered chart data to an ESP32 device.
 struct DevicePairView: View {
+    
+    /// The view model managing hardware connectivity and state.
     @Bindable var hardwareViewModel: HardwareViewModel
+    
+    /// The view model responsible for fetching and calculating fortnightly chore data.
     @State var fortnightlyViewModel = FortnightlyViewModel()
-    let image1 = UIImage(named: "fish")
-    let image2 = UIImage(named: "emoji")
     
     @State private var users: [UserModel] = []
     @State private var chores: [ChoreModel] = []
@@ -46,7 +49,7 @@ struct DevicePairView: View {
                         .font(.title2)
                 }
             }.padding(.bottom, 20)
-            
+             
             VStack{
                 Divider()
                 if isChartLoading {
@@ -57,13 +60,16 @@ struct DevicePairView: View {
                             users: users,
                             entries: usageEntries,
                             startDate: startDate,
-                            onSelect: { _ in }
+                            onSelect: { _ in },
+                            scrollEnabled: false,
+                            daysToShow: 7
                         )
-                        FortnightlyLegend(users: users)
+                         
+                        legend
                             .padding(.bottom)
                     }
                 }
-                
+                 
                 Button {
                     Task {
                         try await hardwareViewModel.sendChartToESP32(
@@ -71,7 +77,6 @@ struct DevicePairView: View {
                         )
                     }
                 } label: {
-                    
                     ZStack {
                         RoundedRectangle(cornerRadius: 20)
                             .frame(width: 150, height: 44)
@@ -87,12 +92,29 @@ struct DevicePairView: View {
         .task {
             print("setup")
             await fortnightlyViewModel.setupWithFetch()
-            
+             
             users = fortnightlyViewModel.users
             chores = fortnightlyViewModel.chores
             usageEntries = await fortnightlyViewModel.usageEntries
             startDate = fortnightlyViewModel.startDate
             isChartLoading = false
+        }
+    }
+    
+    /// A helper subview that displays a color-coded legend for the active users.
+    private var legend: some View {
+        HStack {
+            ForEach(Array(users.enumerated()), id: \.offset) { index, user in
+                HStack {
+                    Circle()
+                        .frame(width: 14)
+                        .foregroundStyle(UserColorPalette.color(for: index))
+
+                    Text(user.name)
+                        .font(.system(size: 15))
+                        .fontWeight(.light)
+                }
+            }
         }
     }
 }
