@@ -269,6 +269,51 @@ class OnboardingViewModel {
         currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
     }
 
+    /// Publishes the current user's profile into the house that was just joined via a
+    /// CloudKit share invite.
+    ///
+    /// ``createUser()`` saves the profile into this device's own private zone, which is
+    /// invisible to anyone else's account. This creates a second `UserModel` record — with
+    /// the same profile data — directly inside the house's shared zone, links it to the house
+    /// (`house` field) and appends it to the house's `users` list, so housemates (including
+    /// the owner) can see this member. ``currentUser`` and the locally persisted "current
+    /// user" record are updated to point at this new, house-linked record.
+    ///
+    /// - Requires ``currentUser`` to already exist (created via ``createUser()``).
+    @MainActor
+    func joinHouse() async {
+        await fetchHouse()
+
+        guard let house = currentHouse, let houseRecordID = house.recordID,
+              let profile = currentUser
+        else { return }
+
+        isLoading = true
+        errorMessage = nil
+
+        let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
+        let sharedUser = UserModel(
+            name: profile.name,
+            profilePicture: profile.profilePicture,
+            tier: profile.tier,
+            coins: profile.coins,
+            points: profile.points,
+            house: houseReference,
+            couponLimit: profile.couponLimit
+        )
+
+        if let savedUser = await CloudKitManager.shared.create(sharedUser, zoneID: houseRecordID.zoneID) {
+            await house.appendUsers([savedUser])
+            self.currentUser = savedUser
+            self.stateMachine.user = savedUser
+            CloudKitManager.shared.setCurrentUser(savedUser)
+        } else {
+            errorMessage = "Erro ao entrar na casa."
+        }
+
+        isLoading = false
+    }
+
     /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
     /// when onboarding resumes on a fresh launch (see ``restoreProgressIfNeeded()``).
     func fetchCurrentUser() async {
