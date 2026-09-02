@@ -25,8 +25,10 @@ struct FortnightlyView: View {
         VStack {
             OnboardingHeader(title: "Escala quinzenal", description: description)
                 .padding(.bottom)
-
-            chart
+            
+            ScrollView {
+                chart
+            }
 
             Spacer()
         }
@@ -56,7 +58,7 @@ struct FortnightlyView: View {
                 }
             }
         }
-        .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
+//        .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
         .task {
             await viewModel.setup(users: users, chores: chores)
             usageEntries = await viewModel.usageEntries
