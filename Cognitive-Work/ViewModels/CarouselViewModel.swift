@@ -26,10 +26,15 @@ class CarouselViewModel {
     
     /// The chores currently loaded into the carousel
     var cardModels: [ChoreModel] = []
-    var chardModelsToDo: [ChoreModel] {
-        let charsToDo = cardModels.filter { $0.isDone == false }
-        return charsToDo
+    
+    var visibleChores: [ChoreModel] {
+        if isFilterOn {
+            return filteredChards
+        } else {
+            return cardModels.filter { $0.isDone == false }
+        }
     }
+    
     var isLoading: Bool = false
     var hasFocusedCard: Bool {
         focusedIndex != nil
@@ -220,8 +225,8 @@ class CarouselViewModel {
     /// The chore whose details card should currently be shown, driven by whichever card is
     /// focused — whether that focus came from the carousel or from a list-mode tap.
     var focusedChoreForDetails: ChoreModel? {
-        guard let focusedIndex, cardModels.indices.contains(focusedIndex) else { return nil }
-        return cardModels[focusedIndex]
+        guard let focusedIndex, visibleChores.indices.contains(focusedIndex) else { return nil }
+        return visibleChores[focusedIndex] // Atualizado
     }
     
     /// Shows `index`'s details card right away, without the multi-stage flip animation the
@@ -297,8 +302,8 @@ class CarouselViewModel {
     
     /// Determines how far away an item is from the current focal point of the carousel
     func distance(_ index: Int) -> Double {
-        guard !cardModels.isEmpty else { return 0 }
-        return (draggingItem - Double(index)).remainder(dividingBy: Double(cardModels.count))
+        guard !visibleChores.isEmpty else { return 0 }
+        return (draggingItem - Double(index)).remainder(dividingBy: Double(visibleChores.count)) // Atualizado
     }
     
     /// Calculates the horizontal displacement
@@ -363,13 +368,12 @@ class CarouselViewModel {
     
     func onDragEnded(value: DragGesture.Value) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-            guard !cardModels.isEmpty else { return }
+            guard !visibleChores.isEmpty else { return } // Atualizado
             
             let velocity = value.predictedEndTranslation.width - value.translation.width
             let nudge = min(max(velocity / 200, -1), 1)
             
-            // Snap from where the finger actually left the carousel plus a small velocity nudge for quick flicks
-            let count = cardModels.count
+            let count = visibleChores.count // Atualizado
             draggingItem = (draggingItem + nudge)
                 .rounded()
                 .remainder(dividingBy: Double(count))
