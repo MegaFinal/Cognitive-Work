@@ -7,27 +7,35 @@
 
 import SwiftUI
 
+/// A view that handles hardware device pairing via IP address and transmits rendered chart data to an ESP32 device.
 struct DevicePairView: View {
-    @Bindable var viewModel: HardwareViewModel
-    let image1 = UIImage(named: "fish")
-    let image2 = UIImage(named: "emoji")
+    
+    /// The view model managing hardware connectivity and state.
+    @Bindable var hardwareViewModel: HardwareViewModel
+    
+    /// The view model responsible for fetching and calculating fortnightly chore data.
+    @State var fortnightlyViewModel = FortnightlyViewModel()
+    
+    @State private var users: [UserModel] = []
+    @State private var chores: [ChoreModel] = []
+    @State private var usageEntries: [DailyUsageEntry] = []
+    @State private var startDate: Date = Date()
+    @State private var isChartLoading = true
     
     var body: some View {
-        @Bindable var viewModel = viewModel
-        
         VStack(spacing: 0) {
             Text("Pareie seu celular!")
                 .font(.title3)
                 .bold()
                 .padding(.bottom, 20)
-            TextField("IP do device", text: $viewModel.deviceIP)
+            TextField("IP do device", text: $hardwareViewModel.deviceIP)
                 .frame(width: 300, height: 44)
                 .textFieldStyle(.roundedBorder)
                 .padding()
             Button {
-                if viewModel.deviceIP != "" {
+                if hardwareViewModel.deviceIP != "" {
                     Task {
-                        try await viewModel.askForParingCode()
+                        try await hardwareViewModel.askForParingCode()
                     }
                 }
             } label: {
@@ -41,25 +49,34 @@ struct DevicePairView: View {
                         .font(.title2)
                 }
             }.padding(.bottom, 20)
-            
+             
             VStack{
                 Divider()
-                BarChartView(
-                    values: [0.4, 0.9, 0.6, 0.3, 0.7],
-                    labels: ["Seg", "Ter", "Qua", "Qui", "Sex"],
-                    title: "Tarefa da semana"
-                )
-                
+                if isChartLoading {
+                    ProgressView("Carregando gráfico...")
+                } else {
+                    VStack(spacing: 16) {
+                        FortnightlyBarChart(
+                            users: users,
+                            entries: usageEntries,
+                            startDate: startDate,
+                            onSelect: { _ in },
+                            scrollEnabled: false,
+                            daysToShow: 7
+                        )
+                         
+                        legend
+                            .padding(.bottom)
+                    }
+                }
+                 
                 Button {
                     Task {
-                        try await viewModel.sendChartToESP32(
-                            values: [0.4, 0.9, 0.6, 0.3, 0.7],
-                            labels: ["Seg", "Ter", "Qua", "Qui", "Sex"],
-                            title: "Tarefas da semana"
+                        try await hardwareViewModel.sendChartToESP32(
+                            users: users, chores: chores, usageEntries: usageEntries, startDate: startDate
                         )
                     }
                 } label: {
-                    
                     ZStack {
                         RoundedRectangle(cornerRadius: 20)
                             .frame(width: 150, height: 44)
@@ -72,9 +89,36 @@ struct DevicePairView: View {
             }
         }
         .padding()
+        .task {
+            print("setup")
+            await fortnightlyViewModel.setupWithFetch()
+             
+            users = fortnightlyViewModel.users
+            chores = fortnightlyViewModel.chores
+            usageEntries = await fortnightlyViewModel.usageEntries
+            startDate = fortnightlyViewModel.startDate
+            isChartLoading = false
+        }
+    }
+    
+    /// A helper subview that displays a color-coded legend for the active users.
+    private var legend: some View {
+        HStack {
+            ForEach(Array(users.enumerated()), id: \.offset) { index, user in
+                HStack {
+                    Circle()
+                        .frame(width: 14)
+                        .foregroundStyle(UserColorPalette.color(for: index))
+
+                    Text(user.name)
+                        .font(.system(size: 15))
+                        .fontWeight(.light)
+                }
+            }
+        }
     }
 }
 
 #Preview {
-    DevicePairView(viewModel: HardwareViewModel())
+    DevicePairView(hardwareViewModel: HardwareViewModel())
 }

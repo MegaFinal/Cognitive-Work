@@ -72,6 +72,69 @@ class CloudKitManager {
         }
     }
 
+    // MARK: - Current User
+
+    /// UserDefaults key used to remember which `UserModel` record belongs to whoever is
+    /// using this device.
+    private let currentUserRecordNameKey = "currentUserRecordName"
+
+    /// `recordID` of the `UserModel` that belongs to whoever is using this device.
+    ///
+    /// This is persisted locally rather than derived from CloudKit: once housemates become
+    /// visible through shared data, nothing on a `UserModel` record itself says "this one is
+    /// you" — every record looks the same. Set once by ``setCurrentUser(_:)`` right after the
+    /// profile is created (or re-fetched), and read back by ``fetchMyUser()``.
+    var currentUserRecordID: CKRecord.ID? {
+        guard let recordName = UserDefaults.standard.string(forKey: currentUserRecordNameKey)
+        else {
+            return nil
+        }
+        return CKRecord.ID(recordName: recordName, zoneID: houseZoneID)
+    }
+
+    /// Remembers `user` as the profile that belongs to this device, so future launches (and
+    /// lists that include housemates) can tell it apart from everyone else.
+    ///
+    /// - Parameter user: The current device owner's own `UserModel`. Does nothing if
+    ///   `user.recordID` is `nil`.
+    func setCurrentUser(_ user: UserModel) {
+        guard let recordID = user.recordID else { return }
+        UserDefaults.standard.set(recordID.recordName, forKey: currentUserRecordNameKey)
+    }
+
+    /// Fetches the `UserModel` that belongs to this device, using the `recordID` persisted by
+    /// ``setCurrentUser(_:)``.
+    ///
+    /// A user's own profile always lives in their own private zone (see ``create(_:zoneID:parent:)``),
+    /// so this always reads from ``privateDB``.
+    ///
+    /// - Returns: The current user's profile, or `nil` when nothing was ever persisted or the
+    ///   fetch fails.
+    func fetchMyUser() async -> UserModel? {
+        guard let recordID = currentUserRecordID else { return nil }
+
+        do {
+            let record = try await privateDB.record(for: recordID)
+            return UserModel(record: record)
+        } catch {
+            errorMessage = "Failed to fetch current user: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    /// Whether `user` is the profile that belongs to this device, as opposed to a housemate
+    /// fetched alongside it (e.g. via ``fetchAll(_:predicate:)``).
+    func isCurrentUser(_ user: UserModel) -> Bool {
+        guard let recordID = user.recordID else { return false }
+        return recordID.recordName
+            == UserDefaults.standard.string(forKey: currentUserRecordNameKey)
+    }
+
+    /// Clears the persisted current-user record, e.g. after the account is deleted.
+    func clearCurrentUser() {
+        UserDefaults.standard.removeObject(forKey: currentUserRecordNameKey)
+    }
+
     // MARK: - Sharing
 
     /// Returns the share for a house, creating one when it does not exist yet.
@@ -135,8 +198,8 @@ class CloudKitManager {
         }
 
         let database = house.recordID.zoneID.ownerName == CKCurrentUserDefaultName
-            ? privateDB
-            : sharedDB
+            ? privateDB // dono
+            : sharedDB // convidado
 
         do {
             return try await database.record(

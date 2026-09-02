@@ -89,8 +89,8 @@ struct ChoreDetailsCard: View {
                 )
                 
                 CapsuleTag(
-                    tagName: chore.priorityTag.rawValue,
-                    tagColor: chore.priorityTag.color,
+                    tagName: ChoreDurationTier.from(minutes: chore.duration / 60).displayText,
+                    tagColor: ChoreDurationTier.from(minutes: chore.duration / 60).color,
                     horizontalPadding: 10.0,
                     verticalPadding: 1.5
                 )
@@ -197,9 +197,9 @@ struct ChoreDetailsCard: View {
             Spacer()
             
             if allResponsibleUsers.count == 1 {
-                UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.12)
+                UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.1)
             } else {
-                UserProfilePictureList(chore: chore, widthMultiplier: 0.12)
+                UserProfilePictureList(chore: chore, widthMultiplier: 0.1)
             }
             
             NavigationLink {
@@ -271,7 +271,7 @@ fileprivate class MockChoreModel: ChoreModel {
     let user2 = UserModel(name: "João", profilePicture: mockImageData, tier: .tier2)
     
     let room1 = RoomModel(name: "Banheiro", color: .blue)
-        
+    
     let chore1 = MockChoreModel(
         name: "Lavar o Banheiro",
         description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Não esquecer de repor o papel higiênico e esvaziar a lixeira no final.",

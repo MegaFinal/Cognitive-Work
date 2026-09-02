@@ -25,15 +25,13 @@ struct ResponsibleUserPicker: View {
     }
     
     var body: some View {
-        HStack(spacing: 2) {
-            HStack(spacing: -10){
-                ForEach(selectedUsers) { selectedUser in
-                    UserProfilePictureTag(imageData: selectedUser.profilePicture, widthMultiplier: 0.15)
-                        .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
-                        .onTapGesture {
-                            selectedUsers.removeAll { $0.id == selectedUser.id }
-                        }
-                }
+        HStack(spacing: 5) {
+            ForEach(selectedUsers) { selectedUser in
+                UserProfilePictureTag(imageData: selectedUser.profilePicture, widthMultiplier: 0.1)
+                    .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
+                    .onTapGesture {
+                        selectedUsers.removeAll { $0.id == selectedUser.id }
+                    }
             }
             
             Menu {

@@ -29,14 +29,13 @@ struct Carousel: View {
                 ProgressView("Carregando tarefas")
                     .foregroundStyle(.white)
             }
-            else if viewModel.chardModelsToDo.isEmpty {
+            else if viewModel.visibleChores.isEmpty {
                 Text("Nenhuma tarefa no momento")
                     .font(.headline)
                     .foregroundStyle(.black)
             }
             else {
-                // Card loop
-                ForEach(Array(viewModel.chardModelsToDo.enumerated()), id: \.element.id) { index, chore in
+                ForEach(Array(viewModel.visibleChores.enumerated()), id: \.element.id) { index, chore in 
                     CarouselCardFrame(
                         chore: chore,
                         carouselViewModel: viewModel,
@@ -81,7 +80,7 @@ struct Carousel: View {
 #Preview("Carousel") {
     @Previewable @Namespace var namespace
     let mockVM = CarouselViewModel()
-
+    
     let chore1 = ChoreModel(
         name: "Lavar o Banheiro",
         description: "Esfregar o chão do box e limpar os espelhos.",
@@ -92,7 +91,7 @@ struct Carousel: View {
         priorityTag: .urgent
     )
     chore1.symbolName = "toilet"
-
+    
     let chore2 = ChoreModel(
         name: "Varrer a Sala",
         description: "Afastar os móveis e passar pano úmido.",
@@ -114,9 +113,9 @@ struct Carousel: View {
         priorityTag: .urgent
     )
     chore3.symbolName = "toilet"
-
+    
     mockVM.cardModels = [chore1, chore2, chore3]
-
+    
     return Carousel(
         viewModel: mockVM,
         isBackgroundClear: true,

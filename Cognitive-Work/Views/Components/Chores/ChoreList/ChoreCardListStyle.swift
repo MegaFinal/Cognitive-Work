@@ -47,15 +47,17 @@ struct ChoreCardListStyle: View {
                     .frame(width: width * 0.1, height: height * 0.08)
                     .fontWeight(.thin)
                 
-                VStack(alignment: .leading, spacing: 25) {
-                    HStack(spacing: 3) {
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack(spacing: 10) {
                         // MARK: - Responsible users
-                        HStack(spacing: -20) {
+                        HStack(spacing: -5) {
                             ForEach($allResponsibleUsers, id: \.recordID) { $user in
-                                UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: 0.08)
+                                UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: 0.07)
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
                         }
+                        .padding(.leading, 4)
+                        .padding(.bottom, 8)
                         .task {
                             allResponsibleUsers = await chore.allResponsibleUsers
                         }
@@ -116,7 +118,8 @@ struct ChoreCardListStyle: View {
         .task {
             room = await chore.room
         }
-        .frame(width: width * 0.92, height: height * 0.14)
+        .frame(width: width * 0.92)
+        .frame(minHeight: height * 0.14)
         .onTapGesture(perform: onTap)
         .transition(.identity)
     }

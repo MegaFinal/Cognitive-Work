@@ -10,8 +10,8 @@ import SwiftUI
 /// Defines the overlay layout region containing core chore action buttons
 struct ChoresViewButtonsSection: View {
     
-    /// Background cache of all house members used specifically to populate the creation view.
     @State private var houseUsers: [UserModel] = []
+    @State private var showCreateView = false
     
     var body: some View {
         HStack {
@@ -24,6 +24,7 @@ struct ChoresViewButtonsSection: View {
                     .font(.title)
                     .padding(15)
                     .foregroundColor(.black)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .glassEffect(
@@ -32,24 +33,14 @@ struct ChoresViewButtonsSection: View {
             )
             
             // MARK: - Navigation to create a new task
-            NavigationLink {
-                CreateAndEditChoreView(
-                    originalModel: ChoreModel(
-                        name: "",
-                        description: "",
-                        isDone: false,
-                        frequency: .daily,
-                        duration: 0,
-                        isPublic: true,
-                        priorityTag: .low
-                    ),
-                    availableHouseUsers: houseUsers
-                )
+            Button {
+                showCreateView = true
             } label: {
                 Image(systemName: "plus")
                     .font(.title)
                     .foregroundColor(.white)
                     .padding(20)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .glassEffect(
@@ -59,6 +50,20 @@ struct ChoresViewButtonsSection: View {
         }
         .padding(.horizontal, 30)
         .padding(.bottom)
+        .navigationDestination(isPresented: $showCreateView) {
+            CreateAndEditChoreView(
+                originalModel: ChoreModel(
+                    name: "",
+                    description: "",
+                    isDone: false,
+                    frequency: .daily,
+                    duration: 0,
+                    isPublic: true,
+                    priorityTag: .low
+                ),
+                availableHouseUsers: houseUsers
+            )
+        }
         .task {
             houseUsers = await CloudKitManager.shared.fetchAll(UserModel.self)
         }

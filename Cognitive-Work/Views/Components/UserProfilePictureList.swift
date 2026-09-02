@@ -19,7 +19,7 @@ struct UserProfilePictureList: View {
     @State var responsibleUsers: [UserModel] = []
     
     var body: some View {
-        HStack(spacing: -35) {
+        HStack(spacing: -18) {
             ForEach($responsibleUsers, id: \.recordID) { $user in
                 UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: widthMultiplier)
                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)

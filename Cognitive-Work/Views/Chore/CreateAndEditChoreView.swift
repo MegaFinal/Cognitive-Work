@@ -13,21 +13,26 @@ import CloudKit
 /// This view isolates the user's edits in a `ChoreDTO`. The underlying `originalModel`
 /// is only modified and persisted to CloudKit when the user explicitly confirms the changes.
 struct CreateAndEditChoreView: View {
-
+    
+    init(originalModel: ChoreModel, availableHouseUsers: [UserModel]) {
+        self.originalModel = originalModel
+        self._availableHouseUsers = State(initialValue: availableHouseUsers)
+    }
+    
     /// The persisted chore being edited, or an unsaved chore instance when creating a new one.
     var originalModel: ChoreModel
-
-    /// The list of all available users in the current house.
-    @State var availableHouseUsers: [UserModel]
-
+    
+    @State private var availableHouseUsers: [UserModel]
+    @State private var availableRooms: [RoomModel] = []
+    
     /// A local copy of the chore's editable fields to prevent wrong modifications.
     @State private var choreDTO = ChoreDTO()
     
     /// Indicates whether an asynchronous save operation is currently in progress.
     @State private var isSaving = false
-
+    
     @Environment(\.dismiss) private var dismiss
-
+    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
@@ -36,7 +41,7 @@ struct CreateAndEditChoreView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 25) {
                 header
-
+                
                 // MARK: - Pickers
                 VStack(spacing: 10) {
                     HStack {
@@ -44,13 +49,13 @@ struct CreateAndEditChoreView: View {
                         Spacer()
                         ChoreTagPicker(chore: choreDTO, type: .priority)
                     }
-
+                    
                     HStack {
                         Text("Duração")
                         Spacer()
                         ChoreTagPicker(chore: choreDTO, type: .duration)
                     }
-
+                    
                     HStack {
                         Text("Frequência")
                         Spacer()
@@ -59,7 +64,7 @@ struct CreateAndEditChoreView: View {
                 }
                 .font(.subheadline)
                 .fontWeight(.semibold)
-
+                
                 // MARK: - Description
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Descrição")
@@ -70,10 +75,10 @@ struct CreateAndEditChoreView: View {
                         .font(.body)
                         .foregroundColor(.gray)
                 }
-
+                
                 // MARK: - Checklist
                 checklistSection
-
+                
                 // MARK: - Responsible Users
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Responsáveis")
@@ -82,12 +87,12 @@ struct CreateAndEditChoreView: View {
                     
                     ResponsibleUserPicker(availableUsers: availableHouseUsers, selectedUsers: $choreDTO.responsibleUsers)
                 }
-
+                
                 // MARK: - Visibility Toggle
                 publicToggleSection
-
+                
                 Spacer()
-
+                
                 // MARK: - Confirmation Button
                 confirmButton
             }
@@ -96,6 +101,7 @@ struct CreateAndEditChoreView: View {
         }
         .task {
             await loadDraftIfNeeded()
+            availableRooms = await CloudKitManager.shared.fetchAll(RoomModel.self)
         }
     }
     
@@ -134,7 +140,7 @@ struct CreateAndEditChoreView: View {
                     
                     Spacer()
                     
-                    ChoreTagPicker(chore: choreDTO, type: .room)
+                    ChoreTagPicker(chore: choreDTO, type: .room, availableRooms: availableRooms)
                 }
             }
             .frame(width: width * 0.65)
@@ -161,7 +167,7 @@ struct CreateAndEditChoreView: View {
                     .padding(.trailing, 3)
             }
             .frame(width: width * 0.9)
-
+            
             if choreDTO.hasChecklist {
                 CheckListCreateAndEdit(hasChecklist: $choreDTO.hasChecklist, localChecklist: $choreDTO.checklist)
             }
@@ -184,7 +190,7 @@ struct CreateAndEditChoreView: View {
                     .frame(width: width * 0.37)
             }
             .frame(width: width * 0.9)
-
+            
             Text("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
                 .font(.subheadline)
                 .italic()
@@ -223,24 +229,25 @@ struct CreateAndEditChoreView: View {
     // MARK: - Methods
     
     /// Persists the modifications from the local copy onto `originalModel` and dismisses the view.
+    @MainActor
     private func confirmAndSave() async {
         isSaving = true
         await originalModel.save(from: choreDTO)
         isSaving = false
         dismiss()
     }
-
+    
     /// Pre-populates the local copy if editing an existing chore.
     /// A new chore maintains the empty default copy provided by `ChoreDTO()`.
     private func loadDraftIfNeeded() async {
         guard originalModel.recordID != nil else { return }
-
+        
         async let checklistModels = originalModel.checkList
         async let responsibleUsers = originalModel.allResponsibleUsers
         async let room = originalModel.room
-
+        
         let (savedChecklist, savedResponsibleUsers, savedRoom) = await (checklistModels, responsibleUsers, room)
-
+        
         choreDTO = ChoreDTO(
             from: originalModel,
             users: savedResponsibleUsers,

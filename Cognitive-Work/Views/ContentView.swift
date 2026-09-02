@@ -41,10 +41,13 @@ struct ContentView: View {
                     Label("Progresso", systemImage: "figure.2")
                 }
             
-            ChoresView()
-                .tabItem {
-                    Label("Perfil", systemImage: "person.fill")
-                }
+            NavigationStack {
+                UserProfileView()
+                    .navigationTitle("Perfil")
+            }
+            .tabItem {
+                Label("Perfil", systemImage: "person.fill")
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { cloudMetadata in
             showEnviteAcceptAlert = true
