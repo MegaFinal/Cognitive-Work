@@ -26,6 +26,10 @@ class CarouselViewModel {
     
     /// The chores currently loaded into the carousel
     var cardModels: [ChoreModel] = []
+    var chardModelsToDo: [ChoreModel] {
+        let charsToDo = cardModels.filter { $0.isDone == false }
+        return charsToDo
+    }
     var isLoading: Bool = false
     var hasFocusedCard: Bool {
         focusedIndex != nil

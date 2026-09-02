@@ -33,7 +33,6 @@ struct ChoresView: View {
                 VStack(spacing: 3) {
                     VStack(spacing: 15) {
                         header
-                        
                         progressSection
                     }
                     
@@ -176,7 +175,7 @@ struct ChoresView: View {
     private var choreList: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                let chores = carouselVM.isFilterOn ? carouselVM.filteredChards : carouselVM.cardModels
+                let chores = carouselVM.isFilterOn ? carouselVM.filteredChards : carouselVM.chardModelsToDo
                 ForEach(Array(chores.enumerated()), id: \.element.id) { index, chore in
                     ChoreCardListStyle(chore: chore, namespace: cardAnimation) {
                         carouselVM.focusDetailsImmediately(index)
