@@ -14,9 +14,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func windowScene(_ windowScene: UIWindowScene, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {
         Task {
-            let success = await CloudKitManager.shared.acceptShare(metadata: cloudKitShareMetadata)
-            if success {
-                NotificationCenter.default.post(name: .didAcceptShare, object: nil)
+            do {
+                let _ = try await CloudKitManager.shared.fetchFirst(HouseModel.self)
+                NotificationCenter.default.post(name: .notAcceptShare, object: cloudKitShareMetadata)
+            }
+            catch {
+                let success = await CloudKitManager.shared.acceptShare(metadata: cloudKitShareMetadata)
+                if success {
+                    NotificationCenter.default.post(name: .didAcceptShare, object: nil)
+                }
             }
         }
     }

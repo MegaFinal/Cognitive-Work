@@ -177,4 +177,11 @@ class HouseModel: CloudKitSyncable {
         self.description = description
         return await CloudKitManager.shared.update(self)
     }
+    
+    func fetchSelfRecord() async -> CKRecord? {
+        if let recordID {
+            return await CloudKitManager.shared.fetchRecord(for: self)
+        }
+        return nil
+    }
 }

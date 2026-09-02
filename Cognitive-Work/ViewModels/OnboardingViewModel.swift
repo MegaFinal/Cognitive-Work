@@ -52,6 +52,10 @@ class OnboardingViewModel {
         RoomDTO(name: "Outro", symbol: "plus", isAddButton: true)
     ]
     
+    var hasSelectedRooms: Bool {
+        availableRooms.contains { $0.isSelected && !$0.isAddButton }
+    }
+    
     var selectedChores: [ChoreDTO] = []
     
     // MARK: - CloudKit
@@ -112,6 +116,8 @@ class OnboardingViewModel {
                 userRecord["house"] = CKRecord.Reference(recordID: houseRecordID, action: .none)
                 _ = await CloudKitManager.shared.update(record: userRecord)
             }
+            
+            try? await CloudKitManager.shared.createSharedSubscription()
             
             isLoading = false
         } else {
@@ -176,6 +182,18 @@ class OnboardingViewModel {
         isLoading = false
     }
     
+    /// Fetches every user currently linked to ``currentHouse``.
+    ///
+    /// Used to display the members who have already joined while the house owner
+    /// waits on the invite screen.
+    @MainActor
+    func fetchHouseUsers() async -> [UserModel] {
+        guard let houseID = currentHouse?.recordID else { return [] }
+        let reference = CKRecord.Reference(recordID: houseID, action: .none)
+        let predicate = NSPredicate(format: "house == %@", reference)
+        return await CloudKitManager.shared.fetchAll(UserModel.self, predicate: predicate)
+    }
+    
     @MainActor
     func fetchRooms() async -> [RoomModel] {
         guard let houseID = currentHouse?.recordID else { return [] }
@@ -184,8 +202,24 @@ class OnboardingViewModel {
         return await CloudKitManager.shared.fetchAll(RoomModel.self, predicate: predicate)
     }
     
+    /// Creates a `ChoreModel` for each chore the user selected, skipping any that
+    /// another housemate already saved for the same room.
+    ///
+    /// Every resident walks through ``SelectChoresOnboardingView`` independently and picks
+    /// from the same default chore list per room, so without this check the same chore would
+    /// be duplicated once per person who selects it.
     func creatDefoultChores() async {
+        isLoading = true
         for chore in selectedChores {
+            guard let roomReference = chore.roomReference else { continue }
+            
+            let existing = await CloudKitManager.shared.fetchAll(
+                ChoreModel.self,
+                predicate: NSPredicate(format: "room == %@ AND name == %@", roomReference, chore.name)
+            )
+            
+            guard existing.isEmpty else { continue }
+            
             await CloudKitManager.shared.create(
                 ChoreModel(
                     name: chore.name,
@@ -198,7 +232,7 @@ class OnboardingViewModel {
                 parent: chore.roomReference
             )
         }
-        
+        isLoading = false
     }
     
     func goToNextView() {
@@ -224,7 +258,6 @@ class OnboardingViewModel {
                 )
             )
         }
-        
         await currentUser?.setAvailableTimes(availableTime)
     }
     

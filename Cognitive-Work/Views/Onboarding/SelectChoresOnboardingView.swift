@@ -63,6 +63,12 @@ struct SelectChoresOnboardingView: View {
                         .foregroundStyle(.subTitleGray)
                         .padding(.bottom, height * 0.025)
                 }
+                
+                if rooms.isEmpty {
+                    ProgressView("Carregando Comodos e Tarefas...")
+                                .progressViewStyle(CircularProgressViewStyle())
+                }
+                else {
                     VStack(alignment: .leading) {
                         ForEach($rooms) { $room in
                             HStack {
@@ -71,10 +77,14 @@ struct SelectChoresOnboardingView: View {
                             .padding(.bottom, height * 0.07)
                         }
                     }
+                }
                 
-                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
+                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading ,isDisabled: viewModel.selectedChores.isEmpty) {
                     await viewModel.creatDefoultChores()
-                    viewModel.goToNextView()
+                    
+                    if !viewModel.isLoading {
+                        viewModel.goToNextView()
+                    }
                 }
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
@@ -139,7 +149,6 @@ private struct SelectChoreListItem: View {
                     } label: {
                         HStack {
                             Circle()
-                                .border(.black)
                                 .background(.clear)
                                 .frame(width: 15, height: 15)
                                 .padding(.trailing, 8)

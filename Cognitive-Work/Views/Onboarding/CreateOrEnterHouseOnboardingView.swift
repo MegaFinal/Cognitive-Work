@@ -53,8 +53,11 @@ struct CreateOrEnterHouseOnboardingView: View {
                 Button {
                     Task {
                         await viewModel.createHouseAndLinkUser()
-                        viewModel.stateMachine.flow = .houseCreator
-                        viewModel.goToNextView()
+                        
+                        if viewModel.currentHouse != nil {
+                            viewModel.stateMachine.flow = .houseCreator
+                            viewModel.goToNextView()
+                        }
                     }
                 } label: {
                     VStack (spacing: 40){
