@@ -69,7 +69,7 @@ struct SelectFreeTimeOnboardingView: View {
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width)
                 }
                 
-                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })) {
+                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading,isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })) {
                     await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder)
                     viewModel.goToNextView()
                 }
