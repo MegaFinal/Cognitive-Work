@@ -13,25 +13,33 @@ struct FortnightlyBarChart: View {
     var entries: [DailyUsageEntry]
     var startDate: Date = Date()
     var onSelect: (DailyUsageEntry) -> Void
+    var scrollEnabled: Bool = true
+    var daysToShow: Int = 14
 
     var body: some View {
         let calendar = Calendar.current
         let adjustedStartDate = alignToMonday(startDate, calendar: calendar)
-
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 0) {
-                ForEach(0..<14, id: \.self) { dayOffset in
-                    if let day = calendar.date(byAdding: .day, value: dayOffset, to: adjustedStartDate) {
-                        let dayEntries = entries.filter { calendar.isDate($0.day, inSameDayAs: day) }
-                        FortnightlyDayUserBar(
-                            day: day,
-                            entries: dayEntries,
-                            users: users,
-                            onSelect: onSelect
-                        )
-                    }
+        
+        let content = HStack(alignment: .top, spacing: 0) {
+            ForEach(0..<daysToShow, id: \.self) { dayOffset in
+                if let day = calendar.date(byAdding: .day, value: dayOffset, to: adjustedStartDate) {
+                    let dayEntries = entries.filter { calendar.isDate($0.day, inSameDayAs: day) }
+                    FortnightlyDayUserBar(
+                        day: day,
+                        entries: dayEntries,
+                        users: users,
+                        onSelect: onSelect
+                    )
                 }
             }
+        }
+        
+        if scrollEnabled {
+            ScrollView(.horizontal, showsIndicators: false) {
+                content
+            }
+        } else {
+            content
         }
     }
 

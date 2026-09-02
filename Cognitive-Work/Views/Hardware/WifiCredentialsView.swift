@@ -7,7 +7,10 @@
 
 import SwiftUI
 
+/// A view that allows users to input their network credentials (IP, Wi-Fi name, and password)
+/// to configure and connect an ESP32 hardware device.
 struct WifiCredentialsView: View {
+    
     @State private var viewModel = HardwareViewModel()
     
     var body: some View {
@@ -17,7 +20,7 @@ struct WifiCredentialsView: View {
                     .font(.title3)
                     .bold()
                     .padding(.bottom, 20)
-                
+                 
                 TextField("IP do device", text: $viewModel.deviceIP)
                 TextField("Nome do Wifi", text: $viewModel.userWifiName)
                 HStack {
@@ -40,7 +43,7 @@ struct WifiCredentialsView: View {
             .textFieldStyle(.roundedBorder)
             .padding()
             .navigationDestination(isPresented: $viewModel.navigateToParingView) {
-                DevicePairView(viewModel: viewModel)
+                DevicePairView(hardwareViewModel: viewModel)
             }
             .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }
@@ -49,10 +52,11 @@ struct WifiCredentialsView: View {
             }
         }
     }
-    
+     
     // MARK: - Subviews
-    
-    /// Sends the typed credentials to the device and navigates to the pairing step on success.
+     
+    /// Sends the typed credentials to the device and navigates to the pairing step on success,
+    /// while safely handling network errors and invalid IP inputs.
     private var sendCredentialsButton: some View {
         Button {
             if viewModel.userWifiName != "" && viewModel.userWifiPassord != "" && viewModel.deviceIP != "" {
@@ -75,7 +79,7 @@ struct WifiCredentialsView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .frame(width: 100, height: 44)
                     .foregroundStyle(.indigo)
-                
+                 
                 Text("Enviar")
                     .frame(width: 100, height: 44)
                     .foregroundStyle(.white)
