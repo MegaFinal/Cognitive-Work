@@ -53,10 +53,9 @@ final class UserProfileViewModel {
     func loadUser() async {
         isLoading = true
         
-        do {
-            user = try await CloudKitManager.shared.fetchFirst(UserModel.self)
-        } catch {
-            errorMessage = error.localizedDescription
+        user = await CloudKitManager.shared.fetchMyUser()
+        if user == nil {
+            errorMessage = CloudKitManager.shared.errorMessage
         }
         
         isLoading = false
@@ -116,6 +115,7 @@ final class UserProfileViewModel {
         let success = await CloudKitManager.shared.delete(user)
 
         if success {
+            CloudKitManager.shared.clearCurrentUser()
             onAccountDeleted()
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."

@@ -76,6 +76,7 @@ class OnboardingViewModel {
         if let savedUser = await CloudKitManager.shared.create(newUser) {
             self.currentUser = savedUser
             self.stateMachine.user = savedUser
+            CloudKitManager.shared.setCurrentUser(savedUser)
         } else {
             errorMessage = "Erro ao criar usuário."
         }
@@ -271,7 +272,7 @@ class OnboardingViewModel {
     /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
     /// when onboarding resumes on a fresh launch (see ``restoreProgressIfNeeded()``).
     func fetchCurrentUser() async {
-        currentUser = try? await CloudKitManager.shared.fetchFirst(UserModel.self)
+        currentUser = await CloudKitManager.shared.fetchMyUser()
     }
 
     /// Re-hydrates ``currentUser`` and ``currentHouse`` after the app relaunches mid-onboarding.
