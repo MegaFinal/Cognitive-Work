@@ -39,14 +39,13 @@ struct InviteUsersOnboardingView: View {
                         ShareLink(item: shareURL!){
                             Text("Compartilhar Convite")
                                 .font(.system(size: 17))
-                            
                                 .frame(width: width, height: height, alignment: .center)
                                 .foregroundColor(.white)
-                                .background(
+                                .background {
                                     Capsule()
                                         .foregroundColor(.blue)
                                         .glassEffect()
-                                )
+                                }
                         }
                         
                     }
@@ -55,9 +54,9 @@ struct InviteUsersOnboardingView: View {
                         } label: {
                             ProgressView().tint(.white)
                         }
+                        .frame(width: width, height: height, alignment: .center)
                         .foregroundColor(.white)
                         .background(Capsule().foregroundStyle(.gray))
-                        .frame(width: width, height: height)
                     }
                 }
                 

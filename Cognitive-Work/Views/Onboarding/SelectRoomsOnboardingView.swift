@@ -54,10 +54,12 @@ struct SelectRoomsOnboardingView: View {
                 }
                 .padding(.horizontal)
                 
-                OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading) {
+                OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: !viewModel.hasSelectedRooms) {
                     Task {
                         await viewModel.saveSelectedRooms()
-                        viewModel.goToNextView()
+                        if !viewModel.isLoading {
+                            viewModel.goToNextView()
+                        }
                     }
                 }
             }

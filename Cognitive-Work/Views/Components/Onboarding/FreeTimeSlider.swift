@@ -116,11 +116,14 @@ struct FreeTimeSlider: View {
     /// - Parameter rowWidth: Rendered width of the squares row, in points.
     /// - Returns: The mask width, in points.
     private func getSelectedWidth(in rowWidth: CGFloat) -> CGFloat {
+        guard rating > 0 else {
+            return 0
+        }
         guard rating < maxRating else {
-            return rowWidth + Layout.fullSelectionOverflow
+            return rowWidth + Layout.fullSelectionOverflow * 3
         }
 
-        return rowWidth * CGFloat(rating) / CGFloat(maxRating)
+        return CGFloat(rating) * squareSize + CGFloat(rating - 1) * spacing
     }
 
     /// Converts a horizontal gesture position into a discrete rating and stores

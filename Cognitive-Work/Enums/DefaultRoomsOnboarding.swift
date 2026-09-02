@@ -22,8 +22,8 @@ import Foundation
 enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
 
     case bedroom = "Quarto"
-    case livingRoom = "Sala de estar"
-    case laundryRoom = "Área de serviço"
+    case livingRoom = "Sala de Estar"
+    case laundryRoom = "Área de Serviço"
     case kitchen = "Cozinha"
     case bathroom = "Banheiro"
     case homeOffice = "Escritório"

@@ -52,6 +52,10 @@ class OnboardingViewModel {
         RoomDTO(name: "Outro", symbol: "plus", isAddButton: true)
     ]
     
+    var hasSelectedRooms: Bool {
+        availableRooms.contains { $0.isSelected && !$0.isAddButton }
+    }
+    
     var selectedChores: [ChoreDTO] = []
     
     // MARK: - CloudKit
@@ -185,6 +189,7 @@ class OnboardingViewModel {
     }
     
     func creatDefoultChores() async {
+        isLoading = true
         for chore in selectedChores {
             await CloudKitManager.shared.create(
                 ChoreModel(
@@ -198,6 +203,7 @@ class OnboardingViewModel {
                 parent: chore.roomReference
             )
         }
+        isLoading = false
         
     }
     

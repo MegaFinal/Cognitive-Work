@@ -30,12 +30,14 @@ struct CreateProfileOnboardingView: View {
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
             
-            OnboardingProgressButton(text: "Continuar",isLoading: viewModel.isLoading,isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty,  action: {
+            OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty) {
                 Task {
                     await viewModel.createUser()
-                    viewModel.goToNextView()
+                    if viewModel.currentUser != nil {
+                        viewModel.goToNextView()
+                    }
                 }
-            })
+            }
             
         }
         .navigationBarBackButtonHidden()
