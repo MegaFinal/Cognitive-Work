@@ -26,12 +26,14 @@ struct CreateOrEnterHouseOnboardingView: View {
     // `.invitedWithProfile`, creating one saves the house before advancing.
 
     var body: some View {
-        ZStack {
+        VStack {
             OnboardingHeader(
-                title: "Moradia",
+                title: "Para começarmos",
                 description: "Você pode entrar em uma casa existente através de um convite, ou criar uma nova."
             )
-                        
+               
+            Spacer()
+            
             HStack(spacing: 15) {
                 Button {
                     viewModel.stateMachine.flow = .invitedWithProfile
@@ -95,8 +97,8 @@ struct CreateOrEnterHouseOnboardingView: View {
                 }
                 .disabled(viewModel.isLoading)
             }
+            Spacer()
         }
-        .navigationBarBackButtonHidden()
     }
 }
 
