@@ -10,7 +10,7 @@ import SwiftUI
 /// The entry point of the onboarding flow.
 ///
 /// `FirstOnboardingView` presents the app's welcome screen, swiping up expands
-/// the screen into a longer app description (``OnboardingAppDescription``)
+/// the screen into a longer app description (`appDescription`)
 /// and reveals the "Continuar" action that pushes the user into the rest of the
 /// onboarding flow
 ///
@@ -47,9 +47,7 @@ struct WelcomeOnboardingView: View {
                                 .transition(.opacity)
                             
                         } else {
-                            OnboardingAppDescription {
-                                viewModel.goToNextView()
-                            }
+                            appDescription
                         }
                     }
                 }
@@ -58,7 +56,7 @@ struct WelcomeOnboardingView: View {
                 .padding(.top, 5)
                 
                 if isSwipeVisible {
-                    OnboardingSwipeIndicator()
+                    swipeIndicator
                 }
             }
             .gesture(
@@ -83,6 +81,47 @@ struct WelcomeOnboardingView: View {
             }
 
         }
+    }
+    
+    // MARK: - Subviews
+    
+    /// The expanded pitch shown after the user swipes up.
+    private var appDescription: some View {
+        VStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("O HouseHouse veio para facilitar \na vida de quem divide moradia!")
+                
+                Text("Nosso intuito é remover a carga mental da organização de \ntarefas de maneira justa e visual para todos os moradores.")
+                
+                Text("Através da nossa escala de atividades e recorrência de \ntarefas automatizada, basta \nolhar o calendário e saber o que você precisa fazer!")
+                
+                Text("Mas antes, precisamos saber um pouco mais sobre a rotina na \ncasa...")
+            }
+            
+            OnboardingProgressButton(text: "Começar") {
+                viewModel.goToNextView()
+            }
+        }
+        .frame(width: width * 0.8)
+        .foregroundColor(.gray)
+        .multilineTextAlignment(.leading)
+        .padding(.horizontal, 30)
+        .transition(.opacity)
+    }
+    
+    /// A hint prompting the user to swipe up to continue.
+    private var swipeIndicator: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "chevron.up")
+                .font(.largeTitle)
+            
+            Text("Deslize para cima para continuar")
+        }
+        .foregroundColor(.gray)
+        .opacity(0.7)
+        .transition(.opacity)
+        .frame(maxHeight: .infinity, alignment: .bottom)
+        .padding(.bottom, 50)
     }
 }
 

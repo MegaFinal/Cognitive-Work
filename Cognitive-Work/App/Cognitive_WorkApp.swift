@@ -11,7 +11,7 @@ import SwiftData
 @main
 struct Cognitive_WorkApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @State private var didOnboard = false
+    @AppStorage("didOnboard") private var didOnboard: Bool = false
     
     var body: some Scene {
         WindowGroup {

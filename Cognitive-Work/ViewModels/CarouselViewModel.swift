@@ -6,6 +6,14 @@
 //
 
 import SwiftUI
+import CloudKit
+
+struct ChoreFilters {
+    var users: [UserModel] = []
+    var tags: [PriorityTag] = []
+    var frequencies: [Recurrence] = []
+    var state: Bool? = nil
+}
 
 /// Controls the state and mathematical rendering of the carousel.
 @Observable
@@ -18,10 +26,21 @@ class CarouselViewModel {
     
     /// The chores currently loaded into the carousel
     var cardModels: [ChoreModel] = []
+    var chardModelsToDo: [ChoreModel] {
+        let charsToDo = cardModels.filter { $0.isDone == false }
+        return charsToDo
+    }
     var isLoading: Bool = false
     var hasFocusedCard: Bool {
         focusedIndex != nil
     }
+    
+    /// Some filter is applied into the chores
+    var userModels: [UserModel] = []
+    var isFilterOn: Bool = false
+    var isSelectingFilter = false
+    var filteredChards: [ChoreModel] = []
+    var filterChoices = ChoreFilters()
     
     private let flipDuration: Double = 0.6
     private var flippedIndices: Set<Int> = []
@@ -44,6 +63,91 @@ class CarouselViewModel {
         cardModels = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         
         await MainActor.run { self.isLoading = false }
+    }
+    
+    func fetchUsers() async {
+        await MainActor.run { isLoading = true }
+        
+        userModels = await CloudKitManager.shared.fetchAll(UserModel.self)
+        
+        await MainActor.run { self.isLoading = false }
+    }
+    
+    // MARK: - Filters
+    
+    @MainActor
+    func filterByUser() async {
+        var totalChores: [ChoreModel] = cardModels
+        
+        if !filterChoices.users.isEmpty {
+            var userChores: [ChoreModel] = []
+            for chore in cardModels {
+                if let responsible = await chore.currentResponsible,
+                   filterChoices.users.contains(responsible) {
+                    userChores.append(chore)
+                }
+            }
+            totalChores = userChores
+        }
+        
+        if !filterChoices.tags.isEmpty {
+            totalChores = totalChores.filter {filterChoices.tags.contains($0.priorityTag)}
+        }
+        
+        if !filterChoices.frequencies.isEmpty {
+            totalChores = totalChores.filter {filterChoices.frequencies.contains($0.frequency)}
+        }
+        
+        if let state = filterChoices.state {
+            totalChores = totalChores.filter {$0.isDone == state}
+        }
+        
+        self.filteredChards = totalChores
+        self.isFilterOn = true
+    }
+    
+    func addOrRemoveFilter(user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, state: Bool? = nil) async {
+        
+        if let user = user {
+            if !filterChoices.users.contains(user) {
+                filterChoices.users.append(user)
+            } else {
+                filterChoices.users.removeAll {$0 == user}
+            }
+        }
+        
+        if let tag = tag {
+            if !filterChoices.tags.contains(tag) {
+                filterChoices.tags.append(tag)
+            } else {
+                filterChoices.tags.removeAll {$0 == tag}
+            }
+        }
+        
+        if let frequency = frequency {
+            if !filterChoices.frequencies.contains(frequency) {
+                filterChoices.frequencies.append(frequency)
+            } else {
+                filterChoices.frequencies.removeAll {$0 == frequency}
+            }
+        }
+        
+        if let state = state {
+            if filterChoices.state != state {
+                filterChoices.state = state
+            } else {
+                filterChoices.state = nil
+            }
+        }
+        
+        await filterByUser()
+    }
+    
+    func resetFilter() {
+        isFilterOn = false
+        isSelectingFilter = false
+        filteredChards = []
+        filterChoices = ChoreFilters()
     }
     
     // MARK: - Focus

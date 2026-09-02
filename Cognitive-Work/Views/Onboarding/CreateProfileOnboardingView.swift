@@ -8,18 +8,30 @@
 import SwiftUI
 import PhotosUI
 
+/// Onboarding step where the user picks a profile picture and a display name.
+///
+/// Saves the profile to CloudKit on "Continuar" and only advances once the
+/// record actually comes back.
 struct CreateProfileOnboardingView: View {
+
+    // MARK: - Properties
+
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
     @State private var usernameText: String = ""
+
+    /// Image chosen through the system photo picker, before it is converted.
     @State private var selectedItem: PhotosPickerItem? = nil
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .center, spacing: 58) {
-            OnboardingHeaderText(titleText: "Para começarmos...", descriptionText: "Escolha um Memoji e um nome para utilizar no seu app")
+            headerText
             
             PhotosPicker(selection: $selectedItem, matching: .images) {
-                ProfileImage(image: viewModel.userProfilePicture)
+                profileImage
             }
             .layoutPriority(1)
             
@@ -30,12 +42,14 @@ struct CreateProfileOnboardingView: View {
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
             
-            OnboardingProgressButton(text: "Continuar",isLoading: viewModel.isLoading,isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty,  action: {
+            OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty) {
                 Task {
                     await viewModel.createUser()
-                    viewModel.goToNextView()
+                    if viewModel.currentUser != nil {
+                        viewModel.goToNextView()
+                    }
                 }
-            })
+            }
             
         }
         .navigationBarBackButtonHidden()
@@ -52,6 +66,46 @@ struct CreateProfileOnboardingView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Subviews
+    
+    /// Title and supporting copy for this onboarding step.
+    private var headerText: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Para começarmos...")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundStyle(.black.opacity(0.7))
+            
+            Text("Escolha um Memoji e um nome para utilizar no seu app")
+                .font(.callout)
+                .foregroundStyle(.gray)
+                .lineLimit(nil)
+        }
+    }
+    
+    /// The circular avatar, falling back to a placeholder when no picture was chosen yet.
+    private var profileImage: some View {
+        Group {
+            if let image = viewModel.userProfilePicture {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 285, height: 285)
+                    .background(Color(.systemBackground))
+            } else {
+                Circle()
+                    .fill(Color(.systemGray5))
+                    .frame(width: 285, height: 285)
+                    .overlay {
+                        Image(systemName: "person.fill.badge.plus")
+                            .font(.system(size: 65))
+                            .foregroundStyle(.gray)
+                    }
+            }
+        }
+        .clipShape(Circle())
+        .shadow(radius: 5)
     }
 }
 

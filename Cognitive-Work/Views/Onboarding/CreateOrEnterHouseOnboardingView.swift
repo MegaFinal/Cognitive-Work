@@ -11,12 +11,20 @@ import SwiftUI
 /// or create a new one
 /// On success the flow advances to ``FourthOnboardingView``
 struct CreateOrEnterHouseOnboardingView: View {
+
+    // MARK: - Properties
+
     /// The shared onboarding view model, read from the environment
     @Binding var viewModel: OnboardingViewModel
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
-    
+
+    // MARK: - Body
+    //
+    // Two branching actions: joining an existing house switches the flow to
+    // `.invitedWithProfile`, creating one saves the house before advancing.
+
     var body: some View {
         ZStack {
             OnboardingHeader(
@@ -53,8 +61,11 @@ struct CreateOrEnterHouseOnboardingView: View {
                 Button {
                     Task {
                         await viewModel.createHouseAndLinkUser()
-                        viewModel.stateMachine.flow = .houseCreator
-                        viewModel.goToNextView()
+                        
+                        if viewModel.currentHouse != nil {
+                            viewModel.stateMachine.flow = .houseCreator
+                            viewModel.goToNextView()
+                        }
                     }
                 } label: {
                     VStack (spacing: 40){

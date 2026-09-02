@@ -10,8 +10,6 @@ import UIKit
 
 //TODO: ip size verification and masking it to the user by not needing to include the dots
 //TODO: loading screen to wait sending wifi. If true goes to code and if false comes back to wificredentials
-//TODO: document and organize here and on arduino ide
-
 
 @Observable
 class HardwareViewModel {
@@ -40,7 +38,6 @@ class HardwareViewModel {
     
     func prepareImageForESP32() async throws {
         guard let image = UIImage(named: "fish"), let imageData = image.levelBitmap() else {
-            print("Imagem não encontrada!")
             return
         }
         

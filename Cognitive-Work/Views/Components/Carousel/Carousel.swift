@@ -29,14 +29,14 @@ struct Carousel: View {
                 ProgressView("Carregando tarefas")
                     .foregroundStyle(.white)
             }
-            else if viewModel.cardModels.isEmpty {
+            else if viewModel.chardModelsToDo.isEmpty {
                 Text("Nenhuma tarefa no momento")
                     .font(.headline)
                     .foregroundStyle(.black)
             }
             else {
                 // Card loop
-                ForEach(Array(viewModel.cardModels.enumerated()), id: \.element.id) { index, chore in
+                ForEach(Array(viewModel.chardModelsToDo.enumerated()), id: \.element.id) { index, chore in
                     CarouselCardFrame(
                         chore: chore,
                         carouselViewModel: viewModel,

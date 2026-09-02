@@ -230,7 +230,7 @@ func scheduleAssignedChores(
               let user = context.choreResponsibleMap[choreID],
               let userID = user.recordID else { continue }
 
-        var updatable = chore
+        let updatable = chore
         let slots = context.userAvailableTimeMap[userID] ?? []
 
         // Filter for available time slots within the validity period with sufficient capacity
@@ -291,7 +291,7 @@ func scheduleFreeChores(
 
     // Iterate through each free chore (chores without a pre-assigned responsible user)
     for chore in freeChores {
-        var updatable = chore
+        let updatable = chore
 
         // Collect all (user, time slot) combinations capable of undertaking this chore
         var distributable: [(user: UserModel, slot: AvailableTimeModel)] = []
@@ -391,7 +391,7 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel]) asyn
         }
 
         // Merge newly generated daily assignment references into the chore object and update the chore once
-        var updatableChore = result.chore
+        let updatableChore = result.chore
         updatableChore.recordID = choreID
         if !savedRefs.isEmpty {
             updatableChore.dailyAssignmentsReference = (updatableChore.dailyAssignmentsReference ?? []) + savedRefs

@@ -7,9 +7,11 @@ import Foundation
 import CloudKit
 
 /// A member of a house, including their gamification progress.
-class UserModel: CloudKitSyncable, Identifiable {
+class UserModel: CloudKitSyncable, Identifiable, Hashable {
+    private let localID = UUID().uuidString
+
     var id: String {
-        recordID?.recordName ?? UUID().uuidString
+        recordID?.recordName ?? localID
     }
     
     /// CloudKit record type backing this model.
@@ -207,5 +209,22 @@ class UserModel: CloudKitSyncable, Identifiable {
         await setAvailableTimes([
             AvailableTimeModel(capacityMinutes: capacityMinutes, day: day)
         ])
+    }
+    
+    // To conform to Hashable
+    static func == (lhs: UserModel, rhs: UserModel) -> Bool {
+        // compare both records
+        if let l = lhs.recordID, let r = rhs.recordID { return l == r }
+        // if they don't have records, compare memory space
+        return lhs === rhs
+    }
+
+    // To conform to Hashable -> creates hash
+    func hash(into hasher: inout Hasher) {
+        if let recordID {
+            hasher.combine(recordID)
+        } else {
+            hasher.combine(ObjectIdentifier(self))
+        }
     }
 }

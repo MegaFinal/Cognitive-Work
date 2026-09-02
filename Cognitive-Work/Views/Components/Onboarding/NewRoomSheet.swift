@@ -92,6 +92,31 @@ struct NewRoomSheet: View {
     }
 }
 
+// MARK: - Private subviews
+
+/// A single color swatch used to pick a room's accent color.
+///
+/// Renders as a filled circle in ``item``'s color, with a blue selection ring.
+private struct CustomColorPicker: View {
+    let item: RoomColor
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Circle()
+            .fill(item.uiColor)
+            .frame(width: 34, height: 34)
+            .overlay {
+                if isSelected {
+                    Circle()
+                        .stroke(.blue, lineWidth: 2.5)
+                        .padding(-3)
+                }
+            }
+            .onTapGesture(perform: action)
+    }
+}
+
 #Preview {
     NewRoomSheet()
         .environment(OnboardingViewModel())

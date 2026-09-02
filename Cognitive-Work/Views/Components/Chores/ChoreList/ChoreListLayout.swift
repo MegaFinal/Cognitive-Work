@@ -18,11 +18,11 @@ struct ChoreListLayout: View {
     
     /// Namespace required for geometric transitions into the grid view.
     let namespace: Namespace.ID
-    
+        
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                ForEach(Array(viewModel.cardModels.enumerated()), id: \.element.id) { index, chore in
+                ForEach(Array((viewModel.isFilterOn ? viewModel.filteredChards : viewModel.cardModels).enumerated()), id: \.element.id) { index, chore in
                     ChoreCardListStyle(chore: chore, namespace: namespace) {
                         viewModel.focusDetailsImmediately(index)
                     }

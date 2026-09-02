@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// Seventh onboarding step, where the user picks the chores that are split
 /// equally between every resident of the house.
@@ -23,6 +24,10 @@ import SwiftUI
 /// > selects it in the others. Give each room its own list before replacing the
 /// > mock with real data.
 struct SelectChoresOnboardingView: View {
+
+    // MARK: - Properties
+
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
 
     /// Rooms listed on the screen, each holding its own expansion state.
@@ -63,6 +68,12 @@ struct SelectChoresOnboardingView: View {
                         .foregroundStyle(.subTitleGray)
                         .padding(.bottom, height * 0.025)
                 }
+                
+                if rooms.isEmpty {
+                    ProgressView("Carregando Comodos e Tarefas...")
+                                .progressViewStyle(CircularProgressViewStyle())
+                }
+                else {
                     VStack(alignment: .leading) {
                         ForEach($rooms) { $room in
                             HStack {
@@ -71,10 +82,14 @@ struct SelectChoresOnboardingView: View {
                             .padding(.bottom, height * 0.07)
                         }
                     }
+                }
                 
-                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
+                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading ,isDisabled: viewModel.selectedChores.isEmpty) {
                     await viewModel.creatDefoultChores()
-                    viewModel.goToNextView()
+                    
+                    if !viewModel.isLoading {
+                        viewModel.goToNextView()
+                    }
                 }
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
@@ -84,6 +99,80 @@ struct SelectChoresOnboardingView: View {
         }
         .task {
             rooms = await viewModel.fetchRooms()
+        }
+    }
+}
+
+// MARK: - Private subviews
+
+/// A collapsible room section listing the default chores the user can pick.
+private struct SelectChoreListItem: View {
+    @Binding var viewModel: OnboardingViewModel
+    
+    @Binding var room: RoomModel
+
+    @State var isExpanded: Bool = false
+    @State var defaultChores: [ChoreDTO] = []
+    
+    let height: CGFloat
+    let width: CGFloat
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                
+                Text(room.name)
+                    .font(.system(size: 24))
+                    .bold()
+                    .padding(.bottom, height * 0.018)
+                
+                Spacer()
+                
+                Button {
+                    isExpanded.toggle()
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                }
+                .fontWeight(.semibold)
+                .foregroundStyle(.black)
+            }
+            
+            Divider()
+            .frame(height: height * 0.001)
+            .overlay(Color.black)
+            
+            if isExpanded {
+                ForEach($defaultChores) { $chore in
+                    Button {
+                        chore.isSelected.toggle()
+                        if chore.isSelected {
+                            if let roomRecordID = room.recordID {
+                                chore.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
+                            }
+                            viewModel.selectedChores.append(chore)
+                        }
+                        else {
+                            viewModel.selectedChores.removeAll { $0.name == chore.name }
+                        }
+                    } label: {
+                        HStack {
+                            Circle()
+                                .background(.clear)
+                                .frame(width: 15, height: 15)
+                                .padding(.trailing, 8)
+                            Text(chore.name)
+                            
+                            Spacer()
+                        }
+                        .foregroundStyle(chore.isSelected ? .blue : .black)
+                    }
+                }
+            }
+        }
+        .task {
+            if let defoultRoom = DefaultRoomsOnboarding(rawValue: room.name) {
+                defaultChores = defoultRoom.defaultChores
+            }
         }
     }
 }
