@@ -30,8 +30,10 @@ struct UserProfilePictureTag: View {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
                     .scaledToFit()
-                    .foregroundStyle(.gray.opacity(0.5))
-                    .frame(width: width * widthMultiplier)
+                    .foregroundStyle(.gray)
+                    .frame(width: 30, height: 30)
+                    .background(.white)
+                    .clipShape(Circle())
             }
         }
     }
