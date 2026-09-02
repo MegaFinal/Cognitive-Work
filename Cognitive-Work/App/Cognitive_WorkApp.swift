@@ -15,13 +15,11 @@ struct Cognitive_WorkApp: App {
     
     var body: some Scene {
         WindowGroup {
-//            if didOnboard {
-//                ContentView()
-//            } else {
-//                Onboarding(didOnboard: $didOnboard)
-//            }
-            
-            WifiCredentialsView()
+            if didOnboard {
+                ContentView()
+            } else {
+                Onboarding(didOnboard: $didOnboard)
+            }
         }
     }
 }
