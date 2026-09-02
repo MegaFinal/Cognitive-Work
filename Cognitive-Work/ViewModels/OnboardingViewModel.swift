@@ -302,11 +302,12 @@ class OnboardingViewModel {
             couponLimit: profile.couponLimit
         )
 
-        if let savedUser = await CloudKitManager.shared.create(sharedUser, zoneID: houseRecordID.zoneID) {
+        if let savedUser = await CloudKitManager.shared.create(sharedUser, zoneID: houseRecordID.zoneID, parent: house.reference(action: .none)) {
             await house.appendUsers([savedUser])
             self.currentUser = savedUser
             self.stateMachine.user = savedUser
             CloudKitManager.shared.setCurrentUser(savedUser)
+            try? await CloudKitManager.shared.createSharedSubscription()
         } else {
             errorMessage = "Erro ao entrar na casa."
         }
