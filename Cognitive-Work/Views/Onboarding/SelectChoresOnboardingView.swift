@@ -74,28 +74,33 @@ struct SelectChoresOnboardingView: View {
                                 .progressViewStyle(CircularProgressViewStyle())
                 }
                 else {
-                    VStack(alignment: .leading) {
-                        ForEach($rooms) { $room in
-                            HStack {
-                                SelectChoreListItem(viewModel: $viewModel, room: $room, height: height, width: width)
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading) {
+                            ForEach($rooms) { $room in
+                                HStack {
+                                    SelectChoreListItem(viewModel: $viewModel, room: $room, height: height, width: width)
+                                }
+                                .padding(.bottom, height * 0.07)
                             }
-                            .padding(.bottom, height * 0.07)
                         }
                     }
+                    .frame(height: .infinity)
                 }
-                
-                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading ,isDisabled: viewModel.selectedChores.isEmpty) {
-                    await viewModel.creatDefoultChores()
-                    
-                    if !viewModel.isLoading {
-                        viewModel.goToNextView()
-                    }
-                }
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
             .padding(.horizontal, width * 0.086)
             .navigationBarBackButtonHidden()
+        }
+        .overlay {
+            OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading ,isDisabled: viewModel.selectedChores.isEmpty) {
+                await viewModel.creatDefoultChores()
+                
+                if !viewModel.isLoading {
+                    viewModel.goToNextView()
+                }
+            }
+            .multilineTextAlignment(.trailing)
+            .frame(maxWidth: .infinity,maxHeight: .infinity,alignment: .bottomTrailing)
+            .padding(.trailing, 20)
         }
         .task {
             rooms = await viewModel.fetchRooms()
