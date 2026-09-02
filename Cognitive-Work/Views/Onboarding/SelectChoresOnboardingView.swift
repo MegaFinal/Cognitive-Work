@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// Seventh onboarding step, where the user picks the chores that are split
 /// equally between every resident of the house.
@@ -145,6 +146,9 @@ private struct SelectChoreListItem: View {
                     Button {
                         chore.isSelected.toggle()
                         if chore.isSelected {
+                            if let roomRecordID = room.recordID {
+                                chore.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
+                            }
                             viewModel.selectedChores.append(chore)
                         }
                         else {

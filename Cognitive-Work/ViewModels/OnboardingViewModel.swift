@@ -249,6 +249,7 @@ class OnboardingViewModel {
     }
     
     func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async {
+        isLoading = true
         var availableTime: [AvailableTimeModel] = []
         
         for dayOfWeek in daysOfWeekDTO {
@@ -260,6 +261,7 @@ class OnboardingViewModel {
             )
         }
         await currentUser?.setAvailableTimes(availableTime)
+        isLoading = false
     }
     
     func fetchHouse() async {
