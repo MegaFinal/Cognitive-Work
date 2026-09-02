@@ -34,6 +34,9 @@ struct Onboarding: View {
                     viewModel.stateMachine.flow = .invitedWithoutProfile
                 }
             }
+            .task {
+                await viewModel.restoreProgressIfNeeded()
+            }
     }
     
     // MARK: - Steps

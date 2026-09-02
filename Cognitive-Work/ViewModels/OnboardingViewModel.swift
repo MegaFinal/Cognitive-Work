@@ -245,6 +245,7 @@ class OnboardingViewModel {
     
     func finishOnboarding() {
         isOnboardingSkipped = true
+        stateMachine.resetProgress()
     }
     
     func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async {
@@ -263,5 +264,28 @@ class OnboardingViewModel {
     
     func fetchHouse() async {
         currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
+    }
+
+    /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
+    /// when onboarding resumes on a fresh launch (see ``restoreProgressIfNeeded()``).
+    func fetchCurrentUser() async {
+        currentUser = try? await CloudKitManager.shared.fetchFirst(UserModel.self)
+    }
+
+    /// Re-hydrates ``currentUser`` and ``currentHouse`` after the app relaunches mid-onboarding.
+    ///
+    /// ``OnboardingStateMachine`` persists which step the user is on, but ``currentUser`` and
+    /// ``currentHouse`` live only in memory and are lost when the process ends. Steps past
+    /// profile/house creation read those two properties directly, so without this they'd load
+    /// a blank screen after a relaunch. Call once when ``Onboarding`` first appears.
+    func restoreProgressIfNeeded() async {
+        guard stateMachine.index > 0 else { return }
+
+        if currentUser == nil {
+            await fetchCurrentUser()
+        }
+        if currentHouse == nil {
+            await fetchHouse()
+        }
     }
 }
