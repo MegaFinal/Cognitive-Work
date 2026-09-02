@@ -16,6 +16,7 @@ struct InviteUsersOnboardingView: View {
     @State private var resolvendoShare = false
     @State private var shareURL: URL? = nil
     @State private var isLoading = true
+    @State private var houseUsers: [UserModel] = []
     
     var width: CGFloat = UIScreen.main.bounds.width * 0.5
     var height: CGFloat = UIScreen.main.bounds.height * 0.06
@@ -28,6 +29,10 @@ struct InviteUsersOnboardingView: View {
                 .frame(width: width * 1.5)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.gray)
+            
+            if !houseUsers.isEmpty {
+                joinedUsers
+            }
             
             
             HStack {
@@ -75,6 +80,11 @@ struct InviteUsersOnboardingView: View {
             
         }
         .navigationBarBackButtonHidden()
+        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            Task {
+                houseUsers = await viewModel.fetchHouseUsers()
+            }
+        }
         .task {
             print("currentHouse:", viewModel.currentHouse as Any)
             print("recordID:", viewModel.currentHouse?.recordID as Any)
@@ -91,6 +101,19 @@ struct InviteUsersOnboardingView: View {
                 }
             } catch {
                 print("Erro ao gerar link: \(error.localizedDescription)")
+            }
+            
+            houseUsers = await viewModel.fetchHouseUsers()
+        }
+    }
+    
+    // MARK: - Subviews
+    
+    /// Avatars of the house members who have already joined.
+    private var joinedUsers: some View {
+        HStack(spacing: -12) {
+            ForEach(houseUsers) { user in
+                UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: 0.1)
             }
         }
     }
