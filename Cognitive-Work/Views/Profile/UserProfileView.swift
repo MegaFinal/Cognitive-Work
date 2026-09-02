@@ -8,15 +8,30 @@
 import SwiftUI
 import PhotosUI
 
+/// A screen that displays and manages the current user's profile.
+///
+/// `UserProfileView` is responsible for loading the current user's information from CloudKit
+/// through ``UserProfileViewModel`` and presenting it in a form-based interface.
+///
+/// The screen supports:
+/// - Viewing and editing the user's display name.
+/// - Viewing and changing the profile picture.
+/// - Displaying information about the user's house.
+/// - Navigating to the hardware Wi-Fi connection flow.
+/// - Deleting the current user's account.
+///
+
 struct UserProfileView: View {
     @State private var viewModelUser = UserProfileViewModel()
     @State private var viewModelHouse = HouseEditViewModel()
     
+    /// Converts the currently displayed profile picture data into a `UIImage`. During editing this uses the temporary selected image; otherwise it displays the image stored in CloudKit.
     private var displayedUIImage: UIImage? {
         guard let data = viewModelUser.displayedImageData else { return nil }
         return UIImage(data: data)
     }
     
+    // MARK: - View
     var body: some View {
         NavigationStack {
             Group {
@@ -51,6 +66,8 @@ struct UserProfileView: View {
                         Section("Minha Casa") {
                             // FIXME: Change for the house name if it exists
                             Text("Nome da casa")
+                            
+                            // MARK: Delete house button
                             HouseEditView(viewModel: viewModelHouse)
                         }
                         
@@ -65,10 +82,12 @@ struct UserProfileView: View {
                 }
             }
         }
-//        .navigationTitle("Perfil")
+        
+        // MARK: Task
         .task{
             await viewModelUser.loadUser()
         }
+        
         .toolbar {
             profileEditToolbar(viewModel: viewModelUser)
         }
@@ -95,6 +114,8 @@ struct UserProfileView: View {
     }
     
     //MARK: ToolBarContent
+    /// Toolbar used by ``UserProfileView`` to switch between viewing and editing modes.
+    
     private struct profileEditToolbar: ToolbarContent {
         @Bindable var viewModel: UserProfileViewModel
         
@@ -125,7 +146,7 @@ struct UserProfileView: View {
                         viewModel.startEditing()
                     }
                 }
-                
+                // MARK: Delete account button
                 ToolbarItem (placement: .cancellationAction) {
                     DeleteAccountButton(viewModel: viewModel)
                         .foregroundStyle(.red)
