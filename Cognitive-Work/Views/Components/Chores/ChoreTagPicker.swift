@@ -85,7 +85,7 @@ struct ChoreTagPicker: View {
             if let recordID = newRoom?.recordID {
                 chore.roomReference = CKRecord.Reference(recordID: recordID, action: .none)
             } else {
-                chore.roomReference = nil
+                chore.room = nil
             }
         }
     }

@@ -85,7 +85,7 @@ struct SelectChoresOnboardingView: View {
                 }
                 
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading ,isDisabled: viewModel.selectedChores.isEmpty) {
-                    await viewModel.creatDefoultChores()
+                    await viewModel.createDefaultChores()
                     
                     if !viewModel.isLoading {
                         viewModel.goToNextView()

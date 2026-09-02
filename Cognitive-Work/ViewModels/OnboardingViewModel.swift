@@ -208,29 +208,40 @@ class OnboardingViewModel {
     /// Every resident walks through ``SelectChoresOnboardingView`` independently and picks
     /// from the same default chore list per room, so without this check the same chore would
     /// be duplicated once per person who selects it.
-    func creatDefoultChores() async {
+    func createDefaultChores() async {
         isLoading = true
-        for chore in selectedChores {
-            guard let roomReference = chore.roomReference else { continue }
+        
+        if let rooms = await currentHouse?.room {
             
-            let existing = await CloudKitManager.shared.fetchAll(
-                ChoreModel.self,
-                predicate: NSPredicate(format: "room == %@ AND name == %@", roomReference, chore.name)
-            )
-            
-            guard existing.isEmpty else { continue }
-            
-            await CloudKitManager.shared.create(
-                ChoreModel(
-                    name: chore.name,
-                    description: chore.description,
-                    frequency: chore.frequency,
-                    duration: chore.duration,
-                    isPublic: true,
-                    priorityTag: chore.priorityTag
-                ),
-                parent: chore.roomReference
-            )
+            for choreDTO in selectedChores {
+                
+                guard let choreRoom = rooms.first(where: { $0.name == choreDTO.roomDTO.name }) else {
+                    continue
+                }
+                
+                if let recordID = choreRoom.recordID {
+                    let roomReference = CKRecord.Reference(recordID: recordID, action: .none)
+                    
+                    let existing = await CloudKitManager.shared.fetchAll(
+                        ChoreModel.self,
+                        predicate: NSPredicate(format: "room == %@ AND name == %@", roomReference, choreDTO.name)
+                    )
+                    //TODO: Verify vericity of this verification
+                    guard existing.isEmpty else { continue }
+                    
+                    await CloudKitManager.shared.create(
+                        ChoreModel(
+                            name: choreDTO.name,
+                            description: choreDTO.description,
+                            frequency: choreDTO.frequency,
+                            duration: choreDTO.duration,
+                            isPublic: true,
+                            priorityTag: choreDTO.priorityTag
+                        ),
+                        parent: roomReference
+                    )
+                }
+            }
         }
         isLoading = false
     }
@@ -267,13 +278,13 @@ class OnboardingViewModel {
     func fetchHouse() async {
         currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
     }
-
+    
     /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
     /// when onboarding resumes on a fresh launch (see ``restoreProgressIfNeeded()``).
     func fetchCurrentUser() async {
         currentUser = try? await CloudKitManager.shared.fetchFirst(UserModel.self)
     }
-
+    
     /// Re-hydrates ``currentUser`` and ``currentHouse`` after the app relaunches mid-onboarding.
     ///
     /// ``OnboardingStateMachine`` persists which step the user is on, but ``currentUser`` and
@@ -282,7 +293,7 @@ class OnboardingViewModel {
     /// a blank screen after a relaunch. Call once when ``Onboarding`` first appears.
     func restoreProgressIfNeeded() async {
         guard stateMachine.index > 0 else { return }
-
+        
         if currentUser == nil {
             await fetchCurrentUser()
         }
