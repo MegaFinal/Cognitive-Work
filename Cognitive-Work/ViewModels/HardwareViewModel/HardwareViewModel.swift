@@ -20,6 +20,9 @@ class HardwareViewModel {
     var userWifiPassord = ""
     var isPasswordVisible = false
     
+    var users: [UserModel] = []
+    var chores: [ChoreModel] = []
+    
     private var deviceConnectionService = DeviceConnectionService()
     
     var navigateToParingView: Bool = false
@@ -44,21 +47,27 @@ class HardwareViewModel {
         try await deviceConnectionService.sendImageToDevice(imageData: imageData)
     }
     
-    @MainActor func sendChartToESP32(values: [CGFloat], labels: [String], title: String) async throws {
-            let chartView = BarChartView(values: values, labels: labels, title: title)
-            
-            let renderer = ImageRenderer(content: chartView)
-            renderer.scale = 1.0
-            
-            guard let image = renderer.uiImage else {
-                print("Falha ao renderizar o gráfico")
-                return
-            }
-        guard let imageData = image.ditheringBitmap() else {
-                print("Falha ao converter gráfico para o formato do e-paper")
-                return
-            }
-            
-            try await deviceConnectionService.sendImageToDevice(imageData: imageData)
+    @MainActor
+    func sendChartToESP32(users: [UserModel], chores: [ChoreModel], usageEntries: [DailyUsageEntry], startDate: Date) async throws {
+        let chartView = FortnightlyChartRenderView(
+            users: users,
+            chores: chores,
+            usageEntries: usageEntries,
+            startDate: startDate
+        )
+        
+        let renderer = ImageRenderer(content: chartView)
+        renderer.scale = 1.0
+        
+        guard let image = renderer.uiImage else {
+            print("Falha ao renderizar o gráfico")
+            return
         }
+        guard let imageData = image.ditheringBitmap() else {
+            print("Falha ao converter gráfico para o formato do e-paper")
+            return
+        }
+        
+        try await deviceConnectionService.sendImageToDevice(imageData: imageData)
+    }
 }

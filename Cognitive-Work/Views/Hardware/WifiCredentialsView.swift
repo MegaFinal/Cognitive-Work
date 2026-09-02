@@ -43,7 +43,7 @@ struct WifiCredentialsView: View {
             .textFieldStyle(.roundedBorder)
             .padding()
             .navigationDestination(isPresented: $viewModel.navigateToParingView) {
-                DevicePairView(viewModel: viewModel)
+                DevicePairView(hardwareViewModel: viewModel)
             }
             .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }

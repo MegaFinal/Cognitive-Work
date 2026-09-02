@@ -41,6 +41,21 @@ class FortnightlyViewModel {
         isLoading = false
     }
     
+    func setupWithFetch() async {
+        self.users = await CloudKitManager.shared.fetchAll(UserModel.self)
+        self.chores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        
+        dailyAssignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
+
+        let calendar = Calendar.current
+        let today = Date()
+        let weekday = calendar.component(.weekday, from: today)
+        let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
+        self.startDate = calendar.date(byAdding: .day, value: -daysToSubtract, to: today) ?? today
+
+        isLoading = false
+    }
+    
     var usageEntries: [DailyUsageEntry] {
         get async {
             var entries: [DailyUsageEntry] = []
