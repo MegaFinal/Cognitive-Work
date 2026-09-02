@@ -33,7 +33,6 @@ struct ChoresView: View {
                 VStack(spacing: 3) {
                     VStack(spacing: 15) {
                         header
-                        
                         progressSection
                     }
                     
