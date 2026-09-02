@@ -7,9 +7,19 @@
 
 import SwiftUI
 
+/// Onboarding step where the user sets how much free time they have on each
+/// day of the week.
+///
+/// Each row is an ``OnboardingCustomSliderComponent``; the selection is written
+/// to the user record before advancing.
 struct SelectFreeTimeOnboardingView: View {
+
+    // MARK: - Properties
+
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
-    
+
+    /// The seven days rendered as rows, each holding its own free-time choice.
     @State var weekOrder = [
         DayOfWeekDTO(name: "Segunda - Feira", nameAbbreviation: "Seg"),
         DayOfWeekDTO(name: "Terça - Feira", nameAbbreviation:"Ter"),
@@ -20,7 +30,9 @@ struct SelectFreeTimeOnboardingView: View {
         DayOfWeekDTO(name: "Domingo -",nameAbbreviation: "Dom")
     ]
     @State var showAllert: Bool = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width

@@ -23,6 +23,10 @@ import SwiftUI
 /// > selects it in the others. Give each room its own list before replacing the
 /// > mock with real data.
 struct SelectChoresOnboardingView: View {
+
+    // MARK: - Properties
+
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
 
     /// Rooms listed on the screen, each holding its own expansion state.

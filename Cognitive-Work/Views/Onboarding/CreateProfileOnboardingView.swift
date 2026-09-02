@@ -8,12 +8,24 @@
 import SwiftUI
 import PhotosUI
 
+/// Onboarding step where the user picks a profile picture and a display name.
+///
+/// Saves the profile to CloudKit on "Continuar" and only advances once the
+/// record actually comes back.
 struct CreateProfileOnboardingView: View {
+
+    // MARK: - Properties
+
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
     @State private var usernameText: String = ""
+
+    /// Image chosen through the system photo picker, before it is converted.
     @State private var selectedItem: PhotosPickerItem? = nil
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .center, spacing: 58) {
             headerText
