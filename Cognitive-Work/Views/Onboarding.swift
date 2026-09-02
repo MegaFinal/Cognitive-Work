@@ -7,10 +7,22 @@
 
 import SwiftUI
 
+/// Router for the whole onboarding flow.
+///
+/// Renders whichever step ``OnboardingStateMachine`` currently points at, and
+/// hands control over to ``ContentView`` once the flow is finished or skipped.
 struct Onboarding: View {
+
+    // MARK: - Properties
+
+    /// Flips to `true` when onboarding ends, releasing the main app.
     @Binding var didOnboard: Bool
+
+    /// State shared by every step of the flow.
     @State var viewModel = OnboardingViewModel()
-    
+
+    // MARK: - Body
+
     var body: some View {
         stepView(for: viewModel.stateMachine)
             .onChange(of: viewModel.isOnboardingSkipped) {
@@ -24,6 +36,9 @@ struct Onboarding: View {
             }
     }
     
+    // MARK: - Steps
+
+    /// Maps the state machine's current step to its screen.
     @ViewBuilder
     private func stepView(for stateMachine: OnboardingStateMachine) -> some View {
         switch stateMachine.current {
@@ -34,7 +49,7 @@ struct Onboarding: View {
         case .createOrEnterHome:
             CreateOrEnterHouseOnboardingView(viewModel: $viewModel)
         case .waitAcceptLink:
-            EmptyView()
+            WaitAcceptLinkOnboardingView(viewModel: $viewModel)
         case .chooseRooms:
             SelectRoomsOnboardingView(viewModel: $viewModel)
         case .inviteAndConfirmJoin:

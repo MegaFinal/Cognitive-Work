@@ -8,7 +8,15 @@
 import SwiftUI
 import CloudKit
 
+/// Onboarding step where the house owner shares the invite link.
+///
+/// Resolves the CloudKit share on appear and keeps the list of members who
+/// already joined up to date through `.cloudKitDidChange`.
 struct InviteUsersOnboardingView: View {
+
+    // MARK: - Properties
+
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
     @State private var houseShare: CKShare? = nil
@@ -20,7 +28,9 @@ struct InviteUsersOnboardingView: View {
     
     var width: CGFloat = UIScreen.main.bounds.width * 0.5
     var height: CGFloat = UIScreen.main.bounds.height * 0.06
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack{
             OnboardingHeader(title: "Adicione seus roomies!", description: "Envie o convite para os outros moradores da sua casa se juntarem com você no app!")

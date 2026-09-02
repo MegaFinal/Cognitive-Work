@@ -1,3 +1,11 @@
+//
+//  WaitAcceptLinkOnboardingView.swift
+//  Cognitive-Work
+//
+//  Created by Jonas Fernando Nascimento Melo on 01/09/26.
+//
+
+
 import SwiftUI
 
 /// Step shown after the user chooses to join an existing house.
@@ -6,7 +14,12 @@ import SwiftUI
 /// they received, which triggers the system share-acceptance flow. ``Onboarding``
 /// listens for `.didAcceptShare` and moves the flow forward once that happens.
 struct WaitAcceptLinkOnboardingView: View {
+    // MARK: - Properties
+
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
+
+    // MARK: - Body
 
     var body: some View {
         VStack(spacing: 20) {
@@ -31,7 +44,7 @@ struct WaitAcceptLinkOnboardingView: View {
                 viewModel.goToPreviousView()
             }
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, 10)
         .navigationBarBackButtonHidden()
     }
 }

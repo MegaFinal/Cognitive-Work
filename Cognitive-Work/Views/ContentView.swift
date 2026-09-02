@@ -8,10 +8,22 @@
 import SwiftUI
 import CloudKit
 
+/// The app's root screen once onboarding is finished.
+///
+/// Hosts the main tab bar and handles share invitations that arrive while the
+/// user already belongs to a house.
 struct ContentView: View {
+
+    // MARK: - Properties
+
+    /// Whether the "already in a house" warning is being presented.
     @State var showEnviteAcceptAlert: Bool = false
+
+    /// Metadata of the invitation that triggered the warning.
     @State var shareMetadata: CKShare.Metadata? = nil
-    
+
+    // MARK: - Body
+
     var body: some View {
         TabView {
             ChoresView()

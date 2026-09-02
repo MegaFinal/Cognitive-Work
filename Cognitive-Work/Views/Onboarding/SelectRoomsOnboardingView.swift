@@ -19,6 +19,9 @@ import SwiftUI
 ///  Confirming the selection persists the chosen rooms via
 /// ``OnboardingViewModel/saveSelectedRooms()``.
 struct SelectRoomsOnboardingView: View {
+
+    // MARK: - Properties
+
     /// The shared onboarding view model, read from the environment
     @Binding var viewModel: OnboardingViewModel
     
@@ -27,7 +30,9 @@ struct SelectRoomsOnboardingView: View {
     
     /// The two-column grid layout used to display room cards
     var columns = [GridItem(), GridItem()]
-    
+
+    // MARK: - Body
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
