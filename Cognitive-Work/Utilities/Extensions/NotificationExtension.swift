@@ -8,6 +8,7 @@
 import Foundation
 
 extension Notification.Name {
+    static let notAcceptShare = Notification.Name("notAcceptShare")
     static let didAcceptShare = Notification.Name("didAcceptShare")
     static let cloudKitDidChange = Notification.Name("cloudKitDidChange")
 }

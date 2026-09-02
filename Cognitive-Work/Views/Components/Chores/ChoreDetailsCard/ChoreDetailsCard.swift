@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// Represents the detailed back-face view of a chore card.
 ///
@@ -196,9 +197,9 @@ struct ChoreDetailsCard: View {
             Spacer()
             
             if allResponsibleUsers.count == 1 {
-                UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.05)
+                UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.12)
             } else {
-                UserProfilePictureList(chore: chore)
+                UserProfilePictureList(chore: chore, widthMultiplier: 0.12)
             }
             
             NavigationLink {
@@ -253,19 +254,38 @@ private struct ChecklistItemButton: View {
     }
 }
 
-#Preview("ChoreDetails") {
-    let mockChore = ChoreModel(
+// MARK: - Mock class for preview
+fileprivate class MockChoreModel: ChoreModel {
+    var mockUsers: [UserModel] = []
+    var mockChecklist: [CheckItemModel] = []
+    var mockRoom: RoomModel? = nil
+    
+    override var allResponsibleUsers: [UserModel] { get async { mockUsers } }
+    override var checkList: [CheckItemModel] { get async { mockChecklist } }
+    override var room: RoomModel? { get async { mockRoom } }
+}
+
+#Preview("UserChoresView") {
+    let mockImageData = UIImage(named: "defaultUser")?.pngData()
+    let user1 = UserModel(name: "Dayô", profilePicture: mockImageData, tier: .tier1)
+    let user2 = UserModel(name: "João", profilePicture: mockImageData, tier: .tier2)
+    
+    let room1 = RoomModel(name: "Banheiro", color: .blue)
+        
+    let chore1 = MockChoreModel(
         name: "Lavar o Banheiro",
-        description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Tarefa essencial para manter a higiene da suíte.",
-        isDone: false,
-        frequency: .weekly,
-        duration: 1800,
-        isPublic: true,
-        priorityTag: .urgent
+        description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Não esquecer de repor o papel higiênico e esvaziar a lixeira no final.",
+        isDone: false, frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent
     )
-    mockChore.symbolName = "toilet"
+    chore1.symbolName = "toilet"
+    chore1.mockUsers = [user1, user2]
+    chore1.mockChecklist = [
+        CheckItemModel(name: "Lavar o vaso sanitário", isDone: true),
+        CheckItemModel(name: "Limpar o espelho sem manchas", isDone: false),
+        CheckItemModel(name: "Esvaziar a lixeira", isDone: false)
+    ]
+    chore1.mockRoom = room1
+    let carousel = CarouselViewModel()
     
-    let carouselVM = CarouselViewModel()
-    
-    return ChoreDetailsCard(chore: mockChore, carouselViewModel: carouselVM)
+    return ChoreDetailsCard(chore: chore1, carouselViewModel: carousel)
 }

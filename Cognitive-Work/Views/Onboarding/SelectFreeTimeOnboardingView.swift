@@ -7,9 +7,19 @@
 
 import SwiftUI
 
+/// Onboarding step where the user sets how much free time they have on each
+/// day of the week.
+///
+/// Each row is an ``OnboardingCustomSliderComponent``; the selection is written
+/// to the user record before advancing.
 struct SelectFreeTimeOnboardingView: View {
+
+    // MARK: - Properties
+
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
-    
+
+    /// The seven days rendered as rows, each holding its own free-time choice.
     @State var weekOrder = [
         DayOfWeekDTO(name: "Segunda - Feira", nameAbbreviation: "Seg"),
         DayOfWeekDTO(name: "Terça - Feira", nameAbbreviation:"Ter"),
@@ -19,7 +29,10 @@ struct SelectFreeTimeOnboardingView: View {
         DayOfWeekDTO(name: "Sabado -", nameAbbreviation: "Sab"),
         DayOfWeekDTO(name: "Domingo -",nameAbbreviation: "Dom")
     ]
-    
+    @State var showAllert: Bool = false
+
+    // MARK: - Body
+
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
@@ -42,8 +55,8 @@ struct SelectFreeTimeOnboardingView: View {
                     Spacer()
                     Text("30’")
                     Text("1h")
-                    Text("2h’")
-                    Text("3h’")
+                    Text("2h")
+                    Text("3h")
                     Text("4h")
                     Text("5h")
                 }
@@ -56,7 +69,7 @@ struct SelectFreeTimeOnboardingView: View {
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width)
                 }
                 
-                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
+                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading,isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })) {
                     await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder)
                     viewModel.goToNextView()
                 }

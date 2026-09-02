@@ -63,3 +63,6 @@ fastlane/test_output
 .DS_Store
 # Arquivos absorvidos pela refatoracao refactoring/reducingComponents
 _to_delete/
+
+# Local-only CloudKit debug/cleanup utilities — destructive, dev-machine only
+Cognitive-Work/Manager/CloudKitManager/DebugExtension.swift

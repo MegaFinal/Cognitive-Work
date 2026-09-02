@@ -154,6 +154,7 @@ class CloudKitManager {
     /// - Returns: `true` if the invitation was accepted successfully; otherwise `false`.
     ///
     /// If the operation fails, ``errorMessage`` contains the failure reason.
+    @discardableResult
     func acceptShare(metadata: CKShare.Metadata) async -> Bool {
         let operation = CKAcceptSharesOperation(
             shareMetadatas: [metadata]
@@ -174,6 +175,36 @@ class CloudKitManager {
 
             container.add(operation)
         }
+    }
+    
+    @discardableResult
+    func leaveCurrentHouse() async -> Bool {
+        guard let house = try? await fetchFirst(HouseModel.self),
+              let record = await fetchRecord(for: house),
+              let share = await fetchShare(for: record)
+        else {
+            return false
+        }
+
+        // O dono não "sai": ele deleta ou para de compartilhar.
+        guard share.recordID.zoneID.ownerName != CKCurrentUserDefaultName else {
+            errorMessage = "Failed to leave house: current user is the owner"
+            return false
+        }
+
+        do {
+            _ = try await sharedDB.deleteRecord(withID: share.recordID)
+            return true
+        } catch {
+            errorMessage = "Failed to leave house: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    @discardableResult
+    func switchHouse(to metadata: CKShare.Metadata) async -> Bool {
+        await leaveCurrentHouse()
+        return await acceptShare(metadata: metadata)
     }
 
     /// Creates database subscriptions for private and shared database changes.
