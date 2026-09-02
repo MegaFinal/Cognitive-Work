@@ -25,6 +25,7 @@ struct UserProfilePictureTag: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * widthMultiplier)
+                    .clipShape(Circle())
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
@@ -33,9 +34,6 @@ struct UserProfilePictureTag: View {
                     .frame(width: width * widthMultiplier)
             }
         }
-        .padding(7)
-        .background(.gray)
-        .clipShape(Circle())
     }
 }
 
@@ -47,5 +45,5 @@ struct UserProfilePictureTag: View {
         profilePicture: mockImageData, tier: .tier1
     )
     
-    UserProfilePictureTag(imageData: mockUser.profilePicture, widthMultiplier: 0.05)
+    UserProfilePictureTag(imageData: mockUser.profilePicture, widthMultiplier: 0.15)
 }

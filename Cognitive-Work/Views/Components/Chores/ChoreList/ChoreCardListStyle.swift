@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import UIKit
 
 /// A compact row representation of a chore, utilized in the vertical list layout mode.
 struct ChoreCardListStyle: View {
@@ -33,29 +34,33 @@ struct ChoreCardListStyle: View {
         ZStack {
             FolderShape(
                 cornerRadius: 25,
-                tabWidth: 90,
+                tabWidth: 95,
                 topCutoutHeight: 38
             )
             .fill(room?.color.uiColor ?? .gray)
             .shadow(color: .black.opacity(0.21), radius: 3.35, x: 0, y: 5)
             
-            HStack(spacing: 35) {
+            HStack(spacing: 30) {
                 Image(systemName: chore.symbolName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.1, height: height * 0.08)
                     .fontWeight(.thin)
                 
-                VStack(alignment: .leading, spacing: 20) {
-                    // MARK: - Responsible users and tags
-                    HStack(spacing: 5) {
-                        if allResponsibleUsers.count == 1 {
-                            UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture, widthMultiplier: 0.01)
-                            
-                        } else {
-                            UserProfilePictureList(chore: chore)
+                VStack(alignment: .leading, spacing: 25) {
+                    HStack(spacing: 3) {
+                        // MARK: - Responsible users
+                        HStack(spacing: -20) {
+                            ForEach($allResponsibleUsers, id: \.recordID) { $user in
+                                UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: 0.08)
+                                    .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
+                            }
+                        }
+                        .task {
+                            allResponsibleUsers = await chore.allResponsibleUsers
                         }
                         
+                        // MARK: - Tags
                         CapsuleTag(
                             tagName: chore.priorityTag.rawValue,
                             tagColor: chore.priorityTag.color,
@@ -104,9 +109,9 @@ struct ChoreCardListStyle: View {
                         }
                     }
                 }
-                .padding(.bottom, 25)
+                .padding(.bottom, 12)
             }
-            .padding(.horizontal, 25)
+            .padding(.horizontal, 28)
         }
         .task {
             room = await chore.room
