@@ -43,7 +43,10 @@ struct ChoresView: View {
                         choreList
                             .zIndex(1000)
                     }
-                    
+                }
+                
+                VStack {
+                    Spacer()
                     ChoresViewButtonsSection()
                 }
                 
@@ -98,17 +101,14 @@ struct ChoresView: View {
         .task(id: [carouselVM.activeIndex, carouselVM.cardModels.count]) {
             await updateActiveRoomColor()
         }
-        .onAppear {
-            Task {
-                if carouselVM.userModels.isEmpty {
-                    await carouselVM.fetchUsers()
-                }
-            }
+        .task {
+            await carouselVM.fetchChores()
+            await carouselVM.fetchUsers()
         }
     }
     
     // MARK: - Subviews
-
+    
     /// Page title alongside the layout toggle control.
     private var header: some View {
         HStack {
@@ -147,7 +147,6 @@ struct ChoresView: View {
                             .presentationCompactAdaptation(.popover)
                     }
                 }
-                
             }
             .glassEffect(
                 .regular.interactive(),
@@ -183,13 +182,14 @@ struct ChoresView: View {
                 }
             }
             .padding(.top, 8)
+            .padding(.bottom, 100)
         }
         .onSwipeDown(action: carouselVM.toggleLayout)
         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
     }
     
     // MARK: - Actions
-
+    
     /// Dismisses the currently focused card based on the active layout mode.
     private func dismissFocusedCard() {
         if carouselVM.layoutMode == .grid {

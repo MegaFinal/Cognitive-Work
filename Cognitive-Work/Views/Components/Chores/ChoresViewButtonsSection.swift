@@ -12,6 +12,7 @@ struct ChoresViewButtonsSection: View {
     
     /// Background cache of all house members used specifically to populate the creation view.
     @State private var houseUsers: [UserModel] = []
+    @State private var showCreateView = false
     
     var body: some View {
         HStack {
@@ -32,7 +33,20 @@ struct ChoresViewButtonsSection: View {
             )
             
             // MARK: - Navigation to create a new task
-            NavigationLink {
+            Button {
+                showCreateView = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.title)
+                    .foregroundColor(.white)
+                    .padding(20)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(
+                .regular.interactive().tint(.black),
+                in: .circle
+            )
+            .navigationDestination(isPresented: $showCreateView) {
                 CreateAndEditChoreView(
                     originalModel: ChoreModel(
                         name: "",
@@ -45,17 +59,7 @@ struct ChoresViewButtonsSection: View {
                     ),
                     availableHouseUsers: houseUsers
                 )
-            } label: {
-                Image(systemName: "plus")
-                    .font(.title)
-                    .foregroundColor(.white)
-                    .padding(20)
             }
-            .buttonStyle(.plain)
-            .glassEffect(
-                .regular.interactive().tint(.black),
-                in: .circle
-            )
         }
         .padding(.horizontal, 30)
         .padding(.bottom)
