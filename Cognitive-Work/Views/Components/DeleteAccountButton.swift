@@ -27,7 +27,7 @@ struct DeleteAccountButton: View {
                    
             }
         }
-        .disabled(viewModel.isSaving || viewModel.user == nil)
+        .disabled(viewModel.isSaving || viewModel.privateUser == nil)
         .confirmationDialog(
             "Tem certeza que deseja apagar sua conta?\nAo deletar a conta você será removido das casas a que pertence",
             isPresented: $showConfirmation,
