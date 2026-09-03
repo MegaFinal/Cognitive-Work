@@ -173,7 +173,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         checkList: [CKRecord.Reference]? = nil,
         currentResponsible: CKRecord.Reference? = nil,
         allResponsibleUsers: [CKRecord.Reference]? = nil,
-        room: CKRecord.Reference? = nil,
+        roomReference: CKRecord.Reference? = nil,
         dailyAssignment: [CKRecord.Reference]? = nil
     ) {
         self.recordID = nil
@@ -191,7 +191,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.checkListReference = checkList
         self.currentResponsibleReference = currentResponsible
         self.allResponsibleUsersReference = allResponsibleUsers
-        self.roomReference = room
+        self.roomReference = roomReference
         self.dailyAssignmentsReference = dailyAssignment
     }
     

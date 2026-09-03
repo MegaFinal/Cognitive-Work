@@ -133,12 +133,11 @@ class HouseModel: CloudKitSyncable {
     
     @discardableResult
     func appendRoom(rooms: [RoomModel]) async -> Bool {
-        for room in rooms {
-            if let recordID = room.recordID {
-                let roomReference = CKRecord.Reference(recordID: recordID, action: .none)
-                roomsReference?.append(roomReference)
-            }
+        let newReferences = rooms.compactMap { room -> CKRecord.Reference? in
+            guard let recordID = room.recordID else { return nil }
+            return CKRecord.Reference(recordID: recordID, action: .none)
         }
+        roomsReference = (roomsReference ?? []) + newReferences
         return await CloudKitManager.shared.update(self)
     }
     

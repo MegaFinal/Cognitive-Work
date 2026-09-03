@@ -69,6 +69,9 @@ final class ChoreDTO: Identifiable {
     var symbolName: String
     
     /// Reference to the room this chore belongs to.
+    var roomDTO: RoomDTO
+    
+    var room: RoomModel?
     var roomReference: CKRecord.Reference?
     
     /// Every user in the rotation for this chore.
@@ -91,6 +94,7 @@ final class ChoreDTO: Identifiable {
         self.priorityTag = .medium
         self.isPublic = false
         self.symbolName = "toilet"
+        self.roomDTO = RoomDTO(name: "Banheiro", symbol: "toilet")
     }
 
     /// Creates a chore draft from an existing ``ChoreModel`` for the editing flow.
@@ -104,7 +108,7 @@ final class ChoreDTO: Identifiable {
         from model: ChoreModel,
         users: [UserModel],
         checklist: [CheckItemDTO],
-        room: RoomModel?
+        room: RoomModel? = nil
     ) {
         self.originalRecordID = model.recordID
         self.name = model.name
@@ -122,6 +126,7 @@ final class ChoreDTO: Identifiable {
         if let roomModel = room, let roomRecordID = roomModel.recordID {
             self.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
         }
+        self.roomDTO = RoomDTO(name: "NoDTO", symbol: "xmark")
     }
 
     /// Creates a chore for the onboarding selection screens.
@@ -137,7 +142,8 @@ final class ChoreDTO: Identifiable {
         description: String,
         frequency: Recurrence,
         duration: Double,
-        priorityTag: PriorityTag
+        priorityTag: PriorityTag,
+        room: RoomDTO
     ) {
         self.name = name
         self.description = description
@@ -146,5 +152,6 @@ final class ChoreDTO: Identifiable {
         self.priorityTag = priorityTag
         self.isPublic = false
         self.symbolName = "toilet"
+        self.roomDTO = room
     }
 }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// A room as presented during onboarding, before it is persisted to CloudKit.
 ///
