@@ -101,7 +101,10 @@ final class UserProfileViewModel {
     
     func saveChanges() async {
         guard let privateUser, let user
-        else { return }
+        else {
+            print("saved not work")
+            return
+        }
         
         isSaving = true
         
