@@ -24,6 +24,7 @@ import PhotosUI
 struct UserProfileView: View {
     @State private var viewModelUser = UserProfileViewModel()
     @State private var viewModelHouse = HouseEditViewModel()
+    @State private var viewModelHardware = HardwareViewModel()
     
     /// Converts the currently displayed profile picture data into a `UIImage`. During editing this uses the temporary selected image; otherwise it displays the image stored in CloudKit.
     private var displayedUIImage: UIImage? {
@@ -74,7 +75,13 @@ struct UserProfileView: View {
                         
                         // MARK: Harware Conection
                         NavigationLink {
-                            WifiCredentialsView()
+                            Group {
+                                if viewModelHardware.hardwareIp != nil {
+                                    ExistingIPView(viewModelHardware: $viewModelHardware, image: displayedUIImage)
+                                } else {
+                                    WifiCredentialsView()
+                                }
+                            }
                         } label: {
                             Text("Conectar com meu Hardware")
                         }
@@ -86,6 +93,7 @@ struct UserProfileView: View {
         // MARK: Task
         .task{
             await viewModelUser.loadUser()
+            await viewModelHardware.fetchIp()
         }
         
         .toolbar {
