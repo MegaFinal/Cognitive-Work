@@ -27,6 +27,11 @@ final class UserProfileViewModel {
         didSet { loadSelectedPhoto() }
     }
     
+    init(user: UserModel? = nil, onAccountDeleted: @escaping () -> Void = {}) {
+        self.user = user
+        self.onAccountDeleted = onAccountDeleted
+    }
+    
     /// Called after a successful account deletion. Forwarded into `DeleteAccountButton`.
     let onAccountDeleted: () -> Void
     
@@ -58,6 +63,10 @@ final class UserProfileViewModel {
     /// > joined a house yet, or the house may have been deleted. Editing the private profile
     /// > keeps working either way.
     func loadUser() async {
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            return
+        }
+        
         isLoading = true
         defer { isLoading = false }
 
@@ -152,7 +161,7 @@ final class UserProfileViewModel {
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
         }
-
+        
         isSaving = false
     }
 }

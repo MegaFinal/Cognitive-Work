@@ -250,8 +250,15 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     func save(from choreDTO: ChoreDTO) async {
         applyEditableFields(from: choreDTO)
         
+        guard let house = await room?.house,
+                let zoneID = house.recordID?.zoneID,
+                let houseReference = await currentResponsible?.houseReference
+        else {return}
+        
+        
         if recordID == nil {
-            guard let createdChore = await CloudKitManager.shared.create(self) else { return }
+            guard let createdChore = await CloudKitManager.shared.create(self, zoneID: zoneID, parent: houseReference)
+            else { return }
             recordID = createdChore.recordID
         }
         
