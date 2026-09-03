@@ -128,9 +128,14 @@ class OnboardingViewModel {
                 couponLimit: user.couponLimit,
             )
             
+            let copyRecordID = CloudKitManager.shared.houseUserRecordID(
+                for: userRecordID,
+                inHouseZone: houseRecordID.zoneID
+            )
+            
             _ = await CloudKitManager.shared.create(
                 userCopy,
-                zoneID: houseRecordID.zoneID,
+                id: copyRecordID,
                 parent: houseCascadeRef
             )
             
@@ -301,8 +306,10 @@ class OnboardingViewModel {
     /// invisible to anyone else's account. This creates a second `UserModel` record — with
     /// the same profile data — directly inside the house's shared zone, links it to the house
     /// (`house` field) and appends it to the house's `users` list, so housemates (including
-    /// the owner) can see this member. ``currentUser`` and the locally persisted "current
-    /// user" record are updated to point at this new, house-linked record.
+    /// the owner) can see this member. ``currentUser`` is updated to point at this new,
+    /// house-linked record; the *persisted* current-user record keeps pointing at the private
+    /// profile, which is the anchor ``CloudKitManager/fetchMyHouseUser()`` derives this copy's
+    /// `recordID` from.
     ///
     /// - Requires ``currentUser`` to already exist (created via ``createUser()``).
     @MainActor
@@ -310,8 +317,7 @@ class OnboardingViewModel {
         await fetchHouse()
         
         guard let house = currentHouse, let houseRecordID = house.recordID,
-              let profile = currentUser, let recordName = currentUser?.recordID?.recordName,
-              let houseZoneID = currentHouse?.recordID?.zoneID
+              let profile = currentUser, let profileRecordID = profile.recordID
         else { return }
         
         isLoading = true
@@ -325,15 +331,18 @@ class OnboardingViewModel {
             coins: profile.coins,
             points: profile.points,
             house: houseReference,
-            couponLimit: profile.couponLimit,
-            recordID: CKRecord.ID(recordName: recordName, zoneID: houseZoneID)
+            couponLimit: profile.couponLimit
         )
         
-        if let savedUser = await CloudKitManager.shared.create(sharedUser, zoneID: houseRecordID.zoneID, parent: house.reference(action: .none)) {
+        let sharedUserID = CloudKitManager.shared.houseUserRecordID(
+            for: profileRecordID,
+            inHouseZone: houseRecordID.zoneID
+        )
+        
+        if let savedUser = await CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none)) {
             await house.appendUsers([savedUser])
             self.currentUser = savedUser
             self.stateMachine.user = savedUser
-            CloudKitManager.shared.setCurrentUser(savedUser)
             try? await CloudKitManager.shared.createSharedSubscription()
         } else {
             errorMessage = "Erro ao entrar na casa."

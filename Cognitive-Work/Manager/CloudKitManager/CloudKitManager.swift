@@ -32,6 +32,10 @@ class CloudKitManager {
 
     /// Name of the custom zone that stores all house data.
     private let zoneName = "HomeEnvironment"
+    
+    /// Suffix appended to a private profile's `recordName` to derive the `recordName` of the
+    /// copy that lives inside a house. See ``houseUserRecordID(for:inHouseZone:)``.
+    private let houseUserSuffix = "-house"
 
     /// The custom zone owned by the current iCloud user.
     ///
@@ -118,6 +122,61 @@ class CloudKitManager {
             return UserModel(record: record)
         } catch {
             errorMessage = "Failed to fetch current user: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    /// The `recordID` a user's in-house copy must be created with.
+    ///
+    /// A person ends up with two `UserModel` records: the private profile created by
+    /// `OnboardingViewModel.createUser()`, and a copy inside the house's zone (created by
+    /// `createHouseAndLinkUser()` for the owner, `joinHouse()` for an invited member). Nothing
+    /// on the records themselves links the two, so the copy's name is *derived* from the
+    /// private one instead — that is the only thing that makes ``fetchMyHouseUser()`` possible
+    /// without a query.
+    ///
+    /// The suffix is what allows the house owner to have both records: their house lives in
+    /// their own private zone, so an identical `recordName` in the same zone would simply be
+    /// the same record.
+    ///
+    /// - Parameters:
+    ///   - privateRecordID: `recordID` of the private profile.
+    ///   - zoneID: Zone the house lives in (`house.recordID.zoneID`).
+    func houseUserRecordID(
+        for privateRecordID: CKRecord.ID,
+        inHouseZone zoneID: CKRecordZone.ID
+    ) -> CKRecord.ID {
+        CKRecord.ID(
+            recordName: privateRecordID.recordName + houseUserSuffix,
+            zoneID: zoneID
+        )
+    }
+
+    /// Fetches this device's own `UserModel` record *inside the current house* — the one
+    /// housemates can see, as opposed to the private profile returned by ``fetchMyUser()``.
+    ///
+    /// Reads the record directly by ID, derived via ``houseUserRecordID(for:inHouseZone:)``,
+    /// so it needs no `CKQuery` and works the same whether the house is owned (private
+    /// database) or joined through a share (shared database).
+    ///
+    /// - Returns: The in-house copy, or `nil` when there is no house yet, the house was
+    ///   deleted, or the copy predates this naming convention.
+    func fetchMyHouseUser() async -> UserModel? {
+        guard let privateRecordID = currentUserRecordID,
+              let houseZoneID = (try? await fetchFirst(HouseModel.self))?.recordID?.zoneID
+        else {
+            return nil
+        }
+
+        let recordID = houseUserRecordID(for: privateRecordID, inHouseZone: houseZoneID)
+        let database = houseZoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+
+        do {
+            return UserModel(record: try await database.record(for: recordID))
+        } catch let error as CKError where error.code == .unknownItem {
+            return nil
+        } catch {
+            errorMessage = "Failed to fetch house user: \(error.localizedDescription)"
             return nil
         }
     }
