@@ -148,7 +148,9 @@ extension CloudKitManager {
     /// - Returns: The users whose `house` reference points at that house. Empty when no house
     ///   is resolved or none match.
     func fetchHouseUsers(of house: HouseModel? = nil) async -> [UserModel] {
-        let resolvedHouse = house ?? (try? await fetchFirst(HouseModel.self))
+        let defaultHosue = try? await fetchFirst(HouseModel.self)
+        let resolvedHouse = house ?? defaultHosue
+        
         guard let houseID = resolvedHouse?.recordID else { return [] }
 
         let reference = CKRecord.Reference(recordID: houseID, action: .none)
