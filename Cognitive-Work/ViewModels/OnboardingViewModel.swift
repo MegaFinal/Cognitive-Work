@@ -205,10 +205,7 @@ class OnboardingViewModel {
     /// waits on the invite screen.
     @MainActor
     func fetchHouseUsers() async -> [UserModel] {
-        guard let houseID = currentHouse?.recordID else { return [] }
-        let reference = CKRecord.Reference(recordID: houseID, action: .none)
-        let predicate = NSPredicate(format: "house == %@", reference)
-        return await CloudKitManager.shared.fetchAll(UserModel.self, predicate: predicate)
+        await CloudKitManager.shared.fetchHouseUsers(of: currentHouse)
     }
     
     @MainActor

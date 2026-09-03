@@ -135,6 +135,27 @@ extension CloudKitManager {
         throw CloudKitErrors.notFound(T.recordType)
     }
 
+    /// Fetches every ``UserModel`` record that belongs to a house, instead of every user
+    /// record visible to the current account.
+    ///
+    /// Onboarding can leave more than one `UserModel` record behind for the same person (the
+    /// profile record created before a house exists, plus the copy saved as a child of the
+    /// house once one is). An unfiltered ``fetchAll(_:predicate:)`` returns both, so any screen
+    /// listing members should go through this instead.
+    ///
+    /// - Parameter house: The house whose members to fetch. Defaults to the current house
+    ///   (via ``fetchFirst(_:)``) when omitted.
+    /// - Returns: The users whose `house` reference points at that house. Empty when no house
+    ///   is resolved or none match.
+    func fetchHouseUsers(of house: HouseModel? = nil) async -> [UserModel] {
+        let resolvedHouse = house ?? (try? await fetchFirst(HouseModel.self))
+        guard let houseID = resolvedHouse?.recordID else { return [] }
+
+        let reference = CKRecord.Reference(recordID: houseID, action: .none)
+        let predicate = NSPredicate(format: "house == %@", reference)
+        return await fetchAll(UserModel.self, predicate: predicate)
+    }
+
     /// Queries the current user's own house zone.
     func fetchPrivate<T: CloudKitSyncable>(
         _ type: T.Type,
