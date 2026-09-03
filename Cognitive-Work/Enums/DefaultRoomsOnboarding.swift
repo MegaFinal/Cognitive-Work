@@ -154,7 +154,7 @@ private extension DefaultRoomsOnboarding {
     }
 
     static var livingRoomChores: [ChoreDTO] {
-        let room = DefaultRoomsOnboarding.bedroom.roomDTO
+        let room = DefaultRoomsOnboarding.livingRoom.roomDTO
         return [
             ChoreDTO(
                 name: "Organizar a sala",
@@ -209,7 +209,7 @@ private extension DefaultRoomsOnboarding {
     }
 
     static var laundryRoomChores: [ChoreDTO] {
-        let room = DefaultRoomsOnboarding.bedroom.roomDTO
+        let room = DefaultRoomsOnboarding.laundryRoom.roomDTO
         return [
             ChoreDTO(
                 name: "Lavar a roupa",
@@ -263,7 +263,7 @@ private extension DefaultRoomsOnboarding {
     }
 
     static var kitchenChores: [ChoreDTO] {
-        let room = DefaultRoomsOnboarding.bedroom.roomDTO
+        let room = DefaultRoomsOnboarding.kitchen.roomDTO
         return [
             ChoreDTO(
                 name: "Lavar a louça",
@@ -317,7 +317,7 @@ private extension DefaultRoomsOnboarding {
     }
 
     static var bathroomChores: [ChoreDTO] {
-        let room = DefaultRoomsOnboarding.bedroom.roomDTO
+        let room = DefaultRoomsOnboarding.bathroom.roomDTO
         return [
             ChoreDTO(
                 name: "Limpar o vaso sanitário",
@@ -371,7 +371,7 @@ private extension DefaultRoomsOnboarding {
     }
 
     static var homeOfficeChores: [ChoreDTO] {
-        let room = DefaultRoomsOnboarding.bedroom.roomDTO
+        let room = DefaultRoomsOnboarding.homeOffice.roomDTO
         return [
             ChoreDTO(
                 name: "Organizar a mesa",

@@ -237,7 +237,8 @@ class OnboardingViewModel {
                             frequency: choreDTO.frequency,
                             duration: choreDTO.duration,
                             isPublic: true,
-                            priorityTag: choreDTO.priorityTag
+                            priorityTag: choreDTO.priorityTag,
+                            roomReference: roomReference
                         ),
                         parent: roomReference
                     )
