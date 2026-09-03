@@ -70,6 +70,7 @@ struct ChoresView: View {
                             isBackgroundClear: true,
                             onSwipeDown: carouselVM.toggleLayout, namespace: cardAnimation
                         )
+                        .padding(.top, 70)
                         Spacer()
                     }
                     .zIndex(2)
@@ -252,6 +253,7 @@ private struct ProgressIndicatorCard: View {
         .frame(width: width * 0.28, height: height * 0.088)
         .background(color)
         .clipShape(RoundedRectangle(cornerRadius: 21))
+        .shadow(color: .black.opacity(0.25), radius: 4.07717, x: 0, y: 1.23551)
     }
 }
 

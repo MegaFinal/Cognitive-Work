@@ -44,12 +44,12 @@ class OnboardingViewModel {
     
     /// The default set of room choices offered to the user, including the trailing "add custom room" entry
     var availableRooms: [RoomDTO] = [
-        RoomDTO(name: "Quarto", symbol: "bed.double"),
-        RoomDTO(name: "Sala de Estar", symbol: "sofa"),
-        RoomDTO(name: "Área de Serviço", symbol: "washer"),
-        RoomDTO(name: "Cozinha", symbol: "cooktop"),
-        RoomDTO(name: "Banheiro", symbol: "toilet"),
-        RoomDTO(name: "Outro", symbol: "plus", isAddButton: true)
+        RoomDTO(name: "Quarto", symbol: "bed.double", color: .green),
+        RoomDTO(name: "Sala de Estar", symbol: "sofa", color: .yellow),
+        RoomDTO(name: "Área de Serviço", symbol: "washer", color: .purple),
+        RoomDTO(name: "Cozinha", symbol: "cooktop", color: .orange),
+        RoomDTO(name: "Banheiro", symbol: "toilet", color: .blue),
+        RoomDTO(name: "Outro", symbol: "plus", isAddButton: true, color: .red)
     ]
     
     var hasSelectedRooms: Bool {

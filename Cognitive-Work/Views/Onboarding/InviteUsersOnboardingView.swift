@@ -28,22 +28,26 @@ struct InviteUsersOnboardingView: View {
     
     var width: CGFloat = UIScreen.main.bounds.width * 0.5
     var height: CGFloat = UIScreen.main.bounds.height * 0.06
+    var editHouse: Bool
 
     // MARK: - Body
 
     var body: some View {
-        VStack{
+        VStack {
             OnboardingHeader(title: "Adicione seus roomies!", description: "Envie o convite para os outros moradores da sua casa se juntarem com você no app!")
             
-            Text("Assim que todos os moradores estiverem no app, clique em continuar. ")
-                .frame(width: width * 1.5)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.gray)
+            Spacer()
             
             if !houseUsers.isEmpty {
                 joinedUsers
             }
             
+            Spacer()
+            
+            Text("Assim que todos os moradores estiverem no app, clique em continuar. ")
+                .frame(width: width * 1.65)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.gray)
             
             HStack {
                 if resolvendoShare {
@@ -75,32 +79,48 @@ struct InviteUsersOnboardingView: View {
                     }
                 }
                 
-                OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
-                    viewModel.goToNextView()
+                if !editHouse {
+                    OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
+                        viewModel.goToNextView()
+                    }
+                    .multilineTextAlignment(.trailing)
                 }
-                .multilineTextAlignment(.trailing)
-                
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .centerLastTextBaseline)
-            .padding(.bottom)
+            .padding(.top)
             
-            OnboardingSkipButton() {
-                viewModel.finishOnboarding()
+            if !editHouse {
+                OnboardingSkipButton() {
+                    viewModel.finishOnboarding()
+                }
             }
-            
         }
-        .navigationBarBackButtonHidden()
+        .navigationBarBackButtonHidden(!editHouse)
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
+                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
                 houseUsers = await viewModel.fetchHouseUsers()
             }
         }
         .task {
+            // MARK: - Mock for preview
+            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+                let mockImage = UIImage(systemName: "person.circle.fill")?.pngData()
+                houseUsers = [
+                    UserModel(name: "Dayô", profilePicture: mockImage, tier: .tier1),
+                    UserModel(name: "Maria", profilePicture: mockImage, tier: .tier1),
+                    UserModel(name: "João", profilePicture: mockImage, tier: .tier1)
+                ]
+                shareURL = URL(string: "https://apple.com")
+                resolvendoShare = false
+                return
+            }
+            
             print("currentHouse:", viewModel.currentHouse as Any)
             print("recordID:", viewModel.currentHouse?.recordID as Any)
             
             guard let house = viewModel.currentHouse else { return }
             
+            resolvendoShare = true
             houseShare = await CloudKitManager.shared.resolveShare(for: house)
             print("share:", houseShare as Any)
             
@@ -114,23 +134,22 @@ struct InviteUsersOnboardingView: View {
             }
             
             houseUsers = await viewModel.fetchHouseUsers()
+            resolvendoShare = false
         }
     }
     
     // MARK: - Subviews
-    
-    /// Avatars of the house members who have already joined.
     private var joinedUsers: some View {
-        HStack(spacing: -12) {
+        HStack(spacing: 20) {
             ForEach(houseUsers) { user in
-                UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: 0.1)
+                UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: 0.15)
             }
         }
     }
 }
 
 #Preview {
-    @Previewable @State var viewModel = OnboardingViewModel()
-    InviteUsersOnboardingView(viewModel: $viewModel)
-        .environment(OnboardingViewModel())
+    @Previewable @State var mockViewModel = OnboardingViewModel()
+    
+    InviteUsersOnboardingView(viewModel: $mockViewModel, editHouse: true)
 }

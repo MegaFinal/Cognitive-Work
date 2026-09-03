@@ -17,20 +17,20 @@ struct ChoresViewButtonsSection: View {
         HStack {
             Spacer()
             
-            Button {
-                // TODO: - Get task from list of unasigned tasks
-            } label: {
-                Image(systemName: "hand.rays")
-                    .font(.title)
-                    .padding(15)
-                    .foregroundColor(.black)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .glassEffect(
-                .regular.interactive(),
-                in: .circle
-            )
+//            Button {
+//                // TODO: - Get task from list of unasigned tasks
+//            } label: {
+//                Image(systemName: "hand.rays")
+//                    .font(.title)
+//                    .padding(15)
+//                    .foregroundColor(.black)
+//                    .contentShape(Circle())
+//            }
+//            .buttonStyle(.plain)
+//            .glassEffect(
+//                .regular.interactive(),
+//                in: .circle
+//            )
             
             // MARK: - Navigation to create a new task
             Button {
