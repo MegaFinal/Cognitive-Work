@@ -21,9 +21,14 @@ struct HouseEditView: View {
                             await viewModel.deleteHouse()
                         }
                     } label: {
-                        Text("Deletar Casa")
-                            .foregroundColor(.red)
+                        if viewModel.isDeleting {
+                            ProgressView()
+                        } else {
+                            Text("Deletar Casa")
+                                .foregroundColor(.red)
+                        }
                     }
+                    .disabled(viewModel.isDeleting)
                 }
             } else if viewModel.isLoading {
                 ProgressView()
@@ -41,6 +46,9 @@ struct HouseEditView: View {
 
 #Preview {
     let house = HouseModel(name: "Casa", description: "Casa para o preview")
+    // The default zone's ownerName is already CKCurrentUserDefaultName, so isAdmin()
+    // resolves to true and the preview renders the delete button.
+    house.recordID = CKRecord.ID(recordName: "preview")
     
     let viewModel = HouseEditViewModel(house: house)
     

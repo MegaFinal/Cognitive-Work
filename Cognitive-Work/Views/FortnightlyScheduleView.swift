@@ -28,7 +28,6 @@ struct FortnightlyScheduleView: View {
             }
         }
         .task {
-            print("Chegou na view")
             await scheduleViewModel.generateSchedule()
         }
     }

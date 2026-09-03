@@ -156,7 +156,7 @@ class HouseModel: CloudKitSyncable {
     
     func reference(action: CKRecord.ReferenceAction) -> CKRecord.Reference? {
         if let recordID {
-            return CKRecord.Reference(recordID: recordID, action: .none)
+            return CKRecord.Reference(recordID: recordID, action: action)
         }
         print("House doesn't have a recordID")
         return nil
@@ -196,4 +196,31 @@ class HouseModel: CloudKitSyncable {
         }
         return nil
     }
+
+    // MARK: - Delete
+
+    /// Deletes this house together with every record still in its CloudKit hierarchy.
+    ///
+    /// The house is the root of a CKShare record hierarchy (see
+    /// ``CloudKitManager/resolveShare(for:)-(HouseModel)``): rooms and users are saved with
+    /// `record.parent` pointing at the house, a room's chores with `parent` pointing at that
+    /// room, and a chore's checklist items with `parent` pointing at that chore. CloudKit
+    /// refuses to delete a hierarchy root while any descendant still references it — that's
+    /// the "Record delete would violate validating reference" error — so every descendant has
+    /// to be deleted in the *same* batch as the house itself.
+    ///
+    /// - Returns: `true` when the house and all its descendants were deleted, `false` if the
+    ///   recordID is missing or CloudKit rejects the batch (see
+    ///   ``CloudKitManager/errorMessage``).
+    @discardableResult
+    func deleteAllChildren() async -> Bool {
+        guard let recordID
+        else {
+            return false
+        }
+        
+        return await CloudKitManager.shared.deleteChildren(of: recordID)
+    }
+    
+    
 }
