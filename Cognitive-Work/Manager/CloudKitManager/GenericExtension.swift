@@ -46,8 +46,8 @@ extension CloudKitManager {
         if let parent {
             record.parent = parent
         }
-
-        let database = zone.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+        
+        let database = recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
 
         do {
             _ = try await database.save(record)

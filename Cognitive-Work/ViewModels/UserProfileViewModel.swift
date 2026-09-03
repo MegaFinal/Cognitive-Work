@@ -49,31 +49,25 @@ final class UserProfileViewModel {
     
     // MARK: - Loading
     
-    /// Fetches the current user's record from CloudKit.
+    /// Fetches both of the current user's records from CloudKit: the private profile and the
+    /// copy that lives inside the house.
     ///
     /// Call from the view's `.task` modifier. Safe to call more than once (e.g. pull-to-refresh).
+    ///
+    /// > Note: ``user`` being `nil` is a normal state — the person may not have created or
+    /// > joined a house yet, or the house may have been deleted. Editing the private profile
+    /// > keeps working either way.
     func loadUser() async {
         isLoading = true
         defer { isLoading = false }
 
         privateUser = await CloudKitManager.shared.fetchMyUser()
 
-        guard let myRecordID = try? await CloudKitManager.shared.container.userRecordID()
-        else {
-            errorMessage = "Não foi possível identificar a conta iCloud."
-            return
-        }
-
-        let predicate = NSPredicate(
-            format: "creatorUserRecordID == %@",
-            CKRecord.Reference(recordID: myRecordID, action: .none)
-        )
-
-        user = await CloudKitManager.shared.fetchShared(UserModel.self, predicate: predicate).first
-
-        if user == nil {
+        if privateUser == nil {
             errorMessage = CloudKitManager.shared.errorMessage
         }
+
+        user = await CloudKitManager.shared.fetchMyHouseUser()
     }
     
     private func loadSelectedPhoto() {
@@ -99,29 +93,33 @@ final class UserProfileViewModel {
         isEditing = false
     }
     
+    /// Writes the edited name and picture to the private profile and, when it exists, to the
+    /// in-house copy as well.
+    ///
+    /// The in-house copy is what housemates see, so both records have to move together — but
+    /// its absence is not an error (see ``loadUser()``), it just means there is no house yet.
     func saveChanges() async {
-        guard let privateUser, let user
-        else {
-            print("saved not work")
+        guard let privateUser else {
+            errorMessage = "Perfil não carregado. Tente novamente."
             return
         }
         
         isSaving = true
         
-        let updatedPrivateUser = privateUser
-        updatedPrivateUser.name = editedName
-        updatedPrivateUser.profilePicture = editedProfilePicture
+        privateUser.name = editedName
+        privateUser.profilePicture = editedProfilePicture
         
-        let updatedUser = user
-        updatedUser.name = editedName
-        updatedUser.profilePicture = editedProfilePicture
+        var success = await CloudKitManager.shared.update(privateUser)
         
-        let privatesuccess = await CloudKitManager.shared.update(updatedPrivateUser)
-        let success = await CloudKitManager.shared.update(updatedUser)
+        if let user {
+            user.name = editedName
+            user.profilePicture = editedProfilePicture
+            
+            let houseSuccess = await CloudKitManager.shared.update(user)
+            success = success && houseSuccess
+        }
         
-        if success && privatesuccess {
-            self.privateUser = updatedPrivateUser
-            self.user = updatedUser
+        if success {
             isEditing = false
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
@@ -132,16 +130,23 @@ final class UserProfileViewModel {
     
     // MARK: - Delete Account
     
+    /// Deletes the private profile and, when it exists, the in-house copy.
     func deleteAccount() async {
-        guard let privateUser, let user
-        else { return }
+        guard let privateUser else {
+            errorMessage = "Perfil não carregado. Tente novamente."
+            return
+        }
 
         isSaving = true
 
-        let privateSuccess = await CloudKitManager.shared.delete(privateUser)
-        let success = await CloudKitManager.shared.delete(user)
+        var success = await CloudKitManager.shared.delete(privateUser)
 
-        if success && privateSuccess {
+        if let user {
+            let houseSuccess = await CloudKitManager.shared.delete(user)
+            success = success && houseSuccess
+        }
+
+        if success {
             CloudKitManager.shared.clearCurrentUser()
             onAccountDeleted()
         } else {
