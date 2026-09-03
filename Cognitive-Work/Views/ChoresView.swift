@@ -43,7 +43,10 @@ struct ChoresView: View {
                         choreList
                             .zIndex(1000)
                     }
-                    
+                }
+                
+                VStack {
+                    Spacer()
                     ChoresViewButtonsSection()
                 }
                 
@@ -98,17 +101,14 @@ struct ChoresView: View {
         .task(id: [carouselVM.activeIndex, carouselVM.cardModels.count]) {
             await updateActiveRoomColor()
         }
-        .onAppear {
-            Task {
-                if carouselVM.userModels.isEmpty {
-                    await carouselVM.fetchUsers()
-                }
-            }
+        .task {
+            await carouselVM.fetchChores()
+            await carouselVM.fetchUsers()
         }
     }
     
     // MARK: - Subviews
-
+    
     /// Page title alongside the layout toggle control.
     private var header: some View {
         HStack {
@@ -147,7 +147,6 @@ struct ChoresView: View {
                             .presentationCompactAdaptation(.popover)
                     }
                 }
-                
             }
             .glassEffect(
                 .regular.interactive(),
@@ -175,21 +174,21 @@ struct ChoresView: View {
     private var choreList: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                let chores = carouselVM.isFilterOn ? carouselVM.filteredChards : carouselVM.chardModelsToDo
-                ForEach(Array(chores.enumerated()), id: \.element.id) { index, chore in
+                ForEach(Array(carouselVM.visibleChores.enumerated()), id: \.element.id) { index, chore in
                     ChoreCardListStyle(chore: chore, namespace: cardAnimation) {
                         carouselVM.focusDetailsImmediately(index)
                     }
                 }
             }
             .padding(.top, 8)
+            .padding(.bottom, 120)
         }
         .onSwipeDown(action: carouselVM.toggleLayout)
         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
     }
     
     // MARK: - Actions
-
+    
     /// Dismisses the currently focused card based on the active layout mode.
     private func dismissFocusedCard() {
         if carouselVM.layoutMode == .grid {
@@ -201,13 +200,13 @@ struct ChoresView: View {
     
     /// Updates the background color of the progress section to match the focused chore's room color.
     private func updateActiveRoomColor() async {
-        guard !carouselVM.cardModels.isEmpty,
-              carouselVM.cardModels.indices.contains(carouselVM.activeIndex) else {
+        guard !carouselVM.visibleChores.isEmpty,
+              carouselVM.visibleChores.indices.contains(carouselVM.activeIndex) else {
             activeRoomColor = .gray
             return
         }
         
-        let centeredChore = carouselVM.cardModels[carouselVM.activeIndex]
+        let centeredChore = carouselVM.visibleChores[carouselVM.activeIndex]
         
         if let room = await centeredChore.room {
             activeRoomColor = room.color.uiColor

@@ -8,10 +8,12 @@
 import Foundation
 import PhotosUI
 import _PhotosUI_SwiftUI
+import CloudKit
 
 @Observable
 final class UserProfileViewModel {
     
+    private(set) var privateUser: UserModel?
     private(set) var user: UserModel?
     private(set) var isLoading: Bool = false
     
@@ -33,12 +35,12 @@ final class UserProfileViewModel {
     }
     
     var displayedImageData: Data? {
-        isEditing ? editedProfilePicture : user?.profilePicture
+        isEditing ? editedProfilePicture : privateUser?.profilePicture
     }
     
     var hasUnsavedChanges: Bool {
-        guard let user else { return false }
-        return editedName != user.name || editedProfilePicture != user.profilePicture
+        guard let privateUser else { return false }
+        return editedName != privateUser.name || editedProfilePicture != privateUser.profilePicture
     }
     
     var canSave: Bool {
@@ -52,14 +54,26 @@ final class UserProfileViewModel {
     /// Call from the view's `.task` modifier. Safe to call more than once (e.g. pull-to-refresh).
     func loadUser() async {
         isLoading = true
-        
-        do {
-            user = try await CloudKitManager.shared.fetchFirst(UserModel.self)
-        } catch {
-            errorMessage = error.localizedDescription
+        defer { isLoading = false }
+
+        privateUser = await CloudKitManager.shared.fetchMyUser()
+
+        guard let myRecordID = try? await CloudKitManager.shared.container.userRecordID()
+        else {
+            errorMessage = "Não foi possível identificar a conta iCloud."
+            return
         }
-        
-        isLoading = false
+
+        let predicate = NSPredicate(
+            format: "creatorUserRecordID == %@",
+            CKRecord.Reference(recordID: myRecordID, action: .none)
+        )
+
+        user = await CloudKitManager.shared.fetchShared(UserModel.self, predicate: predicate).first
+
+        if user == nil {
+            errorMessage = CloudKitManager.shared.errorMessage
+        }
     }
     
     private func loadSelectedPhoto() {
@@ -74,8 +88,8 @@ final class UserProfileViewModel {
     // MARK: - Editing Account
     
     func startEditing() {
-        editedName = user?.name ?? ""
-        editedProfilePicture = user?.profilePicture
+        editedName = privateUser?.name ?? ""
+        editedProfilePicture = privateUser?.profilePicture
         selectedPhotoItem = nil
         isEditing = true
     }
@@ -86,17 +100,24 @@ final class UserProfileViewModel {
     }
     
     func saveChanges() async {
-        guard let user else { return }
+        guard let privateUser, let user
+        else { return }
         
         isSaving = true
         
-        var updatedUser = user
+        let updatedPrivateUser = privateUser
+        updatedPrivateUser.name = editedName
+        updatedPrivateUser.profilePicture = editedProfilePicture
+        
+        let updatedUser = user
         updatedUser.name = editedName
         updatedUser.profilePicture = editedProfilePicture
         
+        let privatesuccess = await CloudKitManager.shared.update(updatedPrivateUser)
         let success = await CloudKitManager.shared.update(updatedUser)
         
-        if success {
+        if success && privatesuccess {
+            self.privateUser = updatedPrivateUser
             self.user = updatedUser
             isEditing = false
         } else {
@@ -109,13 +130,16 @@ final class UserProfileViewModel {
     // MARK: - Delete Account
     
     func deleteAccount() async {
-        guard let user else { return }
+        guard let privateUser, let user
+        else { return }
 
         isSaving = true
 
+        let privateSuccess = await CloudKitManager.shared.delete(privateUser)
         let success = await CloudKitManager.shared.delete(user)
 
-        if success {
+        if success && privateSuccess {
+            CloudKitManager.shared.clearCurrentUser()
             onAccountDeleted()
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."

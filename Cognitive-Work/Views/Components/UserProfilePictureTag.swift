@@ -23,15 +23,17 @@ struct UserProfilePictureTag: View {
             if let imageData, let uiImage = UIImage(data: imageData) {
                 Image(uiImage: uiImage)
                     .resizable()
-                    .scaledToFit()
-                    .frame(width: width * widthMultiplier)
+                    .scaledToFill()
+                    .frame(width: width * widthMultiplier, height: width * widthMultiplier)
                     .clipShape(Circle())
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
                     .scaledToFit()
-                    .foregroundStyle(.gray.opacity(0.5))
-                    .frame(width: width * widthMultiplier)
+                    .foregroundStyle(.gray)
+                    .frame(width: 30, height: 30)
+                    .background(.white)
+                    .clipShape(Circle())
             }
         }
     }

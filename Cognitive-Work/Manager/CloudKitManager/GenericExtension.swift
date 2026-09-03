@@ -29,13 +29,18 @@ extension CloudKitManager {
     @discardableResult
     func create<T: CloudKitSyncable>(
         _ item: T,
+        id: CKRecord.ID? = nil,
         zoneID: CKRecordZone.ID? = nil,
         parent: CKRecord.Reference? = nil
     ) async -> T? {
         await createZoneIfNeeded()
         let zone = zoneID ?? houseZoneID
-        let id = CKRecord.ID(recordName: UUID().uuidString, zoneID: zone)
-        let record = CKRecord(recordType: T.recordType, recordID: id)
+        let recordID = id ?? CKRecord.ID(recordName: UUID().uuidString, zoneID: zone)
+
+        let record = CKRecord(
+            recordType: T.recordType,
+            recordID: recordID
+        )
 
         item.populate(record: record)
         if let parent {
@@ -47,7 +52,7 @@ extension CloudKitManager {
         do {
             _ = try await database.save(record)
             var saved = item
-            saved.recordID = id
+            saved.recordID = recordID
             return saved
         } catch {
             errorMessage = "Failed to create \(T.recordType): \(error.localizedDescription)"
@@ -131,7 +136,7 @@ extension CloudKitManager {
     }
 
     /// Queries the current user's own house zone.
-    private func fetchPrivate<T: CloudKitSyncable>(
+    func fetchPrivate<T: CloudKitSyncable>(
         _ type: T.Type,
         predicate: NSPredicate
     ) async -> [T] {
@@ -147,7 +152,7 @@ extension CloudKitManager {
     }
 
     /// Queries every zone shared with the current user and merges the results.
-    private func fetchShared<T: CloudKitSyncable>(
+    func fetchShared<T: CloudKitSyncable>(
         _ type: T.Type,
         predicate: NSPredicate
     ) async -> [T] {
