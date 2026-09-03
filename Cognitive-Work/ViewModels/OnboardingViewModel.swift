@@ -98,7 +98,7 @@ class OnboardingViewModel {
     /// - On failure, populates ``errorMessage``
     @MainActor
     func createHouseAndLinkUser() async {
-        guard let savedUser = currentUser, let userRecordID = savedUser.recordID else { return }
+        guard let user = currentUser, let userRecordID = user.recordID else { return }
         
         isLoading = true
         errorMessage = nil
@@ -112,11 +112,27 @@ class OnboardingViewModel {
             
             guard let houseRecordID = savedHouse.recordID else { return }
             
-            if let userRecord = await CloudKitManager.shared.fetchRecord(for: savedUser) {
-                userRecord.parent = CKRecord.Reference(recordID: houseRecordID, action: .none)
-                userRecord["house"] = CKRecord.Reference(recordID: houseRecordID, action: .none)
-                _ = await CloudKitManager.shared.update(record: userRecord)
-            }
+            let houseCascadeRef = CKRecord.Reference(recordID: houseRecordID, action: .none)
+            
+            let userCopy = UserModel(
+                name: user.name ,
+                profilePicture: user.profilePicture,
+                tier: user.tier,
+                coins: user.coins,
+                points: user.points,
+                badges: user.badgesReference,
+                tasks: user.choresReference,
+                availableTime: user.availableTimeReference,
+                house: houseCascadeRef,
+                coupons: user.couponsReference,
+                couponLimit: user.couponLimit,
+            )
+            
+            _ = await CloudKitManager.shared.create(
+                userCopy,
+                zoneID: houseRecordID.zoneID,
+                parent: houseCascadeRef
+            )
             
             try? await CloudKitManager.shared.createSharedSubscription()
             
@@ -189,10 +205,7 @@ class OnboardingViewModel {
     /// waits on the invite screen.
     @MainActor
     func fetchHouseUsers() async -> [UserModel] {
-        guard let houseID = currentHouse?.recordID else { return [] }
-        let reference = CKRecord.Reference(recordID: houseID, action: .none)
-        let predicate = NSPredicate(format: "house == %@", reference)
-        return await CloudKitManager.shared.fetchAll(UserModel.self, predicate: predicate)
+        await CloudKitManager.shared.fetchHouseUsers(of: currentHouse)
     }
     
     @MainActor
@@ -280,7 +293,7 @@ class OnboardingViewModel {
     func fetchHouse() async {
         currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
     }
-
+    
     /// Publishes the current user's profile into the house that was just joined via a
     /// CloudKit share invite.
     ///
@@ -295,15 +308,15 @@ class OnboardingViewModel {
     @MainActor
     func joinHouse() async {
         await fetchHouse()
-
+        
         guard let house = currentHouse, let houseRecordID = house.recordID,
               let profile = currentUser, let recordName = currentUser?.recordID?.recordName,
               let houseZoneID = currentHouse?.recordID?.zoneID
         else { return }
-
+        
         isLoading = true
         errorMessage = nil
-
+        
         let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
         let sharedUser = UserModel(
             name: profile.name,
@@ -315,7 +328,7 @@ class OnboardingViewModel {
             couponLimit: profile.couponLimit,
             recordID: CKRecord.ID(recordName: recordName, zoneID: houseZoneID)
         )
-
+        
         if let savedUser = await CloudKitManager.shared.create(sharedUser, zoneID: houseRecordID.zoneID, parent: house.reference(action: .none)) {
             await house.appendUsers([savedUser])
             self.currentUser = savedUser
@@ -325,10 +338,10 @@ class OnboardingViewModel {
         } else {
             errorMessage = "Erro ao entrar na casa."
         }
-
+        
         isLoading = false
     }
-
+    
     /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
     /// when onboarding resumes on a fresh launch (see ``restoreProgressIfNeeded()``).
     func fetchCurrentUser() async {

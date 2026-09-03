@@ -76,7 +76,7 @@ class FortnightlyViewModel {
     /// Fetches all users, chores, and daily assignments directly from CloudKit,
     /// and initializes the fortnightly time frame.
     func setupWithFetch() async {
-        let fetchedUsers = await CloudKitManager.shared.fetchAll(UserModel.self)
+        let fetchedUsers = await CloudKitManager.shared.fetchHouseUsers()
         let fetchedChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         
         await setup(users: fetchedUsers, chores: fetchedChores)

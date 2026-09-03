@@ -17,7 +17,7 @@ final class FortnightlyScheduleViewModel {
     var isLoading = true
 
     private func setup() async {
-        self.users = await CloudKitManager.shared.fetchAll(UserModel.self)
+        self.users = await CloudKitManager.shared.fetchHouseUsers()
         self.chores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
     }
     
