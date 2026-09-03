@@ -54,11 +54,11 @@ struct UserProfileView: View {
                     // MARK: User Information
                     Section("Nome") {
                         if viewModelUser.isEditing {
-                            TextField(viewModelUser.user?.name ?? "", text: $viewModelUser.editedName)
+                            TextField(viewModelUser.privateUser?.name ?? "", text: $viewModelUser.editedName)
                                 .textInputAutocapitalization(.words)
                         }
                         else {
-                            Text(viewModelUser.user?.name ?? "")
+                            Text(viewModelUser.privateUser?.name ?? "")
                         }
                     }
                     if !viewModelUser.isEditing {

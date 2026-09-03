@@ -297,7 +297,8 @@ class OnboardingViewModel {
         await fetchHouse()
 
         guard let house = currentHouse, let houseRecordID = house.recordID,
-              let profile = currentUser
+              let profile = currentUser, let recordName = currentUser?.recordID?.recordName,
+              let houseZoneID = currentHouse?.recordID?.zoneID
         else { return }
 
         isLoading = true
@@ -311,7 +312,8 @@ class OnboardingViewModel {
             coins: profile.coins,
             points: profile.points,
             house: houseReference,
-            couponLimit: profile.couponLimit
+            couponLimit: profile.couponLimit,
+            recordID: CKRecord.ID(recordName: recordName, zoneID: houseZoneID)
         )
 
         if let savedUser = await CloudKitManager.shared.create(sharedUser, zoneID: houseRecordID.zoneID, parent: house.reference(action: .none)) {
