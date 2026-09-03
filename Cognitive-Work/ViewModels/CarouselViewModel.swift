@@ -73,7 +73,7 @@ class CarouselViewModel {
     func fetchUsers() async {
         await MainActor.run { isLoading = true }
         
-        userModels = await CloudKitManager.shared.fetchAll(UserModel.self)
+        userModels = await CloudKitManager.shared.fetchHouseUsers()
         
         await MainActor.run { self.isLoading = false }
     }

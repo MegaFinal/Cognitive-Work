@@ -98,7 +98,7 @@ class OnboardingViewModel {
     /// - On failure, populates ``errorMessage``
     @MainActor
     func createHouseAndLinkUser() async {
-        guard let savedUser = currentUser, let userRecordID = savedUser.recordID else { return }
+        guard let user = currentUser, let userRecordID = user.recordID else { return }
         
         isLoading = true
         errorMessage = nil
@@ -112,11 +112,32 @@ class OnboardingViewModel {
             
             guard let houseRecordID = savedHouse.recordID else { return }
             
-            if let userRecord = await CloudKitManager.shared.fetchRecord(for: savedUser) {
-                userRecord.parent = CKRecord.Reference(recordID: houseRecordID, action: .none)
-                userRecord["house"] = CKRecord.Reference(recordID: houseRecordID, action: .none)
-                _ = await CloudKitManager.shared.update(record: userRecord)
-            }
+            let houseCascadeRef = CKRecord.Reference(recordID: houseRecordID, action: .none)
+            
+            let userCopy = UserModel(
+                name: user.name ,
+                profilePicture: user.profilePicture,
+                tier: user.tier,
+                coins: user.coins,
+                points: user.points,
+                badges: user.badgesReference,
+                tasks: user.choresReference,
+                availableTime: user.availableTimeReference,
+                house: houseCascadeRef,
+                coupons: user.couponsReference,
+                couponLimit: user.couponLimit,
+            )
+            
+            let copyRecordID = CloudKitManager.shared.houseUserRecordID(
+                for: userRecordID,
+                inHouseZone: houseRecordID.zoneID
+            )
+            
+            _ = await CloudKitManager.shared.create(
+                userCopy,
+                id: copyRecordID,
+                parent: houseCascadeRef
+            )
             
             try? await CloudKitManager.shared.createSharedSubscription()
             
@@ -189,10 +210,7 @@ class OnboardingViewModel {
     /// waits on the invite screen.
     @MainActor
     func fetchHouseUsers() async -> [UserModel] {
-        guard let houseID = currentHouse?.recordID else { return [] }
-        let reference = CKRecord.Reference(recordID: houseID, action: .none)
-        let predicate = NSPredicate(format: "house == %@", reference)
-        return await CloudKitManager.shared.fetchAll(UserModel.self, predicate: predicate)
+        await CloudKitManager.shared.fetchHouseUsers(of: currentHouse)
     }
     
     @MainActor
@@ -280,7 +298,7 @@ class OnboardingViewModel {
     func fetchHouse() async {
         currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
     }
-
+    
     /// Publishes the current user's profile into the house that was just joined via a
     /// CloudKit share invite.
     ///
@@ -288,21 +306,23 @@ class OnboardingViewModel {
     /// invisible to anyone else's account. This creates a second `UserModel` record — with
     /// the same profile data — directly inside the house's shared zone, links it to the house
     /// (`house` field) and appends it to the house's `users` list, so housemates (including
-    /// the owner) can see this member. ``currentUser`` and the locally persisted "current
-    /// user" record are updated to point at this new, house-linked record.
+    /// the owner) can see this member. ``currentUser`` is updated to point at this new,
+    /// house-linked record; the *persisted* current-user record keeps pointing at the private
+    /// profile, which is the anchor ``CloudKitManager/fetchMyHouseUser()`` derives this copy's
+    /// `recordID` from.
     ///
     /// - Requires ``currentUser`` to already exist (created via ``createUser()``).
     @MainActor
     func joinHouse() async {
         await fetchHouse()
-
+        
         guard let house = currentHouse, let houseRecordID = house.recordID,
-              let profile = currentUser
+              let profile = currentUser, let profileRecordID = profile.recordID
         else { return }
-
+        
         isLoading = true
         errorMessage = nil
-
+        
         let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
         let sharedUser = UserModel(
             name: profile.name,
@@ -313,20 +333,24 @@ class OnboardingViewModel {
             house: houseReference,
             couponLimit: profile.couponLimit
         )
-
-        if let savedUser = await CloudKitManager.shared.create(sharedUser, zoneID: houseRecordID.zoneID, parent: house.reference(action: .none)) {
+        
+        let sharedUserID = CloudKitManager.shared.houseUserRecordID(
+            for: profileRecordID,
+            inHouseZone: houseRecordID.zoneID
+        )
+        
+        if let savedUser = await CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none)) {
             await house.appendUsers([savedUser])
             self.currentUser = savedUser
             self.stateMachine.user = savedUser
-            CloudKitManager.shared.setCurrentUser(savedUser)
             try? await CloudKitManager.shared.createSharedSubscription()
         } else {
             errorMessage = "Erro ao entrar na casa."
         }
-
+        
         isLoading = false
     }
-
+    
     /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
     /// when onboarding resumes on a fresh launch (see ``restoreProgressIfNeeded()``).
     func fetchCurrentUser() async {

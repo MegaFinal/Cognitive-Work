@@ -62,7 +62,7 @@ struct UserProfileView: View {
                     )
                 }
             }
-            .navigationTitle("") 
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
