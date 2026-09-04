@@ -107,18 +107,26 @@ class OnboardingViewModel {
         
         let userReference = CKRecord.Reference(recordID: userRecordID, action: .none)
         let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference])
-        
         if let savedHouse = await CloudKitManager.shared.create(newHouse) {
+            print("salvou casa")
             self.currentHouse = savedHouse
             self.stateMachine.house = savedHouse
             
-            guard let houseRecordID = savedHouse.recordID else { return }
+            guard let houseRecordID = savedHouse.recordID else {
+                print("sem houseRecordID")
+                return
+            }
             
             let houseCascadeRef = CKRecord.Reference(recordID: houseRecordID, action: .none)
             
+            guard let profilePicture = user.profilePicture else {return}
+            
+            let assetCopy = try? duplicateCKAsset(profilePicture)
+            
+            
             let userCopy = UserModel(
                 name: user.name ,
-                profilePicture: user.profilePicture,
+                profilePicture: assetCopy,
                 tier: user.tier,
                 coins: user.coins,
                 points: user.points,
@@ -129,6 +137,7 @@ class OnboardingViewModel {
                 coupons: user.couponsReference,
                 couponLimit: user.couponLimit,
             )
+            print("make user copy")
             
             let copyRecordID = CloudKitManager.shared.houseUserRecordID(
                 for: userRecordID,
@@ -141,8 +150,12 @@ class OnboardingViewModel {
                 parent: houseCascadeRef
             )
             
+            print("creat user copy")
+            
             try? await CloudKitManager.shared.createSharedSubscription()
             
+            print("creat Subscription")
+
             isLoading = false
         } else {
             errorMessage = "Erro ao criar a casa."
@@ -374,5 +387,15 @@ class OnboardingViewModel {
         if currentHouse == nil {
             await fetchHouse()
         }
+    }
+    
+    private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
+        guard let origem = asset.fileURL else { return nil }
+
+        let destino = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+
+        try FileManager.default.copyItem(at: origem, to: destino)
+        return CKAsset(fileURL: destino)
     }
 }
