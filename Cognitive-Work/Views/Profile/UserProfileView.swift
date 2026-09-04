@@ -24,6 +24,7 @@ import PhotosUI
 struct UserProfileView: View {
     @State private var viewModelUser: UserProfileViewModel
     @State private var viewModelHouse = HouseEditViewModel()
+    @State private var viewModelHardware = HardwareViewModel()
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -38,7 +39,8 @@ struct UserProfileView: View {
             VStack(spacing: 50) {
                 userInfo
                 
-                SettingsButtonsSection(viewModelUser: viewModelUser, viewModelHouse: viewModelHouse)
+                SettingsButtonsSection(viewModelUser: viewModelUser, viewModelHouse: viewModelHouse, viewModelHardware: $viewModelHardware)
+                
                 
                 Spacer()
             }
@@ -62,8 +64,34 @@ struct UserProfileView: View {
                     )
                 }
             }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
+        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        
+        // MARK: Task
+        .task{
+            await viewModelUser.loadUser()
+            await viewModelHardware.fetchIp()
+        }
+        
+        // MARK: Alert if didn't save
+        .alert(
+            "Não foi possível salvar",
+            isPresented: Binding(
+                get: { viewModelUser.errorMessage != nil },
+                set: { if !$0 { viewModelUser.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        }
+        message: {
+            Text(viewModelUser.errorMessage ?? "")
+        }
+        
+        .overlay {
+            if viewModelUser.isSaving {
+                ProgressView()
+            }
         }
     }
     
@@ -107,6 +135,7 @@ struct UserProfileView: View {
 private struct SettingsButtonsSection: View {
     var viewModelUser: UserProfileViewModel
     var viewModelHouse: HouseEditViewModel
+    @Binding var viewModelHardware: HardwareViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
@@ -134,15 +163,25 @@ private struct SettingsButtonsSection: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
-            
-//            Button {}
-//            label: {
-//                Text("Conectar com Hardware")
-//            }
-//            .padding(.leading)
+            NavigationLink {
+                Group {
+                    if viewModelHardware.hardwareIp != nil {
+                        ExistingIPView(
+                            viewModelHardware: $viewModelHardware,
+                            profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+                        )
+                    } else {
+                        WifiCredentialsView()
+                    }
+                }
+            } label: {
+                Text("Conectar com meu Hardware")
+            }
+            .padding(.horizontal)
         }
     }
 }
+
 
 // MARK: - Preview
 #Preview {

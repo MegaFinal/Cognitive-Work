@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// A view that handles hardware device pairing via IP address and transmits rendered chart data to an ESP32 device.
 struct DevicePairView: View {
@@ -21,6 +22,7 @@ struct DevicePairView: View {
     @State private var usageEntries: [DailyUsageEntry] = []
     @State private var startDate: Date = Date()
     @State private var isChartLoading = true
+    @State private var pairingErrorMessage: String?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -35,7 +37,20 @@ struct DevicePairView: View {
             Button {
                 if hardwareViewModel.deviceIP != "" {
                     Task {
-                        try await hardwareViewModel.askForParingCode()
+                        do {
+                            let connected = try await hardwareViewModel.askForParingCode()
+                            
+                            if connected {
+                                let saved = await hardwareViewModel.createIp()
+                                if !saved {
+                                    pairingErrorMessage = hardwareViewModel.errorMessage ?? "Erro ao salvar o IP."
+                                }
+                            } else {
+                                pairingErrorMessage = "Não foi possível parear com o dispositivo."
+                            }
+                        } catch {
+                            pairingErrorMessage = error.localizedDescription
+                        }
                     }
                 }
             } label: {
@@ -50,7 +65,7 @@ struct DevicePairView: View {
                 }
             }.padding(.bottom, 20)
              
-            VStack{
+            VStack {
                 Divider()
                 if isChartLoading {
                     ProgressView("Carregando gráfico...")
@@ -72,9 +87,13 @@ struct DevicePairView: View {
                  
                 Button {
                     Task {
-                        try await hardwareViewModel.sendChartToESP32(
-                            users: users, chores: chores, usageEntries: usageEntries, startDate: startDate
-                        )
+                        do {
+                            try await hardwareViewModel.sendChartToESP32(
+                                users: users, chores: chores, usageEntries: usageEntries, startDate: startDate
+                            )
+                        } catch {
+                            pairingErrorMessage = error.localizedDescription
+                        }
                     }
                 } label: {
                     ZStack {
@@ -90,7 +109,6 @@ struct DevicePairView: View {
         }
         .padding()
         .task {
-            print("setup")
             await fortnightlyViewModel.setupWithFetch()
              
             users = fortnightlyViewModel.users
@@ -98,6 +116,11 @@ struct DevicePairView: View {
             usageEntries = await fortnightlyViewModel.usageEntries
             startDate = fortnightlyViewModel.startDate
             isChartLoading = false
+        }
+        .alert("Ops", isPresented: .constant(pairingErrorMessage != nil)) {
+            Button("OK") { pairingErrorMessage = nil }
+        } message: {
+            Text(pairingErrorMessage ?? "Ocorreu um erro.")
         }
     }
     
