@@ -41,7 +41,7 @@ struct FortnightlyView: View {
             .foregroundColor(.secondary)
             .frame(width: width * 0.8)
             
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 chart
             }
 
@@ -49,6 +49,7 @@ struct FortnightlyView: View {
         }
         .navigationBarBackButtonHidden()
         .frame(width: width * 0.85)
+        .padding(.top, 30)
     }
 
     private var chart: some View {
