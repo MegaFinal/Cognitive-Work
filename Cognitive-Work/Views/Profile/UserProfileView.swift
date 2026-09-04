@@ -22,82 +22,56 @@ import PhotosUI
 ///
 
 struct UserProfileView: View {
-    @State private var viewModelUser = UserProfileViewModel()
+    @State private var viewModelUser: UserProfileViewModel
     @State private var viewModelHouse = HouseEditViewModel()
     @State private var viewModelHardware = HardwareViewModel()
     
-    /// Converts the currently displayed profile picture data into a `UIImage`. During editing this uses the temporary selected image; otherwise it displays the image stored in CloudKit.
-    private var displayedUIImage: UIImage? {
-        guard let data = viewModelUser.displayedImageData else { return nil }
-        return UIImage(data: data)
+    var width = UIScreen.main.bounds.width
+    var height = UIScreen.main.bounds.height
+    
+    init(viewModelUser: UserProfileViewModel = UserProfileViewModel()) {
+        self._viewModelUser = State(initialValue: viewModelUser)
     }
     
     // MARK: - View
     var body: some View {
         NavigationStack {
-            Group {
-                if viewModelUser.isLoading {
-                    ProgressView("Carregando perfil...")
-                }
-                Form {
-                    
-                    // MARK: Profile Picture
-                    Section {
-                        EditableProfileImage(
-                            image: displayedUIImage,
-                            isEditing: viewModelUser.isEditing,
-                            selection: $viewModelUser.selectedPhotoItem
-                        )
+            VStack(spacing: 50) {
+                userInfo
+                
+                SettingsButtonsSection(viewModelUser: viewModelUser, viewModelHouse: viewModelHouse, viewModelHardware: $viewModelHardware)
+                
+                
+                Spacer()
+            }
+            .ignoresSafeArea()
+            .task {
+                await viewModelUser.loadUser()
+            }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    NavigationLink {
+                        EditProfileView(viewModel: viewModelUser)
+                    } label: {
+                        Image(systemName: "pencil")
+                            .foregroundColor(.black)
+                            .contentShape(Circle())
                     }
-                    .listRowBackground(Color.clear)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    
-                    // MARK: User Information
-                    Section("Nome") {
-                        if viewModelUser.isEditing {
-                            TextField(viewModelUser.privateUser?.name ?? "", text: $viewModelUser.editedName)
-                                .textInputAutocapitalization(.words)
-                        }
-                        else {
-                            Text(viewModelUser.privateUser?.name ?? "")
-                        }
-                    }
-                    if !viewModelUser.isEditing {
-                        // MARK: House Information
-                        Section("Minha Casa") {
-                            // FIXME: Change for the house name if it exists
-                            Text("Nome da casa")
-                            
-                            // MARK: Delete house button
-                            HouseEditView(viewModel: viewModelHouse)
-                        }
-                        
-                        
-                        // MARK: Harware Conection
-                        NavigationLink {
-                            Group {
-                                if viewModelHardware.hardwareIp != nil {
-                                    ExistingIPView(viewModelHardware: $viewModelHardware, image: displayedUIImage)
-                                } else {
-                                    WifiCredentialsView()
-                                }
-                            }
-                        } label: {
-                            Text("Conectar com meu Hardware")
-                        }
-                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(
+                        .regular.interactive(),
+                        in: .circle
+                    )
                 }
             }
         }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         
         // MARK: Task
         .task{
             await viewModelUser.loadUser()
             await viewModelHardware.fetchIp()
-        }
-        
-        .toolbar {
-            profileEditToolbar(viewModel: viewModelUser)
         }
         
         // MARK: Alert if didn't save
@@ -121,53 +95,105 @@ struct UserProfileView: View {
         }
     }
     
-    //MARK: ToolBarContent
-    /// Toolbar used by ``UserProfileView`` to switch between viewing and editing modes.
-    
-    private struct profileEditToolbar: ToolbarContent {
-        @Bindable var viewModel: UserProfileViewModel
-        
-        var body: some ToolbarContent {
-            if viewModel.isEditing {
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button{
-                        Task { await viewModel.saveChanges() }
-                    } label:{
-                        Text("Salvar")
-                            .foregroundStyle(.blue)
-                    }
-                    .disabled(viewModel.isSaving || viewModel.editedName.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-                
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancelar") {
-                        viewModel.cancelEditing()
-                    }
-                    .disabled(viewModel.isSaving)
-                }
-            }
+    private var userInfo: some View {
+        ZStack(alignment: .top) {
+            Rectangle()
+                .foregroundColor(.orange)
+                .frame(height: height * 0.26)
+                .shadow(color: .black.opacity(0.14), radius: 16.46937, x: 0, y: 4.68879)
             
-            else{
-                ToolbarItem(placement: .confirmationAction){
-                    Button("Editar") {
-                        viewModel.startEditing()
-                    }
+            VStack(alignment: .center, spacing: 10) {
+                if let data = viewModelUser.displayedImageData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: width * 0.5, height: width * 0.5)
+                        .clipShape(Circle())
+                } else {
+                    Image(systemName: "person.crop.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(.gray)
+                        .frame(width: width * 0.5, height: width * 0.5)
+                        .background(.white)
+                        .clipShape(Circle())
                 }
-                // MARK: Delete account button
-                ToolbarItem (placement: .cancellationAction) {
-                    DeleteAccountButton(viewModel: viewModel)
-                        .foregroundStyle(.red)
-                }
+                
+                Text(viewModelUser.user?.name ?? "")
+                    .font(.title2)
+                    .bold()
+                
+                Text(viewModelUser.user?.tier.rawValue ?? "Ranking")
+                    .font(.title3)
+                    .fontWeight(.light)
             }
+            .padding(.top, (height * 0.25) - (width * 0.25))
         }
     }
 }
 
-// MARK: - Preview
-#Preview("Visualização") {
-    NavigationStack {
-        UserProfileView()
+private struct SettingsButtonsSection: View {
+    var viewModelUser: UserProfileViewModel
+    var viewModelHouse: HouseEditViewModel
+    @Binding var viewModelHardware: HardwareViewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 30) {
+            NavigationLink {
+                GeneralProfileSettingsView(viewModel: viewModelUser)
+            } label: {
+                HStack {
+                    Text("Configurações Gerais")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
+            NavigationLink {
+                HouseSettingsView(viewModel: viewModelHouse)
+            } label: {
+                HStack {
+                    Text("Ajustes da Casa")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
+            NavigationLink {
+                Group {
+                    if viewModelHardware.hardwareIp != nil {
+                        ExistingIPView(
+                            viewModelHardware: $viewModelHardware,
+                            profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+                        )
+                    } else {
+                        WifiCredentialsView()
+                    }
+                }
+            } label: {
+                Text("Conectar com meu Hardware")
+            }
+            .padding(.horizontal)
+        }
     }
 }
 
+
+// MARK: - Preview
+#Preview {
+    let mockImageData = UIImage(named: "defaultUser")?.pngData()
+    let mockUser = UserModel(
+        name: "Dayô Araújo",
+        profilePicture: mockImageData,
+        tier: .tier1
+    )
+    
+    let mockViewModel = UserProfileViewModel(user: mockUser)
+    
+    UserProfileView(viewModelUser: mockViewModel)
+    
+}

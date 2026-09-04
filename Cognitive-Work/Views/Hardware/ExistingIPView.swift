@@ -10,12 +10,13 @@ import SwiftUI
 struct ExistingIPView: View {
     @Binding var viewModelHardware: HardwareViewModel
     
-    var image: UIImage?
+    var profileImage: UIImage?
     
     @State private var errorMessage: String?
     
     var body: some View {
         VStack {
+            
             Button {
                 print("Botão Parear clicado! IP atual: \(viewModelHardware.deviceIP)")
                 
@@ -44,18 +45,17 @@ struct ExistingIPView: View {
                         .foregroundStyle(.white)
                         .font(.title2)
                 }
-            }.padding(.bottom, 20)
-             
-            profileImage
-             
+            }
+            .padding(.bottom, 20)
+            
+            
+            avatarView
+                .frame(width: 100, height: 100)
+            
             Button {
                 Task {
                     do {
-                        guard let image = image else {
-                            errorMessage = "Nenhuma imagem selecionada para enviar."
-                            return
-                        }
-                        try await viewModelHardware.prepareImageForESP32(imageUI: image)
+                        try await viewModelHardware.prepareImageForESP32(view: avatarForDevice)
                     } catch {
                         errorMessage = error.localizedDescription
                     }
@@ -70,7 +70,7 @@ struct ExistingIPView: View {
                         .padding()
                 }
             }
-             
+            
             Button {
                 Task {
                     await viewModelHardware.deleteIp()
@@ -95,27 +95,26 @@ struct ExistingIPView: View {
             Text(errorMessage ?? "Ocorreu um erro.")
         }
     }
-     
-    private var profileImage: some View {
+    
+    private var avatarView: some View {
         Group {
-            if let image = image {
-                Image(uiImage: image)
+            if let profileImage {
+                Image(uiImage: profileImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 100, height: 100)
-                    .background(Color(.systemBackground))
             } else {
-                Circle()
-                    .fill(Color(.systemGray5))
-                    .frame(width: 100, height: 100)
-                    .overlay {
-                        Image(systemName: "person.fill.badge.plus")
-                            .font(.system(size: 65))
-                            .foregroundStyle(.gray)
-                    }
+                Image(systemName: "person.crop.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.gray)
+                    .background(.white)
             }
         }
         .clipShape(Circle())
-        .shadow(radius: 5)
+    }
+    
+    private var avatarForDevice: some View {
+        avatarView
+            .frame(width: 100, height: 100)
     }
 }

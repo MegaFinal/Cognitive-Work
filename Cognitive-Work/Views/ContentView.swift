@@ -31,16 +31,16 @@ struct ContentView: View {
                     Label("Tarefas", systemImage: "checklist")
                 }
              
-            ChoresView()
-                .tabItem {
-                    Label("Compras", systemImage: "basket")
-                }
-
-            ChoresView()
-                .tabItem {
-                    Label("Progresso", systemImage: "figure.2")
-                }
-            
+//            ChoresView()
+//                .tabItem {
+//                    Label("Compras", systemImage: "basket")
+//                }
+//
+//            ChoresView()
+//                .tabItem {
+//                    Label("Progresso", systemImage: "figure.2")
+//                }
+//            
             NavigationStack {
                 UserProfileView()
                     .navigationTitle("Perfil")

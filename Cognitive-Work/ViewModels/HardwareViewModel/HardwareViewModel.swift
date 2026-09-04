@@ -88,17 +88,27 @@ class HardwareViewModel {
         try await hardwareNetworkManager.sendImageToDevice(imageData: imageData)
     }
     
-    /// Prepares and sends a static image to the ESP32.
-    func prepareImageForESP32(imageUI: UIImage?) async throws {
-        guard let image = imageUI else {
-            throw NSError(domain: "HardwareViewModel", code: 1003, userInfo: [NSLocalizedDescriptionKey: "Imagem não fornecida."])
+    /// Prepares and sends a static image (rendered from a SwiftUI View) to the ESP32.
+    func prepareImageForESP32<Content: View>(view: Content) async throws {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1.0
+        
+        guard let image = renderer.uiImage else {
+            throw NSError(
+                domain: "HardwareViewModel",
+                code: 1003,
+                userInfo: [NSLocalizedDescriptionKey: "Falha ao renderizar a view em imagem."]
+            )
         }
         guard let imageData = image.levelBitmap() else {
-            throw NSError(domain: "HardwareViewModel", code: 1004, userInfo: [NSLocalizedDescriptionKey: "Falha ao converter imagem para o formato do e-paper."])
+            throw NSError(
+                domain: "HardwareViewModel",
+                code: 1004,
+                userInfo: [NSLocalizedDescriptionKey: "Falha ao converter imagem para o formato do e-paper."]
+            )
         }
         try await hardwareNetworkManager.sendImageToDevice(imageData: imageData)
     }
-    
     //MARK: - Cloudkit
     
     /// Creates a new IP record only if one doesn't already exist for this IP, avoiding duplicate records.
