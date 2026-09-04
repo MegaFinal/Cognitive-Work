@@ -270,74 +270,75 @@ fileprivate class MockChoreModel: ChoreModel {
     override var currentResponsible: UserModel? { get async { mockCurrentResponsible } }
 }
 
-#Preview("UserChoresView") {
-    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    
-    let user1 = UserModel(name: "Dayô", profilePicture: mockImageData, tier: .tier1)
-    user1.recordID = CKRecord.ID(recordName: "user_1")
-    
-    let user2 = UserModel(name: "João", profilePicture: mockImageData, tier: .tier2)
-    user2.recordID = CKRecord.ID(recordName: "user_2")
-    
-    let user3 = UserModel(name: "Maria", profilePicture: mockImageData, tier: .tier1)
-    user3.recordID = CKRecord.ID(recordName: "user_3")
-    
-    let room1 = RoomModel(name: "Banheiro", color: .blue)
-    let room2 = RoomModel(name: "Cozinha", color: .red)
-    let room3 = RoomModel(name: "Sofa", color: .yellow)
-    
-    let mockVM = CarouselViewModel()
-    
-    let chore1 = MockChoreModel(
-        name: "Lavar o Banheiro",
-        description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Não esquecer de repor o papel higiênico e esvaziar a lixeira no final.",
-        isDone: false, frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent
-    )
-    chore1.symbolName = "toilet"
-    chore1.recordID = CKRecord.ID(recordName: "chore_1")
-    chore1.mockUsers = [user1, user2]
-    chore1.mockCurrentResponsible = user1
-    chore1.mockChecklist = [
-        CheckItemModel(name: "Lavar o vaso sanitário", isDone: true),
-        CheckItemModel(name: "Limpar o espelho sem manchas", isDone: false),
-        CheckItemModel(name: "Esvaziar a lixeira", isDone: false)
-    ]
-    chore1.mockRoom = room1
-    
-    let chore2 = MockChoreModel(
-        name: "Varrer a Sala",
-        description: "Afastar o sofá e a mesa de centro para varrer os cantos. Passar um pano úmido no chão e limpar o pó da estante e da TV.",
-        isDone: true, frequency: .weekly, duration: 1200, isPublic: true, priorityTag: .urgent
-    )
-    chore2.symbolName = "sofa"
-    chore2.recordID = CKRecord.ID(recordName: "chore_2")
-    chore2.mockUsers = [user3]
-    chore2.mockCurrentResponsible = user3
-    chore2.mockChecklist = [
-        CheckItemModel(name: "Afastar o sofá", isDone: true),
-        CheckItemModel(name: "Passar pano úmido", isDone: false)
-    ]
-    chore2.mockRoom = room2
-    
-    let chore3 = MockChoreModel(
-        name: "Preparar o Jantar",
-        description: "Cortar os legumes, temperar a carne e deixar o arroz pronto. Limpar a bancada e guardar os temperos após o uso.",
-        isDone: false, frequency: .daily, duration: 2400, isPublic: true, priorityTag: .low
-    )
-    chore3.symbolName = "frying.pan"
-    chore3.recordID = CKRecord.ID(recordName: "chore_3")
-    chore3.mockUsers = [user1, user2, user3]
-    chore3.mockCurrentResponsible = user2
-    chore3.mockChecklist = [
-        CheckItemModel(name: "Cortar legumes", isDone: true),
-        CheckItemModel(name: "Temperar carne", isDone: false),
-        CheckItemModel(name: "Fazer o arroz", isDone: false),
-        CheckItemModel(name: "Limpar a bancada", isDone: false)
-    ]
-    chore3.mockRoom = room3
-    
-    mockVM.cardModels = [chore1, chore2, chore3]
-    mockVM.userModels = [user1, user2, user3]
-    
-    return ChoresView(carouselVM: mockVM)
-}
+//TODO: make preview work again
+//#Preview("UserChoresView") {
+//    let mockImageData = UIImage(named: "defaultUser")?.pngData()
+//    
+//    let user1 = UserModel(name: "Dayô", profilePicture: mockImageData, tier: .tier1)
+//    user1.recordID = CKRecord.ID(recordName: "user_1")
+//    
+//    let user2 = UserModel(name: "João", profilePicture: mockImageData, tier: .tier2)
+//    user2.recordID = CKRecord.ID(recordName: "user_2")
+//    
+//    let user3 = UserModel(name: "Maria", profilePicture: mockImageData, tier: .tier1)
+//    user3.recordID = CKRecord.ID(recordName: "user_3")
+//    
+//    let room1 = RoomModel(name: "Banheiro", color: .blue)
+//    let room2 = RoomModel(name: "Cozinha", color: .red)
+//    let room3 = RoomModel(name: "Sofa", color: .yellow)
+//    
+//    let mockVM = CarouselViewModel()
+//    
+//    let chore1 = MockChoreModel(
+//        name: "Lavar o Banheiro",
+//        description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Não esquecer de repor o papel higiênico e esvaziar a lixeira no final.",
+//        isDone: false, frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent
+//    )
+//    chore1.symbolName = "toilet"
+//    chore1.recordID = CKRecord.ID(recordName: "chore_1")
+//    chore1.mockUsers = [user1, user2]
+//    chore1.mockCurrentResponsible = user1
+//    chore1.mockChecklist = [
+//        CheckItemModel(name: "Lavar o vaso sanitário", isDone: true),
+//        CheckItemModel(name: "Limpar o espelho sem manchas", isDone: false),
+//        CheckItemModel(name: "Esvaziar a lixeira", isDone: false)
+//    ]
+//    chore1.mockRoom = room1
+//    
+//    let chore2 = MockChoreModel(
+//        name: "Varrer a Sala",
+//        description: "Afastar o sofá e a mesa de centro para varrer os cantos. Passar um pano úmido no chão e limpar o pó da estante e da TV.",
+//        isDone: true, frequency: .weekly, duration: 1200, isPublic: true, priorityTag: .urgent
+//    )
+//    chore2.symbolName = "sofa"
+//    chore2.recordID = CKRecord.ID(recordName: "chore_2")
+//    chore2.mockUsers = [user3]
+//    chore2.mockCurrentResponsible = user3
+//    chore2.mockChecklist = [
+//        CheckItemModel(name: "Afastar o sofá", isDone: true),
+//        CheckItemModel(name: "Passar pano úmido", isDone: false)
+//    ]
+//    chore2.mockRoom = room2
+//    
+//    let chore3 = MockChoreModel(
+//        name: "Preparar o Jantar",
+//        description: "Cortar os legumes, temperar a carne e deixar o arroz pronto. Limpar a bancada e guardar os temperos após o uso.",
+//        isDone: false, frequency: .daily, duration: 2400, isPublic: true, priorityTag: .low
+//    )
+//    chore3.symbolName = "frying.pan"
+//    chore3.recordID = CKRecord.ID(recordName: "chore_3")
+//    chore3.mockUsers = [user1, user2, user3]
+//    chore3.mockCurrentResponsible = user2
+//    chore3.mockChecklist = [
+//        CheckItemModel(name: "Cortar legumes", isDone: true),
+//        CheckItemModel(name: "Temperar carne", isDone: false),
+//        CheckItemModel(name: "Fazer o arroz", isDone: false),
+//        CheckItemModel(name: "Limpar a bancada", isDone: false)
+//    ]
+//    chore3.mockRoom = room3
+//    
+//    mockVM.cardModels = [chore1, chore2, chore3]
+//    mockVM.userModels = [user1, user2, user3]
+//    
+//    return ChoresView(carouselVM: mockVM)
+//}

@@ -369,4 +369,21 @@ class CloudKitManager {
 
         return url
     }
+    
+    func createAsset(from data: Data) -> CKAsset? {
+        //Create a temporary file URL
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+        let temporaryFileURL = temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        
+        do {
+            //Write the Data to the temporary URL
+            try data.write(to: temporaryFileURL)
+            
+            //Initialize and return the CKAsset
+            return CKAsset(fileURL: temporaryFileURL)
+        } catch {
+            print("Failed to write data to temporary file: \(error)")
+            return nil
+        }
+    }
 }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PhotosUI
+import CloudKit
 
 /// A screen that displays and manages the current user's profile.
 ///
@@ -149,7 +150,8 @@ private struct SettingsButtonsSection: View {
     let mockImageData = UIImage(named: "defaultUser")?.pngData()
     let mockUser = UserModel(
         name: "Dayô Araújo",
-        profilePicture: mockImageData,
+        //TODO: Make preview work again
+        profilePicture: nil,
         tier: .tier1
     )
     

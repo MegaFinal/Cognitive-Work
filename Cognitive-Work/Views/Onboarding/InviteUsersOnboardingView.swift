@@ -101,48 +101,48 @@ struct InviteUsersOnboardingView: View {
                 houseUsers = await viewModel.fetchHouseUsers()
             }
         }
-        .task {
-            // MARK: - Mock for preview
-            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-                let mockImage = UIImage(systemName: "person.circle.fill")?.pngData()
-                houseUsers = [
-                    UserModel(name: "Dayô", profilePicture: mockImage, tier: .tier1),
-                    UserModel(name: "Maria", profilePicture: mockImage, tier: .tier1),
-                    UserModel(name: "João", profilePicture: mockImage, tier: .tier1)
-                ]
-                shareURL = URL(string: "https://apple.com")
-                resolvendoShare = false
-                return
-            }
-            
-            print("currentHouse:", viewModel.currentHouse as Any)
-            print("recordID:", viewModel.currentHouse?.recordID as Any)
-            
-            guard let house = viewModel.currentHouse else { return }
-            
-            resolvendoShare = true
-            houseShare = await CloudKitManager.shared.resolveShare(for: house)
-            print("share:", houseShare as Any)
-            
-            do {
-                if let share = houseShare {
-                    let url = try await CloudKitManager.shared.generateShareLink(share: share)
-                    self.shareURL = url
-                }
-            } catch {
-                print("Erro ao gerar link: \(error.localizedDescription)")
-            }
-            
-            houseUsers = await viewModel.fetchHouseUsers()
-            resolvendoShare = false
-        }
+//        .task {
+//            // MARK: - Mock for preview
+//            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+//                let mockImage = UIImage(systemName: "person.circle.fill")?.pngData()
+//                houseUsers = [
+//                    UserModel(name: "Dayô", profilePicture: mockImage, tier: .tier1),
+//                    UserModel(name: "Maria", profilePicture: mockImage, tier: .tier1),
+//                    UserModel(name: "João", profilePicture: mockImage, tier: .tier1)
+//                ]
+//                shareURL = URL(string: "https://apple.com")
+//                resolvendoShare = false
+//                return
+//            }
+//            
+//            print("currentHouse:", viewModel.currentHouse as Any)
+//            print("recordID:", viewModel.currentHouse?.recordID as Any)
+//            
+//            guard let house = viewModel.currentHouse else { return }
+//            
+//            resolvendoShare = true
+//            houseShare = await CloudKitManager.shared.resolveShare(for: house)
+//            print("share:", houseShare as Any)
+//            
+//            do {
+//                if let share = houseShare {
+//                    let url = try await CloudKitManager.shared.generateShareLink(share: share)
+//                    self.shareURL = url
+//                }
+//            } catch {
+//                print("Erro ao gerar link: \(error.localizedDescription)")
+//            }
+//            
+//            houseUsers = await viewModel.fetchHouseUsers()
+//            resolvendoShare = false
+//        }
     }
     
     // MARK: - Subviews
     private var joinedUsers: some View {
         HStack(spacing: 20) {
             ForEach(houseUsers) { user in
-                UserProfilePictureTag(imageData: user.profilePicture, widthMultiplier: 0.15)
+                UserProfilePictureTag(imageData: user.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.15)
             }
         }
     }

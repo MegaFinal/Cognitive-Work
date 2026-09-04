@@ -40,12 +40,25 @@ final class UserProfileViewModel {
     }
     
     var displayedImageData: Data? {
-        isEditing ? editedProfilePicture : privateUser?.profilePicture
+        if isEditing {
+            return editedProfilePicture
+        }
+        
+        if let fileURL = privateUser?.profilePicture?.fileURL {
+            do {
+                return try Data(contentsOf: fileURL)
+            }
+            catch {
+                print("error to convert Image no data")
+                return nil
+            }
+        }
+        return nil
     }
     
     var hasUnsavedChanges: Bool {
         guard let privateUser else { return false }
-        return editedName != privateUser.name || editedProfilePicture != privateUser.profilePicture
+        return editedName != privateUser.name || editedProfilePicture != privateUser.profilePicture?.fileURL?.dataRepresentation
     }
     
     var canSave: Bool {
@@ -69,13 +82,13 @@ final class UserProfileViewModel {
         
         isLoading = true
         defer { isLoading = false }
-
+        
         privateUser = await CloudKitManager.shared.fetchMyUser()
-
+        
         if privateUser == nil {
             errorMessage = CloudKitManager.shared.errorMessage
         }
-
+        
         user = await CloudKitManager.shared.fetchMyHouseUser()
     }
     
@@ -92,7 +105,14 @@ final class UserProfileViewModel {
     
     func startEditing() {
         editedName = privateUser?.name ?? ""
-        editedProfilePicture = privateUser?.profilePicture
+        if let fileURL = privateUser?.profilePicture?.fileURL {
+            do {
+                editedProfilePicture = try Data(contentsOf: fileURL)
+            }
+            catch {
+                print("error to start editing, cannot convert data")
+            }
+        }
         selectedPhotoItem = nil
         isEditing = true
     }
@@ -108,7 +128,8 @@ final class UserProfileViewModel {
     /// The in-house copy is what housemates see, so both records have to move together — but
     /// its absence is not an error (see ``loadUser()``), it just means there is no house yet.
     func saveChanges() async {
-        guard let privateUser else {
+        guard let privateUser
+        else {
             errorMessage = "Perfil não carregado. Tente novamente."
             return
         }
@@ -116,13 +137,19 @@ final class UserProfileViewModel {
         isSaving = true
         
         privateUser.name = editedName
-        privateUser.profilePicture = editedProfilePicture
+        
+        if let editedProfilePicture {
+            privateUser.profilePicture = CloudKitManager.shared.createAsset(from: editedProfilePicture)
+        }
         
         var success = await CloudKitManager.shared.update(privateUser)
         
         if let user {
             user.name = editedName
-            user.profilePicture = editedProfilePicture
+            
+            if let editedProfilePicture {
+                user.profilePicture = CloudKitManager.shared.createAsset(from: editedProfilePicture)
+            }
             
             let houseSuccess = await CloudKitManager.shared.update(user)
             success = success && houseSuccess
@@ -145,16 +172,16 @@ final class UserProfileViewModel {
             errorMessage = "Perfil não carregado. Tente novamente."
             return
         }
-
+        
         isSaving = true
-
+        
         var success = await CloudKitManager.shared.delete(privateUser)
-
+        
         if let user {
             let houseSuccess = await CloudKitManager.shared.delete(user)
             success = success && houseSuccess
         }
-
+        
         if success {
             CloudKitManager.shared.clearCurrentUser()
             onAccountDeleted()
