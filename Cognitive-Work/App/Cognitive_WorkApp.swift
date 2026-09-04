@@ -11,10 +11,15 @@ import SwiftData
 @main
 struct Cognitive_WorkApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @AppStorage("didOnboard") private var didOnboard: Bool = false
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if didOnboard {
+                ContentView()
+            } else {
+                Onboarding(didOnboard: $didOnboard)
+            }
         }
     }
 }

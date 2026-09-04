@@ -6,69 +6,119 @@
 //
 
 import Foundation
+import SwiftUI
 import CloudKit
 
 /// A household task assigned to one or more users and belonging to a room.
-struct ChoreModel: CloudKitSyncable {
-
+@Observable
+class ChoreModel: CloudKitSyncable, Identifiable {
+    var id: UUID = UUID()
+    
     /// CloudKit record type backing this model.
     static let recordType = "ChoreModel"
-
+    
     /// Identifier of the stored record, or `nil` before the chore is saved.
     var recordID: CKRecord.ID?
-
+    
     /// Title shown to the user.
     var name: String
-
+    
     /// Free-form details about how the chore should be done.
     var description: String
     
     var isDone: Bool
-
+    
     /// When the chore is next due, or `nil` when it has no deadline.
     var dueDate: Date?
-
+    
     /// How often the chore repeats.
     var frequency: Recurrence
-
+    
     /// Expected time to complete the chore, in minutes.
     var duration: Double
-
+    
     /// Whether every member of the house can see and claim the chore.
     var isPublic: Bool
-
+    
     /// Whether the chore is past its ``dueDate``.
     var isLate: Bool = false
-
+    
     /// Effort score used to balance workload between users.
     var weight: Int = 0
-
+    
     /// Priority level shown in the UI.
     var priorityTag: PriorityTag
-
+    
     /// Optional illustrative image.
     var image: Data?
-
-    /// References to the chore's ``CheckItemModel`` entries.
-    var checkList: [CKRecord.Reference]?
-
-    /// The user currently responsible for the chore.
-    var currentResponsible: CKRecord.Reference?
-
-    /// Every user in the rotation for this chore.
-    var allResponsibleUsers: [CKRecord.Reference]?
-
-    /// The room this chore belongs to.
-    var room: CKRecord.Reference?
     
-    var dailyAssignments: [CKRecord.Reference]?
-
+    var symbolName: String = "toilet"
+    
+    /// References to the chore's ``CheckItemModel`` entries.
+    var checkListReference: [CKRecord.Reference]?
+    
+    /// The user currently responsible for the chore.
+    var currentResponsibleReference: CKRecord.Reference?
+    
+    /// Every user in the rotation for this chore.
+    var allResponsibleUsersReference: [CKRecord.Reference]?
+    
+    /// The room this chore belongs to.
+    var roomReference: CKRecord.Reference?
+    
+    var dailyAssignmentsReference: [CKRecord.Reference]?
+    
+    var checkList: [CheckItemModel] {
+        get async {
+            if let checkListReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: CheckItemModel.self, recordReferences: checkListReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    var currentResponsible: UserModel? {
+        get async {
+            if let currentResponsibleReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [currentResponsibleReference])?.first
+            }
+            return nil
+        }
+    }
+    
+    var allResponsibleUsers: [UserModel] {
+        get async {
+            if let allResponsibleUsersReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: allResponsibleUsersReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    var room: RoomModel? {
+        get async {
+            if let roomReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [roomReference])?.first
+            }
+            return nil
+        }
+    }
+    
+    var dailyAssignments: [DailyAssignmentModel] {
+        get async {
+            if let dailyAssignmentsReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: DailyAssignmentModel.self, recordReferences: dailyAssignmentsReference) ?? []
+            }
+            return []
+        }
+    }
+    
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
     /// - Returns: `nil` when a required field is missing, has the wrong type, or holds an
     ///   unknown ``Recurrence`` or ``PriorityTag`` value.
-    init?(record: CKRecord) {
+    required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
             let description = record["description"] as? String,
@@ -84,8 +134,9 @@ struct ChoreModel: CloudKitSyncable {
         else {
             return nil
         }
-
+        
         self.recordID = record.recordID
+        
         self.name = name
         self.description = description
         self.isDone = isDone
@@ -97,13 +148,13 @@ struct ChoreModel: CloudKitSyncable {
         self.weight = weight
         self.priorityTag = priorityTag
         self.image = record["image"] as? Data
-        self.checkList = record["checkList"] as? [CKRecord.Reference]
-        self.currentResponsible = record["currentResponsible"] as? CKRecord.Reference
-        self.allResponsibleUsers = record["allResponsibleUsers"] as? [CKRecord.Reference]
-        self.room = record["room"] as? CKRecord.Reference
-        self.dailyAssignments = record["dailyAssignment"] as? [CKRecord.Reference]
+        self.checkListReference = record["checkList"] as? [CKRecord.Reference]
+        self.currentResponsibleReference = record["currentResponsible"] as? CKRecord.Reference
+        self.allResponsibleUsersReference = record["allResponsibleUsers"] as? [CKRecord.Reference]
+        self.roomReference = record["room"] as? CKRecord.Reference
+        self.dailyAssignmentsReference = record["dailyAssignment"] as? [CKRecord.Reference]
     }
-
+    
     /// Creates a new, unsaved chore.
     ///
     /// Relationship parameters are usually filled in after the related records exist.
@@ -122,7 +173,7 @@ struct ChoreModel: CloudKitSyncable {
         checkList: [CKRecord.Reference]? = nil,
         currentResponsible: CKRecord.Reference? = nil,
         allResponsibleUsers: [CKRecord.Reference]? = nil,
-        room: CKRecord.Reference? = nil,
+        roomReference: CKRecord.Reference? = nil,
         dailyAssignment: [CKRecord.Reference]? = nil
     ) {
         self.recordID = nil
@@ -137,13 +188,17 @@ struct ChoreModel: CloudKitSyncable {
         self.weight = weight
         self.priorityTag = priorityTag
         self.image = image
-        self.checkList = checkList
-        self.currentResponsible = currentResponsible
-        self.allResponsibleUsers = allResponsibleUsers
-        self.room = room
-        self.dailyAssignments = dailyAssignment
+        self.checkListReference = checkList
+        self.currentResponsibleReference = currentResponsible
+        self.allResponsibleUsersReference = allResponsibleUsers
+        self.roomReference = roomReference
+        self.dailyAssignmentsReference = dailyAssignment
     }
-
+    
+    func updateCheckItem(_ item: CheckItemModel) async {
+        await CloudKitManager.shared.update(item)
+    }
+    
     /// Writes this model's values into a CloudKit record.
     ///
     /// - Parameter record: The record to populate.
@@ -162,18 +217,72 @@ struct ChoreModel: CloudKitSyncable {
         record["weight"] = weight
         record["priorityTag"] = priorityTag.rawValue
         record["image"] = image
-        if let checkList {
-            record["checkList"] = checkList
+        
+        record["checkList"] = checkListReference?.isEmpty == false ? checkListReference : nil
+        record["currentResponsible"] = currentResponsibleReference
+        record["allResponsibleUsers"] = allResponsibleUsersReference?.isEmpty == false ? allResponsibleUsersReference : nil
+        record["room"] = roomReference
+        record["dailyAssignment"] = dailyAssignmentsReference?.isEmpty == false ? dailyAssignmentsReference : nil
+    }
+    
+    func postpone(byDays days: Int) async {
+        let currentDate = self.dueDate ?? Date()
+        
+        if let newDate = Calendar.current.date(byAdding: .day, value: days, to: currentDate) {
+            self.dueDate = newDate
+            
+            await CloudKitManager.shared.update(self)
         }
-        record["currentResponsible"] = currentResponsible
-        if let allResponsibleUsers {
-            record["allResponsibleUsers"] = allResponsibleUsers
+    }
+    
+    func toggle() async {
+        self.isDone.toggle()
+        await CloudKitManager.shared.update(self)
+    }
+    
+    /// Applies the edits made in `DTO` to this chore and persists everything to CloudKit.
+    ///
+    /// The chore is saved first (if it doesn't exist yet) so it has a `recordID` before its
+    /// checklist items are created. On failure at any step, the method returns early and
+    /// leaves ``CloudKitManager/errorMessage`` set with the reason.
+    ///
+    /// - Parameter choreDTO: The edited values collected by the create/edit screen.
+    func save(from choreDTO: ChoreDTO) async {
+        applyEditableFields(from: choreDTO)
+        
+        guard let house = await room?.house,
+                let zoneID = house.recordID?.zoneID,
+                let houseReference = await currentResponsible?.houseReference
+        else {return}
+        
+        
+        if recordID == nil {
+            guard let createdChore = await CloudKitManager.shared.create(self, zoneID: zoneID, parent: houseReference)
+            else { return }
+            recordID = createdChore.recordID
         }
-        if let room {
-            record["room"] = room
-        }
-        if let dailyAssignments {
-            record["dailyAssignment"] = dailyAssignments
+        
+        guard let choreRecordID = recordID else { return }
+        
+        let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
+        
+        checkListReference = await CheckItemModel.sync(from: choreDTO.checklist, parent: choreReference)
+        
+        await CloudKitManager.shared.update(self)
+    }
+    
+    /// Copies every user-editable field from `choreDTO` onto this chore.
+    private func applyEditableFields(from choreDTO: ChoreDTO) {
+        name = choreDTO.name
+        description = choreDTO.description
+        frequency = choreDTO.frequency
+        duration = choreDTO.duration
+        priorityTag = choreDTO.priorityTag
+        isPublic = choreDTO.isPublic
+        symbolName = choreDTO.symbolName
+        roomReference = choreDTO.roomReference
+        allResponsibleUsersReference = choreDTO.responsibleUsers.compactMap { responsibleUser in
+            responsibleUser.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
         }
     }
 }

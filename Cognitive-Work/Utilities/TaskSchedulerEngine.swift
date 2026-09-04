@@ -9,11 +9,11 @@ import CloudKit
 // MARK: - Engine
 struct TaskSchedulerEngine {
     
-    /// Schedules unassigned and daily chores for all given users within a one-week horizon.
+    /// Schedules unassigned and recurring chores for all given users within a 14-day horizon.
     ///
     /// This method performs the following key steps:
-    /// 1. Filters out daily chores that have already been scheduled to prevent duplicate entries.
-    /// 2. Sorts remaining non-daily chores by their normalized weight.
+    /// 1. Filters out recurring chores that have already been scheduled to prevent duplicate entries.
+    /// 2. Sorts remaining non-recurring chores by their normalized weight.
     /// 3. Distributes tasks among assigned and free chores accordingly.
     /// 4. Commits the final generated schedule results.
     ///
@@ -26,37 +26,40 @@ struct TaskSchedulerEngine {
         
         // Get the start time of the current day (00:00:00)
         let now = Calendar.current.startOfDay(for: Date())
-        // Calculate the date 7 days from today; return if it fails
-        guard let oneWeekLater = Calendar.current.date(byAdding: .day, value: 7, to: now) else { return }
+        // Calculate the date 14 days from today; return if it fails
+        guard let windowEnd = Calendar.current.date(byAdding: .day, value: 14, to: now) else { return }
         
         // Build the scheduling context to calculate environment variables such as user available time, capacity, etc.
         let context = await buildScheduleContext(
             users: users,
             chores: chores,
             now: now,
-            oneWeekLater: oneWeekLater
+            windowEnd: windowEnd
         )
         
-        // Filter out daily chores that need to be scheduled
-        // Condition: not done, daily frequency, and do not yet have generated daily assignment records
-        let dailyChores = chores.filter {
-            !$0.isDone && $0.frequency == .daily && ($0.dailyAssignments ?? []).isEmpty
+        // Define the set of recurring frequencies
+        let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly]
+        
+        // Filter out recurring chores that need to be scheduled
+        // Condition: not done, recurring frequency, and do not yet have generated daily assignment records
+        let recurringChores = chores.filter {
+            !$0.isDone && recurringFrequencies.contains($0.frequency) && ($0.dailyAssignmentsReference ?? []).isEmpty
         }
         
-        // Filter all unfinished chores with no set due date
-        let unassignedChores = chores.filter { !$0.isDone && $0.dueDate == nil }
+        // Filter all unfinished chores with no set due date, excluding monthly tasks from this window
+        let unassignedChores = chores.filter { !$0.isDone && $0.dueDate == nil && $0.frequency != .monthly }
         
-        // Exclude daily frequency chores from the above list, keeping only common chores
-        let nonDailyChores = unassignedChores.filter { $0.frequency != .daily }
+        // Exclude recurring frequency chores from the above list, keeping only common non-recurring chores
+        let nonRecurringChores = unassignedChores.filter { !recurringFrequencies.contains($0.frequency) }
         
         // Sort chores in descending order by weight, higher weights go to the top for priority scheduling
-        let sortedChores = nonDailyChores.sorted { normalizedWeight(chore: $0) > normalizedWeight(chore: $1) }
+        let sortedChores = nonRecurringChores.sorted { normalizedWeight(chore: $0) > normalizedWeight(chore: $1) }
         
         // Divide the sorted chores into two categories:
         // - Chores that already have a specific assigned responsible user
-        let assignedChores = sortedChores.filter { $0.currentResponsible != nil }
+        let assignedChores = sortedChores.filter { $0.currentResponsibleReference != nil }
         // - "Free" chores without a defined responsible person, requiring automatic system assignment
-        let freeChores = sortedChores.filter { $0.currentResponsible == nil }
+        let freeChores = sortedChores.filter { $0.currentResponsibleReference == nil }
         
         // Initialize remaining capacity and minutes already assigned to each user
         var remainingCapacity = context.initialRemainingCapacity()
@@ -65,9 +68,9 @@ struct TaskSchedulerEngine {
         // Store all generated scheduling results
         var allResults: [ScheduleResult] = []
         
-        // Schedule all daily chores
-        allResults += scheduleDailyChores(
-            dailyChores,
+        // Schedule all recurring chores
+        allResults += scheduleRecurringChores(
+            recurringChores,
             users: users,
             context: context,
             now: now,
@@ -80,7 +83,7 @@ struct TaskSchedulerEngine {
             assignedChores,
             context: context,
             now: now,
-            oneWeekLater: oneWeekLater,
+            windowEnd: windowEnd,
             remainingCapacity: &remainingCapacity,
             userAssignedMinutes: &userAssignedMinutes
         )
@@ -91,7 +94,7 @@ struct TaskSchedulerEngine {
             users: users,
             context: context,
             now: now,
-            oneWeekLater: oneWeekLater,
+            windowEnd: windowEnd,
             remainingCapacity: &remainingCapacity,
             userAssignedMinutes: &userAssignedMinutes
         )

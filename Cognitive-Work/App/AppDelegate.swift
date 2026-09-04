@@ -39,7 +39,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         let notification = CKNotification(fromRemoteNotificationDictionary: userInfo)
         
-        if notification?.subscriptionID == "shared-changes" {
+        if notification?.subscriptionID == "shared-changes" || notification?.subscriptionID == "private-changes" {
             NotificationCenter.default.post(name: .cloudKitDidChange, object: nil)
         }
         return .newData
@@ -58,10 +58,4 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         return true
     }
-}
-
-extension Notification.Name {
-    static let didAcceptShare = Notification.Name("didAcceptShare")
-    static let cloudKitDidChange = Notification.Name("cloudKitDidChange")
-    
 }

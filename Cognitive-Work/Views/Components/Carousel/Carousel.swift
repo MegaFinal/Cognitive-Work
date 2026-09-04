@@ -11,30 +11,36 @@ import SwiftUI
 /// `Apply this component on a ZStack bellow the rest of the view's content`
 struct Carousel: View {
     @Bindable var viewModel: CarouselViewModel
+    var isBackgroundClear: Bool
+    let onSwipeDown: () -> Void
+    let namespace: Namespace.ID
     
     var body: some View {
         ZStack {
-            // Clear background that occupies the whole screen to allow
-            // clearing the focus state by tapping the empty space
-            Color.white
-                .onTapGesture {
-                    viewModel.clearFocus()
-                }
+            // Clearing the focus state by tapping the empty space
+            if !isBackgroundClear {
+                Color.white
+                    .onTapGesture {
+                        viewModel.clearFocus()
+                    }
+            }
             
             if viewModel.isLoading {
                 ProgressView("Carregando tarefas")
                     .foregroundStyle(.white)
             }
-            else if viewModel.cardViewModels.isEmpty {
+            else if viewModel.visibleChores.isEmpty {
                 Text("Nenhuma tarefa no momento")
                     .font(.headline)
                     .foregroundStyle(.black)
             }
             else {
-                // Card loop
-                ForEach(Array(viewModel.cardViewModels.enumerated()), id: \.element.id) { index, cardVM in
+                ForEach(Array(viewModel.visibleChores.enumerated()), id: \.element.id) { index, chore in 
                     CarouselCardFrame(
-                        viewModel: cardVM,
+                        chore: chore,
+                        carouselViewModel: viewModel,
+                        namespace: namespace,
+                        isFocused: viewModel.isFocused(index),
                         rotation: viewModel.flipRotation(index),
                         isShowingBack: viewModel.isShowingBack(index)
                     )
@@ -48,9 +54,9 @@ struct Carousel: View {
                     .opacity(viewModel.opacity(index))
                     .onTapGesture {
                         if viewModel.isFocused(index) {
-                            viewModel.flip(index)
+                            viewModel.clearFocus()
                         } else {
-                            viewModel.focus(index)
+                            viewModel.focusAndFlip(index)
                         }
                     }
                 }
@@ -65,28 +71,55 @@ struct Carousel: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task {
-            // Inicia o fetch do CloudKit quando a tela aparece
-            await viewModel.fetchChores()
-        }
+        .frame(maxWidth: .infinity)
+        .onSwipeDown(action: onSwipeDown)
+        .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
     }
 }
 
-#Preview {
-    let carouselVM = CarouselViewModel()
+#Preview("Carousel") {
+    @Previewable @Namespace var namespace
+    let mockVM = CarouselViewModel()
     
-    let mock1 = ChoreModel(name: "Lavar Banheiro", description: "", frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent)
-    let mock2 = ChoreModel(name: "Varrer Chão", description: "", frequency: .daily, duration: 900, isPublic: true, priorityTag: .low)
-    let mock3 = ChoreModel(name: "Arrumar Cama", description: "", frequency: .montly, duration: 300, isPublic: true, priorityTag: .low)
-    let mock4 = ChoreModel(name: "Lavar Louça", description: "", frequency: .daily, duration: 400, isPublic: true, priorityTag: .urgent)
+    let chore1 = ChoreModel(
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão do box e limpar os espelhos.",
+        isDone: false,
+        frequency: .weekly,
+        duration: 1800,
+        isPublic: true,
+        priorityTag: .urgent
+    )
+    chore1.symbolName = "toilet"
     
-    carouselVM.cardViewModels = [
-        CarouselCardViewModel.mock(chore: mock1, roomName: "Banheiro", color: .blue, imageName: "person.circle"),
-        CarouselCardViewModel.mock(chore: mock2, roomName: "Sala", color: .red, imageName: "person.circle"),
-        CarouselCardViewModel.mock(chore: mock3, roomName: "Quarto", color: .blue, imageName: "person.circle"),
-        CarouselCardViewModel.mock(chore: mock4, roomName: "Cozinha", color: .red, imageName: "person.circle")
-    ]
+    let chore2 = ChoreModel(
+        name: "Varrer a Sala",
+        description: "Afastar os móveis e passar pano úmido.",
+        isDone: false,
+        frequency: .weekly,
+        duration: 1200,
+        isPublic: true,
+        priorityTag: .urgent
+    )
+    chore2.symbolName = "sofa"
     
-    return Carousel(viewModel: carouselVM)
+    let chore3 = ChoreModel(
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão do box e limpar os espelhos.",
+        isDone: false,
+        frequency: .weekly,
+        duration: 1800,
+        isPublic: true,
+        priorityTag: .urgent
+    )
+    chore3.symbolName = "toilet"
+    
+    mockVM.cardModels = [chore1, chore2, chore3]
+    
+    return Carousel(
+        viewModel: mockVM,
+        isBackgroundClear: true,
+        onSwipeDown: {},
+        namespace: namespace
+    )
 }

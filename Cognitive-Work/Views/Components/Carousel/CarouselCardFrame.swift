@@ -12,49 +12,52 @@ import SwiftUI
 ///   - `frontFace:` View that represents the front face of the card
 ///   - `quantity:` View that represents the back of the card
 struct CarouselCardFrame: View {
-    @Bindable var viewModel: CarouselCardViewModel
-   
+    let chore: ChoreModel
+    let carouselViewModel: CarouselViewModel
+    let namespace: Namespace.ID
+    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
-
+    
+    var isFocused: Bool = false
     var rotation: Double = 0
     var isShowingBack: Bool = false
     private let fadeDuration: Double = 0.03
-
+    
     var body: some View {
         ZStack {
-            ChoreCardFrontFace(viewModel: viewModel)
+            ChoreCarouselCard(chore: chore, namespace: namespace)
                 .opacity(isShowingBack ? 0 : 1)
-
-            ChoreCardBackFace(viewModel: viewModel)
+                .scaleEffect(
+                    x: isFocused ? (0.88 / 0.72) : 1.0,
+                    y: isFocused ? (0.65 / 0.47) : 1.0
+                )
+            
+            ChoreDetailsCard(chore: chore, carouselViewModel: carouselViewModel)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(isShowingBack ? 1 : 0)
+                .frame(width: 0, height: 0)
+                .scaleEffect(
+                    x: isFocused ? 1.0 : (0.72 / 0.88),
+                    y: isFocused ? 1.0 : (0.47 / 0.65)
+                )
         }
+        .animation(.spring(response: 0.5, dampingFraction: 0.75), value: isFocused)
         .animation(.easeInOut(duration: fadeDuration), value: isShowingBack)
         .rotation3DEffect(.degrees(rotation), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
-        .task {
-            await viewModel.fetchRoomDependencies()
-            await viewModel.fetchUserDependencies()
-        }
     }
 }
 
 #Preview {
+    @Previewable @Namespace var namespace
     let mockChore = ChoreModel(
-        name: "Lavar a louça",
-        description: "",
-        frequency: .daily,
-        duration: 900,
+        name: "Lavar o Banheiro",
+        description: "Esfregar o chão e limpar o espelho",
+        frequency: .weekly,
+        duration: 1800,
         isPublic: true,
         priorityTag: .urgent
     )
     
-    let mockVM = CarouselCardViewModel.mock(
-        chore: mockChore,
-        roomName: "Cozinha",
-        color: RoomColor.blue.uiColor,
-        imageName: "person.circle.fill"
-    )
-    
-    return CarouselCardFrame(viewModel: mockVM, rotation: 0, isShowingBack: false)
+    return ChoreCarouselCard(chore: mockChore, namespace: namespace)
 }

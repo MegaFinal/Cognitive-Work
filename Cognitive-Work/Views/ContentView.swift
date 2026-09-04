@@ -6,103 +6,68 @@
 //
 
 import SwiftUI
-import SwiftData
 import CloudKit
 
-///// Test harness for the CloudKit sharing flow: creates one house, shares it, shows the invite link.
-/////
-///// >Warning: Temporary test implementation **must be replaced** before release.
-///// >the house name, supports a single record, and reports no errors to the user.
-/////
-///// TODO: Replace with the real house-management screen. 
-//struct ContentView: View {
-//
-//    // MARK: - Dependencies
-//
-//    private let viewModel = ContentViewModel()
-//
-//    // MARK: - Constants
-//
-//    /// Fixed name used so two devices can find the same test record.
-//    private let houseName = "JonesHouseTest"
-//
-//    // MARK: - State
-//
-//    /// House loaded from the store, or `nil` when none exists yet.
-//    @State private var house: HouseModel?
-//
-//    /// CloudKit invitation link for the current share.
-//    @State private var shareURL: URL?
-//
-//    /// `true` while the create operation is running.
-//    @State private var isWorking = false
-//
-//    /// Message describing the last failure, or `nil` when there is none.
-//    @State private var errorMessage: String?
-//
-//    // MARK: - Body
-//
-//    /// Reloads ``house`` on appear, on pull-to-refresh, and when a share invite is accepted.
-//    var body: some View {
-//        ScrollView {
-//            VStack(spacing: 16) {
-//                Text(house?.name ?? "Nenhuma casa ainda")
-//                    .font(.headline)
-//
-//                Button {
-//                    Task {
-//                        (self.house, self.shareURL) = await viewModel.createHouseAndShare(
-//                            houseName: houseName,
-//                            description: "description"
-//                        )
-//                    }
-//                } label: {
-//                    if isWorking {
-//                        ProgressView()
-//                            .frame(maxWidth: .infinity)
-//                    } else {
-//                        Label("Criar casa", systemImage: "house")
-//                            .frame(maxWidth: .infinity)
-//                    }
-//                }
-//                .buttonStyle(.borderedProminent)
-//                .disabled(house != nil || isWorking)
-//
-//                CopyButtonView(textToCopy: shareURL?.absoluteString)
-//
-//                if let shareURL {
-//                    ShareLink(item: shareURL) {
-//                        Label("Compartilhar convite", systemImage: "square.and.arrow.up")
-//                    }
-//                }
-//
-//                if let errorMessage {
-//                    Text(errorMessage)
-//                        .font(.footnote)
-//                        .foregroundStyle(.red)
-//                        .multilineTextAlignment(.center)
-//                }
-//            }
-//            .padding()
-//            .frame(maxWidth: .infinity)
-//        }
-//        .task { house = await viewModel.loadHouse() }
-//        .refreshable { house = await viewModel.loadHouse() }
-//        .onReceive(NotificationCenter.default.publisher(for: .didAcceptShare)) { _ in
-//            Task { house = await viewModel.loadHouse() }
-//        }
-//    }
-//}
-//
-//// MARK: - Preview
-
+/// The app's root screen once onboarding is finished.
+///
+/// Hosts the main tab bar and handles share invitations that arrive while the
+/// user already belongs to a house.
 struct ContentView: View {
+
+    // MARK: - Properties
+
+    /// Whether the "already in a house" warning is being presented.
+    @State var showEnviteAcceptAlert: Bool = false
+
+    /// Metadata of the invitation that triggered the warning.
+    @State var shareMetadata: CKShare.Metadata? = nil
+
+    // MARK: - Body
+
     var body: some View {
-//        FirstOnboardingView()
-        SecondOnboardingView()
+        TabView {
+            ChoresView()
+                .tabItem {
+                    Label("Tarefas", systemImage: "checklist")
+                }
+             
+//            ChoresView()
+//                .tabItem {
+//                    Label("Compras", systemImage: "basket")
+//                }
+//
+//            ChoresView()
+//                .tabItem {
+//                    Label("Progresso", systemImage: "figure.2")
+//                }
+//            
+            NavigationStack {
+                UserProfileView()
+                    .navigationTitle("Perfil")
+            }
+            .tabItem {
+                Label("Perfil", systemImage: "person.fill")
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { cloudMetadata in
+            showEnviteAcceptAlert = true
+            self.shareMetadata = cloudMetadata.object as? CKShare.Metadata
+        }
+        .alert("Não é possivel estar em duas casas ao mesmo tempo", isPresented: $showEnviteAcceptAlert) {
+            Button("Trocar de casa",role: .destructive) {
+                Task {
+                    if let shareMetadata {
+                        await CloudKitManager.shared.switchHouse(to: shareMetadata)
+                    }
+                }
+            }
+        } message: {
+            Text("Se você aceitar, você sairá da sua casa atual todos os seus dados serão perdidos")
+        }
     }
 }
 
 #Preview {
     ContentView()
 }
+

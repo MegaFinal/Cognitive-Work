@@ -1,0 +1,199 @@
+//
+//  ProfileView.swift
+//  Cognitive-Work
+//
+//  Created by Carolina Sun on 31/08/26.
+//
+
+import SwiftUI
+import PhotosUI
+
+/// A screen that displays and manages the current user's profile.
+///
+/// `UserProfileView` is responsible for loading the current user's information from CloudKit
+/// through ``UserProfileViewModel`` and presenting it in a form-based interface.
+///
+/// The screen supports:
+/// - Viewing and editing the user's display name.
+/// - Viewing and changing the profile picture.
+/// - Displaying information about the user's house.
+/// - Navigating to the hardware Wi-Fi connection flow.
+/// - Deleting the current user's account.
+///
+
+struct UserProfileView: View {
+    @State private var viewModelUser: UserProfileViewModel
+    @State private var viewModelHouse = HouseEditViewModel()
+    @State private var viewModelHardware = HardwareViewModel()
+    
+    var width = UIScreen.main.bounds.width
+    var height = UIScreen.main.bounds.height
+    
+    init(viewModelUser: UserProfileViewModel = UserProfileViewModel()) {
+        self._viewModelUser = State(initialValue: viewModelUser)
+    }
+    
+    // MARK: - View
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 50) {
+                userInfo
+                
+                SettingsButtonsSection(viewModelUser: viewModelUser, viewModelHouse: viewModelHouse, viewModelHardware: $viewModelHardware)
+                
+                
+                Spacer()
+            }
+            .ignoresSafeArea()
+            .task {
+                await viewModelUser.loadUser()
+            }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    NavigationLink {
+                        EditProfileView(viewModel: viewModelUser)
+                    } label: {
+                        Image(systemName: "pencil")
+                            .foregroundColor(.black)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(
+                        .regular.interactive(),
+                        in: .circle
+                    )
+                }
+            }
+        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        
+        // MARK: Task
+        .task{
+            await viewModelUser.loadUser()
+            await viewModelHardware.fetchIp()
+        }
+        
+        // MARK: Alert if didn't save
+        .alert(
+            "Não foi possível salvar",
+            isPresented: Binding(
+                get: { viewModelUser.errorMessage != nil },
+                set: { if !$0 { viewModelUser.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        }
+        message: {
+            Text(viewModelUser.errorMessage ?? "")
+        }
+        
+        .overlay {
+            if viewModelUser.isSaving {
+                ProgressView()
+            }
+        }
+    }
+    
+    private var userInfo: some View {
+        ZStack(alignment: .top) {
+            Rectangle()
+                .foregroundColor(.orange)
+                .frame(height: height * 0.26)
+                .shadow(color: .black.opacity(0.14), radius: 16.46937, x: 0, y: 4.68879)
+            
+            VStack(alignment: .center, spacing: 10) {
+                if let data = viewModelUser.displayedImageData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: width * 0.5, height: width * 0.5)
+                        .clipShape(Circle())
+                } else {
+                    Image(systemName: "person.crop.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(.gray)
+                        .frame(width: width * 0.5, height: width * 0.5)
+                        .background(.white)
+                        .clipShape(Circle())
+                }
+                
+                Text(viewModelUser.user?.name ?? "")
+                    .font(.title2)
+                    .bold()
+                
+                Text(viewModelUser.user?.tier.rawValue ?? "Ranking")
+                    .font(.title3)
+                    .fontWeight(.light)
+            }
+            .padding(.top, (height * 0.25) - (width * 0.25))
+        }
+    }
+}
+
+private struct SettingsButtonsSection: View {
+    var viewModelUser: UserProfileViewModel
+    var viewModelHouse: HouseEditViewModel
+    @Binding var viewModelHardware: HardwareViewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 30) {
+            NavigationLink {
+                GeneralProfileSettingsView(viewModel: viewModelUser)
+            } label: {
+                HStack {
+                    Text("Configurações Gerais")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
+            NavigationLink {
+                HouseSettingsView(viewModel: viewModelHouse)
+            } label: {
+                HStack {
+                    Text("Ajustes da Casa")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
+            NavigationLink {
+                Group {
+                    if viewModelHardware.hardwareIp != nil {
+                        ExistingIPView(
+                            viewModelHardware: $viewModelHardware,
+                            profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+                        )
+                    } else {
+                        WifiCredentialsView()
+                    }
+                }
+            } label: {
+                Text("Conectar com meu Hardware")
+            }
+            .padding(.horizontal)
+        }
+    }
+}
+
+
+// MARK: - Preview
+#Preview {
+    let mockImageData = UIImage(named: "defaultUser")?.pngData()
+    let mockUser = UserModel(
+        name: "Dayô Araújo",
+        profilePicture: mockImageData,
+        tier: .tier1
+    )
+    
+    let mockViewModel = UserProfileViewModel(user: mockUser)
+    
+    UserProfileView(viewModelUser: mockViewModel)
+    
+}

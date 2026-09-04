@@ -32,6 +32,10 @@ class CloudKitManager {
 
     /// Name of the custom zone that stores all house data.
     private let zoneName = "HomeEnvironment"
+    
+    /// Suffix appended to a private profile's `recordName` to derive the `recordName` of the
+    /// copy that lives inside a house. See ``houseUserRecordID(for:inHouseZone:)``.
+    private let houseUserSuffix = "-house"
 
     /// The custom zone owned by the current iCloud user.
     ///
@@ -72,6 +76,124 @@ class CloudKitManager {
         }
     }
 
+    // MARK: - Current User
+
+    /// UserDefaults key used to remember which `UserModel` record belongs to whoever is
+    /// using this device.
+    private let currentUserRecordNameKey = "currentUserRecordName"
+
+    /// `recordID` of the `UserModel` that belongs to whoever is using this device.
+    ///
+    /// This is persisted locally rather than derived from CloudKit: once housemates become
+    /// visible through shared data, nothing on a `UserModel` record itself says "this one is
+    /// you" — every record looks the same. Set once by ``setCurrentUser(_:)`` right after the
+    /// profile is created (or re-fetched), and read back by ``fetchMyUser()``.
+    var currentUserRecordID: CKRecord.ID? {
+        guard let recordName = UserDefaults.standard.string(forKey: currentUserRecordNameKey)
+        else {
+            return nil
+        }
+        return CKRecord.ID(recordName: recordName, zoneID: houseZoneID)
+    }
+
+    /// Remembers `user` as the profile that belongs to this device, so future launches (and
+    /// lists that include housemates) can tell it apart from everyone else.
+    ///
+    /// - Parameter user: The current device owner's own `UserModel`. Does nothing if
+    ///   `user.recordID` is `nil`.
+    func setCurrentUser(_ user: UserModel) {
+        guard let recordID = user.recordID else { return }
+        UserDefaults.standard.set(recordID.recordName, forKey: currentUserRecordNameKey)
+    }
+
+    /// Fetches the `UserModel` that belongs to this device, using the `recordID` persisted by
+    /// ``setCurrentUser(_:)``.
+    ///
+    /// A user's own profile always lives in their own private zone (see ``create(_:zoneID:parent:)``),
+    /// so this always reads from ``privateDB``.
+    ///
+    /// - Returns: The current user's profile, or `nil` when nothing was ever persisted or the
+    ///   fetch fails.
+    func fetchMyUser() async -> UserModel? {
+        guard let recordID = currentUserRecordID else { return nil }
+
+        do {
+            let record = try await privateDB.record(for: recordID)
+            return UserModel(record: record)
+        } catch {
+            errorMessage = "Failed to fetch current user: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    /// The `recordID` a user's in-house copy must be created with.
+    ///
+    /// A person ends up with two `UserModel` records: the private profile created by
+    /// `OnboardingViewModel.createUser()`, and a copy inside the house's zone (created by
+    /// `createHouseAndLinkUser()` for the owner, `joinHouse()` for an invited member). Nothing
+    /// on the records themselves links the two, so the copy's name is *derived* from the
+    /// private one instead — that is the only thing that makes ``fetchMyHouseUser()`` possible
+    /// without a query.
+    ///
+    /// The suffix is what allows the house owner to have both records: their house lives in
+    /// their own private zone, so an identical `recordName` in the same zone would simply be
+    /// the same record.
+    ///
+    /// - Parameters:
+    ///   - privateRecordID: `recordID` of the private profile.
+    ///   - zoneID: Zone the house lives in (`house.recordID.zoneID`).
+    func houseUserRecordID(
+        for privateRecordID: CKRecord.ID,
+        inHouseZone zoneID: CKRecordZone.ID
+    ) -> CKRecord.ID {
+        CKRecord.ID(
+            recordName: privateRecordID.recordName + houseUserSuffix,
+            zoneID: zoneID
+        )
+    }
+
+    /// Fetches this device's own `UserModel` record *inside the current house* — the one
+    /// housemates can see, as opposed to the private profile returned by ``fetchMyUser()``.
+    ///
+    /// Reads the record directly by ID, derived via ``houseUserRecordID(for:inHouseZone:)``,
+    /// so it needs no `CKQuery` and works the same whether the house is owned (private
+    /// database) or joined through a share (shared database).
+    ///
+    /// - Returns: The in-house copy, or `nil` when there is no house yet, the house was
+    ///   deleted, or the copy predates this naming convention.
+    func fetchMyHouseUser() async -> UserModel? {
+        guard let privateRecordID = currentUserRecordID,
+              let houseZoneID = (try? await fetchFirst(HouseModel.self))?.recordID?.zoneID
+        else {
+            return nil
+        }
+
+        let recordID = houseUserRecordID(for: privateRecordID, inHouseZone: houseZoneID)
+        let database = houseZoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+
+        do {
+            return UserModel(record: try await database.record(for: recordID))
+        } catch let error as CKError where error.code == .unknownItem {
+            return nil
+        } catch {
+            errorMessage = "Failed to fetch house user: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    /// Whether `user` is the profile that belongs to this device, as opposed to a housemate
+    /// fetched alongside it (e.g. via ``fetchAll(_:predicate:)``).
+    func isCurrentUser(_ user: UserModel) -> Bool {
+        guard let recordID = user.recordID else { return false }
+        return recordID.recordName
+            == UserDefaults.standard.string(forKey: currentUserRecordNameKey)
+    }
+
+    /// Clears the persisted current-user record, e.g. after the account is deleted.
+    func clearCurrentUser() {
+        UserDefaults.standard.removeObject(forKey: currentUserRecordNameKey)
+    }
+
     // MARK: - Sharing
 
     /// Returns the share for a house, creating one when it does not exist yet.
@@ -82,6 +204,29 @@ class CloudKitManager {
     /// > Important: New shares are created with `publicPermission == .readWrite`, so anyone
     /// > holding the link can join and edit the house.
     func resolveShare(for house: CKRecord) async -> CKShare? {
+        if let existing = await fetchShare(for: house) {
+            return existing
+        }
+
+        let share = CKShare(rootRecord: house)
+        share[CKShare.SystemFieldKey.title] = house["name"] as? String
+        share.publicPermission = .readWrite
+
+        do {
+            _ = try await privateDB.modifyRecords(saving: [house, share], deleting: [])
+            return share
+        } catch {
+            self.errorMessage = "Failed to create share: \(error.localizedDescription)"
+            return nil
+        }
+    }
+    
+    func resolveShare(for houseModel: HouseModel) async -> CKShare? {
+        guard let house = await fetchRecord(for: houseModel)
+        else {
+            return nil
+        }
+        
         if let existing = await fetchShare(for: house) {
             return existing
         }
@@ -112,8 +257,8 @@ class CloudKitManager {
         }
 
         let database = house.recordID.zoneID.ownerName == CKCurrentUserDefaultName
-            ? privateDB
-            : sharedDB
+            ? privateDB // dono
+            : sharedDB // convidado
 
         do {
             return try await database.record(
@@ -131,6 +276,7 @@ class CloudKitManager {
     /// - Returns: `true` if the invitation was accepted successfully; otherwise `false`.
     ///
     /// If the operation fails, ``errorMessage`` contains the failure reason.
+    @discardableResult
     func acceptShare(metadata: CKShare.Metadata) async -> Bool {
         let operation = CKAcceptSharesOperation(
             shareMetadatas: [metadata]
@@ -151,6 +297,36 @@ class CloudKitManager {
 
             container.add(operation)
         }
+    }
+    
+    @discardableResult
+    func leaveCurrentHouse() async -> Bool {
+        guard let house = try? await fetchFirst(HouseModel.self),
+              let record = await fetchRecord(for: house),
+              let share = await fetchShare(for: record)
+        else {
+            return false
+        }
+
+        // O dono não "sai": ele deleta ou para de compartilhar.
+        guard share.recordID.zoneID.ownerName != CKCurrentUserDefaultName else {
+            errorMessage = "Failed to leave house: current user is the owner"
+            return false
+        }
+
+        do {
+            _ = try await sharedDB.deleteRecord(withID: share.recordID)
+            return true
+        } catch {
+            errorMessage = "Failed to leave house: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    @discardableResult
+    func switchHouse(to metadata: CKShare.Metadata) async -> Bool {
+        await leaveCurrentHouse()
+        return await acceptShare(metadata: metadata)
     }
 
     /// Creates database subscriptions for private and shared database changes.

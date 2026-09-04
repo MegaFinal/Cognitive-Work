@@ -1,0 +1,51 @@
+//
+//  UserProfilePictureTag.swift
+//  Cognitive-Work
+//
+//  Created by Dayô Araújo on 25/08/26.
+//
+
+import SwiftUI
+
+/// Singular isolated component to portray an explicit image string into an aligned circle badge.
+struct UserProfilePictureTag: View {
+    
+    /// Encoded PNG string data mapping back into a UIImage context.
+    let imageData: Data?
+
+    var width = UIScreen.main.bounds.width
+    
+    /// Scaling parameter controlling absolute size derivations.
+    var widthMultiplier: Double
+    
+    var body: some View {
+        Group {
+            if let imageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: width * widthMultiplier, height: width * widthMultiplier)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.gray)
+                    .frame(width: 30, height: 30)
+                    .background(.white)
+                    .clipShape(Circle())
+            }
+        }
+    }
+}
+
+#Preview {
+    let mockImageData = UIImage(named: "defaultUser")?.pngData()
+    
+    var mockUser = UserModel(
+        name: "Dayô",
+        profilePicture: mockImageData, tier: .tier1
+    )
+    
+    UserProfilePictureTag(imageData: mockUser.profilePicture, widthMultiplier: 0.15)
+}

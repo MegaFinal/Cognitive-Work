@@ -10,7 +10,8 @@ import CloudKit
 ///
 /// The house is the record that gets shared, so its zone determines which database the
 /// related chores, rooms, and users live in.
-struct HouseModel: CloudKitSyncable {
+@Observable
+class HouseModel: CloudKitSyncable {
 
     /// CloudKit record type backing this model.
     static var recordType: String = "HouseModel"
@@ -25,22 +26,51 @@ struct HouseModel: CloudKitSyncable {
     var description: String
 
     /// References to the ``ChoreModel`` records belonging to this house.
-    var chores: [CKRecord.Reference]?
+    private var choresReference: [CKRecord.Reference]?
 
     /// References to the ``UserModel`` records that are members of this house.
-    var users: [CKRecord.Reference]?
+    private var usersReference: [CKRecord.Reference]?
 
     /// References to the shopping list entries of this house.
-    var shopListItem: [CKRecord.Reference]?
+    private var shopListItemReference: [CKRecord.Reference]?
 
     /// References to the ``RoomModel`` records belonging to this house.
-    var rooms: [CKRecord.Reference]?
-
+    private var roomsReference: [CKRecord.Reference]?
+    
+    var chores: [ChoreModel] {
+        get async {
+            if let choresReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: choresReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    var users: [UserModel] {
+        get async {
+            if let usersReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: usersReference) ?? []
+            }
+            return []
+        }
+    }
+    
+    // TODO: ShopListItem
+    
+    var room: [RoomModel] {
+        get async {
+            if let roomsReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: roomsReference) ?? []
+            }
+            return []
+        }
+    }
+    
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
     /// - Returns: `nil` when `name` or `description` is missing or has the wrong type.
-    init?(record: CKRecord) {
+    required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
             let description = record["description"] as? String
@@ -51,10 +81,10 @@ struct HouseModel: CloudKitSyncable {
         self.recordID = record.recordID
         self.name = name
         self.description = description
-        self.chores = record["chores"] as? [CKRecord.Reference]
-        self.users = record["users"] as? [CKRecord.Reference]
-        self.shopListItem = record["shopListItem"] as? [CKRecord.Reference]
-        self.rooms = record["rooms"] as? [CKRecord.Reference]
+        self.choresReference = record["chores"] as? [CKRecord.Reference]
+        self.usersReference = record["users"] as? [CKRecord.Reference]
+        self.shopListItemReference = record["shopListItem"] as? [CKRecord.Reference]
+        self.roomsReference = record["rooms"] as? [CKRecord.Reference]
     }
 
     /// Creates a new, unsaved house.
@@ -79,10 +109,10 @@ struct HouseModel: CloudKitSyncable {
         self.recordID = nil
         self.name = name
         self.description = description
-        self.chores = chores
-        self.users = users
-        self.shopListItem = shopListItem
-        self.rooms = rooms
+        self.choresReference = chores
+        self.usersReference = users
+        self.shopListItemReference = shopListItem
+        self.roomsReference = rooms
     }
 
     /// Writes this model's values into a CloudKit record.
@@ -95,9 +125,102 @@ struct HouseModel: CloudKitSyncable {
     func populate(record: CKRecord) {
         record["name"] = name
         record["description"] = description
-        record["chores"] = chores
-        record["users"] = users
-        record["shopListItem"] = shopListItem
-        record["rooms"] = rooms
+        record["chores"] = choresReference
+        record["users"] = usersReference
+        record["shopListItem"] = shopListItemReference
+        record["rooms"] = roomsReference
     }
+    
+    @discardableResult
+    func appendRoom(rooms: [RoomModel]) async -> Bool {
+        let newReferences = rooms.compactMap { room -> CKRecord.Reference? in
+            guard let recordID = room.recordID else { return nil }
+            return CKRecord.Reference(recordID: recordID, action: .none)
+        }
+        roomsReference = (roomsReference ?? []) + newReferences
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    /// Appends the given users' record references to this house's `users` list and saves it.
+    ///
+    /// Unlike ``appendRoom(rooms:)``, this works even if `usersReference` starts as `nil`.
+    @discardableResult
+    func appendUsers(_ users: [UserModel]) async -> Bool {
+        let newReferences = users.compactMap { user -> CKRecord.Reference? in
+            guard let recordID = user.recordID else { return nil }
+            return CKRecord.Reference(recordID: recordID, action: .none)
+        }
+        usersReference = (usersReference ?? []) + newReferences
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    func reference(action: CKRecord.ReferenceAction) -> CKRecord.Reference? {
+        if let recordID {
+            return CKRecord.Reference(recordID: recordID, action: action)
+        }
+        print("House doesn't have a recordID")
+        return nil
+    }
+    
+    // MARK: - Authorization
+    
+    /// Whether the user is the one who created this house.
+    func isAdmin() async -> Bool? {
+        guard let recordID = self.recordID else { return nil }
+        return await CloudKitManager.shared.isOwner(HouseModel.self, recordID: recordID)
+    }
+    
+    // MARK: - Update
+    //
+    /// Renames the house and/or updates its description, persisting the change to CloudKit.
+    ///
+    /// Only the user referenced by ``adminReference`` may succeed here
+    ///
+    /// - Parameters:
+    ///   - name: New name for the house.
+    ///   - description: New description for the house.
+    ///   - requesterID: `recordID` of the ``UserModel`` attempting the change.
+    /// - Throws: ``CloudKitErrors/notAuthorized`` if `requesterID` isn't the admin.
+    @discardableResult
+    func update(name: String, description: String, requesterID: CKRecord.ID) async -> Bool {
+        guard await isAdmin() == true else { return false }
+        
+        self.name = name
+        self.description = description
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    func fetchSelfRecord() async -> CKRecord? {
+        if let recordID {
+            return await CloudKitManager.shared.fetchRecord(for: self)
+        }
+        return nil
+    }
+
+    // MARK: - Delete
+
+    /// Deletes this house together with every record still in its CloudKit hierarchy.
+    ///
+    /// The house is the root of a CKShare record hierarchy (see
+    /// ``CloudKitManager/resolveShare(for:)-(HouseModel)``): rooms and users are saved with
+    /// `record.parent` pointing at the house, a room's chores with `parent` pointing at that
+    /// room, and a chore's checklist items with `parent` pointing at that chore. CloudKit
+    /// refuses to delete a hierarchy root while any descendant still references it — that's
+    /// the "Record delete would violate validating reference" error — so every descendant has
+    /// to be deleted in the *same* batch as the house itself.
+    ///
+    /// - Returns: `true` when the house and all its descendants were deleted, `false` if the
+    ///   recordID is missing or CloudKit rejects the batch (see
+    ///   ``CloudKitManager/errorMessage``).
+    @discardableResult
+    func deleteAllChildren() async -> Bool {
+        guard let recordID
+        else {
+            return false
+        }
+        
+        return await CloudKitManager.shared.deleteChildren(of: recordID)
+    }
+    
+    
 }
