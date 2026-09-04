@@ -7,6 +7,8 @@
 
 import Testing
 import Foundation
+import CloudKit
+import _PhotosUI_SwiftUI
 @testable import Cognitive_Work
 
 @MainActor
@@ -14,12 +16,36 @@ struct UserModelTests {
 
     @Test func createUserSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
+        let defaultRecordID = CKRecord.ID(recordName: "testRecord")
+        let defaultRefetence = CKRecord.Reference(recordID: defaultRecordID, action: .none)
         
-        let user = UserModel(name: "test user", tier: .tier1)
+        let image = UIImage(named: "defaultUser")
+        let data = image?.jpegData(compressionQuality: 0.9)
+        let uniqueFilename = UUID().uuidString + ".jpg"
+        let tempDirectoryURL = FileManager.default.temporaryDirectory
+        let fileURL = tempDirectoryURL.appendingPathComponent(uniqueFilename)
+        try data?.write(to: fileURL, options: .atomic)
+        let defaultAsset = CKAsset(fileURL: fileURL)
+
+        //Write the data to disk
+        
+        let user = UserModel(name: "creatTest",
+                             profilePicture: defaultAsset,
+                             tier: .tier1,
+                             coins: 0,
+                             points: 10,
+                             badges: [defaultRefetence],
+                             tasks: [defaultRefetence],
+                             availableTime: [defaultRefetence],
+                             house: defaultRefetence,
+                             coupons: [defaultRefetence],
+                             couponLimit: 10
+        )
         
         let itemSaved = await CloudKitManager.shared.create(user)
         CloudKitManager.shared.errorMessage == nil ? print("success") : print("ERRO:", CloudKitManager.shared.errorMessage as Any)
         
+        print(CloudKitManager.shared.errorMessage as Any)
         #expect(itemSaved != nil)
         if let itemSaved = itemSaved {
             await CloudKitManager.shared.delete(itemSaved)

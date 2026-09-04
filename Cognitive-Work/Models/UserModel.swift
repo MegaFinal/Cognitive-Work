@@ -24,7 +24,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     var name: String
     
     /// Optional avatar image.
-    var profilePicture: Data?
+    var profilePicture: CKAsset?
     
     /// Progression level reached by the user.
     var tier: Tier
@@ -104,7 +104,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.points = points
         self.couponLimit = couponLimit
         self.tier = Tier(rawValue: record["tier"] as? String ?? "") ?? .tier1
-        self.profilePicture = record["profilePicture"] as? Data
+        self.profilePicture = record["profilePicture"] as? CKAsset
         self.badgesReference = record["badges"] as? [CKRecord.Reference] ?? []
         self.choresReference = record["chores"] as? [CKRecord.Reference] ?? []
         self.availableTimeReference = record["availableTime"] as? [CKRecord.Reference]
@@ -117,7 +117,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Relationship parameters are usually filled in after the related records exist.
     init(
         name: String,
-        profilePicture: Data? = nil,
+        profilePicture: CKAsset? = nil,
         tier: Tier,
         coins: Int = 0,
         points: Int = 0,
