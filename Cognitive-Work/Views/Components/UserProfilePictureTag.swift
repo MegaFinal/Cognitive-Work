@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// Singular isolated component to portray an explicit image string into an aligned circle badge.
 struct UserProfilePictureTag: View {
@@ -40,12 +41,13 @@ struct UserProfilePictureTag: View {
 }
 
 #Preview {
+    //TODO: make preview work because now profilePicture is a CKAsset
     let mockImageData = UIImage(named: "defaultUser")?.pngData()
     
     var mockUser = UserModel(
         name: "Dayô",
-        profilePicture: mockImageData, tier: .tier1
+        profilePicture: nil, tier: .tier1
     )
     
-    UserProfilePictureTag(imageData: mockUser.profilePicture, widthMultiplier: 0.15)
+    UserProfilePictureTag(imageData: mockUser.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.15)
 }

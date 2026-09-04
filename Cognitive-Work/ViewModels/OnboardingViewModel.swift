@@ -69,16 +69,18 @@ class OnboardingViewModel {
         isLoading = true
         errorMessage = nil
         
-        let imageData = userProfilePicture?.jpegData(compressionQuality: 0.8)
-        
-        let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageData, tier: .tier1)
-        
-        if let savedUser = await CloudKitManager.shared.create(newUser) {
-            self.currentUser = savedUser
-            self.stateMachine.user = savedUser
-            CloudKitManager.shared.setCurrentUser(savedUser)
-        } else {
-            errorMessage = "Erro ao criar usuário."
+        if let imageData = userProfilePicture?.jpegData(compressionQuality: 0.8) {
+            let imageCKAsset = CloudKitManager.shared.createAsset(from: imageData)
+            
+            let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1)
+            
+            if let savedUser = await CloudKitManager.shared.create(newUser) {
+                self.currentUser = savedUser
+                self.stateMachine.user = savedUser
+                CloudKitManager.shared.setCurrentUser(savedUser)
+            } else {
+                errorMessage = "Erro ao criar usuário."
+            }
         }
         isLoading = false
     }

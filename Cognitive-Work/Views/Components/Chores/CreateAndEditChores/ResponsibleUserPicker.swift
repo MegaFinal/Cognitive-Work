@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// Lets the user visually pick which house members are responsible for a chore.
 ///
@@ -27,7 +28,7 @@ struct ResponsibleUserPicker: View {
     var body: some View {
         HStack(spacing: 5) {
             ForEach(selectedUsers) { selectedUser in
-                UserProfilePictureTag(imageData: selectedUser.profilePicture, widthMultiplier: 0.1)
+                UserProfilePictureTag(imageData: selectedUser.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.1)
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
                     .onTapGesture {
                         selectedUsers.removeAll { $0.id == selectedUser.id }
