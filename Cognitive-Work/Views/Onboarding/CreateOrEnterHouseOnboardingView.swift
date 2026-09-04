@@ -83,7 +83,7 @@ struct CreateOrEnterHouseOnboardingView: View {
                             VStack {
                                 Text("Criar")
                                     .bold()
-                                Text("em uma casa")
+                                Text("uma casa")
                             }
                         }
                     }

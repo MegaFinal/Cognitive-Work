@@ -15,16 +15,31 @@ struct FortnightlyView: View {
     @State private var viewModel = FortnightlyViewModel()
     @State private var selectedEntry: DailyUsageEntry?
     @State private var usageEntries: [DailyUsageEntry] = []
+    
+    var width = UIScreen.main.bounds.width
+    var height = UIScreen.main.bounds.height
 
     let description: String = """
         Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível.
-        Clique nas tarefas para saber mais.
         """
 
     var body: some View {
         VStack {
-            OnboardingHeader(title: "Escala quinzenal", description: description)
-                .padding(.bottom)
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Escala quinzenal")
+                    .bold()
+                    .font(.title)
+                    .foregroundColor(.black)
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(description)
+                    
+                    Text("Clique nas tarefas para saber mais.")
+                }
+            }
+            .padding(.bottom, 30)
+            .foregroundColor(.secondary)
+            .frame(width: width * 0.8)
             
             ScrollView {
                 chart
@@ -33,6 +48,7 @@ struct FortnightlyView: View {
             Spacer()
         }
         .navigationBarBackButtonHidden()
+        .frame(width: width * 0.85)
     }
 
     private var chart: some View {
@@ -58,13 +74,9 @@ struct FortnightlyView: View {
                 }
             }
         }
-//        .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
         .task {
             await viewModel.setup(users: users, chores: chores)
             usageEntries = await viewModel.usageEntries
-        }
-        .onAppear {
-            print("cheguei na chart")
         }
     }
 
