@@ -46,6 +46,7 @@ struct ChoreCardListStyle: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.1, height: height * 0.08)
+                    .foregroundColor(.white)
                     .fontWeight(.thin)
                 
                 VStack(alignment: .leading, spacing: 20) {
@@ -90,6 +91,7 @@ struct ChoreCardListStyle: View {
                                     .font(.title2)
                                     .bold()
                             }
+                            .foregroundColor(.white)
                             
                             Spacer()
                             
