@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 struct ChoreCard: View {
     var width = UIScreen.main.bounds.width
@@ -61,8 +62,8 @@ private struct ChorePriority: View {
                 .frame(width: 2)
             
             VStack(alignment: .leading) {
-                UserProfilePictureTag(imageData: user?.profilePicture, widthMultiplier: 0.05)
-                
+                UserProfilePictureTag(imageData: user?.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.05)
+
                 CapsuleTag(
                     tagName: chore.priorityTag.rawValue,
                     tagColor: chore.priorityTag.color,

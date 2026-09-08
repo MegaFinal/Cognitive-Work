@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import CloudKit
 
 //TODO: ip size verification and masking it to the user by not needing to include the dots
 //TODO: loading screen to wait sending wifi. If true goes to code and if false comes back to wificredentials
@@ -21,6 +22,10 @@ class HardwareViewModel {
     
     /// The IP address of the target hardware device.
     var deviceIP = ""
+    
+    var hardwareIp: HardwareIpModel?
+    
+    var house: HouseModel?
     
     /// The name (SSID) of the user's local Wi-Fi network.
     var userWifiName = ""
@@ -37,36 +42,22 @@ class HardwareViewModel {
     /// An optional error message capturing the latest failure state.
     var errorMessage: String?
     
-    private var deviceConnectionService = DeviceConnectionService()
+    private var hardwareNetworkManager = HardwareNetworkManager()
     
     /// Sends Wi-Fi credentials to the connected hardware device.
     func sendWifiCredentials() async throws {
-        deviceConnectionService.ip = deviceIP
-        try await deviceConnectionService.sendWifiCredentials(ssid: self.userWifiName, password: self.userWifiPassord)
+        hardwareNetworkManager.ip = deviceIP
+        try await hardwareNetworkManager.sendWifiCredentials(ssid: self.userWifiName, password: self.userWifiPassord)
     }
     
     /// Requests a pairing code from the device using the current IP.
-    func askForParingCode() async throws {
-        deviceConnectionService.ip = deviceIP
-        try await deviceConnectionService.askForParingCode(ipcode: deviceIP)
+    func askForParingCode() async throws -> Bool {
+        hardwareNetworkManager.ip = deviceIP
+        try await hardwareNetworkManager.askForParingCode(ipcode: deviceIP)
+        return hardwareNetworkManager.isConnected
     }
     
     // MARK: - Image & Chart Transmission (ESP32 Display)
-    
-    /// A list of users associated with the charts.
-    var users: [UserModel] = []
-    
-    /// A list of chores tracked in the system.
-    var chores: [ChoreModel] = []
-    
-    /// Prepares and sends a static image ("fish") to the ESP32.
-    func prepareImageForESP32() async throws {
-        guard let image = UIImage(named: "fish"), let imageData = image.levelBitmap() else {
-            return
-        }
-        
-        try await deviceConnectionService.sendImageToDevice(imageData: imageData)
-    }
     
     /// Renders a fortnightly chore chart and streams it as an e-paper compatible image to the ESP32.
     /// - Parameters:
@@ -94,6 +85,86 @@ class HardwareViewModel {
             throw NSError(domain: "HardwareViewModel", code: 1002, userInfo: [NSLocalizedDescriptionKey: "Failed to convert the chart image into e-paper format."])
         }
         
-        try await deviceConnectionService.sendImageToDevice(imageData: imageData)
+        try await hardwareNetworkManager.sendImageToDevice(imageData: imageData)
+    }
+    
+    /// Prepares and sends a static image (rendered from a SwiftUI View) to the ESP32.
+    func prepareImageForESP32<Content: View>(view: Content) async throws {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1.0
+        
+        guard let image = renderer.uiImage else {
+            throw NSError(
+                domain: "HardwareViewModel",
+                code: 1003,
+                userInfo: [NSLocalizedDescriptionKey: "Falha ao renderizar a view em imagem."]
+            )
+        }
+        guard let imageData = image.levelBitmap() else {
+            throw NSError(
+                domain: "HardwareViewModel",
+                code: 1004,
+                userInfo: [NSLocalizedDescriptionKey: "Falha ao converter imagem para o formato do e-paper."]
+            )
+        }
+        try await hardwareNetworkManager.sendImageToDevice(imageData: imageData)
+    }
+    //MARK: - Cloudkit
+    
+    /// Creates a new IP record only if one doesn't already exist for this IP, avoiding duplicate records.
+    @MainActor
+    func createIp() async -> Bool {
+        errorMessage = nil
+         
+        house = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
+         
+        guard let houseRecordID = house?.recordID else { 
+            errorMessage = "House not found."
+            return false
+        }
+         
+        let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
+         
+        if let existing = try? await CloudKitManager.shared.fetchFirst(HardwareIpModel.self),
+           existing.ip == self.deviceIP {
+            self.hardwareIp = existing
+            return true
+        }
+         
+        let ip = HardwareIpModel(ip: self.deviceIP)
+         
+        if let created = await CloudKitManager.shared.create(ip, zoneID: house?.recordID?.zoneID, parent: houseReference) {
+            self.hardwareIp = created
+            return true
+        } else {
+            errorMessage = "Erro ao criar IP."
+            return false
+        }
+    }
+    
+    func fetchIp() async {
+        errorMessage = nil
+        
+        do {
+            hardwareIp = try await CloudKitManager.shared.fetchFirst(HardwareIpModel.self)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        deviceIP = hardwareIp?.ip ?? ""
+        
+        print(deviceIP)
+    }
+    
+    /// Deletes the current IP record and clears local state so the UI reflects the change immediately.
+    func deleteIp() async {
+        guard let hardwareIp else { return }
+
+        await CloudKitManager.shared.delete(hardwareIp)
+        
+        self.hardwareIp = nil
+        self.deviceIP = ""
     }
 }
+
+
