@@ -84,7 +84,6 @@ struct SelectChoresOnboardingView: View {
                             }
                         }
                     }
-                    .frame(height: .infinity)
                 }
             }
             .padding(.horizontal, width * 0.086)
