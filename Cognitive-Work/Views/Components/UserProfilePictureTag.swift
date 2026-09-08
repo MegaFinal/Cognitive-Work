@@ -32,7 +32,7 @@ struct UserProfilePictureTag: View {
                     .resizable()
                     .scaledToFit()
                     .foregroundStyle(.gray)
-                    .frame(width: 30, height: 30)
+                    .frame(width: width * widthMultiplier, height: width * widthMultiplier)
                     .background(.white)
                     .clipShape(Circle())
             }
