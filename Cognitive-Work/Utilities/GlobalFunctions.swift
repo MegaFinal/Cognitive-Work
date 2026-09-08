@@ -368,6 +368,48 @@ func scheduleFreeChores(
     return results
 }
 
+// MARK: - Repair
+
+/// Clears stale ``ChoreModel/dailyAssignmentsReference`` lists left behind by the zone bug
+/// fixed in ``commitScheduleResults(_:users:houseZoneID:)``: before that fix, whichever
+/// device ran the scheduler first saved the `DailyAssignmentModel` records into its own
+/// private zone instead of the house's, so nobody else — including the house owner — could
+/// ever read them back.
+///
+/// Because ``TaskSchedulerEngine/schedule(chores:users:)`` only reschedules a recurring
+/// chore whose reference list is empty, a chore stuck pointing at unreadable records would
+/// otherwise never be rescheduled again. This checks whether the referenced records are
+/// actually readable and, if none of them are, clears the list so the caller's own
+/// `recurringChores` filter picks the chore back up this run.
+///
+/// - Parameter chores: Every chore currently loaded, as passed into ``TaskSchedulerEngine/schedule(chores:users:)``.
+func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
+    let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly]
+
+    for chore in chores {
+        guard !chore.isDone,
+              recurringFrequencies.contains(chore.frequency),
+              let refs = chore.dailyAssignmentsReference,
+              !refs.isEmpty
+        else { continue }
+
+        // `fetchRecordsByRecordReference` bails out (returns `nil`) the moment a single
+        // reference fails to fetch, rather than returning the ones that did resolve. That's
+        // fine here: every reference for a given chore was written by the same
+        // `commitScheduleResults` call, so they're either all in the wrong zone or all fine
+        // — there's no realistic case where only some of them are orphaned.
+        let resolved = await CloudKitManager.shared.fetchRecordsByRecordReference(
+            for: DailyAssignmentModel.self,
+            recordReferences: refs
+        )
+
+        if resolved?.isEmpty ?? true {
+            chore.dailyAssignmentsReference = nil
+            await CloudKitManager.shared.update(chore)
+        }
+    }
+}
+
 // MARK: - Persistence
 
 /// Commits all schedule results by saving them to CloudKit and updating user relationships.
@@ -375,7 +417,11 @@ func scheduleFreeChores(
 /// - Parameters:
 ///   - results: An array of ``ScheduleResult`` to commit.
 ///   - users: An array of ``UserModel`` to update.
-func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel]) async {
+///   - houseZoneID: The house's actual record zone, so the new `DailyAssignmentModel`
+///     records land where every housemate (owner included) can read them, rather than in
+///     whichever device happens to run this. `nil` falls back to the old, zone-unsafe
+///     behavior if the house couldn't be resolved.
+func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], houseZoneID: CKRecordZone.ID?) async {
 
     // Create and save each chore and its corresponding daily assignment records in the cloud
     for result in results {
@@ -383,8 +429,9 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel]) asyn
 
         var savedRefs: [CKRecord.Reference] = []
         for assignment in result.newAssignments {
-            // Create a single daily assignment record in CloudKit
-            if let saved = await CloudKitManager.shared.create(assignment),
+            // Create a single daily assignment record in CloudKit, explicitly inside the
+            // house's zone rather than the calling device's own private zone.
+            if let saved = await CloudKitManager.shared.create(assignment, zoneID: houseZoneID),
                let savedID = saved.recordID {
                 savedRefs.append(CKRecord.Reference(recordID: savedID, action: CKRecord.ReferenceAction.none))
             }

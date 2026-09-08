@@ -6,4 +6,7 @@
 
 import CloudKit
 
-
+/// Destructive, irreversible debug utilities for wiping test data during development.
+///
+/// Nothing in the app calls these automatically; invoke them manually (e.g. from a
+/// debug button you wire up yourself) when you need a clean CloudKit database.

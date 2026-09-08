@@ -30,8 +30,12 @@ struct Onboarding: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .didAcceptShare)) { _ in
                 Task {
-                    await viewModel.joinHouse()
-                    viewModel.stateMachine.flow = .invitedWithoutProfile
+                    if viewModel.currentUser != nil {
+                        await viewModel.joinHouse()
+                        viewModel.goToNextView()
+                    } else {
+                        viewModel.stateMachine.flow = .invitedWithoutProfile
+                    }
                 }
             }
             .task {
