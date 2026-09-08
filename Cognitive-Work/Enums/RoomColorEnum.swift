@@ -26,7 +26,7 @@ enum RoomColor: String, CaseIterable, Identifiable {
         case .yellow: return .choreYellow
         case .green: return .choreGreen
         case .blue: return .choreBlue
-        case .purple: return .purple
+        case .purple: return .chorePink
         }
     }
 }
