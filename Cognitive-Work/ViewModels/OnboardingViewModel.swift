@@ -79,7 +79,7 @@ class OnboardingViewModel {
                 self.stateMachine.user = savedUser
                 CloudKitManager.shared.setCurrentUser(savedUser)
             } else {
-                errorMessage = "Erro ao criar usuário."
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar usuário."
             }
         }
         isLoading = false
@@ -100,25 +100,39 @@ class OnboardingViewModel {
     /// - On failure, populates ``errorMessage``
     @MainActor
     func createHouseAndLinkUser() async {
-        guard let user = currentUser, let userRecordID = user.recordID else { return }
-        
+        guard let user = currentUser, let userRecordID = user.recordID else {
+            errorMessage = "Seu perfil ainda não foi salvo. Volte e crie o perfil antes de criar a casa."
+            return
+        }
+
         isLoading = true
         errorMessage = nil
-        
+
+        // Clears the spinner on *every* exit, including the early returns below. Without it,
+        // any of those returns leaves the button spinning forever with no way out.
+        defer { isLoading = false }
+
         let userReference = CKRecord.Reference(recordID: userRecordID, action: .none)
         let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference])
-        
         if let savedHouse = await CloudKitManager.shared.create(newHouse) {
+            print("salvou casa")
             self.currentHouse = savedHouse
             self.stateMachine.house = savedHouse
             
-            guard let houseRecordID = savedHouse.recordID else { return }
+            guard let houseRecordID = savedHouse.recordID else {
+                errorMessage = "A casa foi criada, mas o CloudKit não devolveu o identificador dela. Tente de novo."
+                return
+            }
             
             let houseCascadeRef = CKRecord.Reference(recordID: houseRecordID, action: .none)
             
+            // The picture is optional: a member without one still needs their in-house copy
+            // created, so this must not bail out of the whole flow.
+            let assetCopy = user.profilePicture.flatMap { try? duplicateCKAsset($0) }
+
             let userCopy = UserModel(
                 name: user.name ,
-                profilePicture: user.profilePicture,
+                profilePicture: assetCopy,
                 tier: user.tier,
                 coins: user.coins,
                 points: user.points,
@@ -129,6 +143,7 @@ class OnboardingViewModel {
                 coupons: user.couponsReference,
                 couponLimit: user.couponLimit,
             )
+            print("make user copy")
             
             let copyRecordID = CloudKitManager.shared.houseUserRecordID(
                 for: userRecordID,
@@ -141,12 +156,13 @@ class OnboardingViewModel {
                 parent: houseCascadeRef
             )
             
+            print("creat user copy")
+            
             try? await CloudKitManager.shared.createSharedSubscription()
             
-            isLoading = false
+            print("creat Subscription")
         } else {
-            errorMessage = "Erro ao criar a casa."
-            isLoading = false
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar a casa."
         }
     }
     
@@ -200,7 +216,7 @@ class OnboardingViewModel {
         if success {
             self.currentHouse = house
         } else {
-            errorMessage = "Erro ao atrelar cômodos."
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao atrelar cômodos."
         }
         
         isLoading = false
@@ -347,7 +363,7 @@ class OnboardingViewModel {
             self.stateMachine.user = savedUser
             try? await CloudKitManager.shared.createSharedSubscription()
         } else {
-            errorMessage = "Erro ao entrar na casa."
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
         }
         
         isLoading = false
@@ -374,5 +390,15 @@ class OnboardingViewModel {
         if currentHouse == nil {
             await fetchHouse()
         }
+    }
+    
+    private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
+        guard let origem = asset.fileURL else { return nil }
+
+        let destino = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+
+        try FileManager.default.copyItem(at: origem, to: destino)
+        return CKAsset(fileURL: destino)
     }
 }
