@@ -56,7 +56,7 @@ struct Onboarding: View {
         case .chooseRooms:
             SelectRoomsOnboardingView(viewModel: $viewModel)
         case .inviteAndConfirmJoin:
-            InviteUsersOnboardingView(viewModel: $viewModel, editHouse: false)
+            InviteUsersOnboardingView(viewModel: $viewModel, isFromSettings: false)
         case .setUpScheduleChores:
             StartChoreDivisionOnboardingView(viewModel: $viewModel)
         case .chooseChores:

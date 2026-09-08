@@ -24,35 +24,35 @@ import CloudKit
 /// > selects it in the others. Give each room its own list before replacing the
 /// > mock with real data.
 struct SelectChoresOnboardingView: View {
-
+    
     // MARK: - Properties
-
+    
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
-
+    
     /// Rooms listed on the screen, each holding its own expansion state.
     @State private var rooms: [RoomModel] = []
-
+    
     /// Placeholder chores rendered inside every expanded room.
     ///
     /// > Note: Temporary stand-in for the chores fetched from CloudKit through
     /// > ``RoomModel/fetchRelatedChores()``.
     @State private var choresDTO: [ChoreDTO] = []
-
+    
     /// Chores the user marked to be split between the residents.
     private var selectedChores: [ChoreDTO] {
         choresDTO.filter { $0.isSelected }
     }
     
     @State private var isLoading = true
-
+    
     // MARK: - Body
-
+    
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height
-
+            
             VStack(alignment: .leading) {
                 
                 VStack(alignment: .leading) {
@@ -62,7 +62,7 @@ struct SelectChoresOnboardingView: View {
                         .foregroundStyle(.titleGray)
                         .padding(.top, height * 0.034)
                         .padding(.bottom, 10)
-
+                    
                     Text("Escolha **apenas** as tarefas que serão divididas de maneira igual entre todos os moradores")
                         .font(.system(size: 16))
                         .foregroundStyle(.subTitleGray)
@@ -71,7 +71,7 @@ struct SelectChoresOnboardingView: View {
                 
                 if rooms.isEmpty {
                     ProgressView("Carregando Comodos e Tarefas...")
-                                .progressViewStyle(CircularProgressViewStyle())
+                        .progressViewStyle(CircularProgressViewStyle())
                 }
                 else {
                     ScrollView(showsIndicators: false) {
@@ -115,7 +115,7 @@ private struct SelectChoreListItem: View {
     @Binding var viewModel: OnboardingViewModel
     
     @Binding var room: RoomModel
-
+    
     @State var isExpanded: Bool = false
     @State var defaultChores: [ChoreDTO] = []
     
@@ -124,27 +124,26 @@ private struct SelectChoreListItem: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            HStack {
-                
-                Text(room.name)
-                    .font(.system(size: 24))
-                    .bold()
-                    .padding(.bottom, height * 0.018)
-                
-                Spacer()
-                
-                Button {
-                    isExpanded.toggle()
-                } label: {
+            Button {
+                isExpanded.toggle()
+            } label: {
+                HStack {
+                    Text(room.name)
+                        .font(.system(size: 24))
+                        .bold()
+                        .padding(.bottom, height * 0.018)
+                    
+                    Spacer()
+                    
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                 }
-                .fontWeight(.semibold)
-                .foregroundStyle(.black)
             }
+            .fontWeight(.semibold)
+            .foregroundStyle(.black)
             
             Divider()
-            .frame(height: height * 0.001)
-            .overlay(Color.black)
+                .frame(height: height * 0.001)
+                .overlay(Color.black)
             
             if isExpanded {
                 ForEach($defaultChores) { $chore in
