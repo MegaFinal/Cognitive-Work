@@ -21,7 +21,6 @@ struct WaitingAlgorithmView: View {
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
-//    var schedule: TaskSchedulerEngine
     
     var body: some View {
         VStack(alignment: .center, spacing: 20) {

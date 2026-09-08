@@ -38,7 +38,7 @@ struct SelectRoomsOnboardingView: View {
             VStack(spacing: 20) {
                 OnboardingHeader(
                     title: "Defina os cômodos",
-                    description: "Escolha os ambientes presentes na sua residência, aperte e segure para editar seus nomes e quantidades."
+                    description: "Escolha os ambientes presentes na sua residência."
                 )
                 
                 LazyVGrid(columns: columns, spacing: 16) {

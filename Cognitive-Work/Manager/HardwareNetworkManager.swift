@@ -16,7 +16,7 @@ import Foundation
 /// 2. Pairing — the app asks for the hash the device generated at boot and keeps it
 /// 3. Use — text and images are sent, authenticated by that hash
 @Observable
-class DeviceConnectionService {
+class HardwareNetworkManager {
     /// The device's IP. Typed by the user while the ESP32 is still an access point
     /// (usually 192.168.4.1), then replaced by the address it gets on the home network.
     var ip: String = ""

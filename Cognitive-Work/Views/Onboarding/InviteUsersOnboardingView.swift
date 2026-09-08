@@ -26,15 +26,29 @@ struct InviteUsersOnboardingView: View {
     @State private var isLoading = true
     @State private var houseUsers: [UserModel] = []
     
-    var width: CGFloat = UIScreen.main.bounds.width * 0.5
-    var height: CGFloat = UIScreen.main.bounds.height * 0.06
-    var editHouse: Bool
+    var width: CGFloat = UIScreen.main.bounds.width
+    var height: CGFloat = UIScreen.main.bounds.height
+    var isFromSettings: Bool
 
     // MARK: - Body
 
     var body: some View {
         VStack {
-            OnboardingHeader(title: "Adicione seus roomies!", description: "Envie o convite para os outros moradores da sua casa se juntarem com você no app!")
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Adicione seus \nroomies!")
+                    .bold()
+                    .font(.title)
+                    .foregroundColor(.black)
+                
+                VStack(alignment: .leading) {
+                    Text("Envie o convite para os outros moradores da sua casa se juntarem com você no app!")
+                    
+                    Text("Aceite o pedido dos moradores que estão em vermelho!")
+                }
+            }
+            .frame(width: width * 0.84)
+            .foregroundColor(.secondary)
+            .padding(.top, 30)
             
             Spacer()
             
@@ -45,20 +59,20 @@ struct InviteUsersOnboardingView: View {
             Spacer()
             
             Text("Assim que todos os moradores estiverem no app, clique em continuar. ")
-                .frame(width: width * 1.65)
+                .frame(width: width * 0.8)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.gray)
             
             HStack {
                 if resolvendoShare {
                     ProgressView("Preparando chaves de acesso...")
-                        .frame(width: width, height: height)
+                        .frame(width: width * 0.55)
                 } else {
                     if shareURL != nil {
                         ShareLink(item: shareURL!){
                             Text("Compartilhar Convite")
                                 .font(.system(size: 17))
-                                .frame(width: width, height: height, alignment: .center)
+                                .frame(width: width * 0.5, height: height * 0.065, alignment: .center)
                                 .foregroundColor(.white)
                                 .background {
                                     Capsule()
@@ -66,7 +80,6 @@ struct InviteUsersOnboardingView: View {
                                         .glassEffect()
                                 }
                         }
-                        
                     }
                     else {
                         Button {
@@ -79,7 +92,7 @@ struct InviteUsersOnboardingView: View {
                     }
                 }
                 
-                if !editHouse {
+                if !isFromSettings {
                     OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
                         viewModel.goToNextView()
                     }
@@ -88,13 +101,14 @@ struct InviteUsersOnboardingView: View {
             }
             .padding(.top)
             
-            if !editHouse {
+            if !isFromSettings {
                 OnboardingSkipButton() {
                     viewModel.finishOnboarding()
                 }
             }
         }
-        .navigationBarBackButtonHidden(!editHouse)
+        .frame(width: width * 0.84)
+        .navigationBarBackButtonHidden(!isFromSettings)
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
                 if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
@@ -125,7 +139,12 @@ struct InviteUsersOnboardingView: View {
     private var joinedUsers: some View {
         HStack(spacing: 20) {
             ForEach(houseUsers) { user in
-                UserProfilePictureTag(imageData: user.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.15)
+                ZStack {
+                    Circle()
+                        .foregroundColor(.green)
+                        .frame(width: width * 0.17)
+                    UserProfilePictureTag(imageData: user.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.15)
+                }
             }
         }
     }
@@ -134,5 +153,5 @@ struct InviteUsersOnboardingView: View {
 #Preview {
     @Previewable @State var mockViewModel = OnboardingViewModel()
     
-    InviteUsersOnboardingView(viewModel: $mockViewModel, editHouse: true)
+    InviteUsersOnboardingView(viewModel: $mockViewModel, isFromSettings: false)
 }

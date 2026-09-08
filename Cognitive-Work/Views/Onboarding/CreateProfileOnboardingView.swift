@@ -84,7 +84,7 @@ struct CreateProfileOnboardingView: View {
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.black.opacity(0.7))
             
-            Text("Escolha um Memoji e um nome para utilizar no seu app")
+            Text("Escolha uma foto e um nome para utilizar no app")
                 .font(.callout)
                 .foregroundStyle(.gray)
                 .lineLimit(nil)

@@ -26,8 +26,8 @@ struct SelectFreeTimeOnboardingView: View {
         DayOfWeekDTO(name: "Quarta - Feira", nameAbbreviation: "Qua"),
         DayOfWeekDTO(name: "Quinta - Feira", nameAbbreviation: "Qui"),
         DayOfWeekDTO(name: "Sexta - Feira", nameAbbreviation:"Sex"),
-        DayOfWeekDTO(name: "Sabado -", nameAbbreviation: "Sab"),
-        DayOfWeekDTO(name: "Domingo -",nameAbbreviation: "Dom")
+        DayOfWeekDTO(name: "Sábado ", nameAbbreviation: "Sáb"),
+        DayOfWeekDTO(name: "Domingo ",nameAbbreviation: "Dom")
     ]
     @State var showAllert: Bool = false
 
