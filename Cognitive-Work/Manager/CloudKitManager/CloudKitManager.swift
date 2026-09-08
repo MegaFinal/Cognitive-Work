@@ -387,3 +387,80 @@ class CloudKitManager {
         }
     }
 }
+
+extension CloudKitManager {
+
+    // MARK: - Debug / Cleanup
+
+    /// Deletes every record owned by the current user by dropping the custom zone that
+    /// holds all of them, then recreates the (now empty) zone so the app keeps working.
+    ///
+    /// Every model created through `⁠ create(_:zoneID:parent:) ⁠` lives in `⁠ houseZoneID ⁠`
+    /// by default, so removing that single zone wipes houses, rooms, chores, users and
+    /// everything else in one atomic server-side operation — no need to enumerate record
+    /// types or paginate queries.
+    ///
+    /// - Returns: ⁠ true ⁠ when the zone was deleted and recreated successfully.
+    @discardableResult
+    func deleteAllPrivateRecords() async -> Bool {
+        do {
+            _ = try await privateDB.deleteRecordZone(withID: houseZoneID)
+        } catch {
+            errorMessage = "Failed to delete zone: \(error.localizedDescription)"
+            return false
+        }
+
+        return await createZoneIfNeeded()
+    }
+
+    /// Leaves every house shared with the current user, across every shared zone.
+    ///
+    /// > Note: CloudKit doesn't let a participant delete another account's private zone —
+    /// > only its owner can do that. Deleting the `⁠ CKShare ⁠` record is the correct
+    /// > equivalent available to a participant: it removes every reference this account
+    /// > holds into shared houses, without touching the owner's actual data.
+    ///
+    /// - Returns: ⁠ true ⁠ when every shared house was successfully left.
+    @discardableResult
+    func leaveAllSharedHouses() async -> Bool {
+        let sharedHouses = await fetchAll(HouseModel.self).filter {
+            guard let recordID = $0.recordID else { return false }
+            return !isOwner(HouseModel.self, recordID: recordID)
+        }
+
+        var allSucceeded = true
+
+        for house in sharedHouses {
+            guard let record = await fetchRecord(for: house),
+                  let share = await fetchShare(for: record)
+            else {
+                allSucceeded = false
+                continue
+            }
+
+            do {
+                _ = try await sharedDB.deleteRecord(withID: share.recordID)
+            } catch {
+                errorMessage = "Failed to leave house \(house.name): \(error.localizedDescription)"
+                allSucceeded = false
+            }
+        }
+
+        return allSucceeded
+    }
+
+    /// Deletes everything the current user can reach: every record they own, plus their
+    /// participation in every house shared with them.
+    ///
+    /// > Warning: Destructive, irreversible debug utility. Nothing in the app calls it
+    /// > automatically.
+    ///
+    /// - Returns: ⁠ true ⁠ when both steps succeeded.
+    @discardableResult
+    func deleteAllRecords() async -> Bool {
+        let leftShared = await leaveAllSharedHouses()
+        let deletedPrivate = await deleteAllPrivateRecords()
+        return leftShared && deletedPrivate
+    }
+}
+

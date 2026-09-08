@@ -53,7 +53,7 @@ struct ChoreCardListStyle: View {
                         // MARK: - Responsible users
                         HStack(spacing: -5) {
                             ForEach($allResponsibleUsers, id: \.recordID) { $user in
-                                UserProfilePictureTag(imageData: user.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.07)
+                                UserProfilePictureTag(user: user, widthMultiplier: 0.07)
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
                         }

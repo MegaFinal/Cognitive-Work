@@ -29,6 +29,18 @@ struct TaskSchedulerEngine {
         // Calculate the date 14 days from today; return if it fails
         guard let windowEnd = Calendar.current.date(byAdding: .day, value: 14, to: now) else { return }
         
+        // `DailyAssignmentModel` records must live in the house's own zone, never in
+        // whichever device happens to run this first — otherwise anyone who isn't that
+        // device (the owner included) can end up unable to read them back. Resolve the
+        // real house zone once, up front, and thread it through to `commitScheduleResults`.
+        let houseZoneID = (try? await CloudKitManager.shared.fetchFirst(HouseModel.self))?.recordID?.zoneID
+        
+        // Chores scheduled before the fix above may still be pointing at daily-assignment
+        // records that live in the wrong zone and are now unreadable. Clear those stale
+        // references so they're picked up by the `recurringChores` filter below and
+        // rescheduled correctly this run.
+        await repairOrphanedRecurringAssignments(in: chores)
+        
         // Build the scheduling context to calculate environment variables such as user available time, capacity, etc.
         let context = await buildScheduleContext(
             users: users,
@@ -100,7 +112,7 @@ struct TaskSchedulerEngine {
         )
         
         // Commit and save the final schedule results to the cloud
-        await commitScheduleResults(allResults, users: users)
+        await commitScheduleResults(allResults, users: users, houseZoneID: houseZoneID)
     }
     
     // MARK: - Prioritization

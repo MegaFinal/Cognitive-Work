@@ -13,9 +13,9 @@ import CloudKit
 /// Resolves the CloudKit share on appear and keeps the list of members who
 /// already joined up to date through `.cloudKitDidChange`.
 struct InviteUsersOnboardingView: View {
-
+    
     // MARK: - Properties
-
+    
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
@@ -29,9 +29,9 @@ struct InviteUsersOnboardingView: View {
     var width: CGFloat = UIScreen.main.bounds.width
     var height: CGFloat = UIScreen.main.bounds.height
     var isFromSettings: Bool
-
+    
     // MARK: - Body
-
+    
     var body: some View {
         VStack {
             VStack(alignment: .leading, spacing: 10) {
@@ -86,7 +86,7 @@ struct InviteUsersOnboardingView: View {
                         } label: {
                             ProgressView().tint(.white)
                         }
-                        .frame(width: width, height: height, alignment: .center)
+                        .frame(width: width * 0.5, height: height * 0.065, alignment: .center)
                         .foregroundColor(.white)
                         .background(Capsule().foregroundStyle(.gray))
                     }
@@ -111,45 +111,28 @@ struct InviteUsersOnboardingView: View {
         .navigationBarBackButtonHidden(!isFromSettings)
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
-                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
+                //                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
                 houseUsers = await viewModel.fetchHouseUsers()
             }
         }
-//        .task {
-//            // MARK: - Mock for preview
-//            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-//                let mockImage = UIImage(systemName: "person.circle.fill")?.pngData()
-//                houseUsers = [
-//                    UserModel(name: "Dayô", profilePicture: mockImage, tier: .tier1),
-//                    UserModel(name: "Maria", profilePicture: mockImage, tier: .tier1),
-//                    UserModel(name: "João", profilePicture: mockImage, tier: .tier1)
-//                ]
-//                shareURL = URL(string: "https://apple.com")
-//                resolvendoShare = false
-//                return
-//            }
-//            
-//            print("currentHouse:", viewModel.currentHouse as Any)
-//            print("recordID:", viewModel.currentHouse?.recordID as Any)
-//            
-//            guard let house = viewModel.currentHouse else { return }
-//            
-//            resolvendoShare = true
-//            houseShare = await CloudKitManager.shared.resolveShare(for: house)
-//            print("share:", houseShare as Any)
-//            
-//            do {
-//                if let share = houseShare {
-//                    let url = try await CloudKitManager.shared.generateShareLink(share: share)
-//                    self.shareURL = url
-//                }
-//            } catch {
-//                print("Erro ao gerar link: \(error.localizedDescription)")
-//            }
-//            
-//            houseUsers = await viewModel.fetchHouseUsers()
-//            resolvendoShare = false
-//        }
+        .task {
+            guard let house = viewModel.currentHouse else { return }
+            
+            resolvendoShare = true
+            houseShare = await CloudKitManager.shared.resolveShare(for: house)
+            
+            do {
+                if let share = houseShare {
+                    let url = try await CloudKitManager.shared.generateShareLink(share: share)
+                    self.shareURL = url
+                }
+            } catch {
+                print("Erro ao gerar link: \(error.localizedDescription)")
+            }
+            
+            houseUsers = await viewModel.fetchHouseUsers()
+            resolvendoShare = false
+        }
     }
     
     // MARK: - Subviews
@@ -160,7 +143,7 @@ struct InviteUsersOnboardingView: View {
                     Circle()
                         .foregroundColor(.green)
                         .frame(width: width * 0.17)
-                    UserProfilePictureTag(imageData: user.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.15)
+                    UserProfilePictureTag(user: user, widthMultiplier: 0.15)
                 }
             }
         }

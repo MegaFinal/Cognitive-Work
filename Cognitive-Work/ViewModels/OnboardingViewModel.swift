@@ -342,15 +342,21 @@ class OnboardingViewModel {
         errorMessage = nil
         
         let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
-        let sharedUser = UserModel(
-            name: profile.name,
-            profilePicture: profile.profilePicture,
-            tier: profile.tier,
-            coins: profile.coins,
-            points: profile.points,
-            house: houseReference,
-            couponLimit: profile.couponLimit
-        )
+        
+        //TODO: make fallback
+                guard let profilePicture = profile.profilePicture
+                else {return}
+                let assetCopy = try? duplicateCKAsset(profilePicture)
+                
+                let sharedUser = UserModel(
+                    name: profile.name,
+                    profilePicture: assetCopy,
+                    tier: profile.tier,
+                    coins: profile.coins,
+                    points: profile.points,
+                    house: houseReference,
+                    couponLimit: profile.couponLimit
+                )
         
         let sharedUserID = CloudKitManager.shared.houseUserRecordID(
             for: profileRecordID,
