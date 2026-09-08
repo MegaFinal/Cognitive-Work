@@ -76,7 +76,7 @@ private struct FortnightlyDayUserBar: View {
             if !entries.isEmpty {
                 VStack(spacing: 4) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
-                        let userIndex = users.firstIndex(where: { $0.recordID == entry.userID }) ?? (index % users.count)
+                        let userIndex = users.firstIndex(where: { $0.recordID == entry.userID }) ?? (users.isEmpty ? 0 : index % users.count)
                         
                         RoundedRectangle(cornerRadius: 15)
                             .fill(UserColorPalette.color(for: userIndex))
