@@ -22,10 +22,10 @@ enum RoomColor: String, CaseIterable, Identifiable {
     var uiColor: Color {
         switch self {
         case .red: return .red
-        case .orange: return .orange
-        case .yellow: return .yellow
-        case .green: return .green
-        case .blue: return .blue
+        case .orange: return .choreOrange
+        case .yellow: return .choreYellow
+        case .green: return .choreGreen
+        case .blue: return .choreBlue
         case .purple: return .purple
         }
     }
