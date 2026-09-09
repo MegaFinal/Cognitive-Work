@@ -11,7 +11,7 @@ extension UIImage {
     
     // MARK: - E-Paper Image Preparation (Black and White)
 
-    /// The prepareForEPaper function takes an image, scales it to fit the screen, creates a source buffer
+    /// The levelBitmap function takes an image, scales it to fit the screen, creates a source buffer
     /// with that scaled image in RGBA (32 bits per pixel) and uses that buffer to create a
     /// second destination buffer with only BW (1 bit per pixel) by checking the lightness of each pixel of the
     /// source buffer.
@@ -20,16 +20,16 @@ extension UIImage {
     ///
     /// - Parameters:
     ///   - image: The image to be converted to the panel's format.
-    /// - Returns: Main function that returns the Data object of 4,736 bytes (3 Colors).
+    /// - Returns: Main function that returns the Data object of 48,000 bytes (black plane only).
     func levelBitmap() -> Data? {
 
         // ------------------------------------- Setup variables -------------------------------------
         
-        let ePaperWidth = 296 //pixels
-        let ePaperHeight = 128 //pixels
+        let ePaperWidth = 800  // GDEY075T7 7.5"
+        let ePaperHeight = 480
 
         // The panel uses 1 bit per pixel (only black or white, no intermediate tones).
-        // 296 × 128 = 37,888 pixels ÷ 8 bits per byte = 4,736 bytes.
+        // 800 × 480 = 384,000 pixels ÷ 8 bits per byte = 48,000 bytes.
         let bytesPerLayer = (ePaperWidth * ePaperHeight) / 8
 
         // Color space of the bitmap, in this case, indicates that it has three (R G B)
@@ -98,7 +98,7 @@ extension UIImage {
         // ------------------------------------- Creates the destination buffer -------------------------------------
         // Each pixel has one bit
 
-        // Creates a new buffer that will receive the BW image. Array of 4,736 zeroed bytes
+        // Creates a new buffer that will receive the BW image. Array of 48,000 zeroed bytes
         var blackBuffer = [UInt8](repeating: 0, count: bytesPerLayer)
 
         // Walks through the source byte matrix, going over every pixel
@@ -138,14 +138,14 @@ extension UIImage {
             }
         }
 
-        return Data(blackBuffer) // Returns exactly 4,736 bytes
+        return Data(blackBuffer) // Returns exactly 48,000 bytes
     }
     
     
     
     // MARK: - E-Paper Image Preparation with Dithering
 
-    /// The ditheringBitmap function does the same job as prepareForEPaper — it turns a UIImage into
+    /// The ditheringBitmap function does the same job as levelBitmap — it turns a UIImage into
     /// the 1 bit per pixel buffer the panel expects — but instead of deciding each pixel in isolation,
     /// it applies Floyd-Steinberg error diffusion.
     ///
@@ -155,14 +155,14 @@ extension UIImage {
     ///
     /// - Parameters:
     ///   - image: The image to be converted to the panel's format.
-    /// - Returns: The Data object of 4,736 bytes (black plane only).
+    /// - Returns: The Data object of 48,000 bytes (black plane only).
     func ditheringBitmap() -> Data? {
 
         // ------------------------------------- Setup variables -------------------------------------
         // Identical to levelBitmap — see that function for the details.
 
-        let ePaperWidth = 296
-        let ePaperHeight = 128
+        let ePaperWidth = 800
+        let ePaperHeight = 480
         let bytesPerLayer = (ePaperWidth * ePaperHeight) / 8
 
         let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -201,7 +201,7 @@ extension UIImage {
         let data = pixelBuffer.bindMemory(to: UInt8.self, capacity: ePaperWidth * ePaperHeight * 4)
 
         // ------------------------------------- Grayscale pass -------------------------------------
-        // DIFFERENT: prepareForEPaper computes the brightness and decides the bit in the same step.
+        // DIFFERENT: levelBitmap computes the brightness and decides the bit in the same step.
         // Here the brightness of every pixel is stored first, because error diffusion needs to go back
         // and modify neighbours that haven't been visited yet.
         // Float instead of Int because the accumulated error can push a value past 255 or below 0.
@@ -272,5 +272,108 @@ extension UIImage {
         }
 
         return Data(blackBuffer)
+    }
+    
+    
+    
+    // MARK: - E-Paper Image Preparation (4 Grayscale Levels)
+
+    /// The levelBitmap4Gray function turns a UIImage into the 2 bits per pixel buffer that a
+    /// 4-grayscale e-paper panel expects. Unlike levelBitmap (1 bit: black or white) and
+    /// ditheringBitmap (1 bit with error diffusion), here each pixel keeps one of FOUR real tones:
+    /// black, dark gray, light gray and white.
+    ///
+    /// 2 bits per pixel means 4 pixels fit in each byte, so the buffer is (width × height) / 4 bytes.
+    ///
+    /// - Returns: The Data object of 96,000 bytes.
+    func levelBitmap4Gray() -> Data? {
+
+        // ------------------------------------- Setup variables -------------------------------------
+        // Same source-buffer setup as levelBitmap — see that function for the details.
+
+        let ePaperWidth = 800   // GDEY075T7 7.5"
+        let ePaperHeight = 480
+
+        // 2 bits per pixel now: 4 pixels per byte.
+        // 800 × 480 = 384,000 pixels ÷ 4 pixels per byte = 96,000 bytes.
+        let bytesTotal = (ePaperWidth * ePaperHeight) / 4
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+
+        guard let context = CGContext(data: nil, width: ePaperWidth, height: ePaperHeight,
+                                      bitsPerComponent: 8, bytesPerRow: ePaperWidth * 4,
+                                      space: colorSpace, bitmapInfo: bitmapInfo) else {
+            return nil
+        }
+
+        context.translateBy(x: 0, y: CGFloat(ePaperHeight))
+        context.scaleBy(x: 1, y: -1)
+
+        UIGraphicsPushContext(context)
+        UIColor.white.setFill()
+        UIRectFill(CGRect(x: 0, y: 0, width: ePaperWidth, height: ePaperHeight))
+
+        // Centers the image keeping aspect ratio (same as the other functions)
+        let aspectWidth = CGFloat(ePaperWidth) / self.size.width
+        let aspectHeight = CGFloat(ePaperHeight) / self.size.height
+        let ratio = min(aspectWidth, aspectHeight)
+        let newWidth = self.size.width * ratio
+        let newHeight = self.size.height * ratio
+        let xOffset = (CGFloat(ePaperWidth) - newWidth) / 2.0
+        let yOffset = (CGFloat(ePaperHeight) - newHeight) / 2.0
+        self.draw(in: CGRect(x: xOffset, y: yOffset, width: newWidth, height: newHeight))
+
+        UIGraphicsPopContext()
+
+        guard let pixelBuffer = context.data else { return nil }
+        let data = pixelBuffer.bindMemory(to: UInt8.self, capacity: ePaperWidth * ePaperHeight * 4)
+
+        // ------------------------------------- Creates the destination buffer -------------------------------------
+        // Each pixel now takes 2 bits. The buffer starts zeroed.
+
+        var grayBuffer = [UInt8](repeating: 0, count: bytesTotal)
+
+        for y in 0..<ePaperHeight {
+            for x in 0..<ePaperWidth {
+
+                let pixelIndex = (y * ePaperWidth * 4) + (x * 4)
+
+                let r = Int(data[pixelIndex])
+                let g = Int(data[pixelIndex + 1])
+                let b = Int(data[pixelIndex + 2])
+
+                // Same ITU-R BT.601 luma as levelBitmap: 0 (black) .. 255 (white)
+                let brightness = (r * 299 + g * 587 + b * 114) / 1000
+
+                // DIFFERENT: instead of one threshold, split the 0–255 range into 4 bands.
+                // Maps brightness to a 2-bit value:
+                //   0 = black, 1 = dark gray, 2 = light gray, 3 = white
+                let level: UInt8
+                if brightness < 64 {
+                    level = 0            // black
+                } else if brightness < 128 {
+                    level = 1            // dark gray
+                } else if brightness < 192 {
+                    level = 2            // light gray
+                } else {
+                    level = 3            // white
+                }
+
+                // DIFFERENT: 4 pixels per byte instead of 8.
+                // byteIndex divides x by 4 (not 8) since each pixel is 2 bits.
+                let byteIndex = (y * (ePaperWidth / 4)) + (x / 4)
+
+                // Which of the 4 slots inside the byte (0..3), read left to right.
+                // Each slot is 2 bits, so we shift by 6, 4, 2, 0.
+                let slot = x % 4
+                let bitShift = 6 - (slot * 2)
+
+                // Writes the 2-bit level into its slot with OR (buffer starts zeroed).
+                grayBuffer[byteIndex] |= (level << bitShift)
+            }
+        }
+
+        return Data(grayBuffer)   // 96,000 bytes
     }
 }

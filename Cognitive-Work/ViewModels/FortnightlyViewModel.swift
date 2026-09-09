@@ -88,9 +88,9 @@ class FortnightlyViewModel {
         
         let calendar = Calendar.current
         let today = Date()
-        let weekday = calendar.component(.weekday, from: today)
-        let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
-        self.startDate = calendar.date(byAdding: .day, value: -daysToSubtract, to: today) ?? today
+        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: today)) else { return }
+        
+        self.startDate = tomorrow
         
         isLoading = false
     }
@@ -105,47 +105,41 @@ class FortnightlyViewModel {
     ///   - **With Daily Assignments (`dailyAssignmentsReference`):** Cross-references the chore's linked references with the globally loaded `dailyAssignments`. For each matched assignment, it looks up the associated user asynchronously and builds a dedicated usage entry.
     ///   - **Fallback (No Daily Assignments):** If a chore has no rigid daily schedule, it falls back to a single deadline-based assignment by reading the chore's `dueDate` and `currentResponsible` user.
     var usageEntries: [DailyUsageEntry] {
-        get async {
-            var entries: [DailyUsageEntry] = []
+        var entries: [DailyUsageEntry] = []
+        
+        for chore in chores {
+            guard let choreID = chore.recordID else { continue }
             
-            for chore in chores {
-                // Skips chores that are not yet saved to CloudKit since they lack an ID for referencing.
-                guard let choreID = chore.recordID else { continue }
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+                let relatedAssignments = dailyAssignments.filter { assignment in
+                    refs.contains { $0.recordID == assignment.recordID }
+                }
                 
-                if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                    // Cross-references chore reference IDs with already loaded daily assignments.
-                    let relatedAssignments = dailyAssignments.filter { assignment in
-                        refs.contains { $0.recordID == assignment.recordID }
-                    }
-                    
-                    // Each valid assignment represents one user performing this chore on a specific day.
-                    for assignment in relatedAssignments {
-                        guard let userID = await assignment.user?.recordID else { continue }
-                        entries.append(DailyUsageEntry(
-                            day: assignment.day,
-                            userID: userID,
-                            choreID: choreID,
-                            minutes: chore.duration, // Duration is derived from the parent chore, not the assignment
-                            choreName: chore.name
-                        ))
-                    }
-                } else {
-                    // Fallback mechanism: If no daily schedule exists, use the due date and current responsible user.
-                    guard let dueDate = chore.dueDate,
-                          let user = await chore.currentResponsible
-                    else { continue }
-                    
+                for assignment in relatedAssignments {
+                    guard let userID = assignment.userReference?.recordID else { continue }
                     entries.append(DailyUsageEntry(
-                        day: dueDate,
-                        userID: user.recordID!,
+                        day: assignment.day,
+                        userID: userID,
                         choreID: choreID,
                         minutes: chore.duration,
                         choreName: chore.name
                     ))
                 }
+            } else {
+                guard let dueDate = chore.dueDate,
+                      let userID = chore.currentResponsibleReference?.recordID
+                else { continue }
+                
+                entries.append(DailyUsageEntry(
+                    day: dueDate,
+                    userID: userID,
+                    choreID: choreID,
+                    minutes: chore.duration,
+                    choreName: chore.name
+                ))
             }
-            
-            return entries
         }
+        
+        return entries
     }
 }

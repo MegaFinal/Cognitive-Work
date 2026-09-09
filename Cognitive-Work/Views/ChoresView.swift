@@ -1,5 +1,5 @@
 //
-//  UserChoresView.swift
+//  ChoresView.swift
 //  Cognitive-Work
 //
 //  Created by Dayô Araújo on 25/08/26.
@@ -104,12 +104,11 @@ struct ChoresView: View {
                     }
             )
         }
-        .task(id: [carouselVM.activeIndex, carouselVM.cardModels.count]) {
-            await updateActiveRoomColor()
-        }
         .task {
-            await carouselVM.fetchChores()
-            await carouselVM.fetchUsers()
+            await carouselVM.fetchAllData()
+        }
+        .task(id: carouselVM.activeIndex) {
+            updateActiveRoomColor()
         }
     }
     
@@ -181,7 +180,7 @@ struct ChoresView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 ForEach(Array(carouselVM.visibleChores.enumerated()), id: \.element.id) { index, chore in
-                    ChoreCardListStyle(chore: chore, namespace: cardAnimation) {
+                    ChoreCardListStyle(chore: chore, namespace: cardAnimation, carouselViewModel: carouselVM) {
                         carouselVM.focusDetailsImmediately(index)
                     }
                 }
@@ -204,8 +203,8 @@ struct ChoresView: View {
         }
     }
     
-    /// Updates the background color of the progress section to match the focused chore's room color.
-    private func updateActiveRoomColor() async {
+    /// Updates the background color of the progress section locally to match the focused chore's room color.
+    private func updateActiveRoomColor() {
         guard !carouselVM.visibleChores.isEmpty,
               carouselVM.visibleChores.indices.contains(carouselVM.activeIndex) else {
             activeRoomColor = .gray
@@ -214,7 +213,7 @@ struct ChoresView: View {
         
         let centeredChore = carouselVM.visibleChores[carouselVM.activeIndex]
         
-        if let room = await centeredChore.room {
+        if let room = carouselVM.getRoom(for: centeredChore) {
             activeRoomColor = room.color.uiColor
         } else {
             activeRoomColor = .gray
@@ -260,94 +259,4 @@ private struct ProgressIndicatorCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 21))
         .shadow(color: .black.opacity(0.25), radius: 4.07717, x: 0, y: 1.23551)
     }
-}
-
-// MARK: - Mock class for preview
-fileprivate class MockChoreModel: ChoreModel {
-    var mockUsers: [UserModel] = []
-    var mockChecklist: [CheckItemModel] = []
-    var mockRoom: RoomModel? = nil
-    var mockCurrentResponsible: UserModel? = nil
-    
-    override var allResponsibleUsers: [UserModel] { get async { mockUsers } }
-    override var checkList: [CheckItemModel] { get async { mockChecklist } }
-    override var room: RoomModel? { get async { mockRoom } }
-    override var currentResponsible: UserModel? { get async { mockCurrentResponsible } }
-}
-
-// MARK: - Mock data for preview
-@MainActor
-private func makeMockCarouselVM() -> CarouselViewModel {
-    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    let mockAsset = mockImageData.flatMap { CloudKitManager.shared.createAsset(from: $0) }
-
-    let user1 = UserModel(name: "Dayô", profilePicture: mockAsset, tier: .tier1)
-    user1.recordID = CKRecord.ID(recordName: "user_1")
-
-    let user2 = UserModel(name: "João", profilePicture: mockAsset, tier: .tier2)
-    user2.recordID = CKRecord.ID(recordName: "user_2")
-
-    let user3 = UserModel(name: "Maria", profilePicture: mockAsset, tier: .tier1)
-    user3.recordID = CKRecord.ID(recordName: "user_3")
-
-    let room1 = RoomModel(name: "Banheiro", color: .blue)
-    let room2 = RoomModel(name: "Cozinha", color: .red)
-    let room3 = RoomModel(name: "Sofa", color: .yellow)
-
-    let chore1 = MockChoreModel(
-        name: "Lavar o Banheiro",
-        description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Não esquecer de repor o papel higiênico e esvaziar a lixeira no final.",
-        isDone: false, frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent
-    )
-    chore1.symbolName = "toilet"
-    chore1.recordID = CKRecord.ID(recordName: "chore_1")
-    chore1.mockUsers = [user1, user2]
-    chore1.mockCurrentResponsible = user1
-    chore1.mockChecklist = [
-        CheckItemModel(name: "Lavar o vaso sanitário", isDone: true),
-        CheckItemModel(name: "Limpar o espelho sem manchas", isDone: false),
-        CheckItemModel(name: "Esvaziar a lixeira", isDone: false)
-    ]
-    chore1.mockRoom = room1
-
-    let chore2 = MockChoreModel(
-        name: "Varrer a Sala",
-        description: "Afastar o sofá e a mesa de centro para varrer os cantos. Passar um pano úmido no chão e limpar o pó da estante e da TV.",
-        isDone: true, frequency: .weekly, duration: 1200, isPublic: true, priorityTag: .urgent
-    )
-    chore2.symbolName = "sofa"
-    chore2.recordID = CKRecord.ID(recordName: "chore_2")
-    chore2.mockUsers = [user3]
-    chore2.mockCurrentResponsible = user3
-    chore2.mockChecklist = [
-        CheckItemModel(name: "Afastar o sofá", isDone: true),
-        CheckItemModel(name: "Passar pano úmido", isDone: false)
-    ]
-    chore2.mockRoom = room2
-
-    let chore3 = MockChoreModel(
-        name: "Preparar o Jantar",
-        description: "Cortar os legumes, temperar a carne e deixar o arroz pronto. Limpar a bancada e guardar os temperos após o uso.",
-        isDone: false, frequency: .daily, duration: 2400, isPublic: true, priorityTag: .low
-    )
-    chore3.symbolName = "frying.pan"
-    chore3.recordID = CKRecord.ID(recordName: "chore_3")
-    chore3.mockUsers = [user1, user2, user3]
-    chore3.mockCurrentResponsible = user2
-    chore3.mockChecklist = [
-        CheckItemModel(name: "Cortar legumes", isDone: true),
-        CheckItemModel(name: "Temperar carne", isDone: false),
-        CheckItemModel(name: "Fazer o arroz", isDone: false),
-        CheckItemModel(name: "Limpar a bancada", isDone: false)
-    ]
-    chore3.mockRoom = room3
-
-    let mockVM = CarouselViewModel()
-    mockVM.cardModels = [chore1, chore2, chore3]
-    mockVM.userModels = [user1, user2, user3]
-    return mockVM
-}
-
-#Preview("UserChoresView") {
-    ChoresView(carouselVM: makeMockCarouselVM())
 }
