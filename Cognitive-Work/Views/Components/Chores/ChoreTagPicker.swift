@@ -12,7 +12,7 @@ import CloudKit
 struct ChoreTagPicker: View {
     
     /// The mutable configuration state governing the selected options.
-    @Bindable var chore: ChoreDTO
+    @Binding var chore: ChoreDTO
     
     /// Defines the attribute mode this picker will govern.
     var type: TagPickerType
@@ -49,16 +49,13 @@ struct ChoreTagPicker: View {
                             .tag(tier)
                     }
                 }
-                
-            case .room:
-                Picker("Cômodo", selection: $currentRoom) {
-                    Text("Sem Cômodo").tag(RoomModel?(nil))
-                    
-                    ForEach(availableRooms, id: \.self) { room in
-                        ColorIconTagLabel(title: room.name.capitalized, color: room.color.uiColor)
-                            .tag(RoomModel?(room))
-                    }
-                }
+//            case .room:
+//                Picker("Cômodo", selection: $currentRoom) {
+//                    ForEach(availableRooms, id: \.self) { room in
+//                        ColorIconTagLabel(title: room.name.capitalized, color: room.color.uiColor)
+//                            .tag(RoomModel?(room))
+//                    }
+//                }
             }
         } label: {
             HStack {
@@ -74,13 +71,13 @@ struct ChoreTagPicker: View {
                     .imageScale(.small)
             }
         }
-        .task {
-            if type == .room, let roomReference = chore.roomReference {
-                currentRoom = await CloudKitManager.shared
-                    .fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [roomReference])?
-                    .first
-            }
-        }
+//        .task {
+//            if type == .room, let roomReference = chore.roomReference {
+//                currentRoom = await CloudKitManager.shared
+//                    .fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [roomReference])?
+//                    .first
+//            }
+//        }
         .onChange(of: currentRoom) { _, newRoom in
             if let recordID = newRoom?.recordID {
                 chore.roomReference = CKRecord.Reference(recordID: recordID, action: .none)

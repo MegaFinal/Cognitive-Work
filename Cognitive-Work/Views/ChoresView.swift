@@ -26,6 +26,11 @@ struct ChoresView: View {
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
+    /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
+    init(carouselVM: CarouselViewModel = CarouselViewModel()) {
+        self._carouselVM = State(initialValue: carouselVM)
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack {

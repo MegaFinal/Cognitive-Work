@@ -203,6 +203,14 @@ class OnboardingViewModel {
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
         
+        let roomToRepresentChoresToAllHome = RoomModel(name: "Casa",
+                                  house: house.reference(action: .deleteSelf),
+                                  color: .orange)
+        
+        if let savedDefault = await CloudKitManager.shared.create(roomToRepresentChoresToAllHome,parent: house.reference(action: .none)) {
+            selectedDrafts.append(savedDefault)
+        }
+        
         let savedRooms = await withTaskGroup(of: RoomModel?.self) { group in
             for draft in selectedDrafts {
                 group.addTask {
