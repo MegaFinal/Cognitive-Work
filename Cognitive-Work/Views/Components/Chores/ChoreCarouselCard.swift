@@ -28,6 +28,7 @@ struct ChoreCarouselCard: View {
         VStack {
             Text(chore.name)
                 .font(.title)
+                .fontWeight(.semibold)
             
             Image(systemName: chore.symbolName)
                 .resizable()
@@ -38,6 +39,7 @@ struct ChoreCarouselCard: View {
         .task {
             room = await chore.room
         }
+        .foregroundColor(.white)
         .frame(width: width * 0.7, height: height * 0.43)
         .background(room?.color.uiColor ?? .gray)
         .clipShape(RoundedRectangle(cornerRadius: 31))

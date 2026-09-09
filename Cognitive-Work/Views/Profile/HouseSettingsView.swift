@@ -16,7 +16,7 @@ struct HouseSettingsView: View {
         VStack(spacing: 30) {
             // MARK: - Add roomates button
             NavigationLink {
-                InviteUsersOnboardingView(viewModel: .constant(makeInviteViewModel()), editHouse: true)
+                InviteUsersOnboardingView(viewModel: .constant(makeInviteViewModel()), isFromSettings: true)
                     .padding(.bottom, 30)
             } label: {
                 HStack {

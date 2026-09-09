@@ -198,7 +198,7 @@ struct ChoreDetailsCard: View {
             Spacer()
             
             if allResponsibleUsers.count == 1 {
-                UserProfilePictureTag(imageData: allResponsibleUsers.first?.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.1)
+                UserProfilePictureTag(user: allResponsibleUsers.first, widthMultiplier: 0.1)
             } else {
                 UserProfilePictureList(chore: chore, widthMultiplier: 0.1)
             }

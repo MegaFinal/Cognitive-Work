@@ -11,40 +11,38 @@ import CloudKit
 struct ChoreCard: View {
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
-
+    
     let chore: ChoreModel
-    @State var roomName: String = ""
-
+    @State var room: RoomModel? = nil
+    
     var body: some View {
-        VStack {
+        VStack(spacing: 30) {
             title
-
+            
             HStack {
                 Image(systemName: "toilet")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: width * 0.2, height: height * 0.2)
+                    .frame(width: width * 0.2)
                     .padding(.horizontal)
-
-
+                
+                
                 ChorePriority(chore: chore)
             }
         }
+        .foregroundColor(.white)
         .task {
-            if let room = await chore.room {
-                roomName = room.name
-            }
+            room = await chore.room
         }
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .foregroundStyle(.delimiteTimeSquareComponent)
-                .frame(width: 345, height: 290)
-        )
+        .frame(width: width * 0.85, height: height * 0.35)
+        .background(room?.color.uiColor ?? .teal)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.32), radius: 5.8, x: 4, y: 6)
     }
-
+    
     private var title: some View {
         VStack {
-            Text(roomName)
+            Text(room?.name ?? "Cômodo")
                 .fontWeight(.regular)
                 .font(.headline)
             Text(chore.name)
@@ -57,26 +55,26 @@ struct ChoreCard: View {
 private struct ChorePriority: View {
     let chore: ChoreModel
     @State var user: UserModel?
-
+    
     var body: some View {
         HStack {
             Rectangle()
                 .frame(width: 2)
-
+            
             VStack(alignment: .leading) {
-                UserProfilePictureTag(imageData: user?.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.05)
+                UserProfilePictureTag(user: user, widthMultiplier: 0.05)
 
                 CapsuleTag(
                     tagName: chore.priorityTag.rawValue,
-                    tagColor: .subTitleGray,
-                    horizontalPadding: 0.0,
+                    tagColor: chore.priorityTag.color,
+                    horizontalPadding: 7,
                     verticalPadding: 1.5
                 )
-
+                
                 CapsuleTag(
                     tagName: tier.displayText,
-                    tagColor: .titleGray,
-                    horizontalPadding: 0.0,
+                    tagColor: tier.color,
+                    horizontalPadding: 7,
                     verticalPadding: 1.5
                 )
             }
@@ -86,7 +84,7 @@ private struct ChorePriority: View {
         }
         .frame(height: 100)
     }
-
+    
     private var tier: ChoreDurationTier {
         ChoreDurationTier.from(minutes: chore.duration)
     }
@@ -101,6 +99,6 @@ private struct ChorePriority: View {
         isPublic: true,
         priorityTag: .urgent
     )
-
+    
     ChoreCard(chore: mockChore)
 }

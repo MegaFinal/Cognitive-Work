@@ -45,6 +45,15 @@ struct CreateProfileOnboardingView: View {
                 Task {
                     await viewModel.createUser()
                     if viewModel.currentUser != nil {
+                        // A share invite may have been accepted before this profile
+                        // existed (see `Onboarding`'s `.didAcceptShare` handler), in
+                        // which case `joinHouse()` couldn't run yet because it needs
+                        // `currentUser`. Run it now that the profile is finally saved,
+                        // so the user actually ends up linked to the house instead of
+                        // just holding an accepted CloudKit share with no house record.
+                        if viewModel.stateMachine.flow == .invitedWithoutProfile {
+                            await viewModel.joinHouse()
+                        }
                         viewModel.goToNextView()
                     }
                 }
@@ -53,6 +62,14 @@ struct CreateProfileOnboardingView: View {
         }
         .navigationBarBackButtonHidden()
         .padding()
+        .alert("Não deu para criar o perfil", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
         .onChange(of: selectedItem) { _, newItem in
             Task {
                 if let newItem,
@@ -76,7 +93,7 @@ struct CreateProfileOnboardingView: View {
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.black.opacity(0.7))
             
-            Text("Escolha um Memoji e um nome para utilizar no seu app")
+            Text("Escolha uma foto e um nome para utilizar no app")
                 .font(.callout)
                 .foregroundStyle(.gray)
                 .lineLimit(nil)

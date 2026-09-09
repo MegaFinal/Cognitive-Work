@@ -76,11 +76,11 @@ private struct FortnightlyDayUserBar: View {
             if !entries.isEmpty {
                 VStack(spacing: 4) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
-                        let userIndex = users.firstIndex(where: { $0.recordID == entry.userID }) ?? (index % users.count)
-
-                        RoundedRectangle(cornerRadius: 4)
+                        let userIndex = users.firstIndex(where: { $0.recordID == entry.userID }) ?? (users.isEmpty ? 0 : index % users.count)
+                        
+                        RoundedRectangle(cornerRadius: 15)
                             .fill(UserColorPalette.color(for: userIndex))
-                            .frame(width: 38, height: maxBarHeight * entry.tier.heightRatio)
+                            .frame(width: 45, height: maxBarHeight * entry.tier.heightRatio)
                             .onTapGesture {
                                 onSelect(entry)
                             }
@@ -88,7 +88,7 @@ private struct FortnightlyDayUserBar: View {
                 }
             }
         }
-        .frame(width: 50)
+        .frame(width: 55)
     }
 }
 

@@ -30,8 +30,12 @@ struct Onboarding: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .didAcceptShare)) { _ in
                 Task {
-                    await viewModel.joinHouse()
-                    viewModel.stateMachine.flow = .invitedWithoutProfile
+                    if viewModel.currentUser != nil {
+                        await viewModel.joinHouse()
+                        viewModel.goToNextView()
+                    } else {
+                        viewModel.stateMachine.flow = .invitedWithoutProfile
+                    }
                 }
             }
             .task {
@@ -56,7 +60,7 @@ struct Onboarding: View {
         case .chooseRooms:
             SelectRoomsOnboardingView(viewModel: $viewModel)
         case .inviteAndConfirmJoin:
-            InviteUsersOnboardingView(viewModel: $viewModel, editHouse: false)
+            InviteUsersOnboardingView(viewModel: $viewModel, isFromSettings: false)
         case .setUpScheduleChores:
             StartChoreDivisionOnboardingView(viewModel: $viewModel)
         case .chooseChores:

@@ -46,6 +46,7 @@ struct ChoreCardListStyle: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.1, height: height * 0.08)
+                    .foregroundColor(.white)
                     .fontWeight(.thin)
                 
                 VStack(alignment: .leading, spacing: 20) {
@@ -53,7 +54,7 @@ struct ChoreCardListStyle: View {
                         // MARK: - Responsible users
                         HStack(spacing: -5) {
                             ForEach($allResponsibleUsers, id: \.recordID) { $user in
-                                UserProfilePictureTag(imageData: user.profilePicture?.fileURL?.dataRepresentation, widthMultiplier: 0.07)
+                                UserProfilePictureTag(user: user, widthMultiplier: 0.07)
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
                         }
@@ -90,6 +91,7 @@ struct ChoreCardListStyle: View {
                                     .font(.title2)
                                     .bold()
                             }
+                            .foregroundColor(.white)
                             
                             Spacer()
                             
