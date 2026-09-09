@@ -81,7 +81,7 @@ class HardwareViewModel {
         guard let image = renderer.uiImage else {
             throw NSError(domain: "HardwareViewModel", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Failed to render the chart view."])
         }
-        guard let imageData = image.ditheringBitmap() else {
+        guard let imageData = image.levelBitmap4Gray() else {
             throw NSError(domain: "HardwareViewModel", code: 1002, userInfo: [NSLocalizedDescriptionKey: "Failed to convert the chart image into e-paper format."])
         }
         
@@ -100,7 +100,7 @@ class HardwareViewModel {
                 userInfo: [NSLocalizedDescriptionKey: "Falha ao renderizar a view em imagem."]
             )
         }
-        guard let imageData = image.levelBitmap() else {
+        guard let imageData = image.levelBitmap4Gray() else {
             throw NSError(
                 domain: "HardwareViewModel",
                 code: 1004,

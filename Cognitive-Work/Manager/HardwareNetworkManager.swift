@@ -159,23 +159,18 @@ class HardwareNetworkManager {
     ///   - imageData: The 4,736 bytes produced by `prepareForEPaper` or `ditheringBitmap`.
     /// - Throws: ``APIErrors/invalidURL``, ``APIErrors/invalidResponse``, ``APIErrors/invalidData``.
     func sendImageToDevice(imageData: Data) async throws {
-        let route = "/send_image"
-        let endpoint = self.base + self.ip + route
+        guard imageData.count == 800 * 480 / 4 else { throw APIErrors.invalidData }
 
-        guard let url = URL(string: endpoint) else {
-            throw APIErrors.invalidURL
-        }
+        let endpoint = self.base + self.ip + "/send_image"
+        guard let url = URL(string: endpoint) else { throw APIErrors.invalidURL }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("text/plain", forHTTPHeaderField: "Content-Type") // base64 is text, not binary
-        request.setValue(self.hash, forHTTPHeaderField: "X-Auth-Hash") // hash goes in the header
-        request.httpBody = imageData.base64EncodedString().data(using: .utf8)
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        request.setValue(self.hash, forHTTPHeaderField: "X-Auth-Hash")
+        request.timeoutInterval = 60
 
-        let (data, response) = try await session.data(for: request)
-
-        // 200 means the device received and validated the payload, not that the panel
-        // finished drawing — the refresh takes several seconds and happens after the answer
+        let (data, response) = try await session.upload(for: request, from: imageData)
         try validate(data: data, response: response)
     }
 
