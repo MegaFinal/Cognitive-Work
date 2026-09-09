@@ -252,21 +252,23 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         
         guard let house = await room?.house,
                 let zoneID = house.recordID?.zoneID,
-                let houseReference = await currentResponsible?.houseReference
-        else {return}
+              let houseReference = await room?.houseReference
+        else {
+            return
+        }
         
-        
+        let parentReference = CKRecord.Reference(recordID: houseReference.recordID, action: .none)
+
         if recordID == nil {
-            guard let createdChore = await CloudKitManager.shared.create(self, zoneID: zoneID, parent: houseReference)
+            guard let createdChore = await CloudKitManager.shared.create(self, zoneID: zoneID, parent: parentReference)
             else { return }
             recordID = createdChore.recordID
         }
         
         guard let choreRecordID = recordID else { return }
-        
         let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
         
-        checkListReference = await CheckItemModel.sync(from: choreDTO.checklist, parent: choreReference)
+        self.checkListReference = await CheckItemModel.sync(from: choreDTO.checklist, parent: choreReference)
         
         await CloudKitManager.shared.update(self)
     }

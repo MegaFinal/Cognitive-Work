@@ -203,6 +203,14 @@ class OnboardingViewModel {
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
         var savedRooms: [RoomModel] = []
         
+        let roomToRepresentChoresToAllHome = RoomModel(name: "Casa",
+                                  house: house.reference(action: .deleteSelf),
+                                  color: .orange)
+        
+        if let savedDefault = await CloudKitManager.shared.create(roomToRepresentChoresToAllHome,parent: house.reference(action: .none)) {
+            savedRooms.append(savedDefault)
+        }
+        
         for draft in selectedDrafts {
             let roomModel = RoomModel(name: draft.name,
                                       house: house.reference(action: .deleteSelf),

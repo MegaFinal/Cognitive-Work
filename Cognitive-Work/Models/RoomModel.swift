@@ -30,7 +30,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     private var relatedChoresReference: [CKRecord.Reference]?
     
     /// The house this room belongs to.
-    private var houseReference: CKRecord.Reference?
+    var houseReference: CKRecord.Reference?
     
     
     var relatedChores: [ChoreModel] {
