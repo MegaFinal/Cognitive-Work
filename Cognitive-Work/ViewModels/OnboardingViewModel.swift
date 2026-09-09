@@ -104,14 +104,14 @@ class OnboardingViewModel {
             errorMessage = "Seu perfil ainda não foi salvo. Volte e crie o perfil antes de criar a casa."
             return
         }
-
+        
         isLoading = true
         errorMessage = nil
-
+        
         // Clears the spinner on *every* exit, including the early returns below. Without it,
         // any of those returns leaves the button spinning forever with no way out.
         defer { isLoading = false }
-
+        
         let userReference = CKRecord.Reference(recordID: userRecordID, action: .none)
         let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference])
         if let savedHouse = await CloudKitManager.shared.create(newHouse) {
@@ -129,7 +129,7 @@ class OnboardingViewModel {
             // The picture is optional: a member without one still needs their in-house copy
             // created, so this must not bail out of the whole flow.
             let assetCopy = user.profilePicture.flatMap { try? duplicateCKAsset($0) }
-
+            
             let userCopy = UserModel(
                 name: user.name ,
                 profilePicture: assetCopy,
@@ -201,16 +201,26 @@ class OnboardingViewModel {
         isLoading = true
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
-        var savedRooms: [RoomModel] = []
         
-        for draft in selectedDrafts {
-            let roomModel = RoomModel(name: draft.name,
-                                      house: house.reference(action: .deleteSelf),
-                                      color: draft.color)
-            if let savedRoom = await CloudKitManager.shared.create(roomModel,parent: house.reference(action: .none)) {
-                savedRooms.append(savedRoom)
+        let savedRooms = await withTaskGroup(of: RoomModel?.self) { group in
+            for draft in selectedDrafts {
+                group.addTask {
+                    let roomModel = await RoomModel(name: draft.name,
+                                              house: house.reference(action: .deleteSelf),
+                                              color: draft.color)
+                    return await CloudKitManager.shared.create(roomModel, parent: house.reference(action: .none))
+                }
             }
+            
+            var results: [RoomModel] = []
+            for await result in group {
+                if let savedRoom = result {
+                    results.append(savedRoom)
+                }
+            }
+            return results
         }
+        
         let success = await house.appendRoom(rooms: savedRooms)
         
         if success {
@@ -400,10 +410,10 @@ class OnboardingViewModel {
     
     private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
         guard let origem = asset.fileURL else { return nil }
-
+        
         let destino = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
-
+        
         try FileManager.default.copyItem(at: origem, to: destino)
         return CKAsset(fileURL: destino)
     }

@@ -15,23 +15,24 @@ final class FortnightlyScheduleViewModel {
     var users: [UserModel] = []
     var chores: [ChoreModel] = []
     var isLoading = true
-
+    
     private func setup() async {
-        self.users = await CloudKitManager.shared.fetchHouseUsers()
-        self.chores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        async let fetchUsers = CloudKitManager.shared.fetchHouseUsers()
+        async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
+        
+        self.users = await fetchUsers
+        self.chores = await fetchChores
     }
     
     func generateSchedule() async {
         isLoading = true
         
         await setup()
-
+        
         await TaskSchedulerEngine.schedule(chores: chores,users: users)
         
         await setup()
-
+        
         isLoading = false
     }
-    
-    
 }

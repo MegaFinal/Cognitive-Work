@@ -21,7 +21,6 @@ import CloudKit
 /// - Navigating to the hardware Wi-Fi connection flow.
 /// - Deleting the current user's account.
 ///
-
 struct UserProfileView: View {
     @State private var viewModelUser: UserProfileViewModel
     @State private var viewModelHouse = HouseEditViewModel()
@@ -40,8 +39,11 @@ struct UserProfileView: View {
             VStack(spacing: 50) {
                 userInfo
                 
-                SettingsButtonsSection(viewModelUser: viewModelUser, viewModelHouse: viewModelHouse, viewModelHardware: $viewModelHardware)
-                
+                SettingsButtonsSection(
+                    viewModelUser: viewModelUser,
+                    viewModelHouse: viewModelHouse,
+                    viewModelHardware: $viewModelHardware
+                )
                 
                 Spacer()
             }
@@ -68,13 +70,13 @@ struct UserProfileView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        
         // MARK: Task
-        .task{
-            await viewModelUser.loadUser()
-            await viewModelHardware.fetchIp()
+        .task {
+            async let loadUserTask: () = viewModelUser.loadUser()
+            async let loadIpTask: () = viewModelHardware.fetchIp()
+            
+            _ = await (loadUserTask, loadIpTask)
         }
-        
         // MARK: Alert if didn't save
         .alert(
             "Não foi possível salvar",
@@ -88,7 +90,6 @@ struct UserProfileView: View {
         message: {
             Text(viewModelUser.errorMessage ?? "")
         }
-        
         .overlay {
             if viewModelUser.isSaving {
                 ProgressView()
@@ -181,21 +182,4 @@ private struct SettingsButtonsSection: View {
             .padding(.horizontal)
         }
     }
-}
-
-
-// MARK: - Preview
-#Preview {
-    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    let mockUser = UserModel(
-        name: "Dayô Araújo",
-        //TODO: Make preview work again
-        profilePicture: nil,
-        tier: .tier1
-    )
-    
-    let mockViewModel = UserProfileViewModel(user: mockUser)
-    
-    UserProfileView(viewModelUser: mockViewModel)
-    
 }
