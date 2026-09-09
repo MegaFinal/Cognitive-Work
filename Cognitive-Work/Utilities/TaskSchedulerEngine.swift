@@ -24,10 +24,12 @@ struct TaskSchedulerEngine {
         // Return immediately if the user list is empty, without performing any scheduling
         guard !users.isEmpty else { return }
         
-        // Get the start time of the current day (00:00:00)
-        let now = Calendar.current.startOfDay(for: Date())
+        // Get the start time of the tomorrow (00:00:00)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let now = calendar.date(byAdding: .day, value: 1, to: today) else { return }
         // Calculate the date 14 days from today; return if it fails
-        guard let windowEnd = Calendar.current.date(byAdding: .day, value: 14, to: now) else { return }
+        guard let windowEnd = calendar.date(byAdding: .day, value: 15, to: now) else { return }
         
         // `DailyAssignmentModel` records must live in the house's own zone, never in
         // whichever device happens to run this first — otherwise anyone who isn't that

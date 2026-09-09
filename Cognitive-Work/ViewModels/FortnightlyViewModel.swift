@@ -88,9 +88,9 @@ class FortnightlyViewModel {
         
         let calendar = Calendar.current
         let today = Date()
-        let weekday = calendar.component(.weekday, from: today)
-        let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
-        self.startDate = calendar.date(byAdding: .day, value: -daysToSubtract, to: today) ?? today
+        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: today)) else { return }
+        
+        self.startDate = tomorrow
         
         isLoading = false
     }
