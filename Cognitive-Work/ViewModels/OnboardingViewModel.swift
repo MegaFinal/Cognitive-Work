@@ -31,6 +31,7 @@ class OnboardingViewModel {
     
     /// Whether an asynchronous CloudKit operation is currently in progress
     var isLoading: Bool = false
+    var isCheckingAccount: Bool = true
     /// A message describing the most recent error, if any
     var errorMessage: String? = nil
     
@@ -206,8 +207,8 @@ class OnboardingViewModel {
             for draft in selectedDrafts {
                 group.addTask {
                     let roomModel = await RoomModel(name: draft.name,
-                                              house: house.reference(action: .deleteSelf),
-                                              color: draft.color)
+                                                    house: house.reference(action: .deleteSelf),
+                                                    color: draft.color)
                     return await CloudKitManager.shared.create(roomModel, parent: house.reference(action: .none))
                 }
             }
@@ -416,5 +417,40 @@ class OnboardingViewModel {
         
         try FileManager.default.copyItem(at: origem, to: destino)
         return CKAsset(fileURL: destino)
+    }
+    
+    // MARK: - Auto Login / Initial Validation
+    
+    /// Checks if the current iCloud user already possesses an account within the application.
+    ///
+    /// This method queries CloudKit for an existing `UserModel`. If a profile is found, it restores
+    /// the local session and updates the `OnboardingStateMachine`. Then, it checks for an existing `HouseModel`.
+    ///
+    /// - If both exist: the user is routed directly to the main app (skipping onboarding completely).
+    /// - If only the profile exists: sets the state machine flow to `.houseCreator` and advances
+    ///   directly to the home creation/entry step (`.createOrEnterHome`), bypassing welcome and profile creation.
+    @MainActor
+    func checkExistingAccount() async {
+        isCheckingAccount = true
+        defer { isCheckingAccount = false }
+        
+        if let existingUser = try? await CloudKitManager.shared.fetchFirst(UserModel.self) {
+            
+            CloudKitManager.shared.setCurrentUser(existingUser)
+            self.currentUser = existingUser
+            self.stateMachine.user = existingUser
+            
+            if let existingHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self) {
+                self.currentHouse = existingHouse
+                self.stateMachine.house = existingHouse
+                
+                self.finishOnboarding()
+            } else {
+                stateMachine.flow = .houseCreator
+                if let targetIndex = stateMachine.steps.firstIndex(of: .createOrEnterHome) {
+                    stateMachine.jumpToStep(index: targetIndex)
+                }
+            }
+        }
     }
 }
