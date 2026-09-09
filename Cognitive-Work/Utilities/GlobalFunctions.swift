@@ -38,10 +38,10 @@ func buildScheduleContext(
             recordReferences: refs
         ) ?? []
 
-        // Filter for valid time slots between today (inclusive) and window end (exclusive)
+        // Filter for valid time slots between today and window end
         let validSlots = slots.filter { slot in
             let day = Calendar.current.startOfDay(for: slot.day)
-            return day >= now && day < windowEnd
+            return day >= now && day <= windowEnd
         }
 
         // Store valid time slots in the user's available time map

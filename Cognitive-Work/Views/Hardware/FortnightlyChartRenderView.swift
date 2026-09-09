@@ -25,11 +25,14 @@ struct FortnightlyChartRenderView: View {
     
     /// The content and layout of the render view.
     var body: some View {
+        let calendar = Calendar.current
+        let tomorrowStartDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: startDate)) ?? startDate
+        
         VStack(spacing: 16) {
             FortnightlyBarChart(
                 users: users,
                 entries: usageEntries,
-                startDate: startDate,
+                startDate: tomorrowStartDate,
                 onSelect: { _ in },
                 scrollEnabled: false,
                 daysToShow: 7
