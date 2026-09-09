@@ -14,21 +14,15 @@ import CloudKit
 /// This view is revealed when the user flips or taps a card, providing full details, checklist progress,
 /// postponement actions, and a completion swipe toggle.
 struct ChoreDetailsCard: View {
+    @Bindable var chore: ChoreModel
+    @Bindable var carouselViewModel: CarouselViewModel
     
-    /// The room associated with the current chore.
-    @State var room: RoomModel? = nil
+    var isShowingBack: Bool
     
-    /// All users designated as responsible for this chore.
-    @State var allResponsibleUsers: [UserModel] = []
-    
-    /// The sub-items defining the chore's checklist.
     @State private var checkList: [CheckItemModel] = []
     
-    /// The core data model of the chore being displayed.
-    @Bindable var chore: ChoreModel
-    
-    /// The view model governing the carousel's state.
-    @Bindable var carouselViewModel: CarouselViewModel
+    var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
+    var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -55,10 +49,10 @@ struct ChoreDetailsCard: View {
             
             actionBar
         }
-        .task {
-            room = await chore.room
-            allResponsibleUsers = await chore.allResponsibleUsers
-            checkList = await chore.checkList
+        .task(id: isShowingBack) {
+            if isShowingBack && checkList.isEmpty {
+                checkList = await chore.checkList
+            }
         }
         .frame(width: width * 0.88, height: height * 0.599)
         .background(.white)
@@ -200,7 +194,7 @@ struct ChoreDetailsCard: View {
             if allResponsibleUsers.count == 1 {
                 UserProfilePictureTag(user: allResponsibleUsers.first, widthMultiplier: 0.1)
             } else {
-                UserProfilePictureList(chore: chore, widthMultiplier: 0.1)
+                UserProfilePictureList(users: allResponsibleUsers, widthMultiplier: 0.1)
             }
             
             NavigationLink {
@@ -254,40 +248,3 @@ private struct ChecklistItemButton: View {
         .buttonStyle(.plain)
     }
 }
-
-// MARK: - Mock class for preview
-fileprivate class MockChoreModel: ChoreModel {
-    var mockUsers: [UserModel] = []
-    var mockChecklist: [CheckItemModel] = []
-    var mockRoom: RoomModel? = nil
-    
-    override var allResponsibleUsers: [UserModel] { get async { mockUsers } }
-    override var checkList: [CheckItemModel] { get async { mockChecklist } }
-    override var room: RoomModel? { get async { mockRoom } }
-}
-
-//#Preview("UserChoresView") {
-//    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-//    //TODO: Make preview work again, profilePicture now is a CKAsset
-//    let user1 = UserModel(name: "Dayô", profilePicture: nil, tier: .tier1)
-//    let user2 = UserModel(name: "João", profilePicture: nil, tier: .tier2)
-//    
-//    let room1 = RoomModel(name: "Banheiro", color: .blue)
-//    
-//    let chore1 = MockChoreModel(
-//        name: "Lavar o Banheiro",
-//        description: "Esfregar o chão do box, limpar os espelhos com limpa-vidros, lavar a pia e o vaso sanitário. Não esquecer de repor o papel higiênico e esvaziar a lixeira no final.",
-//        isDone: false, frequency: .weekly, duration: 1800, isPublic: true, priorityTag: .urgent
-//    )
-//    chore1.symbolName = "toilet"
-//    chore1.mockUsers = [user1, user2]
-//    chore1.mockChecklist = [
-//        CheckItemModel(name: "Lavar o vaso sanitário", isDone: true),
-//        CheckItemModel(name: "Limpar o espelho sem manchas", isDone: false),
-//        CheckItemModel(name: "Esvaziar a lixeira", isDone: false)
-//    ]
-//    chore1.mockRoom = room1
-//    let carousel = CarouselViewModel()
-//    
-//    ChoreDetailsCard(chore: chore1, carouselViewModel: carousel)
-//}

@@ -17,8 +17,12 @@ class DashboardModel: Identifiable {
     var averageTime: Double
     
     func setup() async {
-        for user in users {
-            allChores.append(contentsOf: await user.chores)
+        let fetchedChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        let userIDs = users.compactMap { $0.recordID }
+        
+        self.allChores = fetchedChores.filter { chore in
+            guard let responsibleID = chore.currentResponsibleReference?.recordID else { return false }
+            return userIDs.contains(responsibleID)
         }
     }
     

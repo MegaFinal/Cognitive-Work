@@ -12,21 +12,14 @@ import CloudKit
 
 /// A compact row representation of a chore, utilized in the vertical list layout mode.
 struct ChoreCardListStyle: View {
-    
-    /// The chore represented by this list item.
     @State var chore: ChoreModel
-    
-    /// The room mapped to the current chore.
-    @State var room: RoomModel? = nil
-    
-    /// The users designated to execute this chore.
-    @State var allResponsibleUsers: [UserModel] = []
-    
-    /// Namespace required for layout morphing transitions.
     let namespace: Namespace.ID
     
-    /// Closure triggered when the list item is tapped, typically to open the detail view.
+    var carouselViewModel: CarouselViewModel
     var onTap: () -> Void = {}
+    
+    var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
+    var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -53,16 +46,13 @@ struct ChoreCardListStyle: View {
                     HStack(spacing: 10) {
                         // MARK: - Responsible users
                         HStack(spacing: -5) {
-                            ForEach($allResponsibleUsers, id: \.recordID) { $user in
+                            ForEach(allResponsibleUsers, id: \.recordID) { user in
                                 UserProfilePictureTag(user: user, widthMultiplier: 0.07)
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
                         }
                         .padding(.leading, 4)
                         .padding(.bottom, 8)
-                        .task {
-                            allResponsibleUsers = await chore.allResponsibleUsers
-                        }
                         
                         // MARK: - Tags
                         CapsuleTag(
@@ -117,9 +107,6 @@ struct ChoreCardListStyle: View {
                 .padding(.bottom, 12)
             }
             .padding(.horizontal, 28)
-        }
-        .task {
-            room = await chore.room
         }
         .frame(width: width * 0.92)
         .frame(minHeight: height * 0.14)
