@@ -6,7 +6,12 @@
 //
 
 import SwiftUI
+import CloudKit
 
+/// A state machine responsible for managing the user's progression through the onboarding process.
+///
+/// It persists the current state (both the active flow and the step index) across app launches
+/// to ensure users can resume exactly where they left off if the app is closed.
 @Observable
 class OnboardingStateMachine {
 
@@ -20,23 +25,31 @@ class OnboardingStateMachine {
 
     // MARK: - Properties
 
+    /// The user profile being created or utilized during the onboarding process.
     var user: UserModel? = nil
+    
+    /// The house record being created or joined during the onboarding process.
     var house: HouseModel? = nil
 
-    /// Current position in ``steps``. Persisted so relaunching the app resumes onboarding
-    /// where the user left off instead of restarting from the first step.
+    /// The current position index within the active ``steps`` array.
+    ///
+    /// > Note: Whenever this property is updated, its new value is automatically
+    /// > persisted to `UserDefaults` to prevent progress loss.
     private(set) var index: Int {
         didSet { UserDefaults.standard.set(index, forKey: StorageKey.index) }
     }
 
-    /// Which branch of onboarding the user is in. Persisted alongside ``index``, since the
-    /// meaning of a given index depends on which flow it belongs to.
+    /// The specific branching path the user is currently following.
+    ///
+    /// Since the meaning of a given index changes depending on the active flow, this
+    /// is persisted alongside the ``index``.
     var flow: NavigationFlowsOnboarding {
         didSet { UserDefaults.standard.set(flow.rawValue, forKey: StorageKey.flow) }
     }
 
-    // MARK: - Init
+    // MARK: - Initialization
 
+    /// Initializes the state machine, restoring the previous session's index and flow from `UserDefaults`.
     init() {
         self.index = UserDefaults.standard.integer(forKey: StorageKey.index)
 
@@ -44,6 +57,11 @@ class OnboardingStateMachine {
         self.flow = savedFlow.flatMap(NavigationFlowsOnboarding.init(rawValue:)) ?? .notDefined
     }
 
+    // MARK: - Computed Properties
+
+    /// Evaluates if the current user is the administrator/creator of the linked house.
+    ///
+    /// - Returns: `true` if the user owns the house zone, `false` otherwise, or `nil` if no house exists yet.
     var isOwner: Bool? {
         if let recordID = house?.recordID {
             return CloudKitManager.shared.isOwner(HouseModel.self, recordID: recordID)
@@ -51,6 +69,7 @@ class OnboardingStateMachine {
         return nil
     }
     
+    /// The dynamic array of sequential steps dictated by the currently active ``flow``.
     var steps: [OnboardingNavigationSteps] {
         switch flow {
         case .houseCreator:
@@ -92,23 +111,42 @@ class OnboardingStateMachine {
         }
     }
     
+    /// Returns the specific navigation step corresponding to the current ``index``.
+    ///
+    /// - Returns: The active `OnboardingNavigationSteps`, or `nil` if the index is out of bounds.
     var current: OnboardingNavigationSteps? {
         steps.indices.contains(index) ? steps[index] : nil
     }
     
-    // MARK: - Navigation
+    // MARK: - Navigation & Mutators
 
+    /// Assigns a newly created or fetched user to the state machine's memory.
+    ///
+    /// - Parameter user: The `UserModel` instance to store.
     func setUser(user: UserModel) {
         self.user = user
     }
     
-    func next() { index = min(index + 1, steps.count - 1) }
-    func back() { index = max(index - 1, 0) }
+    /// Advances the state machine to the next step, safely bounded by the array limits.
+    func next() {
+        index = min(index + 1, steps.count - 1)
+    }
+    
+    /// Retreats the state machine to the previous step, safely bounded to zero.
+    func back() {
+        index = max(index - 1, 0)
+    }
 
-    /// Clears the persisted progress. Call once onboarding finishes (or is skipped) so a
-    /// future run doesn't try to resume in the middle of a flow that no longer applies.
+    /// Clears the persisted progress completely.
+    ///
+    /// > Important: Call this once onboarding finishes (or is skipped) so a future run
+    /// > doesn't attempt to resume in the middle of a flow that is no longer applicable.
     func resetProgress() {
         index = 0
         flow = .notDefined
+    }
+    
+    func jumpToStep(index: Int) {
+        self.index = min(max(index, 0), steps.count - 1)
     }
 }
