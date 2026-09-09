@@ -150,12 +150,17 @@ class OnboardingViewModel {
                 inHouseZone: houseRecordID.zoneID
             )
             
-            _ = await CloudKitManager.shared.create(
+            let savedUserCopy = await CloudKitManager.shared.create(
                 userCopy,
                 id: copyRecordID,
                 parent: houseCascadeRef
             )
-            
+
+            if let savedUserCopy {
+                self.currentUser = savedUserCopy
+                self.stateMachine.user = savedUserCopy
+            }
+
             print("creat user copy")
             
             try? await CloudKitManager.shared.createSharedSubscription()

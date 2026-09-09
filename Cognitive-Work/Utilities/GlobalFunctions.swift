@@ -29,24 +29,45 @@ func buildScheduleContext(
     var userTotalCapacity: [CKRecord.ID: Int] = [:]
 
     // Iterate through each user
+//    for user in users {
+//        // Ensure the user's recordID exists and that they have available time slot references
+//        guard let userID = user.recordID, let refs = user.availableTimeReference else { continue }
+//        // Fetch all available time slot records for this user from CloudKit, or default to an empty array if it fails
+//        let slots = await CloudKitManager.shared.fetchRecordsByRecordReference(
+//            for: AvailableTimeModel.self,
+//            recordReferences: refs
+//        ) ?? []
+//
+//        // Filter for valid time slots between today and window end
+//        let validSlots = slots.filter { slot in
+//            let day = Calendar.current.startOfDay(for: slot.day)
+//            return day >= now && day <= windowEnd
+//        }
+//
+//        // Store valid time slots in the user's available time map
+//        userAvailableTimeMap[userID] = validSlots
+//        // Calculate the total capacity in minutes for this user during this period and store it in the total capacity dictionary
+//        userTotalCapacity[userID] = validSlots.reduce(0) { $0 + $1.capacityMinutes }
+//    }
+    
     for user in users {
-        // Ensure the user's recordID exists and that they have available time slot references
-        guard let userID = user.recordID, let refs = user.availableTimeReference else { continue }
-        // Fetch all available time slot records for this user from CloudKit, or default to an empty array if it fails
+        guard let userID = user.recordID, let refs = user.availableTimeReference else {
+            print("⚠️ User \(user.name) has no recordID or no availableTimeReference")
+            continue
+        }
         let slots = await CloudKitManager.shared.fetchRecordsByRecordReference(
             for: AvailableTimeModel.self,
             recordReferences: refs
         ) ?? []
+        print("👤 \(user.name): fetched \(slots.count) raw slots, refs.count = \(refs.count)")
 
-        // Filter for valid time slots between today and window end
         let validSlots = slots.filter { slot in
             let day = Calendar.current.startOfDay(for: slot.day)
             return day >= now && day <= windowEnd
         }
+        print("   → \(validSlots.count) valid slots within window")
 
-        // Store valid time slots in the user's available time map
         userAvailableTimeMap[userID] = validSlots
-        // Calculate the total capacity in minutes for this user during this period and store it in the total capacity dictionary
         userTotalCapacity[userID] = validSlots.reduce(0) { $0 + $1.capacityMinutes }
     }
 
@@ -135,52 +156,41 @@ func scheduleRecurringChores(
 
         // Loop through the specific occurrence offsets for this chore's frequency within the 14-day window
         for dayOffset in occurrenceOffsets(for: chore.frequency, windowDays: 14) {
-            // Calculate the specific date for the current offset day, skipping if it fails
             guard let day = Calendar.current.date(byAdding: .day, value: dayOffset, to: now) else { continue }
 
-            // Initialize the list of users capable of undertaking this chore today
             var availableToday: [UserModel] = []
             for user in targetUsers {
-                // Ensure the user ID exists
                 guard let userID = user.recordID else { continue }
-                // Get the user's available time slots
                 let slots = context.userAvailableTimeMap[userID] ?? []
-                // Find the time slot for the corresponding date where the remaining capacity is greater than or equal to the chore duration
                 if let slot = slots.first(where: { Calendar.current.startOfDay(for: $0.day) == day }),
                    let slotID = slot.recordID {
                     let remaining = remainingCapacity[slotID] ?? 0
-
-                    // If remaining capacity is sufficient, add the user to today's available list
                     if remaining >= chore.duration {
                         availableToday.append(user)
                     }
                 }
             }
-
-            // Recurring chores must be assigned to someone on their scheduled days, even if everyone lacks sufficient capacity
-            let pool = availableToday.isEmpty ? targetUsers : availableToday
-
-            // Select the user from the candidate pool who currently has the fewest assigned minutes (to achieve load balancing)
-            guard let chosenUser = pool.min(by: { u1, u2 in
+            
+            guard !availableToday.isEmpty else {
+                print("No one available for chore '\(chore.name)' on \(day)")
+                continue
+            }
+            
+            guard let chosenUser = availableToday.min(by: { u1, u2 in
                 let a1 = u1.recordID.flatMap { userAssignedMinutes[$0] } ?? 0
                 let a2 = u2.recordID.flatMap { userAssignedMinutes[$0] } ?? 0
                 return a1 < a2
             }), let chosenUserID = chosenUser.recordID else { continue }
 
-            // Get the selected user's available time slots and deduct the corresponding capacity
             let slots = context.userAvailableTimeMap[chosenUserID] ?? []
             if let slot = slots.first(where: { Calendar.current.startOfDay(for: $0.day) == day }),
                let slotID = slot.recordID {
                 let remaining = remainingCapacity[slotID] ?? 0
-
-                // Update the remaining capacity of the time slot (cannot be less than 0)
                 remainingCapacity[slotID] = max(remaining - chore.duration, 0)
             }
 
-            // Accumulate the assigned minutes for the selected user
             userAssignedMinutes[chosenUserID, default: 0] += Int(chore.duration)
 
-            // Create cloud references and generate the daily assignment model (DailyAssignmentModel)
             let chosenUserRef = CKRecord.Reference(recordID: chosenUserID, action: CKRecord.ReferenceAction.none)
             let choreRef = CKRecord.Reference(recordID: choreID, action: CKRecord.ReferenceAction.deleteSelf)
             let assignment = DailyAssignmentModel(
@@ -189,10 +199,9 @@ func scheduleRecurringChores(
                 user: chosenUserRef,
                 chore: choreRef
             )
-            // Append the assignment record to the current chore's results
             result.newAssignments.append(assignment)
         }
-
+        
         // Add the complete scheduling result of the current chore to the total results set
         results.append(result)
     }

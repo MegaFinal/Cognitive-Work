@@ -11,22 +11,11 @@ import CloudKit
 /// A data model representing a single daily usage or chore entry for a user,
 /// typically utilized for charting and e-paper display formatting.
 struct DailyUsageEntry {
-    /// The specific date when the chore is scheduled or due.
     let day: Date
-    
-    /// The unique CloudKit record identifier of the user assigned to the chore.
     let userID: CKRecord.ID
-    
-    /// The unique CloudKit record identifier of the chore itself.
     let choreID: CKRecord.ID
-    
-    /// The estimated duration of the chore in minutes.
     let minutes: Double
-    
-    /// The display name of the chore.
     let choreName: String
-    
-    /// The calculated duration tier (e.g., short, medium, long) derived from the chore's minutes.
     var tier: ChoreDurationTier { ChoreDurationTier.from(minutes: minutes) }
 }
 
@@ -57,6 +46,9 @@ class FortnightlyViewModel {
     
     /// An optional error message capturing any failure states during data synchronization.
     var errorMessage: String?
+    
+    /// Stored property for usage entries to allow synchronous access in SwiftUI Views.
+    var usageEntries: [DailyUsageEntry] = []
     
     // MARK: - Setup Methods
     
@@ -92,60 +84,53 @@ class FortnightlyViewModel {
         
         self.startDate = tomorrow
         
+        // Process and populate usage entries for UI rendering
+        await loadUsageEntries()
+        
         isLoading = false
     }
     
     // MARK: - Data Processing
     
-    /// An asynchronous computed property that transforms raw chores and assignments into a clean array of `DailyUsageEntry` objects.
-    ///
-    /// ### Complex Logic Breakdown:
-    /// 1. **Chore Validation:** Skips any chore that hasn't been saved to CloudKit yet (i.e., lacks a `recordID`).
-    /// 2. **Branching Strategy (Assignments vs. Fallback):**
-    ///   - **With Daily Assignments (`dailyAssignmentsReference`):** Cross-references the chore's linked references with the globally loaded `dailyAssignments`. For each matched assignment, it looks up the associated user asynchronously and builds a dedicated usage entry.
-    ///   - **Fallback (No Daily Assignments):** If a chore has no rigid daily schedule, it falls back to a single deadline-based assignment by reading the chore's `dueDate` and `currentResponsible` user.
-    var usageEntries: [DailyUsageEntry] {
-        get async {
-            var entries: [DailyUsageEntry] = []
-            
-            for chore in chores {
-                // Skips chores that are not yet saved to CloudKit since they lack an ID for referencing.
-                guard let choreID = chore.recordID else { continue }
-                
-                if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                    // Cross-references chore reference IDs with already loaded daily assignments.
-                    let relatedAssignments = dailyAssignments.filter { assignment in
-                        refs.contains { $0.recordID == assignment.recordID }
-                    }
-                    
-                    // Each valid assignment represents one user performing this chore on a specific day.
-                    for assignment in relatedAssignments {
-                        guard let userID = await assignment.user?.recordID else { continue }
-                        entries.append(DailyUsageEntry(
-                            day: assignment.day,
-                            userID: userID,
-                            choreID: choreID,
-                            minutes: chore.duration, // Duration is derived from the parent chore, not the assignment
-                            choreName: chore.name
-                        ))
-                    }
-                } else {
-                    // Fallback mechanism: If no daily schedule exists, use the due date and current responsible user.
-                    guard let dueDate = chore.dueDate,
-                          let user = await chore.currentResponsible
-                    else { continue }
-                    
+    /// Processes raw chores and assignments into a clean array of `DailyUsageEntry` objects.
+    func loadUsageEntries() async {
+        var entries: [DailyUsageEntry] = []
+
+        for chore in chores {
+            guard let choreID = chore.recordID else { continue }
+
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+                let relatedAssignments = dailyAssignments.filter { assignment in
+                    refs.contains { $0.recordID == assignment.recordID }
+                }
+
+                for assignment in relatedAssignments {
+                    guard let userID = assignment.user?.recordID else { continue }
                     entries.append(DailyUsageEntry(
-                        day: dueDate,
-                        userID: user.recordID!,
+                        day: assignment.day,
+                        userID: userID,
                         choreID: choreID,
                         minutes: chore.duration,
                         choreName: chore.name
                     ))
                 }
+            } else {
+                guard let dueDate = chore.dueDate,
+                      let user = await chore.currentResponsible,
+                      let userID = user.recordID else { continue }
+
+                entries.append(DailyUsageEntry(
+                    day: dueDate,
+                    userID: userID,
+                    choreID: choreID,
+                    minutes: chore.duration,
+                    choreName: chore.name
+                ))
             }
-            
-            return entries
+        }
+
+        await MainActor.run {
+            self.usageEntries = entries
         }
     }
 }
