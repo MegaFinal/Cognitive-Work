@@ -153,12 +153,17 @@ class OnboardingViewModel {
                 inHouseZone: houseRecordID.zoneID
             )
             
-            _ = await CloudKitManager.shared.create(
+            let savedUserCopy = await CloudKitManager.shared.create(
                 userCopy,
                 id: copyRecordID,
                 parent: houseCascadeRef
             )
-            
+
+            if let savedUserCopy {
+                self.currentUser = savedUserCopy
+                self.stateMachine.user = savedUserCopy
+            }
+
             print("creat user copy")
             
             try? await CloudKitManager.shared.createSharedSubscription()
@@ -456,7 +461,12 @@ class OnboardingViewModel {
     @MainActor
     func checkExistingAccount() async {
         isCheckingAccount = true
-        defer { isCheckingAccount = false }
+        isLoading = true
+        
+        defer {
+            isCheckingAccount = false
+            isLoading = false
+        }
         
         if let existingUser = try? await CloudKitManager.shared.fetchFirst(UserModel.self) {
             
@@ -470,7 +480,7 @@ class OnboardingViewModel {
                 
                 self.finishOnboarding()
             } else {
-                stateMachine.flow = .houseCreator
+                stateMachine.flow = .notDefined
                 if let targetIndex = stateMachine.steps.firstIndex(of: .createOrEnterHome) {
                     stateMachine.jumpToStep(index: targetIndex)
                 }

@@ -11,22 +11,11 @@ import CloudKit
 /// A data model representing a single daily usage or chore entry for a user,
 /// typically utilized for charting and e-paper display formatting.
 struct DailyUsageEntry {
-    /// The specific date when the chore is scheduled or due.
     let day: Date
-    
-    /// The unique CloudKit record identifier of the user assigned to the chore.
     let userID: CKRecord.ID
-    
-    /// The unique CloudKit record identifier of the chore itself.
     let choreID: CKRecord.ID
-    
-    /// The estimated duration of the chore in minutes.
     let minutes: Double
-    
-    /// The display name of the chore.
     let choreName: String
-    
-    /// The calculated duration tier (e.g., short, medium, long) derived from the chore's minutes.
     var tier: ChoreDurationTier { ChoreDurationTier.from(minutes: minutes) }
 }
 
@@ -58,6 +47,9 @@ class FortnightlyViewModel {
     /// An optional error message capturing any failure states during data synchronization.
     var errorMessage: String?
     
+    /// Stored property for usage entries to allow synchronous access in SwiftUI Views.
+    var usageEntries: [DailyUsageEntry] = []
+    
     // MARK: - Setup Methods
     
     /// Configures the view model with pre-fetched users and chores, then fetches daily assignments
@@ -66,10 +58,11 @@ class FortnightlyViewModel {
     /// - Parameters:
     ///   - users: An array of already loaded `UserModel` instances.
     ///   - chores: An array of already loaded `ChoreModel` instances.
-    func setup() async {
-        async let fetchedUsers = CloudKitManager.shared.fetchHouseUsers()
-        async let fetchedChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        (self.users, self.chores) = await (fetchedUsers, fetchedChores)
+    func setup(users: [UserModel], chores: [ChoreModel]) async {
+        self.users = users
+        self.chores = chores
+        
+        await finishSetup()
     }
     
     /// Fetches all users, chores, and daily assignments directly from CloudKit,
@@ -78,7 +71,7 @@ class FortnightlyViewModel {
         let fetchedUsers = await CloudKitManager.shared.fetchHouseUsers()
         let fetchedChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         
-        await setup()
+        await setup(users: fetchedUsers, chores: fetchedChores)
     }
     
     /// Handles common post-fetch initialization tasks like loading assignments and calculating the date window.
@@ -91,19 +84,15 @@ class FortnightlyViewModel {
         
         self.startDate = tomorrow
         
+        // Process and populate usage entries for UI rendering
+        await loadUsageEntries()
+        
         isLoading = false
     }
     
     // MARK: - Data Processing
-    
-    /// An asynchronous computed property that transforms raw chores and assignments into a clean array of `DailyUsageEntry` objects.
-    ///
-    /// ### Complex Logic Breakdown:
-    /// 1. **Chore Validation:** Skips any chore that hasn't been saved to CloudKit yet (i.e., lacks a `recordID`).
-    /// 2. **Branching Strategy (Assignments vs. Fallback):**
-    ///   - **With Daily Assignments (`dailyAssignmentsReference`):** Cross-references the chore's linked references with the globally loaded `dailyAssignments`. For each matched assignment, it looks up the associated user asynchronously and builds a dedicated usage entry.
-    ///   - **Fallback (No Daily Assignments):** If a chore has no rigid daily schedule, it falls back to a single deadline-based assignment by reading the chore's `dueDate` and `currentResponsible` user.
-    var usageEntries: [DailyUsageEntry] {
+    /// Processes raw chores and assignments into a clean array of `DailyUsageEntry` objects.
+    func loadUsageEntries() async {
         var entries: [DailyUsageEntry] = []
         
         for chore in chores {
@@ -115,7 +104,7 @@ class FortnightlyViewModel {
                 }
                 
                 for assignment in relatedAssignments {
-                    guard let userID = assignment.userReference?.recordID else { continue }
+                    guard let userID = assignment.user?.recordID else { continue }
                     entries.append(DailyUsageEntry(
                         day: assignment.day,
                         userID: userID,
@@ -126,8 +115,8 @@ class FortnightlyViewModel {
                 }
             } else {
                 guard let dueDate = chore.dueDate,
-                      let userID = chore.currentResponsibleReference?.recordID
-                else { continue }
+                      let user = await chore.currentResponsible,
+                      let userID = user.recordID else { continue }
                 
                 entries.append(DailyUsageEntry(
                     day: dueDate,
@@ -139,7 +128,9 @@ class FortnightlyViewModel {
             }
         }
         
-        return entries
+        await MainActor.run {
+            self.usageEntries = entries
+        }
     }
 
 }
