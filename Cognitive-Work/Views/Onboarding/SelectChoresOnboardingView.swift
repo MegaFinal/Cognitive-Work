@@ -101,7 +101,7 @@ struct SelectChoresOnboardingView: View {
             .frame(maxWidth: .infinity,maxHeight: .infinity,alignment: .bottomTrailing)
             .padding(.trailing, 20)
         }
-        .task {
+        .task(id: viewModel.currentHouse?.recordID) {
             rooms = await viewModel.fetchRooms()
         }
     }
