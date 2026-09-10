@@ -15,7 +15,7 @@ import CloudKit
 struct ContentView: View {
 
     // MARK: - Properties
-
+    @State var viewModel: ContentViewModel = ContentViewModel()
     /// Whether the "already in a house" warning is being presented.
     @State var showEnviteAcceptAlert: Bool = false
 
@@ -57,12 +57,17 @@ struct ContentView: View {
             Button("Trocar de casa",role: .destructive) {
                 Task {
                     if let shareMetadata {
-                        await CloudKitManager.shared.switchHouse(to: shareMetadata)
+                        await viewModel.switchHouse(to: shareMetadata)
                     }
                 }
             }
         } message: {
             Text("Se você aceitar, você sairá da sua casa atual todos os seus dados serão perdidos")
+        }
+        .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "Deu algum erro.")
         }
     }
 }
