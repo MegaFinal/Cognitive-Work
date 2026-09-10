@@ -17,6 +17,12 @@ struct GeneralProfileSettingsView: View {
     
     @State private var showDeleteConfirmation = false
     
+    // MARK: - Debug State
+    #if DEBUG
+    @State private var showDebugResetConfirmation = false
+    @AppStorage("didOnboard") private var didOnboard: Bool = true
+    #endif
+    
     let supportedLanguages = ["Português", "Inglês"]
     
     var width = UIScreen.main.bounds.width
@@ -92,6 +98,20 @@ struct GeneralProfileSettingsView: View {
             
             Spacer()
             
+            // MARK: - Developer / Debug Section
+            #if DEBUG
+            Button {
+                showDebugResetConfirmation = true
+            } label: {
+                HStack {
+                    Text("Reset App (Debug Only)")
+                        .fontWeight(.semibold)
+                    Image(systemName: "exclamationmark.triangle.fill")
+                }
+            }
+            .foregroundColor(.orange)
+            #endif
+            
             // MARK: - Delete account button
             Button {
                 showDeleteConfirmation = true
@@ -106,6 +126,8 @@ struct GeneralProfileSettingsView: View {
         .frame(width: width * 0.9)
         .navigationTitle("Configurações Gerais")
         .navigationBarTitleDisplayMode(.inline)
+        
+        // MARK: - Alerts
         .alert("Excluir Perfil?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {
@@ -116,11 +138,41 @@ struct GeneralProfileSettingsView: View {
         } message: {
             Text("Esta ação é permanente. Todos os seus dados serão apagados do iCloud.")
         }
+        
+        #if DEBUG
+        .alert("Resetar Aplicativo?", isPresented: $showDebugResetConfirmation) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Resetar Tudo", role: .destructive) {
+                Task {
+                    viewModel.isSaving = true
+                    
+                    // 1. Wipe CloudKit Database
+                    await CloudKitManager.shared.deleteAllRecords()
+                    
+                    // 2. Clear Local User Recognition
+                    CloudKitManager.shared.clearCurrentUser()
+                    
+                    // 3. Clear State Machine Persistence
+                    UserDefaults.standard.removeObject(forKey: "onboarding.index")
+                    UserDefaults.standard.removeObject(forKey: "onboarding.flow")
+                    
+                    // 4. Force App State Back to Onboarding
+                    didOnboard = false
+                    
+                    viewModel.isSaving = false
+                }
+            }
+        } message: {
+            Text("Isso vai apagar todos os dados do seu iCloud de desenvolvedor e te mandar de volta para a tela inicial do Onboarding.")
+        }
+        #endif
+        
+        // MARK: - Loading Overlay
         .overlay {
             if viewModel.isSaving {
                 ZStack {
                     Color.black.opacity(0.2).ignoresSafeArea()
-                    ProgressView("Excluindo conta...")
+                    ProgressView("Processando...")
                         .padding()
                         .background(.white)
                         .cornerRadius(12)

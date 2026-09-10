@@ -24,23 +24,42 @@ struct Onboarding: View {
     // MARK: - Body
 
     var body: some View {
-        stepView(for: viewModel.stateMachine)
-            .onChange(of: viewModel.isOnboardingSkipped) {
-                didOnboard = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .didAcceptShare)) { _ in
-                Task {
-                    if viewModel.currentUser != nil {
-                        await viewModel.joinHouse()
-                        viewModel.goToNextView()
-                    } else {
-                        viewModel.stateMachine.flow = .invitedWithoutProfile
+        ZStack {
+            stepView(for: viewModel.stateMachine)
+                .onChange(of: viewModel.isOnboardingSkipped) {
+                    didOnboard = true
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .didAcceptShare)) { _ in
+                    Task {
+                        if viewModel.currentUser != nil {
+                            viewModel.stateMachine.flow = .invitedWithProfile
+                            await viewModel.joinHouse()
+                            viewModel.goToNextView()
+                        } else {
+                            viewModel.stateMachine.flow = .invitedWithoutProfile
+                        }
                     }
                 }
+            if viewModel.isCheckingAccount {
+                Color.white.ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    
+                    Text("Buscando seu perfil")
+                        .font(.headline)
+                        .foregroundStyle(.gray)
+                }
             }
-            .task {
+        }
+        .task {
+            await viewModel.checkExistingAccount()
+            
+            if !viewModel.isOnboardingSkipped {
                 await viewModel.restoreProgressIfNeeded()
             }
+        }
     }
     
     // MARK: - Steps
@@ -68,7 +87,7 @@ struct Onboarding: View {
         case .chooseFreeTime:
             SelectFreeTimeOnboardingView(viewModel: $viewModel)
         case .waitAdminScheduling:
-            WaitHouseCreatorShedule(viewModel: $viewModel)
+            WaitHouseCreatorSheduleView(viewModel: $viewModel)
         case .scheduleChores:
             FortnightlyScheduleView(shouldGenerate: viewModel.stateMachine.isOwner ?? false) {
                     viewModel.finishOnboarding()

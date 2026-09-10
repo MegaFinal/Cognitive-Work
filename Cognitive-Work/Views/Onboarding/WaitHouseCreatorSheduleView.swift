@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct WaitHouseCreatorShedule: View {
+struct WaitHouseCreatorSheduleView: View {
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
@@ -59,5 +59,5 @@ struct WaitHouseCreatorShedule: View {
 
 #Preview {
     @Previewable @State var mockViewModel = OnboardingViewModel()
-    WaitHouseCreatorShedule(viewModel: $mockViewModel)
+    WaitHouseCreatorSheduleView(viewModel: $mockViewModel)
 }

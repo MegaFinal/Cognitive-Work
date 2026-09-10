@@ -15,14 +15,14 @@ struct FortnightlyBarChart: View {
     var onSelect: (DailyUsageEntry) -> Void
     var scrollEnabled: Bool = true
     var daysToShow: Int = 14
-
+    
     var body: some View {
         let calendar = Calendar.current
-        let adjustedStartDate = alignToMonday(startDate, calendar: calendar)
+        let baseStartDate = calendar.startOfDay(for: startDate)
         
         let content = HStack(alignment: .top, spacing: 0) {
             ForEach(0..<daysToShow, id: \.self) { dayOffset in
-                if let day = calendar.date(byAdding: .day, value: dayOffset, to: adjustedStartDate) {
+                if let day = calendar.date(byAdding: .day, value: dayOffset, to: baseStartDate) {
                     let dayEntries = entries.filter { calendar.isDate($0.day, inSameDayAs: day) }
                     FortnightlyDayUserBar(
                         day: day,
@@ -42,12 +42,12 @@ struct FortnightlyBarChart: View {
             content
         }
     }
-
-    private func alignToMonday(_ date: Date, calendar: Calendar) -> Date {
-        let weekday = calendar.component(.weekday, from: date)
-        let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
-        return calendar.date(byAdding: .day, value: -daysToSubtract, to: date) ?? date
-    }
+    
+    //    private func alignToMonday(_ date: Date, calendar: Calendar) -> Date {
+    //        let weekday = calendar.component(.weekday, from: date)
+    //        let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
+    //        return calendar.date(byAdding: .day, value: -daysToSubtract, to: date) ?? date
+    //    }
 }
 
 private struct FortnightlyDayUserBar: View {
@@ -55,16 +55,16 @@ private struct FortnightlyDayUserBar: View {
     var entries: [DailyUsageEntry]
     var users: [UserModel]
     var onSelect: (DailyUsageEntry) -> Void
-
+    
     private let maxBarHeight: Double = 100
-
+    
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "pt_BR")
         formatter.dateFormat = "EEE"
         return formatter
     }
-
+    
     var body: some View {
         VStack(spacing: 6) {
             Spacer(minLength: 0)
@@ -72,7 +72,7 @@ private struct FortnightlyDayUserBar: View {
             Text(formattedDay.capitalized)
                 .font(.system(size: 16.35))
                 .fontWeight(.medium)
-
+            
             if !entries.isEmpty {
                 VStack(spacing: 4) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
@@ -97,18 +97,18 @@ private struct FortnightlyDayUserBar: View {
     let user2ID = CKRecord.ID(recordName: "user-2")
     let chore1ID = CKRecord.ID(recordName: "chore-1")
     let chore2ID = CKRecord.ID(recordName: "chore-2")
-
+    
     var user1 = UserModel(name: "Você", tier: .tier1, recordID: user1ID)
     var user2 = UserModel(name: "Alice", tier: .tier1, recordID: user2ID)
-
+    
     let today = Date()
     let calendar = Calendar.current
-
+    
     let mockEntries: [DailyUsageEntry] = [
         DailyUsageEntry(day: today, userID: user1ID, choreID: chore1ID, minutes: 15.0, choreName: "Lavar a louça"),
         DailyUsageEntry(day: calendar.date(byAdding: .day, value: 1, to: today)!, userID: user2ID, choreID: chore2ID, minutes: 90.0, choreName: "Limpar a casa")
     ]
-
+    
     FortnightlyBarChart(
         users: [user1, user2],
         entries: mockEntries,

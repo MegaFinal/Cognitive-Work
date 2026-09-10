@@ -31,6 +31,7 @@ class OnboardingViewModel {
     
     /// Whether an asynchronous CloudKit operation is currently in progress
     var isLoading: Bool = false
+    var isCheckingAccount: Bool = true
     /// A message describing the most recent error, if any
     var errorMessage: String? = nil
     
@@ -106,14 +107,14 @@ class OnboardingViewModel {
             errorMessage = "Seu perfil ainda não foi salvo. Volte e crie o perfil antes de criar a casa."
             return
         }
-
+        
         isLoading = true
         errorMessage = nil
-
+        
         // Clears the spinner on *every* exit, including the early returns below. Without it,
         // any of those returns leaves the button spinning forever with no way out.
         defer { isLoading = false }
-
+        
         let userReference = CKRecord.Reference(recordID: userRecordID, action: .none)
         let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference])
         if let savedHouse = await CloudKitManager.shared.create(newHouse) {
@@ -131,7 +132,7 @@ class OnboardingViewModel {
             // The picture is optional: a member without one still needs their in-house copy
             // created, so this must not bail out of the whole flow.
             let assetCopy = user.profilePicture.flatMap { try? duplicateCKAsset($0) }
-
+            
             let userCopy = UserModel(
                 name: user.name ,
                 profilePicture: assetCopy,
@@ -203,16 +204,35 @@ class OnboardingViewModel {
         isLoading = true
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
-        var savedRooms: [RoomModel] = []
         
-        for draft in selectedDrafts {
-            let roomModel = RoomModel(name: draft.name,
-                                      house: house.reference(action: .deleteSelf),
-                                      color: draft.color)
-            if let savedRoom = await CloudKitManager.shared.create(roomModel,parent: house.reference(action: .none)) {
-                savedRooms.append(savedRoom)
+        let roomToRepresentChoresToAllHome = RoomModel(name: "Casa",
+                                  house: house.reference(action: .deleteSelf),
+                                  color: .orange)
+        
+        
+        var savedRooms = await withTaskGroup(of: RoomModel?.self) { group in
+            for draft in selectedDrafts {
+                group.addTask {
+                    let roomModel = await RoomModel(name: draft.name,
+                                                    house: house.reference(action: .deleteSelf),
+                                                    color: draft.color)
+                    return await CloudKitManager.shared.create(roomModel, parent: house.reference(action: .none))
+                }
             }
+            
+            var results: [RoomModel] = []
+            for await result in group {
+                if let savedRoom = result {
+                    results.append(savedRoom)
+                }
+            }
+            return results
         }
+        
+        if let savedDefault = await CloudKitManager.shared.create(roomToRepresentChoresToAllHome,parent: house.reference(action: .none)) {
+            savedRooms.append(savedDefault)
+        }
+        
         let success = await house.appendRoom(rooms: savedRooms)
         
         if success {
@@ -402,10 +422,10 @@ class OnboardingViewModel {
     
     private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
         guard let origem = asset.fileURL else { return nil }
-
+        
         let destino = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
-
+        
         try FileManager.default.copyItem(at: origem, to: destino)
         return CKAsset(fileURL: destino)
     }
@@ -416,9 +436,43 @@ class OnboardingViewModel {
     func checkAndAdvanceIfScheduleReady() async {
         let assignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
         isScheduleReady = !assignments.isEmpty
-
+        
         if isScheduleReady {
             goToNextView()
+        }
+    }
+    // MARK: - Auto Login / Initial Validation
+    
+    /// Checks if the current iCloud user already possesses an account within the application.
+    ///
+    /// This method queries CloudKit for an existing `UserModel`. If a profile is found, it restores
+    /// the local session and updates the `OnboardingStateMachine`. Then, it checks for an existing `HouseModel`.
+    ///
+    /// - If both exist: the user is routed directly to the main app (skipping onboarding completely).
+    /// - If only the profile exists: sets the state machine flow to `.houseCreator` and advances
+    ///   directly to the home creation/entry step (`.createOrEnterHome`), bypassing welcome and profile creation.
+    @MainActor
+    func checkExistingAccount() async {
+        isCheckingAccount = true
+        defer { isCheckingAccount = false }
+        
+        if let existingUser = try? await CloudKitManager.shared.fetchFirst(UserModel.self) {
+            
+            CloudKitManager.shared.setCurrentUser(existingUser)
+            self.currentUser = existingUser
+            self.stateMachine.user = existingUser
+            
+            if let existingHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self) {
+                self.currentHouse = existingHouse
+                self.stateMachine.house = existingHouse
+                
+                self.finishOnboarding()
+            } else {
+                stateMachine.flow = .houseCreator
+                if let targetIndex = stateMachine.steps.firstIndex(of: .createOrEnterHome) {
+                    stateMachine.jumpToStep(index: targetIndex)
+                }
+            }
         }
     }
 }

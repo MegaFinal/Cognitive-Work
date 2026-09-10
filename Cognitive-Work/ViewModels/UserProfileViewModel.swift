@@ -76,20 +76,22 @@ final class UserProfileViewModel {
     /// > joined a house yet, or the house may have been deleted. Editing the private profile
     /// > keeps working either way.
     func loadUser() async {
-        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-            return
-        }
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
         
         isLoading = true
         defer { isLoading = false }
         
-        privateUser = await CloudKitManager.shared.fetchMyUser()
+        async let fetchPrivate = CloudKitManager.shared.fetchMyUser()
+        async let fetchHouse = CloudKitManager.shared.fetchMyHouseUser()
+        
+        let (fetchedPrivate, fetchedHouse) = await (fetchPrivate, fetchHouse)
+        
+        privateUser = fetchedPrivate
+        user = fetchedHouse
         
         if privateUser == nil {
             errorMessage = CloudKitManager.shared.errorMessage
         }
-        
-        user = await CloudKitManager.shared.fetchMyHouseUser()
     }
     
     private func loadSelectedPhoto() {
@@ -128,37 +130,41 @@ final class UserProfileViewModel {
     /// The in-house copy is what housemates see, so both records have to move together — but
     /// its absence is not an error (see ``loadUser()``), it just means there is no house yet.
     func saveChanges() async {
-        guard let privateUser
-        else {
+        guard let privateUser else {
             errorMessage = "Perfil não carregado. Tente novamente."
             return
         }
         
         isSaving = true
-        
         privateUser.name = editedName
         
         if let editedProfilePicture {
             privateUser.profilePicture = CloudKitManager.shared.createAsset(from: editedProfilePicture)
         }
         
-        var success = await CloudKitManager.shared.update(privateUser)
-        
         if let user {
             user.name = editedName
-            
             if let editedProfilePicture {
                 user.profilePicture = CloudKitManager.shared.createAsset(from: editedProfilePicture)
             }
             
-            let houseSuccess = await CloudKitManager.shared.update(user)
-            success = success && houseSuccess
-        }
-        
-        if success {
-            isEditing = false
+            async let updatePrivate = CloudKitManager.shared.update(privateUser)
+            async let updateHouse = CloudKitManager.shared.update(user)
+            
+            let (privateSuccess, houseSuccess) = await (updatePrivate, updateHouse)
+            
+            if privateSuccess && houseSuccess {
+                isEditing = false
+            } else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+            }
         } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+            let success = await CloudKitManager.shared.update(privateUser)
+            if success {
+                isEditing = false
+            } else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+            }
         }
         
         isSaving = false
@@ -175,20 +181,27 @@ final class UserProfileViewModel {
         
         isSaving = true
         
-        var success = await CloudKitManager.shared.delete(privateUser)
-        
         if let user {
-            let houseSuccess = await CloudKitManager.shared.delete(user)
-            success = success && houseSuccess
-        }
-        
-        if success {
-            CloudKitManager.shared.clearCurrentUser()
-            onAccountDeleted()
+            async let deletePrivate = CloudKitManager.shared.delete(privateUser)
+            async let deleteHouse = CloudKitManager.shared.delete(user)
+            
+            let (privateSuccess, houseSuccess) = await (deletePrivate, deleteHouse)
+            
+            if privateSuccess && houseSuccess {
+                CloudKitManager.shared.clearCurrentUser()
+                onAccountDeleted()
+            } else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+            }
         } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+            let success = await CloudKitManager.shared.delete(privateUser)
+            if success {
+                CloudKitManager.shared.clearCurrentUser()
+                onAccountDeleted()
+            } else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+            }
         }
-        
         isSaving = false
     }
 }
