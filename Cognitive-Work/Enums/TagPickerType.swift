@@ -13,7 +13,7 @@ enum TagPickerType {
     case priority
     case frequency
     case duration
-    case room
+//    case room
         
     /// Decodes a relevant identifier label given an overarching DTO reference constraints object point.
     func labelName(for chore: ChoreDTO, currentRoom: RoomModel?) -> String {
@@ -25,8 +25,8 @@ enum TagPickerType {
         case .duration:
             let minutes = chore.duration / 60
             return ChoreDurationTier.from(minutes: minutes).displayText.capitalized
-        case .room:
-            return currentRoom?.name.capitalized ?? "Sem Cômodo"
+//        case .room:
+//            return currentRoom?.name.capitalized ?? "Sem Cômodo"
         }
     }
     
@@ -40,8 +40,8 @@ enum TagPickerType {
         case .duration:
             let minutes = chore.duration / 60
             return ChoreDurationTier.from(minutes: minutes).color
-        case .room:
-            return currentRoom?.color.uiColor ?? .gray
+//        case .room:
+//            return currentRoom?.color.uiColor ?? .gray
         }
     }
 }

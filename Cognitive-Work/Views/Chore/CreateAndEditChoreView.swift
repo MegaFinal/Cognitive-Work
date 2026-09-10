@@ -47,19 +47,19 @@ struct CreateAndEditChoreView: View {
                     HStack {
                         Text("Prioridade")
                         Spacer()
-                        ChoreTagPicker(chore: choreDTO, type: .priority)
+                        ChoreTagPicker(chore: $choreDTO, type: .priority)
                     }
                     
                     HStack {
                         Text("Duração")
                         Spacer()
-                        ChoreTagPicker(chore: choreDTO, type: .duration)
+                        ChoreTagPicker(chore: $choreDTO, type: .duration)
                     }
                     
                     HStack {
                         Text("Frequência")
                         Spacer()
-                        ChoreTagPicker(chore: choreDTO, type: .frequency)
+                        ChoreTagPicker(chore: $choreDTO, type: .frequency)
                     }
                 }
                 .font(.subheadline)
@@ -140,11 +140,34 @@ struct CreateAndEditChoreView: View {
                     
                     Spacer()
                     
-                    ChoreTagPicker(chore: choreDTO, type: .room, availableRooms: availableRooms)
+                    Menu {
+                        Picker("Cômodo", selection: $choreDTO.room) {
+                            ForEach(availableRooms, id: \.self) { room in
+                                ColorIconTagLabel(title: room.name.capitalized, color: room.color.uiColor)
+                                    .tag(RoomModel?(room))
+                            }
+                        }
+                    }
+                    label: {
+                        HStack {
+                            CapsuleTag(
+                                tagName: choreDTO.room?.name.capitalized ?? "Sem Cômodo",
+                                tagColor: choreDTO.room?.color.uiColor ?? .gray,
+                                horizontalPadding: 10.0,
+                                verticalPadding: 1.5
+                            )
+                            
+                            Image(systemName: "chevron.up.chevron.down")
+                                .foregroundColor(.black)
+                                .imageScale(.small)
+                        }
+                    }
+//                    ChoreTagPicker(chore: $choreDTO, type: .room, availableRooms: availableRooms)
                 }
             }
             .frame(width: width * 0.65)
         }
+        
     }
     
     /// Encapsulates the toggle and the inline editor for the chore's checklist.
@@ -237,6 +260,24 @@ struct CreateAndEditChoreView: View {
         dismiss()
     }
     
+    private struct ColorIconTagLabel: View {
+        
+        /// The string to be displayed next to the icon.
+        let title: String
+        
+        /// The background color for the circular icon shape.
+        let color: Color
+        
+        var body: some View {
+            Label {
+                Text(title)
+            } icon: {
+                Image(uiImage: .coloredCircle(color: color))
+                    .renderingMode(.original)
+            }
+        }
+    }
+    
     /// Pre-populates the local copy if editing an existing chore.
     /// A new chore maintains the empty default copy provided by `ChoreDTO()`.
     private func loadDraftIfNeeded() async {
@@ -246,14 +287,15 @@ struct CreateAndEditChoreView: View {
         async let responsibleUsers = originalModel.allResponsibleUsers
         async let room = originalModel.room
         
-        let (savedChecklist, savedResponsibleUsers, savedRoom) = await (checklistModels, responsibleUsers, room)
-        
-        choreDTO = ChoreDTO(
-            from: originalModel,
-            users: savedResponsibleUsers,
-            checklist: savedChecklist.map(CheckItemDTO.init(from:)),
-            room: savedRoom
-        )
+        choreDTO.duration = originalModel.duration
+        choreDTO.frequency = originalModel.frequency
+        choreDTO.priorityTag = originalModel.priorityTag
+        choreDTO.name = originalModel.name
+        choreDTO.symbolName = originalModel.symbolName
+        choreDTO.originalRecordID = originalModel.recordID
+        choreDTO.room = await room
+        choreDTO.checklist = await checklistModels.map(CheckItemDTO.init(from:))
+        choreDTO.responsibleUsers = await responsibleUsers
     }
 }
 
