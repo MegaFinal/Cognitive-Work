@@ -58,6 +58,8 @@ class OnboardingViewModel {
     
     var selectedChores: [ChoreDTO] = []
     
+    var isScheduleReady: Bool = false
+    
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
     ///
@@ -406,5 +408,17 @@ class OnboardingViewModel {
 
         try FileManager.default.copyItem(at: origem, to: destino)
         return CKAsset(fileURL: destino)
+    }
+    
+    //MARK: Algoritm
+    
+    @MainActor
+    func checkAndAdvanceIfScheduleReady() async {
+        let assignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
+        isScheduleReady = !assignments.isEmpty
+
+        if isScheduleReady {
+            goToNextView()
+        }
     }
 }

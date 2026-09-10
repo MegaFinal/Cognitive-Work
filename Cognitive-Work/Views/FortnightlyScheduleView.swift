@@ -10,8 +10,9 @@ import SwiftUI
 // View principal da escala, quando estiver carregando, aparecer WaitingAlgorithmView e quando rodar, aparever a FortinightlyView
 
 struct FortnightlyScheduleView: View {
-    @State private var scheduleViewModel = FortnightlyScheduleViewModel()
+    @State private var scheduleViewModel = ScheduleViewModel()
     
+    let shouldGenerate: Bool
     let action: () -> Void
     var body: some View {
         Group {
@@ -28,13 +29,13 @@ struct FortnightlyScheduleView: View {
             }
         }
         .task {
-            await scheduleViewModel.generateSchedule()
+            await scheduleViewModel.loadSchedule(shouldGenerate: shouldGenerate)
         }
     }
 }
 
 #Preview {
-    FortnightlyScheduleView() {
+    FortnightlyScheduleView(shouldGenerate: true) {
         print("Action")
     }
 }

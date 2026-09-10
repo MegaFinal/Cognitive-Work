@@ -66,11 +66,10 @@ class FortnightlyViewModel {
     /// - Parameters:
     ///   - users: An array of already loaded `UserModel` instances.
     ///   - chores: An array of already loaded `ChoreModel` instances.
-    func setup(users: [UserModel], chores: [ChoreModel]) async {
-        self.users = users
-        self.chores = chores
-        
-        await finishSetup()
+    func setup() async {
+        async let fetchedUsers = CloudKitManager.shared.fetchHouseUsers()
+        async let fetchedChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
+        (self.users, self.chores) = await (fetchedUsers, fetchedChores)
     }
     
     /// Fetches all users, chores, and daily assignments directly from CloudKit,
@@ -79,7 +78,7 @@ class FortnightlyViewModel {
         let fetchedUsers = await CloudKitManager.shared.fetchHouseUsers()
         let fetchedChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         
-        await setup(users: fetchedUsers, chores: fetchedChores)
+        await setup()
     }
     
     /// Handles common post-fetch initialization tasks like loading assignments and calculating the date window.
@@ -148,4 +147,5 @@ class FortnightlyViewModel {
             return entries
         }
     }
+
 }

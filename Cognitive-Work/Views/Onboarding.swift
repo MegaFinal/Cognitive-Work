@@ -67,10 +67,15 @@ struct Onboarding: View {
             SelectChoresOnboardingView(viewModel: $viewModel)
         case .chooseFreeTime:
             SelectFreeTimeOnboardingView(viewModel: $viewModel)
+        case .waitAdminScheduling:
+            WaitHouseCreatorShedule(viewModel: $viewModel)
         case .scheduleChores:
-            FortnightlyScheduleView() {
-                viewModel.finishOnboarding()
-            }
+            FortnightlyScheduleView(shouldGenerate: viewModel.stateMachine.isOwner ?? false) {
+                    viewModel.finishOnboarding()
+                }
+//        case .choreScheduleResult:
+//            FortnightlyView()
+            
         case .none:
             EmptyView()
         }

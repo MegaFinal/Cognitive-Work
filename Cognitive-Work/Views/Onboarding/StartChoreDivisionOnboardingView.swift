@@ -28,12 +28,14 @@ struct StartChoreDivisionOnboardingView: View {
                 Text("Criar divisão de tarefas")
                     .font(.title.bold())
                     .foregroundStyle(.titleGray)
-                
+//               TODO: if isAdmin
                 Text("Para que possamos ajudar no seu dia a dia em sua casa precisamos saber um pouco mais sobre ela!")
                 
                 Text("Criamos um formulário curto, com duração de cerca de 5 minutos, você precisa apenas nos dizer mais serão as tarefas que serão divididas por todos da casa e qual sua carga horária por semana, o resto é com a gente!")
                 
                 Text("Assim que todos os moradores preencherem enviaremos uma notificação avisando que a escala de tarefas foi dividida de uma forma justa por todos da casa!\n")
+                
+//                TODO: else
             }
             
             OnboardingProgressButton(text: "Continuar") {

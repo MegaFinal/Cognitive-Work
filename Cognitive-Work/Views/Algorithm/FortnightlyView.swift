@@ -76,7 +76,7 @@ struct FortnightlyView: View {
             }
         }
         .task {
-            await viewModel.setup(users: users, chores: chores)
+            await viewModel.setup()
             usageEntries = await viewModel.usageEntries
         }
     }
