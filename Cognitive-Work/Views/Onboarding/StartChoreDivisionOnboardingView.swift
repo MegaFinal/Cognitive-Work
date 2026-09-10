@@ -38,7 +38,11 @@ struct StartChoreDivisionOnboardingView: View {
 //                TODO: else
             }
             
-            OnboardingProgressButton(text: "Continuar") {
+            OnboardingProgressButton(
+            text: viewModel.stateMachine.isOwner == true
+                    ? "Fazer divisão"
+                    : "Continuar"
+            ) {
                 viewModel.goToNextView()
             }
             

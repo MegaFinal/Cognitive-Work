@@ -52,7 +52,9 @@ struct WaitHouseCreatorSheduleView: View {
             await viewModel.checkAndAdvanceIfScheduleReady()
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            Task { await viewModel.checkAndAdvanceIfScheduleReady() }
+            Task(priority: .userInitiated) {
+                await viewModel.checkAndAdvanceIfScheduleReady()
+            }
         }
     }
 }

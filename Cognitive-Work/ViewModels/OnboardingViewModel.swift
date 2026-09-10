@@ -430,17 +430,19 @@ class OnboardingViewModel {
         return CKAsset(fileURL: destino)
     }
     
-    //MARK: Algoritm
-    
+    // MARK: - Algorithm
+
     @MainActor
     func checkAndAdvanceIfScheduleReady() async {
         let assignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
-        isScheduleReady = !assignments.isEmpty
-        
-        if isScheduleReady {
-            goToNextView()
-        }
+        let scheduleIsReady = !assignments.isEmpty
+        guard scheduleIsReady else { return }
+
+        isScheduleReady = true
+        guard stateMachine.current == .waitAdminScheduling else { return }
+        goToNextView()
     }
+    
     // MARK: - Auto Login / Initial Validation
     
     /// Checks if the current iCloud user already possesses an account within the application.

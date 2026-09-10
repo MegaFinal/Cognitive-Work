@@ -36,20 +36,26 @@ final class ScheduleViewModel {
         isLoading = false
     }
     
-    //TODO: traduzir pra ingles
-    /// Ponto único de entrada, chamado pela View sem ramificação própria.
-    /// `shouldGenerate` indica se este dispositivo é o admin (roda o
-    /// algoritmo) ou um convidado (só lê o resultado já persistido).
     func loadSchedule(shouldGenerate: Bool) async {
         isLoading = true
 
         if shouldGenerate {
             await setup()
-            await TaskSchedulerEngine.schedule(chores: chores, users: users)
+
+            await TaskSchedulerEngine.schedule(
+                chores: chores,
+                users: users
+            )
+
+            // TODO: implement notification for users when its done loading?
+            NotificationCenter.default.post(
+                name: .cloudKitDidChange,
+                object: nil
+            )
         }
 
         await setup()
+        
         isLoading = false
     }
-
 }

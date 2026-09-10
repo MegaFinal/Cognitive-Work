@@ -92,6 +92,7 @@ struct Onboarding: View {
             FortnightlyScheduleView(shouldGenerate: viewModel.stateMachine.isOwner ?? false) {
                     viewModel.finishOnboarding()
                 }
+            
 //        case .choreScheduleResult:
 //            FortnightlyView()
             
