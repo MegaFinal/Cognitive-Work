@@ -98,8 +98,11 @@ struct WelcomeOnboardingView: View {
                 Text("Mas antes, precisamos saber um pouco mais sobre a rotina na \ncasa...")
             }
             
-            OnboardingProgressButton(text: "Começar") {
-                viewModel.goToNextView()
+            OnboardingProgressButton(text: "Começar", isLoading: viewModel.isLoading) {
+                await viewModel.checkExistingAccount()
+                if viewModel.currentUser == nil {
+                    viewModel.goToNextView()
+                }
             }
         }
         .frame(width: width * 0.8)

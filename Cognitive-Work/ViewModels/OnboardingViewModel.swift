@@ -441,7 +441,12 @@ class OnboardingViewModel {
     @MainActor
     func checkExistingAccount() async {
         isCheckingAccount = true
-        defer { isCheckingAccount = false }
+        isLoading = true
+        
+        defer {
+            isCheckingAccount = false
+            isLoading = false
+        }
         
         if let existingUser = try? await CloudKitManager.shared.fetchFirst(UserModel.self) {
             
@@ -455,7 +460,7 @@ class OnboardingViewModel {
                 
                 self.finishOnboarding()
             } else {
-                stateMachine.flow = .houseCreator
+                stateMachine.flow = .notDefined
                 if let targetIndex = stateMachine.steps.firstIndex(of: .createOrEnterHome) {
                     stateMachine.jumpToStep(index: targetIndex)
                 }
