@@ -174,30 +174,38 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     }
     
     @discardableResult
-    func setAvailableTimes(_ times: [AvailableTimeModel]) async -> Bool {
+    func setAvailableTimes(_ times: [AvailableTimeModel], forWeeks weeks: Int = 4) async -> Bool {
         guard let recordID else {
             CloudKitManager.shared.errorMessage = "Failed to add availableTime: user missing recordID"
             return false
         }
+        
         let calendar: Calendar = .current
         let userRef = CKRecord.Reference(recordID: recordID, action: .deleteSelf)
         var newRefs: [CKRecord.Reference] = []
         
-        for (offset,time) in times.enumerated() {
-            let linked = AvailableTimeModel(
-                capacityMinutes: time.capacityMinutes,
-                day: Date().weekdayInCurrentWeek(offset: offset, calendar: calendar),
-                user: userRef
-            )
+        for (offset, time) in times.enumerated() {
             
-            guard
-                let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID),
-                let savedID = saved.recordID
-            else {
-                return false
+            guard time.capacityMinutes > 0 else { continue }
+            
+            let baseDay = Date().weekdayInCurrentWeek(offset: offset, calendar: calendar)
+            
+            for weekOffset in 0..<weeks {
+                guard let futureDay = calendar.date(byAdding: .weekOfYear, value: weekOffset, to: baseDay) else {
+                    continue
+                }
+                
+                let linked = AvailableTimeModel(
+                    capacityMinutes: time.capacityMinutes,
+                    day: futureDay,
+                    user: userRef
+                )
+                
+                if let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID),
+                   let savedID = saved.recordID {
+                    newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
+                }
             }
-
-            newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
         }
         
         availableTimeReference = (availableTimeReference ?? []) + newRefs
