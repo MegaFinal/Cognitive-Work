@@ -80,6 +80,13 @@ class FortnightlyViewModel {
         let fetchedChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
         
         await setup(users: fetchedUsers, chores: fetchedChores)
+        
+        print("---------------------------------------------------------------------------")
+        for chore in fetchedChores {
+            if chore.frequency == .monthly {
+                print(chore.name)
+            }
+        }
     }
     
     /// Handles common post-fetch initialization tasks like loading assignments and calculating the date window.

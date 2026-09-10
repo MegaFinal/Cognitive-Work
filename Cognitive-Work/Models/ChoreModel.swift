@@ -49,6 +49,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// Priority level shown in the UI.
     var priorityTag: PriorityTag
     
+    /// Flag for including monthly chores
+    var shouldBeIncluded: Bool?
+    
     /// Optional illustrative image.
     var image: Data?
     
@@ -142,6 +145,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.isDone = isDone
         self.dueDate = record["dueDate"] as? Date
         self.frequency = frequency
+        self.shouldBeIncluded = (record["shouldBeIncluded"] as? Int).map { $0 != 0 }
         self.duration = duration
         self.isPublic = isPublic
         self.isLate = isLate
@@ -153,6 +157,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.allResponsibleUsersReference = record["allResponsibleUsers"] as? [CKRecord.Reference]
         self.roomReference = record["room"] as? CKRecord.Reference
         self.dailyAssignmentsReference = record["dailyAssignment"] as? [CKRecord.Reference]
+        
+        if frequency == .monthly {
+            print("shouldBeIncluded da chore \(name) no init do cloudkit: \(String(describing: self.shouldBeIncluded))")
+        }
     }
     
     /// Creates a new, unsaved chore.
@@ -182,6 +190,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.isDone = isDone
         self.dueDate = dueDate
         self.frequency = frequency
+        self.shouldBeIncluded = frequency == .monthly ? Bool.random() : nil
         self.duration = duration
         self.isPublic = isPublic
         self.isLate = isLate
@@ -193,6 +202,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.allResponsibleUsersReference = allResponsibleUsers
         self.roomReference = roomReference
         self.dailyAssignmentsReference = dailyAssignment
+        
+        if frequency == .monthly {
+            print("shouldBeIncluded da chore \(name) no init normal: \(String(describing: self.shouldBeIncluded))")
+        }
     }
     
     func updateCheckItem(_ item: CheckItemModel) async {
@@ -211,6 +224,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["isDone"] = isDone
         record["dueDate"] = dueDate
         record["frequency"] = frequency.rawValue
+        record["shouldBeIncluded"] = shouldBeIncluded.map { $0 ? 1 : 0 }
         record["duration"] = duration
         record["isPublic"] = isPublic
         record["isLate"] = isLate
@@ -223,6 +237,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["allResponsibleUsers"] = allResponsibleUsersReference?.isEmpty == false ? allResponsibleUsersReference : nil
         record["room"] = roomReference
         record["dailyAssignment"] = dailyAssignmentsReference?.isEmpty == false ? dailyAssignmentsReference : nil
+        
+        if frequency == .monthly {
+            print("shouldBeIncluded da chore \(String(describing: record["name"])) no populate: \(String(describing: record["shouldBeIncluded"]))")
+        }
     }
     
     func postpone(byDays days: Int) async {

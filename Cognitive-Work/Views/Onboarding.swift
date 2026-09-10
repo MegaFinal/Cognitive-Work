@@ -54,6 +54,7 @@ struct Onboarding: View {
             }
         }
         .task {
+            await CloudKitManager.shared.deleteAllRecords()
             await viewModel.checkExistingAccount()
             
             if !viewModel.isOnboardingSkipped {
