@@ -79,9 +79,9 @@ class OnboardingStateMachine {
                 .createOrEnterHome,
                 .chooseRooms,
                 .chooseChores,
-                .chooseFreeTime,
                 .inviteAndConfirmJoin,
                 .setUpScheduleChores,
+                .chooseFreeTime,
                 .scheduleChores
             ]
         case .invitedWithProfile:

@@ -46,9 +46,9 @@ struct StartChoreDivisionOnboardingView: View {
                 viewModel.goToNextView()
             }
             
-            OnboardingSkipButton() {
-                viewModel.finishOnboarding()
-            }
+//            OnboardingSkipButton() {
+//                viewModel.finishOnboarding()
+//            }
 
         }
         .frame(width: width * 0.8)
