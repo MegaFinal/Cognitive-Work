@@ -40,7 +40,7 @@ struct ContentView: View {
 //                .tabItem {
 //                    Label("Progresso", systemImage: "figure.2")
 //                }
-//            
+            
             NavigationStack {
                 UserProfileView()
                     .navigationTitle("Perfil")
