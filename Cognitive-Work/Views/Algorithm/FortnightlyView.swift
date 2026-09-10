@@ -14,7 +14,6 @@ struct FortnightlyView: View {
     
     @State private var viewModel = FortnightlyViewModel()
     @State private var selectedEntry: DailyUsageEntry?
-    @State private var usageEntries: [DailyUsageEntry] = []
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -61,7 +60,7 @@ struct FortnightlyView: View {
             } else {
                 FortnightlyBarChart(
                     users: users,
-                    entries: usageEntries,
+                    entries: viewModel.usageEntries,
                     startDate: viewModel.startDate,
                     onSelect: { entry in selectedEntry = entry }
                 )
@@ -77,7 +76,6 @@ struct FortnightlyView: View {
         }
         .task {
             await viewModel.setup(users: users, chores: chores)
-            usageEntries = await viewModel.usageEntries
         }
     }
     

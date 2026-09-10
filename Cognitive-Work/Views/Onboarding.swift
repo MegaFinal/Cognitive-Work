@@ -40,23 +40,11 @@ struct Onboarding: View {
                         }
                     }
                 }
-            if viewModel.isCheckingAccount {
-                Color.white.ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    ProgressView()
-                        .scaleEffect(1.5)
-                    
-                    Text("Buscando seu perfil")
-                        .font(.headline)
-                        .foregroundStyle(.gray)
-                }
-            }
         }
         .task {
             await CloudKitManager.shared.deleteAllRecords()
             await viewModel.checkExistingAccount()
-            
+
             if !viewModel.isOnboardingSkipped {
                 await viewModel.restoreProgressIfNeeded()
             }

@@ -20,6 +20,7 @@ enum CloudKitErrors<T>: Error, LocalizedError {
     case zoneNotFound
     case limitExceeded
     case underlying(Error)
+    case currentHouseOwnerCannotLeaveTheHouse
 
     var errorDescription: String? {
         switch self {
@@ -52,6 +53,8 @@ enum CloudKitErrors<T>: Error, LocalizedError {
                 return "Erro do CloudKit (Código \(ckError.errorCode)): \(ckError.localizedDescription)"
             }
             return "Erro inesperado: \(error.localizedDescription)"
+        case .currentHouseOwnerCannotLeaveTheHouse:
+            return "Failed to leave house: current user is the owner"
         }
     }
 }

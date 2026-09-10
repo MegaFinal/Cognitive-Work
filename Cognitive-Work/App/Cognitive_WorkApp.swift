@@ -19,9 +19,6 @@ struct Cognitive_WorkApp: App {
                 ContentView()
             } else {
                 Onboarding(didOnboard: $didOnboard)
-//                    .task {
-//                        await CloudKitManager.shared.deleteAllRecords()
-//                    }
             }
         }
     }

@@ -23,59 +23,81 @@ func buildScheduleContext(
     windowEnd: Date
 ) async -> ScheduleContext {
     
-    // Initialize a dictionary to store the list of available time slots for each user ID
     var userAvailableTimeMap: [CKRecord.ID: [AvailableTimeModel]] = [:]
-    // Initialize a dictionary to store the total capacity (in minutes) for each user ID
     var userTotalCapacity: [CKRecord.ID: Int] = [:]
     
-    // Iterate through each user
+    // Collect all user time request references into a single array
+    var allTimeRefs: [CKRecord.Reference] = []
     for user in users {
-        // Ensure the user's recordID exists and that they have available time slot references
+        if let refs = user.availableTimeReference {
+            allTimeRefs.append(contentsOf: refs)
+        }
+    }
+    
+    // Perform only 1 network request outside the for loop
+    let allFetchedSlots = await CloudKitManager.shared.fetchRecordsByRecordReference(
+        for: AvailableTimeModel.self,
+        recordReferences: allTimeRefs
+    ) ?? []
+    
+    for user in users {
         guard let userID = user.recordID, let refs = user.availableTimeReference else { continue }
-        // Fetch all available time slot records for this user from CloudKit, or default to an empty array if it fails
-        let slots = await CloudKitManager.shared.fetchRecordsByRecordReference(
-            for: AvailableTimeModel.self,
-            recordReferences: refs
-        ) ?? []
         
-        // Filter for valid time slots between today (inclusive) and window end (exclusive)
+        // Extract all record IDs belonging to this user
+        let userRefIDs = Set(refs.map { $0.recordID })
+        
+        // Filter records belonging to this user from the main pool fetched in the single request
+        let slots = allFetchedSlots.filter { slot in
+            guard let slotID = slot.recordID else { return false }
+            return userRefIDs.contains(slotID)
+        }
+        
         let validSlots = slots.filter { slot in
             let day = Calendar.current.startOfDay(for: slot.day)
             return day >= now && day <= windowEnd
         }
         
-        // Store valid time slots in the user's available time map
         userAvailableTimeMap[userID] = validSlots
-        // Calculate the total capacity in minutes for this user during this period and store it in the total capacity dictionary
         userTotalCapacity[userID] = validSlots.reduce(0) { $0 + $1.capacityMinutes }
     }
     
-    // Initialize a dictionary to store the mapping from chore ID to its corresponding responsible user model
     var choreResponsibleMap: [CKRecord.ID: UserModel] = [:]
-    // Iterate through each chore
+    
+    // Additional optimization: Chores whose users are not found locally would traditionally trigger individual awaits in the loop
+    var missingUserRefs = Set<CKRecord.Reference>()
+    // We can similarly batch these requests
+    var missingChores: [ChoreModel] = []
+    
     for chore in chores {
-        // Ensure the chore has a current responsible reference and a chore ID
         guard let ref = chore.currentResponsibleReference, let choreID = chore.recordID else { continue }
         
-        // If the corresponding user is found in the locally loaded users array, reuse it directly to avoid unnecessary CloudKit network requests
         if let local = users.first(where: { $0.recordID == ref.recordID }) {
             choreResponsibleMap[choreID] = local
-            continue
+        } else {
+            // Record missing users rather than triggering an immediate network request
+            missingUserRefs.insert(ref)
+            missingChores.append(chore)
         }
         
-        // If not found locally, fetch the user model from CloudKit using the remote reference and store it in the mapping
-        if let fetched = await CloudKitManager.shared.fetchRecordsByRecordReference(
-            for: UserModel.self,
-            recordReferences: [ref]
-        )?.first {
-            choreResponsibleMap[choreID] = fetched
+        // If there are missing users, fetch them all using a single request
+        if !missingUserRefs.isEmpty {
+            let fetchedUsers = await CloudKitManager.shared.fetchRecordsByRecordReference(
+                for: UserModel.self,
+                recordReferences: Array(missingUserRefs)
+            ) ?? []
+            
+            // Populate the map in memory
+            for chore in missingChores {
+                guard let ref = chore.currentResponsibleReference, let choreID = chore.recordID else { continue }
+                if let found = fetchedUsers.first(where: { $0.recordID == ref.recordID }) {
+                    choreResponsibleMap[choreID] = found
+                }
+            }
         }
     }
     
-    // Get the minimum total capacity among all users, defaulting to 0 if none exists (used for subsequent baseline capacity calculations)
     let minimumCapacity = userTotalCapacity.values.min() ?? 0
     
-    // Return the constructed scheduling context object
     return ScheduleContext(
         userAvailableTimeMap: userAvailableTimeMap,
         choreResponsibleMap: choreResponsibleMap,
@@ -96,7 +118,7 @@ func occurrenceOffsets(for frequency: Recurrence, windowDays: Int, phase: Int = 
     case .monthly:     period = 14
     case .none:        return []
     }
-
+    
     let start = phase % period
     return stride(from: start, to: windowDays, by: period).map { $0 }
 }
@@ -145,31 +167,33 @@ func scheduleRecurringChores(
             for user in targetUsers {
                 guard let userID = user.recordID else { continue }
                 let slots = context.userAvailableTimeMap[userID] ?? []
-
+                
+                
                 let hasRoom = slots.contains { slot in
                     guard Calendar.current.startOfDay(for: slot.day) == day, let slotID = slot.recordID
                     else { return false }
                     return (remainingCapacity[slotID] ?? Double(slot.capacityMinutes)) >= chore.duration
                 }
-
+                
                 if hasRoom {
                     availableToday.append(user)
                 }
             }
             
-            // Recurring chores must be assigned to someone on their scheduled days, even if everyone lacks sufficient capacity
-            let pool = availableToday.isEmpty ? targetUsers : availableToday
+            guard !availableToday.isEmpty else {
+                continue
+            }
             
-            // Select the user from the candidate pool who currently has the fewest assigned minutes (to achieve load balancing)
-            guard let chosenUser = pool.min(by: { u1, u2 in
+            guard let chosenUser = availableToday.min(by: { u1, u2 in
                 let a1 = u1.recordID.flatMap { userAssignedMinutes[$0] } ?? 0
                 let a2 = u2.recordID.flatMap { userAssignedMinutes[$0] } ?? 0
                 return a1 < a2
             }), let chosenUserID = chosenUser.recordID else { continue }
             
+            
             // Get the selected user's available time slots and deduct the corresponding capacity
             let slots = context.userAvailableTimeMap[chosenUserID] ?? []
-
+            
             // Deduct the chore duration from the day's slot
             if let slot = slots.first(where: { Calendar.current.startOfDay(for: $0.day) == day }),
                let slotID = slot.recordID {
@@ -189,7 +213,6 @@ func scheduleRecurringChores(
                 user: chosenUserRef,
                 chore: choreRef
             )
-            // Append the assignment record to the current chore's results
             result.newAssignments.append(assignment)
         }
         
@@ -422,69 +445,68 @@ func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
 ///     whichever device happens to run this. `nil` falls back to the old, zone-unsafe
 ///     behavior if the house couldn't be resolved.
 func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], houseZoneID: CKRecordZone.ID?) async {
+    guard let zoneID = houseZoneID else { return }
     
-    // Create and save each chore and its corresponding daily assignment records in the cloud
+    var recordsToSave: [CKRecord] = []
+    var choresByUser: [CKRecord.ID: [CKRecord.Reference]] = [:]
+    
     for result in results {
         guard let choreID = result.chore.recordID else { continue }
         
         var savedRefs: [CKRecord.Reference] = []
         for assignment in result.newAssignments {
-            // Create a single daily assignment record in CloudKit, explicitly inside the
-            // house's zone rather than the calling device's own private zone.
-            if let saved = await CloudKitManager.shared.create(assignment, zoneID: houseZoneID),
-               let savedID = saved.recordID {
-                savedRefs.append(CKRecord.Reference(recordID: savedID, action: CKRecord.ReferenceAction.none))
-            }
-        }
-        
-        // Merge newly generated daily assignment references into the chore object and update the chore once
-        let updatableChore = result.chore
-        updatableChore.recordID = choreID
-        if !savedRefs.isEmpty {
-            updatableChore.dailyAssignmentsReference = (updatableChore.dailyAssignmentsReference ?? []) + savedRefs
-        }
-        await CloudKitManager.shared.update(updatableChore)
-    }
-    
-    // Associate the scheduled chores into the corresponding user's personal task list
-    var choresByUser: [CKRecord.ID: [CKRecord.Reference]] = [:]
-    
-    for result in results {
-        guard let choreID = result.chore.recordID else { continue }
-        let choreRef = CKRecord.Reference(recordID: choreID, action: CKRecord.ReferenceAction.none)
-        
-        // Collect all user IDs involved in this chore
-        var userIDs = Set<CKRecord.ID>()
-        if let responsibleID = result.chore.currentResponsibleReference?.recordID {
-            userIDs.insert(responsibleID)
-        }
-        for assignment in result.newAssignments {
+            let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
+            let record = CKRecord(recordType: DailyAssignmentModel.recordType, recordID: recordID)
+            
+            assignment.populate(record: record)
+            recordsToSave.append(record)
+            savedRefs.append(CKRecord.Reference(recordID: recordID, action: .none))
+            
+            // Categorize by user
             if let assignedID = assignment.user?.recordID {
-                userIDs.insert(assignedID)
+                choresByUser[assignedID, default: []].append(CKRecord.Reference(recordID: choreID, action: .none))
             }
         }
         
-        // Categorize chore references into the dictionary corresponding to user IDs
-        for userID in userIDs {
-            choresByUser[userID, default: []].append(choreRef)
+        // Update local chore references
+        if !savedRefs.isEmpty {
+            result.chore.dailyAssignmentsReference = (result.chore.dailyAssignmentsReference ?? []) + savedRefs
         }
     }
     
-    // Iterate through all users, append new tasks to the user's tasks field, and sync to the cloud
-    for user in users {
-        guard let userID = user.recordID,
-              let newRefs = choresByUser[userID],
-              !newRefs.isEmpty else { continue }
+    // Batch save the schedule records
+    if !recordsToSave.isEmpty {
+        await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: zoneID)
+    }
+    
+    // Use parallel multithreading (TaskGroup) to update existing Chores and Users
+    // Perfectly aligns with the architecture guidelines for multithreading concurrency
+    await withTaskGroup(of: Void.self) { group in
         
-        var updatableUser = user
+        // Concurrently update all chores
+        for result in results {
+            let chore = result.chore
+            group.addTask {
+                await CloudKitManager.shared.update(chore)
+            }
+        }
         
-        let existingRefs = updatableUser.choresReference ?? []
-        let existingIDs = Set(existingRefs.map { $0.recordID })
-        let dedupedNewRefs = newRefs.filter { !existingIDs.contains($0.recordID) }
-        
-        guard !dedupedNewRefs.isEmpty else { continue }
-        
-        updatableUser.choresReference = existingRefs + dedupedNewRefs
-        await CloudKitManager.shared.update(updatableUser)
+        for user in users {
+            guard let userID = user.recordID,
+                  let newRefs = choresByUser[userID],
+                  !newRefs.isEmpty else { continue }
+            
+            let existingRefs = user.choresReference ?? []
+            let existingIDs = Set(existingRefs.map { $0.recordID })
+            let dedupedNewRefs = newRefs.filter { !existingIDs.contains($0.recordID) }
+            
+            if !dedupedNewRefs.isEmpty {
+                user.choresReference = existingRefs + dedupedNewRefs
+                
+                group.addTask {
+                    await CloudKitManager.shared.update(user)
+                }
+            }
+        }
     }
 }
