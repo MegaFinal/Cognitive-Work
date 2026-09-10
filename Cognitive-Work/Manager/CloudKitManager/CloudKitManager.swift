@@ -300,7 +300,7 @@ class CloudKitManager {
     }
     
     @discardableResult
-    func leaveCurrentHouse() async -> Bool {
+    func leaveCurrentHouse() async throws -> Bool {
         guard let house = try? await fetchFirst(HouseModel.self),
               let record = await fetchRecord(for: house),
               let share = await fetchShare(for: record)
@@ -311,7 +311,7 @@ class CloudKitManager {
         // O dono não "sai": ele deleta ou para de compartilhar.
         guard share.recordID.zoneID.ownerName != CKCurrentUserDefaultName else {
             errorMessage = "Failed to leave house: current user is the owner"
-            return false
+            throw CloudKitErrors<Any>.currentHouseOwnerCannotLeaveTheHouse
         }
 
         do {
@@ -325,8 +325,14 @@ class CloudKitManager {
 
     @discardableResult
     func switchHouse(to metadata: CKShare.Metadata) async -> Bool {
-        await leaveCurrentHouse()
-        return await acceptShare(metadata: metadata)
+        do {
+            try await leaveCurrentHouse()
+            return await acceptShare(metadata: metadata)
+        }
+        catch {
+            print("\(String(describing: errorMessage))")
+            return false
+        }
     }
 
     /// Creates database subscriptions for private and shared database changes.

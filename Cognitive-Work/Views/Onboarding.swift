@@ -42,6 +42,7 @@ struct Onboarding: View {
                 }
         }
         .task {
+            await CloudKitManager.shared.deleteAllRecords()
             if !viewModel.isOnboardingSkipped {
                 await viewModel.restoreProgressIfNeeded()
             }
