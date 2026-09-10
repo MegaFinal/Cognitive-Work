@@ -26,14 +26,14 @@ struct CarouselCardFrame: View {
     
     var body: some View {
         ZStack {
-            ChoreCarouselCard(chore: chore, namespace: namespace)
+            ChoreCarouselCard(chore: chore, namespace: namespace, carouselViewModel: carouselViewModel)
                 .opacity(isShowingBack ? 0 : 1)
                 .scaleEffect(
                     x: isFocused ? (0.88 / 0.72) : 1.0,
                     y: isFocused ? (0.65 / 0.47) : 1.0
                 )
             
-            ChoreDetailsCard(chore: chore, carouselViewModel: carouselViewModel)
+            ChoreDetailsCard(chore: chore, carouselViewModel: carouselViewModel, isShowingBack: isShowingBack)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(isShowingBack ? 1 : 0)
                 .frame(width: 0, height: 0)
@@ -46,18 +46,4 @@ struct CarouselCardFrame: View {
         .animation(.easeInOut(duration: fadeDuration), value: isShowingBack)
         .rotation3DEffect(.degrees(rotation), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
     }
-}
-
-#Preview {
-    @Previewable @Namespace var namespace
-    let mockChore = ChoreModel(
-        name: "Lavar o Banheiro",
-        description: "Esfregar o chão e limpar o espelho",
-        frequency: .weekly,
-        duration: 1800,
-        isPublic: true,
-        priorityTag: .urgent
-    )
-    
-    return ChoreCarouselCard(chore: mockChore, namespace: namespace)
 }

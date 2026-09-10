@@ -91,19 +91,18 @@ class FortnightlyViewModel {
     }
     
     // MARK: - Data Processing
-    
     /// Processes raw chores and assignments into a clean array of `DailyUsageEntry` objects.
     func loadUsageEntries() async {
         var entries: [DailyUsageEntry] = []
-
+        
         for chore in chores {
             guard let choreID = chore.recordID else { continue }
-
+            
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
                 let relatedAssignments = dailyAssignments.filter { assignment in
                     refs.contains { $0.recordID == assignment.recordID }
                 }
-
+                
                 for assignment in relatedAssignments {
                     guard let userID = assignment.user?.recordID else { continue }
                     entries.append(DailyUsageEntry(
@@ -118,7 +117,7 @@ class FortnightlyViewModel {
                 guard let dueDate = chore.dueDate,
                       let user = await chore.currentResponsible,
                       let userID = user.recordID else { continue }
-
+                
                 entries.append(DailyUsageEntry(
                     day: dueDate,
                     userID: userID,
@@ -128,7 +127,7 @@ class FortnightlyViewModel {
                 ))
             }
         }
-
+        
         await MainActor.run {
             self.usageEntries = entries
         }
