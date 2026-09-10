@@ -74,6 +74,7 @@ class FortnightlyViewModel {
         let (fetchedUsers, fetchedChores) = await (fetchU, fetchC)
         
         await setup(users: fetchedUsers, chores: fetchedChores)
+        
     }
     
     /// Handles common post-fetch initialization tasks like loading assignments and calculating the date window.

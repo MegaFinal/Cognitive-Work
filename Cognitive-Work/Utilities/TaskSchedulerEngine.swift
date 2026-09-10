@@ -52,16 +52,23 @@ struct TaskSchedulerEngine {
         )
         
         // Define the set of recurring frequencies
-        let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly]
+        let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly, .monthly]
         
         // Filter out recurring chores that need to be scheduled
         // Condition: not done, recurring frequency, and do not yet have generated daily assignment records
         let recurringChores = chores.filter {
-            !$0.isDone && recurringFrequencies.contains($0.frequency) && ($0.dailyAssignmentsReference ?? []).isEmpty
+            !$0.isDone && recurringFrequencies.contains($0.frequency) && ($0.dailyAssignmentsReference ?? []).isEmpty && $0.shouldBeIncluded != false
+        }
+        
+        // Monthly chores that wont be done now, but need to be done next 14 days
+        let monthyChoresNotToDo = chores.filter { $0.frequency == .monthly && $0.shouldBeIncluded == false }
+        
+        for chore in recurringChores where chore.frequency == .monthly {
+            chore.shouldBeIncluded?.toggle()
         }
         
         // Filter all unfinished chores with no set due date, excluding monthly tasks from this window
-        let unassignedChores = chores.filter { !$0.isDone && $0.dueDate == nil && $0.frequency != .monthly }
+        let unassignedChores = chores.filter { !$0.isDone && $0.dueDate == nil && $0.frequency != .monthly}
         
         // Exclude recurring frequency chores from the above list, keeping only common non-recurring chores
         let nonRecurringChores = unassignedChores.filter { !recurringFrequencies.contains($0.frequency) }
@@ -115,6 +122,12 @@ struct TaskSchedulerEngine {
         
         // Commit and save the final schedule results to the cloud
         await commitScheduleResults(allResults, users: users, houseZoneID: houseZoneID)
+        
+        // toogle shouldBeIncluded chores so they can be included on the next 14 days and persists on cloudkit
+        for chore in monthyChoresNotToDo {
+            chore.shouldBeIncluded?.toggle()
+            await CloudKitManager.shared.update(chore)
+        }
     }
     
     // MARK: - Prioritization

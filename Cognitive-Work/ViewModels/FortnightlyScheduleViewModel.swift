@@ -14,6 +14,7 @@ import SwiftUI
 final class FortnightlyScheduleViewModel {
     var users: [UserModel] = []
     var chores: [ChoreModel] = []
+    var errorMessage: String?
     var isLoading = true
     
     private func setup() async {
@@ -28,7 +29,7 @@ final class FortnightlyScheduleViewModel {
         isLoading = true
         
         await setup()
-        
+                
         await TaskSchedulerEngine.schedule(chores: chores,users: users)
         
         await setup()

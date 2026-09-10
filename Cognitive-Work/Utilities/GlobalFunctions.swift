@@ -115,7 +115,8 @@ func occurrenceOffsets(for frequency: Recurrence, windowDays: Int, phase: Int = 
     case .daily:       period = 1
     case .weekly:      period = 7
     case .fortnightly: period = 14
-    case .monthly, .none: return []
+    case .monthly:     period = 14
+    case .none:        return []
     }
     
     let start = phase % period
@@ -180,7 +181,6 @@ func scheduleRecurringChores(
             }
             
             guard !availableToday.isEmpty else {
-                print("No one available for chore '\(chore.name)' on \(day)")
                 continue
             }
             
