@@ -53,6 +53,10 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Maximum number of coupons the user may hold at once.
     var couponLimit: Int
     
+//    var hasSelectedFreeTime: Bool {
+//        return !availableTime.isEmpty
+//    }
+    
     var chores: [ChoreModel] {
         get async {
             if let choresReference {

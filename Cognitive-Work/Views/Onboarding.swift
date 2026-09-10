@@ -56,28 +56,40 @@ struct Onboarding: View {
         switch stateMachine.current {
         case .welcome:
             WelcomeOnboardingView(viewModel: $viewModel)
+            
         case .createProfile:
             CreateProfileOnboardingView(viewModel: $viewModel)
+            
         case .createOrEnterHome:
             CreateOrEnterHouseOnboardingView(viewModel: $viewModel)
+            
         case .waitAcceptLink:
             WaitAcceptLinkOnboardingView(viewModel: $viewModel)
+            
         case .chooseRooms:
             SelectRoomsOnboardingView(viewModel: $viewModel)
+            
         case .inviteAndConfirmJoin:
             InviteUsersOnboardingView(viewModel: $viewModel, isFromSettings: false)
+            
         case .setUpScheduleChores:
             StartChoreDivisionOnboardingView(viewModel: $viewModel)
+            
         case .chooseChores:
             SelectChoresOnboardingView(viewModel: $viewModel)
+            
         case .chooseFreeTime:
             SelectFreeTimeOnboardingView(viewModel: $viewModel)
+            
         case .waitAdminScheduling:
             WaitHouseCreatorSheduleView(viewModel: $viewModel)
+            
         case .scheduleChores:
             FortnightlyScheduleView(shouldGenerate: viewModel.stateMachine.isOwner ?? false) {
                     viewModel.finishOnboarding()
                 }
+        case .waitGuestsFreeTime:
+            WaitUsersFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: false)
             
 //        case .choreScheduleResult:
 //            FortnightlyView()

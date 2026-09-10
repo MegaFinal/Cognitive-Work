@@ -18,5 +18,5 @@ enum OnboardingNavigationSteps {
     case chooseFreeTime
     case scheduleChores
     case waitAdminScheduling
-//    case choreScheduleResult
+    case waitGuestsFreeTime
 }
