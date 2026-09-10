@@ -392,6 +392,30 @@ class CloudKitManager {
             return nil
         }
     }
+    
+    /// Saves a collection of records to CloudKit in a single batch operation.
+    ///
+    /// This method determines the appropriate database (private or shared) based on the provided **zone ID** and executes a **batch save** using `modifyRecords(saving:deleting:)`.
+    ///
+    /// - Parameters:
+    ///   - records: An array of **`CKRecord`** objects to be saved.
+    ///   - zoneID: The **`CKRecordZone.ID`** indicating where the records reside.
+    ///
+    /// - Returns: A **Boolean** value indicating whether the batch operation succeeded (`true`) or failed (`false`).
+    ///
+    /// - Important: If the operation fails, the error message is stored in **`self.errorMessage`**.
+    @discardableResult
+    func batchSave(records: [CKRecord], zoneID: CKRecordZone.ID) async -> Bool {
+        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+        do {
+            // Modifies the specified records and returns the results to an awaiting caller
+            _ = try await database.modifyRecords(saving: records, deleting: [])
+            return true
+        } catch {
+            self.errorMessage = "Batch save failed: \(error.localizedDescription)"
+            return false
+        }
+    }
 }
 
 extension CloudKitManager {
