@@ -53,10 +53,6 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Maximum number of coupons the user may hold at once.
     var couponLimit: Int
     
-//    var hasSelectedFreeTime: Bool {
-//        return !availableTime.isEmpty
-//    }
-    
     var chores: [ChoreModel] {
         get async {
             if let choresReference {
@@ -205,7 +201,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
                     user: userRef
                 )
                 
-                if let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID),
+                if let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID, parent: houseReference),
                    let savedID = saved.recordID {
                     newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
                 }
