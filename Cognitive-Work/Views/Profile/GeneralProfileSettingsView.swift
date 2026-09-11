@@ -123,11 +123,12 @@ struct GeneralProfileSettingsView: View {
     }
 }
 
-#Preview {
-    let mockUser = UserModel(name: "Preview User", tier: .tier1)
-    let mockViewModel = UserProfileViewModel(user: mockUser)
-    
-    return NavigationStack {
-        GeneralProfileSettingsView(viewModel: mockViewModel)
-    }
-}
+//TODO: fix preview
+//#Preview {
+//    let mockUser = UserModel(name: "Preview User", tier: .tier1)
+//    let mockViewModel = UserProfileViewModel(user: mockUser)
+//    
+//    return NavigationStack {
+//        GeneralProfileSettingsView(viewModel: mockViewModel)
+//    }
+//}
