@@ -53,6 +53,10 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Maximum number of coupons the user may hold at once.
     var couponLimit: Int
     
+//    var hasSelectedFreeTime: Bool {
+//        return !availableTime.isEmpty
+//    }
+    
     var chores: [ChoreModel] {
         get async {
             if let choresReference {
@@ -206,17 +210,18 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
                     day: futureDay,
                     user: userRef
                 )
-                linked.populate(record: record)
-            
-                recordsToSave.append(record)
-                newRefs.append(CKRecord.Reference(recordID: newID, action: .none))
+                
+                if let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID),
+                   let savedID = saved.recordID {
+                    newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
+                }
             }
         }
         
         if !recordsToSave.isEmpty {
                 let saveSuccess = await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: recordID.zoneID)
                 guard saveSuccess else { return false }
-            }
+        }
         
         self.availableTimeReference = newRefs
         

@@ -158,12 +158,12 @@ class OnboardingViewModel {
                 id: copyRecordID,
                 parent: houseCascadeRef
             )
-            
+
             if let savedUserCopy {
                 self.currentUser = savedUserCopy
                 self.stateMachine.user = savedUserCopy
             }
-            
+
             print("creat user copy")
             
             try? await CloudKitManager.shared.createSharedSubscription()
@@ -211,8 +211,8 @@ class OnboardingViewModel {
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
         
         let roomToRepresentChoresToAllHome = RoomModel(name: "Casa",
-                                                       house: house.reference(action: .deleteSelf),
-                                                       color: .orange)
+                                  house: house.reference(action: .deleteSelf),
+                                  color: .orange)
         
         
         var savedRooms = await withTaskGroup(of: RoomModel?.self) { group in
@@ -337,11 +337,6 @@ class OnboardingViewModel {
             )
         }
         await currentUser?.setAvailableTimes(availableTime)
-        var houseUser = await CloudKitManager.shared.fetchMyHouseUser()
-        print(currentUser?.name)
-        print(houseUser?.name)
-        let isSuccess = await houseUser?.setAvailableTimes(availableTime)
-        print(isSuccess)
         isLoading = false
     }
     
@@ -376,13 +371,9 @@ class OnboardingViewModel {
         let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
         
         //TODO: make fallback
-        //        guard let profilePicture = profile.profilePicture
-        //        else {return}
-        //        let assetCopy = try? duplicateCKAsset(profilePicture)
-        
-        let assetCopy = profile.profilePicture.flatMap {
-            try? duplicateCKAsset($0)
-        }
+        guard let profilePicture = profile.profilePicture
+        else {return}
+        let assetCopy = try? duplicateCKAsset(profilePicture)
         
         let sharedUser = UserModel(
             name: profile.name,
@@ -414,11 +405,7 @@ class OnboardingViewModel {
     /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
     /// when onboarding resumes on a fresh launch (see ``restoreProgressIfNeeded()``).
     func fetchCurrentUser() async {
-        if let houseUser = await CloudKitManager.shared.fetchMyHouseUser() {
-            currentUser = houseUser
-        } else {
-            currentUser = await CloudKitManager.shared.fetchMyUser()
-        }
+        currentUser = await CloudKitManager.shared.fetchMyUser()
     }
     
     /// Re-hydrates ``currentUser`` and ``currentHouse`` after the app relaunches mid-onboarding.
@@ -449,13 +436,13 @@ class OnboardingViewModel {
     }
     
     // MARK: - Algorithm
-    
+
     @MainActor
     func checkAndAdvanceIfScheduleReady() async {
         let assignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
         let scheduleIsReady = !assignments.isEmpty
         guard scheduleIsReady else { return }
-        
+
         isScheduleReady = true
         guard stateMachine.current == .waitAdminScheduling else { return }
         goToNextView()
