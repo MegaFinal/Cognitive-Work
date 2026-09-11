@@ -54,6 +54,7 @@ struct WaitHouseCreatorSheduleView: View {
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task(priority: .userInitiated) {
                 await viewModel.checkAndAdvanceIfScheduleReady()
+                print("Recebi mudança")
             }
         }
     }

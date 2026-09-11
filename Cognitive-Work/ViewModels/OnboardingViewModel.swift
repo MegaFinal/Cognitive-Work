@@ -340,6 +340,8 @@ class OnboardingViewModel {
                 )
             )
         }
+        async let publicUser = CloudKitManager.shared.fetchMyHouseUser()
+        await publicUser?.setAvailableTimes(availableTime)
         await currentUser?.setAvailableTimes(availableTime)
         isLoading = false
     }
