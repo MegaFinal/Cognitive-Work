@@ -20,6 +20,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Identifier of the stored record, or `nil` before the user is saved.
     var recordID: CKRecord.ID?
     
+    var ownerRecordName: String
+    
     /// Display name shown to other members.
     var name: String
     
@@ -93,7 +95,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
             let name = record["name"] as? String,
             let coins = record["coins"] as? Int,
             let points = record["points"] as? Int,
-            let couponLimit = record["couponLimit"] as? Int
+            let couponLimit = record["couponLimit"] as? Int,
+            let ownerRecordName = record["ownerRecordName"] as? String
         else {
             return nil
         }
@@ -110,6 +113,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.availableTimeReference = record["availableTime"] as? [CKRecord.Reference]
         self.couponsReference = record["coupons"] as? [CKRecord.Reference]
         self.houseReference = record["house"] as? CKRecord.Reference
+        self.ownerRecordName = ownerRecordName
     }
     
     /// Creates a new, unsaved user.
@@ -127,7 +131,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         house: CKRecord.Reference? = nil,
         coupons: [CKRecord.Reference]? = nil,
         couponLimit: Int = 0,
-        recordID: CKRecord.ID? = nil
+        recordID: CKRecord.ID? = nil,
+        ownerRecordName: String
     ) {
         self.recordID = recordID
         self.name = name
@@ -141,6 +146,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.houseReference = house
         self.couponsReference = coupons
         self.couponLimit = couponLimit
+        self.ownerRecordName = ownerRecordName
     }
     
     /// Writes this model's values into a CloudKit record.
@@ -170,7 +176,9 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         if let couponsReference {
             record["coupons"] = couponsReference
         }
+        record["ownerRecordName"] = ownerRecordName
         record["couponLimit"] = couponLimit
+        
     }
     
     @discardableResult

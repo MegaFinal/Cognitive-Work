@@ -309,36 +309,36 @@ fileprivate class MockChoreModel: ChoreModel {
     override var checkList: [CheckItemModel] { get async { mockChecklist } }
     override var room: RoomModel? { get async { mockRoom } }
 }
-
-#Preview {
-    let user1 = UserModel(name: "Dayô", tier: .tier1, recordID: CKRecord.ID(recordName: "user1"))
-    let user2 = UserModel(name: "João", tier: .tier1, recordID: CKRecord.ID(recordName: "user2"))
-    let user3 = UserModel(name: "Maria", tier: .tier2, recordID: CKRecord.ID(recordName: "user3"))
-    let allUsers = [user1, user2, user3]
-    
-    let check1 = CheckItemModel(name: "Limpar o espelho", isDone: true)
-    check1.recordID = CKRecord.ID(recordName: "check1")
-    let check2 = CheckItemModel(name: "Lavar o chão", isDone: false)
-    check2.recordID = CKRecord.ID(recordName: "check2")
-    
-    let mockChore = MockChoreModel(
-        name: "Lavar Banheiro",
-        description: "Deixar tudo brilhando e cheiroso",
-        isDone: false,
-        frequency: .weekly,
-        duration: 1800,
-        isPublic: false,
-        priorityTag: .urgent
-    )
-    
-    mockChore.recordID = CKRecord.ID(recordName: "chore_existente")
-    mockChore.mockUsers = [user1, user2]
-    mockChore.mockChecklist = [check1, check2]
-    
-    return NavigationStack {
-        CreateAndEditChoreView(
-            originalModel: mockChore,
-            availableHouseUsers: allUsers
-        )
-    }
-}
+//TODO: FIX PREVIEW
+//#Preview {
+//    let user1 = UserModel(name: "Dayô", tier: .tier1, recordID: CKRecord.ID(recordName: "user1"))
+//    let user2 = UserModel(name: "João", tier: .tier1, recordID: CKRecord.ID(recordName: "user2"))
+//    let user3 = UserModel(name: "Maria", tier: .tier2, recordID: CKRecord.ID(recordName: "user3"))
+//    let allUsers = [user1, user2, user3]
+//    
+//    let check1 = CheckItemModel(name: "Limpar o espelho", isDone: true)
+//    check1.recordID = CKRecord.ID(recordName: "check1")
+//    let check2 = CheckItemModel(name: "Lavar o chão", isDone: false)
+//    check2.recordID = CKRecord.ID(recordName: "check2")
+//    
+//    let mockChore = MockChoreModel(
+//        name: "Lavar Banheiro",
+//        description: "Deixar tudo brilhando e cheiroso",
+//        isDone: false,
+//        frequency: .weekly,
+//        duration: 1800,
+//        isPublic: false,
+//        priorityTag: .urgent
+//    )
+//    
+//    mockChore.recordID = CKRecord.ID(recordName: "chore_existente")
+//    mockChore.mockUsers = [user1, user2]
+//    mockChore.mockChecklist = [check1, check2]
+//    
+//    NavigationStack {
+//        CreateAndEditChoreView(
+//            originalModel: mockChore,
+//            availableHouseUsers: allUsers
+//        )
+//    }
+//}
