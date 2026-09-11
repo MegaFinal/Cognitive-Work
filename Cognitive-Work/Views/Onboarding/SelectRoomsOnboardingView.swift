@@ -49,10 +49,12 @@ struct SelectRoomsOnboardingView: View {
                             isSelected: roomDraft.isSelected
                         )
                         .onTapGesture {
-                            if roomDraft.isAddButton {
-                                isShowingCustomRoomSheet = true
-                            } else {
-                                viewModel.toggleRoomSelection(id: roomDraft.id)
+                            if !viewModel.isLoading {
+                                if roomDraft.isAddButton {
+                                    isShowingCustomRoomSheet = true
+                                } else {
+                                    viewModel.toggleRoomSelection(id: roomDraft.id)
+                                }
                             }
                         }
                     }

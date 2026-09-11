@@ -66,12 +66,14 @@ struct SelectFreeTimeOnboardingView: View {
                 .padding(.top, height * 0.023)
                 
                 ForEach($weekOrder, id: \.name) { $day in
-                    OnboardingCustomSliderComponent(dayOfWeek: $day, width: width)
+                    OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
                 }
                 
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading,isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })) {
+                    viewModel.isLoading = true
                     await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder)
                     viewModel.goToNextView()
+                    viewModel.isLoading = false
                 }
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
@@ -133,6 +135,8 @@ private struct OnboardingCustomSliderComponent: View {
     private var abbreviationWidth: CGFloat {
         width * Layout.abbreviationWidthRatio
     }
+    
+    @Binding var isLoading: Bool
 
     // MARK: - Body
 
@@ -144,7 +148,7 @@ private struct OnboardingCustomSliderComponent: View {
                 .frame(width: abbreviationWidth, alignment: .leading)
 
             VStack {
-                FreeTimeSlider(rating: $selectedFreeTimeLevel)
+                FreeTimeSlider(rating: $selectedFreeTimeLevel, isLoading: $isLoading)
 
                 caption
             }

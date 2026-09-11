@@ -62,6 +62,8 @@ struct FreeTimeSlider: View {
     private var totalWidth: CGFloat {
         CGFloat(maxRating) * squareSize + spacing * CGFloat(maxRating - 1)
     }
+    
+    @Binding var isLoading: Bool
 
     // MARK: - Body
 
@@ -106,7 +108,9 @@ struct FreeTimeSlider: View {
     private func buildSelectionGesture(in rowWidth: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: Layout.minimumDragDistance)
             .onChanged { value in
-                updateRating(with: value.location.x, in: rowWidth)
+                if !isLoading {
+                    updateRating(with: value.location.x, in: rowWidth)
+                }
             }
     }
 
@@ -142,4 +146,18 @@ struct FreeTimeSlider: View {
 
         rating = max(0, min(maxRating, calculatedRating))
     }
+}
+
+#Preview("FreeTimeSlider") {
+    @Previewable @State var rating = 3
+
+    VStack(spacing: 32) {
+        FreeTimeSlider(rating: $rating, isLoading: .constant(false))
+
+        Text("Blocos selecionados: \(rating)")
+            .font(.headline)
+            .contentTransition(.numericText())
+            .animation(.default, value: rating)
+    }
+    .padding()
 }

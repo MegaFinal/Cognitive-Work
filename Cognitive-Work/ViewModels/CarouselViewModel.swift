@@ -92,7 +92,7 @@ class CarouselViewModel {
         let (chores, users, rooms) = await (fetchC, fetchU, fetchR)
         
         await MainActor.run {
-            self.cardModels = chores
+            self.cardModels = chores.filter { $0.shouldBeIncluded != true }
             self.userModels = users
             self.roomModels = rooms
             
