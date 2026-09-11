@@ -142,9 +142,9 @@ func scheduleRecurringChores(
     remainingCapacity: inout [CKRecord.ID: Double],
     userAssignedMinutes: inout [CKRecord.ID: Int]
 ) -> [ScheduleResult] {
-
+    
     let calendar = Calendar.current
-
+    
     // Convert user available times into a [UserID: [StartOfDay: TimeSlot]] structure to index only once and improve lookup efficiency
     var slotsByUserAndDay: [CKRecord.ID: [Date: AvailableTimeModel]] = [:]
     for (userID, slots) in context.userAvailableTimeMap {
@@ -154,31 +154,31 @@ func scheduleRecurringChores(
         }
         slotsByUserAndDay[userID] = dayMap
     }
-
+    
     var results: [ScheduleResult] = []
-
+    
     // Iterate through each recurring chore
     for chore in recurringChores { // FOR 1
         guard let choreID = chore.recordID else { continue }
         var result = ScheduleResult(chore: chore)
-
+        
         let fixedUser = context.choreResponsibleMap[choreID]
         let targetUsers = fixedUser.map { [$0] } ?? users
-
+        
         let phase = choreID.recordName.utf8.reduce(0) { $0 &+ Int($1) }
-
+        
         // Calculate on which days this chore needs to occur based on its frequency and the 14-day window
         for dayOffset in occurrenceOffsets(for: chore.frequency, windowDays: 14, phase: phase) {
             guard let day = calendar.date(byAdding: .day, value: dayOffset, to: now) else { continue }
             let dayStart = calendar.startOfDay(for: day)
-
+            
             // Single iteration, filtering and finding the person with the fewest assigned minutes simultaneously
             var chosenUser: UserModel?
             var chosenUserID: CKRecord.ID?
             var chosenSlotID: CKRecord.ID?
             var chosenRemaining: Double = 0
             var bestMinutes = Int.max
-
+            
             // Iterate through candidate users within a single day, filtering and finding the person with the fewest assigned minutes (the freest) today
             for user in targetUsers {
                 guard let userID = user.recordID,
@@ -189,9 +189,9 @@ func scheduleRecurringChores(
                 let remaining = remainingCapacity[slotID] ?? Double(slot.capacityMinutes)
                 // Check if the remaining capacity is sufficient to support the current chore's duration
                 guard remaining >= chore.duration else { continue }
-
+                
                 let assigned = userAssignedMinutes[userID] ?? 0
-
+                
                 // If the current user's assigned time is less than the current minimum record, update the best candidate
                 if assigned < bestMinutes {
                     bestMinutes = assigned
@@ -201,15 +201,15 @@ func scheduleRecurringChores(
                     chosenRemaining = remaining
                 }
             }
-
+            
             // If no suitable user is found for the day, skip this day
             guard let finalUserID = chosenUserID,
                   let slotID = chosenSlotID else { continue }
-
+            
             // Deduct time slot capacity and accumulate the user's assigned duration
             remainingCapacity[slotID] = max(chosenRemaining - chore.duration, 0)
             userAssignedMinutes[finalUserID, default: 0] += Int(chore.duration)
-
+            
             // Create a CloudKit reference, generate the daily assignment model, and append it to the current chore's results
             let chosenUserRef = CKRecord.Reference(recordID: finalUserID, action: .none)
             let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
@@ -217,10 +217,10 @@ func scheduleRecurringChores(
                 DailyAssignmentModel(day: day, isCompleted: false, user: chosenUserRef, chore: choreRef)
             )
         }
-
+        
         results.append(result)
     }
-
+    
     return results
 }
 
@@ -247,7 +247,7 @@ func scheduleAssignedChores(
 ) -> [ScheduleResult] {
     
     let calendar = Calendar.current
-
+    
     // Unified preprocessing: Convert user available times into a [UserID: [StartOfDay: TimeSlot]] structure
     var slotsByUserAndDay: [CKRecord.ID: [Date: AvailableTimeModel]] = [:]
     for (userID, slots) in context.userAvailableTimeMap {
@@ -288,7 +288,7 @@ func scheduleAssignedChores(
         
         // Select the earliest day among them
         if let chosen = validOptions.min(by: { $0.day < $1.day }),
-          let slotID = chosen.slot.recordID {
+           let slotID = chosen.slot.recordID {
             
             updatable.dueDate = chosen.slot.day
             
@@ -330,7 +330,7 @@ func scheduleFreeChores(
 ) -> [ScheduleResult] {
     
     let calendar = Calendar.current
-
+    
     // Reuse preprocessing: Convert user available times into a [UserID: [StartOfDay: TimeSlot]] structure to avoid redundant calculations of startOfDay
     var slotsByUserAndDay: [CKRecord.ID: [Date: AvailableTimeModel]] = [:]
     for (userID, slots) in context.userAvailableTimeMap {
@@ -340,7 +340,7 @@ func scheduleFreeChores(
         }
         slotsByUserAndDay[userID] = dayMap
     }
-
+    
     var results: [ScheduleResult] = []
     
     // Iterate through each unassigned free chore
@@ -499,24 +499,6 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
     var recordsToSave: [CKRecord] = []
     var choresByUser: [CKRecord.ID: [CKRecord.Reference]] = [:]
     
-//    for result in results {
-//        guard let choreID = result.chore.recordID else { continue }
-//        var savedRefs: [CKRecord.Reference] = []
-//        for assignment in result.newAssignments {
-//            let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-//            let record = CKRecord(recordType: DailyAssignmentModel.recordType, recordID: recordID)
-//            assignment.populate(record: record)
-//            recordsToSave.append(record)
-//            savedRefs.append(CKRecord.Reference(recordID: recordID, action: .none))
-//            if let assignedID = assignment.user?.recordID {
-//                choresByUser[assignedID, default: []].append(CKRecord.Reference(recordID: choreID, action: .none))
-//            }
-//        }
-//        if !savedRefs.isEmpty {
-//            result.chore.dailyAssignmentsReference = (result.chore.dailyAssignmentsReference ?? []) + savedRefs
-//        }
-//    }
-    
     for (i, result) in results.enumerated() {
         let tIter = Date()
         
@@ -528,7 +510,7 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
             assignment.populate(record: record)
             recordsToSave.append(record)
             savedRefs.append(CKRecord.Reference(recordID: recordID, action: .none))
-            if let assignedID = assignment.user?.recordID {
+            if let assignedID = assignment.userReference?.recordID {
                 choresByUser[assignedID, default: []].append(CKRecord.Reference(recordID: choreID, action: .none))
             }
         }
@@ -550,9 +532,9 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
         await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: zoneID)
     }
     print("③ batchSave assignments: \(Date().timeIntervalSince(t3))s, count=\(recordsToSave.count)")
-
+    
     let choresToUpdate = results.map { $0.chore }
-
+    
     var usersToUpdate: [UserModel] = []
     for user in users {
         guard let userID = user.recordID,
@@ -565,7 +547,7 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
         user.choresReference = existingRefs + dedupedNewRefs
         usersToUpdate.append(user)
     }
-
+    
     // ④ chore 批量更新，⑤ user 批量更新，两者并行
     let t4 = Date()
     async let choresDone: Bool = {
