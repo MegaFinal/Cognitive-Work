@@ -184,6 +184,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         let userRef = CKRecord.Reference(recordID: recordID, action: .deleteSelf)
         var newRefs: [CKRecord.Reference] = []
         
+        var recordsToSave: [CKRecord] = []
+        
         for (offset, time) in times.enumerated() {
             
             guard time.capacityMinutes > 0 else { continue }
@@ -195,20 +197,29 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
                     continue
                 }
                 
+                let newID = CKRecord.ID(recordName: UUID().uuidString, zoneID: recordID.zoneID)
+                let record = CKRecord(recordType: AvailableTimeModel.recordType, recordID: newID)
+                record.parent = houseReference
+                
                 let linked = AvailableTimeModel(
                     capacityMinutes: time.capacityMinutes,
                     day: futureDay,
                     user: userRef
                 )
-                
-                if let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID, parent: houseReference),
-                   let savedID = saved.recordID {
-                    newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
-                }
+                linked.populate(record: record)
+            
+                recordsToSave.append(record)
+                newRefs.append(CKRecord.Reference(recordID: newID, action: .none))
             }
         }
         
-        availableTimeReference = (availableTimeReference ?? []) + newRefs
+        if !recordsToSave.isEmpty {
+                let saveSuccess = await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: recordID.zoneID)
+                guard saveSuccess else { return false }
+            }
+        
+        self.availableTimeReference = newRefs
+        
         return await CloudKitManager.shared.update(self)
     }
     

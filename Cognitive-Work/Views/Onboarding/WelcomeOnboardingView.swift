@@ -22,6 +22,8 @@ struct WelcomeOnboardingView: View {
     @State private var isExpanded = false
     /// Whether the "swipe up" hint indicator is currently visible
     @State private var isSwipeVisible = false
+    /// Whether the iCloud alert is currently visible.
+    @State private var showICloudAlert = false
     
     /// The shared view model for navigation and state across the onboarding flow
     @Binding var viewModel: OnboardingViewModel
@@ -71,6 +73,8 @@ struct WelcomeOnboardingView: View {
                     }
             )
             .onAppear {
+                showICloudAlert = true
+                
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     if !isExpanded {
                         withAnimation(.easeIn(duration: 0.8)) {
@@ -79,7 +83,11 @@ struct WelcomeOnboardingView: View {
                     }
                 }
             }
-
+            .alert("Continue com seu iCloud", isPresented: $showICloudAlert) {
+                Button("Continuar") {}
+            } message: {
+                Text("O HouseHouse usa a conta do iCloud do seu iPhone para guardar os dados da sua casa com segurança e sincronizar tudo entre você e os demais moradores. Verifique se você está conectado a uma conta do iCloud nos Ajustes do seu iPhone para continuar.")
+            }
         }
     }
     

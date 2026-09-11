@@ -49,6 +49,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// Priority level shown in the UI.
     var priorityTag: PriorityTag
     
+    /// Flag for including monthly chores
+    var shouldBeIncluded: Bool?
+    
     /// Optional illustrative image.
     var image: Data?
     
@@ -142,6 +145,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.isDone = isDone
         self.dueDate = record["dueDate"] as? Date
         self.frequency = frequency
+        self.shouldBeIncluded = (record["shouldBeIncluded"] as? Int).map { $0 != 0 }
         self.duration = duration
         self.isPublic = isPublic
         self.isLate = isLate
@@ -182,6 +186,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.isDone = isDone
         self.dueDate = dueDate
         self.frequency = frequency
+        self.shouldBeIncluded = frequency == .monthly ? Bool.random() : nil
         self.duration = duration
         self.isPublic = isPublic
         self.isLate = isLate
@@ -211,6 +216,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["isDone"] = isDone
         record["dueDate"] = dueDate
         record["frequency"] = frequency.rawValue
+        record["shouldBeIncluded"] = shouldBeIncluded.map { $0 ? 1 : 0 }
         record["duration"] = duration
         record["isPublic"] = isPublic
         record["isLate"] = isLate

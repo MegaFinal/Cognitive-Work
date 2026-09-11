@@ -465,12 +465,10 @@ class OnboardingViewModel {
     
     /// Checks if the current iCloud user already possesses an account within the application.
     ///
-    /// This method queries CloudKit for an existing `UserModel`. If a profile is found, it restores
-    /// the local session and updates the `OnboardingStateMachine`. Then, it checks for an existing `HouseModel`.
-    ///
-    /// - If both exist: the user is routed directly to the main app (skipping onboarding completely).
-    /// - If only the profile exists: sets the state machine flow to `.houseCreator` and advances
-    ///   directly to the home creation/entry step (`.createOrEnterHome`), bypassing welcome and profile creation.
+    /// - If only the profile exists: resets the state machine flow to `.notDefined` and jumps
+    ///   directly to the home creation/entry step (`.createOrEnterHome`), bypassing welcome and
+    ///   profile creation. The flow is corrected to `.houseCreator`/`.invitedWithProfile` once the
+    ///   user picks "Criar" or "Entrar" on that screen.
     @MainActor
     func checkExistingAccount() async {
         isCheckingAccount = true

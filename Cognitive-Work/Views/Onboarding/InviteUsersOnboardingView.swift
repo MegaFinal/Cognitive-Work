@@ -115,7 +115,7 @@ struct InviteUsersOnboardingView: View {
                 houseUsers = await viewModel.fetchHouseUsers()
             }
         }
-        .task {
+        .task(id: viewModel.currentHouse?.recordID) {
             guard let house = viewModel.currentHouse else { return }
             
             resolvendoShare = true
