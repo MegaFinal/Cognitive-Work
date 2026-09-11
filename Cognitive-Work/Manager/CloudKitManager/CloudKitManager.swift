@@ -416,6 +416,50 @@ class CloudKitManager {
             return false
         }
     }
+    
+    @discardableResult
+    func batchUpdate<T: CloudKitSyncable>(_ items: [T]) async -> Bool {
+        guard !items.isEmpty else { return true }
+
+        let grouped = Dictionary(grouping: items) { item in
+            item.recordID?.zoneID.ownerName == CKCurrentUserDefaultName
+        }
+
+        var allSucceeded = true
+
+        for (isPrivate, group) in grouped {
+            let database = isPrivate ? privateDB : sharedDB
+            let recordIDs = group.compactMap { $0.recordID }
+            guard !recordIDs.isEmpty else { continue }
+
+            do {
+                let tFetch = Date()
+                let fetchResults = try await database.records(for: recordIDs)
+                print("    batchUpdate fetch (\(T.recordType)): \(Date().timeIntervalSince(tFetch))s, count=\(recordIDs.count)")
+
+                var recordsToSave: [CKRecord] = []
+                for item in group {
+                    guard let recordID = item.recordID,
+                          let result = fetchResults[recordID],
+                          case .success(let record) = result else { continue }
+                    item.populate(record: record)
+                    recordsToSave.append(record)
+                }
+
+                guard !recordsToSave.isEmpty else { continue }
+
+                let tSave = Date()
+                _ = try await database.modifyRecords(saving: recordsToSave, deleting: [])
+                print("    batchUpdate save (\(T.recordType)): \(Date().timeIntervalSince(tSave))s, count=\(recordsToSave.count)")
+            } catch {
+                errorMessage = "Batch update failed: \(error.localizedDescription)"
+                print("    batchUpdate FAILED (\(T.recordType)): \(error)")
+                allSucceeded = false
+            }
+        }
+
+        return allSucceeded
+    }
 }
 
 extension CloudKitManager {
