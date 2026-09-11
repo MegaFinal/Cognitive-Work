@@ -397,10 +397,11 @@ class CloudKitManager {
     /// - Important: If the operation fails, the error message is stored in **`self.errorMessage`**.
     @discardableResult
     func batchSave(records: [CKRecord], zoneID: CKRecordZone.ID) async -> Bool {
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+        let isPrivate = zoneID.ownerName == CKCurrentUserDefaultName
+        let database = isPrivate ? privateDB : sharedDB
         do {
-            // Modifies the specified records and returns the results to an awaiting caller
             _ = try await database.modifyRecords(saving: records, deleting: [])
+        
             return true
         } catch {
             self.errorMessage = "Batch save failed: \(error.localizedDescription)"

@@ -117,7 +117,6 @@ class OnboardingViewModel {
         let userReference = CKRecord.Reference(recordID: userRecordID, action: .none)
         let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference])
         if let savedHouse = await CloudKitManager.shared.create(newHouse) {
-            print("salvou casa")
             self.currentHouse = savedHouse
             self.stateMachine.house = savedHouse
             
@@ -148,7 +147,6 @@ class OnboardingViewModel {
                 couponLimit: user.couponLimit,
                 ownerRecordName: ownerRecordName,
             )
-            print("make user copy")
             
             let copyRecordID = CloudKitManager.shared.houseUserRecordID(
                 for: userRecordID,
@@ -165,12 +163,9 @@ class OnboardingViewModel {
                 self.currentUser = savedUserCopy
                 self.stateMachine.user = savedUserCopy
             }
-
-            print("creat user copy")
             
             try? await CloudKitManager.shared.createSharedSubscription()
             
-            print("creat Subscription")
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar a casa."
         }
@@ -305,6 +300,7 @@ class OnboardingViewModel {
                             priorityTag: choreDTO.priorityTag,
                             roomReference: roomReference
                         ),
+                        zoneID: recordID.zoneID,
                         parent: roomReference
                     )
                 }

@@ -107,7 +107,7 @@ class FortnightlyViewModel {
                 }
                 
                 for assignment in relatedAssignments {
-                    guard let userID = assignment.user?.recordID else { continue }
+                    guard let userID = await assignment.user?.recordID else { continue }
                     entries.append(DailyUsageEntry(
                         day: assignment.day,
                         userID: userID,

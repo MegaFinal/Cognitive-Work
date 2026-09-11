@@ -457,13 +457,14 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
         for assignment in result.newAssignments {
             let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             let record = CKRecord(recordType: DailyAssignmentModel.recordType, recordID: recordID)
-            
+
             assignment.populate(record: record)
+            record.parent = CKRecord.Reference(recordID: choreID, action: .none)
             recordsToSave.append(record)
             savedRefs.append(CKRecord.Reference(recordID: recordID, action: .none))
             
             // Categorize by user
-            if let assignedID = assignment.user?.recordID {
+            if let assignedID = await assignment.user?.recordID {
                 choresByUser[assignedID, default: []].append(CKRecord.Reference(recordID: choreID, action: .none))
             }
         }
