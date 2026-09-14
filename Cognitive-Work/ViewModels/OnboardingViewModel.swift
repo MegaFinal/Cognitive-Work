@@ -73,14 +73,15 @@ class OnboardingViewModel {
         if let imageData = userProfilePicture?.jpegData(compressionQuality: 0.8) {
             let imageCKAsset = CloudKitManager.shared.createAsset(from: imageData)
             
-            let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1)
-            
-            if let savedUser = await CloudKitManager.shared.create(newUser) {
-                self.currentUser = savedUser
-                self.stateMachine.user = savedUser
-                CloudKitManager.shared.setCurrentUser(savedUser)
-            } else {
-                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar usuário."
+            if let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName {
+                let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1, ownerRecordName: ownerRecordName)
+                
+                if let savedUser = await CloudKitManager.shared.create(newUser) {
+                    self.currentUser = savedUser
+                    self.stateMachine.user = savedUser
+                } else {
+                    errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar usuário."
+                }
             }
         }
         isLoading = false
@@ -116,7 +117,6 @@ class OnboardingViewModel {
         let userReference = CKRecord.Reference(recordID: userRecordID, action: .none)
         let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference])
         if let savedHouse = await CloudKitManager.shared.create(newHouse) {
-            print("salvou casa")
             self.currentHouse = savedHouse
             self.stateMachine.house = savedHouse
             
@@ -131,6 +131,8 @@ class OnboardingViewModel {
             // created, so this must not bail out of the whole flow.
             let assetCopy = user.profilePicture.flatMap { try? duplicateCKAsset($0) }
             
+            let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName ?? "error to fetch users id"
+            
             let userCopy = UserModel(
                 name: user.name ,
                 profilePicture: assetCopy,
@@ -143,8 +145,8 @@ class OnboardingViewModel {
                 house: houseCascadeRef,
                 coupons: user.couponsReference,
                 couponLimit: user.couponLimit,
+                ownerRecordName: ownerRecordName,
             )
-            print("make user copy")
             
             let copyRecordID = CloudKitManager.shared.houseUserRecordID(
                 for: userRecordID,
@@ -161,12 +163,9 @@ class OnboardingViewModel {
                 self.currentUser = savedUserCopy
                 self.stateMachine.user = savedUserCopy
             }
-
-            print("creat user copy")
             
             try? await CloudKitManager.shared.createSharedSubscription()
             
-            print("creat Subscription")
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar a casa."
         }
@@ -301,6 +300,7 @@ class OnboardingViewModel {
                             priorityTag: choreDTO.priorityTag,
                             roomReference: roomReference
                         ),
+                        zoneID: recordID.zoneID,
                         parent: roomReference
                     )
                 }
@@ -373,6 +373,7 @@ class OnboardingViewModel {
         else {return}
         let assetCopy = try? duplicateCKAsset(profilePicture)
         
+        let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName ?? "error fetch user's ID"
         let sharedUser = UserModel(
             name: profile.name,
             profilePicture: assetCopy,
@@ -380,7 +381,8 @@ class OnboardingViewModel {
             coins: profile.coins,
             points: profile.points,
             house: houseReference,
-            couponLimit: profile.couponLimit
+            couponLimit: profile.couponLimit,
+            ownerRecordName: ownerRecordName
         )
         
         let sharedUserID = CloudKitManager.shared.houseUserRecordID(
@@ -450,10 +452,11 @@ class OnboardingViewModel {
             isCheckingAccount = false
             isLoading = false
         }
+        let user = await CloudKitManager.shared.fetchMyUser()
+        print(user?.name as Any)
         
-        if let existingUser = try? await CloudKitManager.shared.fetchFirst(UserModel.self) {
-            
-            CloudKitManager.shared.setCurrentUser(existingUser)
+        if let existingUser = await CloudKitManager.shared.fetchMyUser() {
+
             self.currentUser = existingUser
             self.stateMachine.user = existingUser
             
@@ -469,5 +472,7 @@ class OnboardingViewModel {
                 }
             }
         }
+        print(CloudKitManager.shared.errorMessage)
+        isLoading = false
     }
 }

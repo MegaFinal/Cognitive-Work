@@ -492,49 +492,40 @@ func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
 ///     whichever device happens to run this. `nil` falls back to the old, zone-unsafe
 ///     behavior if the house couldn't be resolved.
 func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], houseZoneID: CKRecordZone.ID?) async {
+    // Validate the Record Zone to prevent data from falling back to the default private zone, which breaks multi-device sharing.
     guard let zoneID = houseZoneID else { return }
-    
-    let t0 = Date()
-    
+
     var recordsToSave: [CKRecord] = []
     var choresByUser: [CKRecord.ID: [CKRecord.Reference]] = [:]
-    
-    for (i, result) in results.enumerated() {
-        let tIter = Date()
-        
+
+    for result in results {
         guard let choreID = result.chore.recordID else { continue }
         var savedRefs: [CKRecord.Reference] = []
         for assignment in result.newAssignments {
             let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             let record = CKRecord(recordType: DailyAssignmentModel.recordType, recordID: recordID)
             assignment.populate(record: record)
+            
+            // Set the CloudKit Parent reference to establish a parent-child hierarchy between Chore and DailyAssignment.
+            record.parent = CKRecord.Reference(recordID: choreID, action: .none)
             recordsToSave.append(record)
             savedRefs.append(CKRecord.Reference(recordID: recordID, action: .none))
+            
             if let assignedID = assignment.userReference?.recordID {
+                // Group chore references by user ID to prepare for batch-updating UserModel instances later.
                 choresByUser[assignedID, default: []].append(CKRecord.Reference(recordID: choreID, action: .none))
             }
         }
-        
-        let tBeforeAssign = Date()
-        print("  [\(i)] before assign loop: \(tBeforeAssign.timeIntervalSince(tIter))s")
-        
         if !savedRefs.isEmpty {
             result.chore.dailyAssignmentsReference = (result.chore.dailyAssignmentsReference ?? []) + savedRefs
         }
-        
-        print("  [\(i)] dailyAssignmentsReference set: \(Date().timeIntervalSince(tBeforeAssign))s")
     }
-    
-    print("⓪ local prep loop: \(Date().timeIntervalSince(t0))s, count=\(results.count)")  // 新增
-    
-    let t3 = Date()
+
     if !recordsToSave.isEmpty {
         await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: zoneID)
     }
-    print("③ batchSave assignments: \(Date().timeIntervalSince(t3))s, count=\(recordsToSave.count)")
-    
+
     let choresToUpdate = results.map { $0.chore }
-    
     var usersToUpdate: [UserModel] = []
     for user in users {
         guard let userID = user.recordID,
@@ -542,22 +533,22 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
               !newRefs.isEmpty else { continue }
         let existingRefs = user.choresReference ?? []
         let existingIDs = Set(existingRefs.map { $0.recordID })
+        
+        // Deduplicate chore references to filter out items the user already has, preventing redundant data.
         let dedupedNewRefs = newRefs.filter { !existingIDs.contains($0.recordID) }
         guard !dedupedNewRefs.isEmpty else { continue }
         user.choresReference = existingRefs + dedupedNewRefs
         usersToUpdate.append(user)
     }
-    
-    // ④ chore 批量更新，⑤ user 批量更新，两者并行
-    let t4 = Date()
+
+    // Use async let to concurrently update Chores and Users, improving network efficiency.
     async let choresDone: Bool = {
         let r = await CloudKitManager.shared.batchUpdate(choresToUpdate)
-        print("④ batchUpdate chores: \(Date().timeIntervalSince(t4))s, count=\(choresToUpdate.count)")
         return r
     }()
+    
     async let usersDone: Bool = {
         let r = await CloudKitManager.shared.batchUpdate(usersToUpdate)
-        print("⑤ batchUpdate users: \(Date().timeIntervalSince(t4))s, count=\(usersToUpdate.count)")
         return r
     }()
     _ = await (choresDone, usersDone)

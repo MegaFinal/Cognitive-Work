@@ -12,31 +12,31 @@ import CloudKit
 /// Failing operations return `false` or `nil` and describe the reason in ``errorMessage``.
 @Observable
 class CloudKitManager {
-
+    
     /// The shared instance of the CloudKit manager.
     static let shared = CloudKitManager()
-
+    
     // MARK: - Properties
-
+    
     /// The app's iCloud container.
     let container: CKContainer
-
+    
     /// Database holding records owned by the current user.
     let privateDB: CKDatabase
-
+    
     /// Database holding records shared with the current user by others.
     let sharedDB: CKDatabase
-
+    
     /// Description of the most recent failure, or `nil` when none occurred.
     var errorMessage: String?
-
+    
     /// Name of the custom zone that stores all house data.
     private let zoneName = "HomeEnvironment"
     
     /// Suffix appended to a private profile's `recordName` to derive the `recordName` of the
     /// copy that lives inside a house. See ``houseUserRecordID(for:inHouseZone:)``.
     private let houseUserSuffix = "-house"
-
+    
     /// The custom zone owned by the current iCloud user.
     ///
     /// Use this zone only for operations that belong to the current user, such as creating the
@@ -47,7 +47,7 @@ class CloudKitManager {
         zoneName: zoneName,
         ownerName: CKCurrentUserDefaultName
     )
-
+    
     private init() {
         container = CKContainer(
             identifier: "iCloud.JonasMelo.Cognitive-Work"
@@ -55,9 +55,9 @@ class CloudKitManager {
         privateDB = container.privateCloudDatabase
         sharedDB = container.sharedCloudDatabase
     }
-
+    
     // MARK: - Zone Management
-
+    
     /// Creates the custom house zone if it does not already exist.
     ///
     /// - Returns: `true` when the zone is successfully saved, otherwise `false`.
@@ -66,7 +66,7 @@ class CloudKitManager {
     @discardableResult
     func createZoneIfNeeded() async -> Bool {
         let zone = CKRecordZone(zoneID: houseZoneID)
-
+        
         do {
             _ = try await privateDB.save(zone)
             return true
@@ -75,37 +75,13 @@ class CloudKitManager {
             return false
         }
     }
-
+    
     // MARK: - Current User
-
+    
     /// UserDefaults key used to remember which `UserModel` record belongs to whoever is
     /// using this device.
     private let currentUserRecordNameKey = "currentUserRecordName"
-
-    /// `recordID` of the `UserModel` that belongs to whoever is using this device.
-    ///
-    /// This is persisted locally rather than derived from CloudKit: once housemates become
-    /// visible through shared data, nothing on a `UserModel` record itself says "this one is
-    /// you" — every record looks the same. Set once by ``setCurrentUser(_:)`` right after the
-    /// profile is created (or re-fetched), and read back by ``fetchMyUser()``.
-    var currentUserRecordID: CKRecord.ID? {
-        guard let recordName = UserDefaults.standard.string(forKey: currentUserRecordNameKey)
-        else {
-            return nil
-        }
-        return CKRecord.ID(recordName: recordName, zoneID: houseZoneID)
-    }
-
-    /// Remembers `user` as the profile that belongs to this device, so future launches (and
-    /// lists that include housemates) can tell it apart from everyone else.
-    ///
-    /// - Parameter user: The current device owner's own `UserModel`. Does nothing if
-    ///   `user.recordID` is `nil`.
-    func setCurrentUser(_ user: UserModel) {
-        guard let recordID = user.recordID else { return }
-        UserDefaults.standard.set(recordID.recordName, forKey: currentUserRecordNameKey)
-    }
-
+    
     /// Fetches the `UserModel` that belongs to this device, using the `recordID` persisted by
     /// ``setCurrentUser(_:)``.
     ///
@@ -115,17 +91,19 @@ class CloudKitManager {
     /// - Returns: The current user's profile, or `nil` when nothing was ever persisted or the
     ///   fetch fails.
     func fetchMyUser() async -> UserModel? {
-        guard let recordID = currentUserRecordID else { return nil }
-
-        do {
-            let record = try await privateDB.record(for: recordID)
-            return UserModel(record: record)
-        } catch {
-            errorMessage = "Failed to fetch current user: \(error.localizedDescription)"
-            return nil
-        }
+        guard let recordID = await fetchCurrentUserRecordID()
+        else { return nil }
+        
+        
+        let predicate = NSPredicate(
+            format: "ownerRecordName == %@",
+            recordID.recordName
+        )
+        let user = await fetchPrivate(UserModel.self, predicate: predicate).first
+        return user
+        
     }
-
+    
     /// The `recordID` a user's in-house copy must be created with.
     ///
     /// A person ends up with two `UserModel` records: the private profile created by
@@ -151,7 +129,11 @@ class CloudKitManager {
             zoneID: zoneID
         )
     }
-
+    
+    func fetchCurrentUserRecordID() async -> CKRecord.ID? {
+        return try? await container.userRecordID()
+    }
+    
     /// Fetches this device's own `UserModel` record *inside the current house* — the one
     /// housemates can see, as opposed to the private profile returned by ``fetchMyUser()``.
     ///
@@ -162,15 +144,20 @@ class CloudKitManager {
     /// - Returns: The in-house copy, or `nil` when there is no house yet, the house was
     ///   deleted, or the copy predates this naming convention.
     func fetchMyHouseUser() async -> UserModel? {
-        guard let privateRecordID = currentUserRecordID,
-              let houseZoneID = (try? await fetchFirst(HouseModel.self))?.recordID?.zoneID
+        guard let privateRecordID = await fetchMyUser()?.recordID,
+              let houseZoneID = (
+                try? await fetchFirst(HouseModel.self)
+              )?.recordID?.zoneID
         else {
             return nil
         }
-
-        let recordID = houseUserRecordID(for: privateRecordID, inHouseZone: houseZoneID)
+        
+        let recordID = houseUserRecordID(
+            for: privateRecordID,
+            inHouseZone: houseZoneID
+        )
         let database = houseZoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
-
+        
         do {
             return UserModel(record: try await database.record(for: recordID))
         } catch let error as CKError where error.code == .unknownItem {
@@ -180,22 +167,22 @@ class CloudKitManager {
             return nil
         }
     }
-
+    
     /// Whether `user` is the profile that belongs to this device, as opposed to a housemate
     /// fetched alongside it (e.g. via ``fetchAll(_:predicate:)``).
     func isCurrentUser(_ user: UserModel) -> Bool {
         guard let recordID = user.recordID else { return false }
         return recordID.recordName
-            == UserDefaults.standard.string(forKey: currentUserRecordNameKey)
+        == UserDefaults.standard.string(forKey: currentUserRecordNameKey)
     }
-
+    
     /// Clears the persisted current-user record, e.g. after the account is deleted.
     func clearCurrentUser() {
         UserDefaults.standard.removeObject(forKey: currentUserRecordNameKey)
     }
-
+    
     // MARK: - Sharing
-
+    
     /// Returns the share for a house, creating one when it does not exist yet.
     ///
     /// - Parameter house: The house record whose share should be retrieved or created.
@@ -207,13 +194,14 @@ class CloudKitManager {
         if let existing = await fetchShare(for: house) {
             return existing
         }
-
+        
         let share = CKShare(rootRecord: house)
         share[CKShare.SystemFieldKey.title] = house["name"] as? String
         share.publicPermission = .readWrite
-
+        
         do {
-            _ = try await privateDB.modifyRecords(saving: [house, share], deleting: [])
+            _ = try await privateDB
+                .modifyRecords(saving: [house, share], deleting: [])
             return share
         } catch {
             self.errorMessage = "Failed to create share: \(error.localizedDescription)"
@@ -230,20 +218,21 @@ class CloudKitManager {
         if let existing = await fetchShare(for: house) {
             return existing
         }
-
+        
         let share = CKShare(rootRecord: house)
         share[CKShare.SystemFieldKey.title] = house["name"] as? String
         share.publicPermission = .readWrite
-
+        
         do {
-            _ = try await privateDB.modifyRecords(saving: [house, share], deleting: [])
+            _ = try await privateDB
+                .modifyRecords(saving: [house, share], deleting: [])
             return share
         } catch {
             self.errorMessage = "Failed to create share: \(error.localizedDescription)"
             return nil
         }
     }
-
+    
     /// Fetches the share associated with a house.
     ///
     /// The database is selected automatically based on the owner of the house's record zone.
@@ -255,11 +244,11 @@ class CloudKitManager {
         guard let shareReference = house.share else {
             return nil
         }
-
+        
         let database = house.recordID.zoneID.ownerName == CKCurrentUserDefaultName
-            ? privateDB // dono
-            : sharedDB // convidado
-
+        ? privateDB // dono
+        : sharedDB // convidado
+        
         do {
             return try await database.record(
                 for: shareReference.recordID
@@ -269,7 +258,7 @@ class CloudKitManager {
             return nil
         }
     }
-
+    
     /// Accepts a CloudKit share invitation.
     ///
     /// - Parameter metadata: The metadata received from the CloudKit share invitation.
@@ -281,20 +270,20 @@ class CloudKitManager {
         let operation = CKAcceptSharesOperation(
             shareMetadatas: [metadata]
         )
-
+        
         return await withCheckedContinuation { continuation in
             operation.acceptSharesResultBlock = { result in
                 switch result {
                 case .success:
                     continuation.resume(returning: true)
-
+                    
                 case .failure(let error):
                     self.errorMessage =
-                        "Failed to accept share invitation: \(error.localizedDescription)"
+                    "Failed to accept share invitation: \(error.localizedDescription)"
                     continuation.resume(returning: false)
                 }
             }
-
+            
             container.add(operation)
         }
     }
@@ -307,13 +296,13 @@ class CloudKitManager {
         else {
             return false
         }
-
+        
         // O dono não "sai": ele deleta ou para de compartilhar.
         guard share.recordID.zoneID.ownerName != CKCurrentUserDefaultName else {
             errorMessage = "Failed to leave house: current user is the owner"
             throw CloudKitErrors<Any>.currentHouseOwnerCannotLeaveTheHouse
         }
-
+        
         do {
             _ = try await sharedDB.deleteRecord(withID: share.recordID)
             return true
@@ -322,7 +311,7 @@ class CloudKitManager {
             return false
         }
     }
-
+    
     @discardableResult
     func switchHouse(to metadata: CKShare.Metadata) async -> Bool {
         do {
@@ -334,7 +323,7 @@ class CloudKitManager {
             return false
         }
     }
-
+    
     /// Creates database subscriptions for private and shared database changes.
     ///
     /// The subscriptions request silent push notifications by enabling
@@ -345,21 +334,21 @@ class CloudKitManager {
         let sharedSubscription = CKDatabaseSubscription(
             subscriptionID: "shared-changes"
         )
-
+        
         let privateSubscription = CKDatabaseSubscription(
             subscriptionID: "private-changes"
         )
-
+        
         let notificationInfo = CKSubscription.NotificationInfo()
         notificationInfo.shouldSendContentAvailable = true
-
+        
         sharedSubscription.notificationInfo = notificationInfo
         privateSubscription.notificationInfo = notificationInfo
-
+        
         try await privateDB.save(privateSubscription)
         try await sharedDB.save(sharedSubscription)
     }
-
+    
     /// Saves a share and returns the invitation link CloudKit assigned to it.
     ///
     /// - Parameter share: The share to save.
@@ -368,18 +357,20 @@ class CloudKitManager {
     ///   ``CloudKitErrors/missingShareURL`` if CloudKit returns no URL.
     func generateShareLink(share: CKShare) async throws -> URL {
         _ = try await privateDB.modifyRecords(saving: [share], deleting: [])
-
+        
         guard let url = share.url else {
             throw CloudKitErrors<Any>.missingShareURL
         }
-
+        
         return url
     }
     
     func createAsset(from data: Data) -> CKAsset? {
         //Create a temporary file URL
         let temporaryDirectory = FileManager.default.temporaryDirectory
-        let temporaryFileURL = temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let temporaryFileURL = temporaryDirectory.appendingPathComponent(
+            UUID().uuidString
+        )
         
         do {
             //Write the Data to the temporary URL
@@ -406,10 +397,11 @@ class CloudKitManager {
     /// - Important: If the operation fails, the error message is stored in **`self.errorMessage`**.
     @discardableResult
     func batchSave(records: [CKRecord], zoneID: CKRecordZone.ID) async -> Bool {
-        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+        let isPrivate = zoneID.ownerName == CKCurrentUserDefaultName
+        let database = isPrivate ? privateDB : sharedDB
         do {
-            // Modifies the specified records and returns the results to an awaiting caller
             _ = try await database.modifyRecords(saving: records, deleting: [])
+        
             return true
         } catch {
             self.errorMessage = "Batch save failed: \(error.localizedDescription)"
@@ -433,9 +425,7 @@ class CloudKitManager {
             guard !recordIDs.isEmpty else { continue }
 
             do {
-                let tFetch = Date()
                 let fetchResults = try await database.records(for: recordIDs)
-                print("    batchUpdate fetch (\(T.recordType)): \(Date().timeIntervalSince(tFetch))s, count=\(recordIDs.count)")
 
                 var recordsToSave: [CKRecord] = []
                 for item in group {
@@ -448,9 +438,7 @@ class CloudKitManager {
 
                 guard !recordsToSave.isEmpty else { continue }
 
-                let tSave = Date()
                 _ = try await database.modifyRecords(saving: recordsToSave, deleting: [])
-                print("    batchUpdate save (\(T.recordType)): \(Date().timeIntervalSince(tSave))s, count=\(recordsToSave.count)")
             } catch {
                 errorMessage = "Batch update failed: \(error.localizedDescription)"
                 print("    batchUpdate FAILED (\(T.recordType)): \(error)")
@@ -463,9 +451,9 @@ class CloudKitManager {
 }
 
 extension CloudKitManager {
-
+    
     // MARK: - Debug / Cleanup
-
+    
     /// Deletes every record owned by the current user by dropping the custom zone that
     /// holds all of them, then recreates the (now empty) zone so the app keeps working.
     ///
@@ -483,10 +471,10 @@ extension CloudKitManager {
             errorMessage = "Failed to delete zone: \(error.localizedDescription)"
             return false
         }
-
+        
         return await createZoneIfNeeded()
     }
-
+    
     /// Leaves every house shared with the current user, across every shared zone.
     ///
     /// > Note: CloudKit doesn't let a participant delete another account's private zone —
@@ -501,9 +489,9 @@ extension CloudKitManager {
             guard let recordID = $0.recordID else { return false }
             return !isOwner(HouseModel.self, recordID: recordID)
         }
-
+        
         var allSucceeded = true
-
+        
         for house in sharedHouses {
             guard let record = await fetchRecord(for: house),
                   let share = await fetchShare(for: record)
@@ -511,7 +499,7 @@ extension CloudKitManager {
                 allSucceeded = false
                 continue
             }
-
+            
             do {
                 _ = try await sharedDB.deleteRecord(withID: share.recordID)
             } catch {
@@ -519,10 +507,10 @@ extension CloudKitManager {
                 allSucceeded = false
             }
         }
-
+        
         return allSucceeded
     }
-
+    
     /// Deletes everything the current user can reach: every record they own, plus their
     /// participation in every house shared with them.
     ///

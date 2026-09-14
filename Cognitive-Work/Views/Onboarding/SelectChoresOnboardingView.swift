@@ -43,9 +43,7 @@ struct SelectChoresOnboardingView: View {
     private var selectedChores: [ChoreDTO] {
         choresDTO.filter { $0.isSelected }
     }
-    
-    @State private var isLoading = true
-    
+        
     // MARK: - Body
     
     var body: some View {
@@ -91,11 +89,13 @@ struct SelectChoresOnboardingView: View {
         }
         .overlay {
             OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading ,isDisabled: viewModel.selectedChores.isEmpty) {
+                viewModel.isLoading = true
                 await viewModel.createDefaultChores()
                 
                 if !viewModel.isLoading {
                     viewModel.goToNextView()
                 }
+                viewModel.isLoading = false
             }
             .multilineTextAlignment(.trailing)
             .frame(maxWidth: .infinity,maxHeight: .infinity,alignment: .bottomTrailing)
@@ -147,15 +147,17 @@ private struct SelectChoreListItem: View {
             if isExpanded {
                 ForEach($defaultChores) { $chore in
                     Button {
-                        chore.isSelected.toggle()
-                        if chore.isSelected {
-                            if let roomRecordID = room.recordID {
-                                chore.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
+                        if !viewModel.isLoading {
+                            chore.isSelected.toggle()
+                            if chore.isSelected {
+                                if let roomRecordID = room.recordID {
+                                    chore.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
+                                }
+                                viewModel.selectedChores.append(chore)
                             }
-                            viewModel.selectedChores.append(chore)
-                        }
-                        else {
-                            viewModel.selectedChores.removeAll { $0.name == chore.name }
+                            else {
+                                viewModel.selectedChores.removeAll { $0.name == chore.name }
+                            }
                         }
                     } label: {
                         HStack {
@@ -173,8 +175,8 @@ private struct SelectChoreListItem: View {
             }
         }
         .task {
-            if let defoultRoom = DefaultRoomsOnboarding(rawValue: room.name) {
-                defaultChores = defoultRoom.defaultChores
+            if let defaultRoom = DefaultRoomsOnboarding(rawValue: room.name) {
+                defaultChores = defaultRoom.defaultChores
             }
         }
     }

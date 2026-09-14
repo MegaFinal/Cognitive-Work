@@ -74,10 +74,10 @@ extension CloudKitManager {
         _ type: T.Type,
         predicate: NSPredicate = NSPredicate(value: true)
     ) async -> [T] {
-        async let owned = fetchPrivate(type, predicate: predicate)
-        async let shared = fetchShared(type, predicate: predicate)
-        let (ownedItems, sharedItems) = await (owned, shared)
-        return ownedItems + sharedItems
+        /*async*/ let owned = await fetchPrivate(type, predicate: predicate)
+        /*async*/ let shared = await fetchShared(type, predicate: predicate)
+//        let (ownedItems, sharedItems) = await (owned, shared)
+        return owned + shared
     }
     
     /// Fetches the raw `CKRecord` backing a model, needed for sharing operations.

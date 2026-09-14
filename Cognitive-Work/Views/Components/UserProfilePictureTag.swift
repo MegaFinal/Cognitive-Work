@@ -55,14 +55,14 @@ struct UserProfilePictureTag: View {
     }
 }
 
-#Preview {
-    //TODO: make preview work because now profilePicture is a CKAsset
-    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-    
-    var mockUser = UserModel(
-        name: "Dayô",
-        profilePicture: nil, tier: .tier1
-    )
-    
-    UserProfilePictureTag(user: mockUser, widthMultiplier: 0.15)
-}
+//TODO: fix preview
+//#Preview {
+//    let mockImageData = UIImage(named: "defaultUser")?.pngData()
+//    
+//    var mockUser = UserModel(
+//        name: "Dayô",
+//        profilePicture: nil, tier: .tier1
+//    )
+//    
+//    UserProfilePictureTag(user: mockUser, widthMultiplier: 0.15)
+//}

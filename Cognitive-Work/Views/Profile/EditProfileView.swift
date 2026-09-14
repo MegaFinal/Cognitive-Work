@@ -101,11 +101,12 @@ struct EditProfileView: View {
     }
 }
 
-#Preview {
-    let mockUser = UserModel(name: "Dayô Araújo", tier: .tier1)
-    let mockViewModel = UserProfileViewModel(user: mockUser)
-    
-    return NavigationStack {
-        EditProfileView(viewModel: mockViewModel)
-    }
-}
+//TODO: fix preview
+//#Preview {
+//    let mockUser = UserModel(name: "Dayô Araújo", tier: .tier1)
+//    let mockViewModel = UserProfileViewModel(user: mockUser)
+//    
+//    return NavigationStack {
+//        EditProfileView(viewModel: mockViewModel)
+//    }
+//}

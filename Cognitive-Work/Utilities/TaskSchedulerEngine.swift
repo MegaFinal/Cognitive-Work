@@ -44,21 +44,15 @@ struct TaskSchedulerEngine {
         // rescheduled correctly this run.
         // repair must precede buildScheduleContext (as it modifies chore.dailyAssignmentsReference,
         // which the subsequent recurringChores filter relies on), so these two steps remain sequential
-        let t0 = Date()//para print
         await repairOrphanedRecurringAssignments(in: chores)
-        print("① repair: \(Date().timeIntervalSince(t0))s")//para print
-
         
         // Build the scheduling context to calculate environment variables such as user available time, capacity, etc.
-        let t1 = Date() //para print
         let context = await buildScheduleContext(
             users: users,
             chores: chores,
             now: now,
             windowEnd: windowEnd
         )
-        print("② buildContext: \(Date().timeIntervalSince(t1))s")//para print
-        
         // houseZoneID's result is only truly needed here (used by commitScheduleResults), by which time it is most likely ready
         let houseZoneID = (try? await houseTask)?.recordID?.zoneID
         
@@ -100,7 +94,6 @@ struct TaskSchedulerEngine {
         // Store all generated scheduling results
         var allResults: [ScheduleResult] = []
         
-        let t3 = Date()//para print
         // Schedule all recurring chores
         allResults += scheduleRecurringChores(
             recurringChores,
@@ -110,9 +103,7 @@ struct TaskSchedulerEngine {
             remainingCapacity: &remainingCapacity,
             userAssignedMinutes: &userAssignedMinutes
         )
-        print("②scheduleRecurringChores: \(Date().timeIntervalSince(t1))s")//para print
 
-        let t4 = Date()//para print
         // Schedule chores that already have a specific responsible user
         allResults += scheduleAssignedChores(
             assignedChores,
@@ -122,9 +113,7 @@ struct TaskSchedulerEngine {
             remainingCapacity: &remainingCapacity,
             userAssignedMinutes: &userAssignedMinutes
         )
-        print("scheduleAssignedChores: \(Date().timeIntervalSince(t1))s")//para print
 
-        let t5 = Date()//para print
         // Schedule free chores
         allResults += scheduleFreeChores(
             freeChores,
@@ -135,13 +124,9 @@ struct TaskSchedulerEngine {
             remainingCapacity: &remainingCapacity,
             userAssignedMinutes: &userAssignedMinutes
         )
-        print("scheduleFreeChores: \(Date().timeIntervalSince(t1))s")//para print
-
         
         // Commit and save the final schedule results to the cloud
-        let t6 = Date()//print
         await commitScheduleResults(allResults, users: users, houseZoneID: houseZoneID)
-        print("commit took \(Date().timeIntervalSince(t6))s")//print
         
         // toogle shouldBeIncluded chores so they can be included on the next 14 days and persists on cloudkit
         await withTaskGroup(of: Void.self) { group in
