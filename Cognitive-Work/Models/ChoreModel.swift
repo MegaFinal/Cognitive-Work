@@ -107,10 +107,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
-    var dailyAssignments: [DailyAssignmentModel] {
+    var dailyAssignments: [RecurrentAssignmentModel] {
         get async {
             if let dailyAssignmentsReference {
-                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: DailyAssignmentModel.self, recordReferences: dailyAssignmentsReference) ?? []
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: RecurrentAssignmentModel.self, recordReferences: dailyAssignmentsReference) ?? []
             }
             return []
         }

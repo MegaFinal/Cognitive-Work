@@ -43,6 +43,7 @@ struct CreateProfileOnboardingView: View {
             
             OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty) {
                 Task {
+                    viewModel.isLoading = true
                     await viewModel.createUser()
                     if viewModel.currentUser != nil {
                         // A share invite may have been accepted before this profile
@@ -56,6 +57,7 @@ struct CreateProfileOnboardingView: View {
                         }
                         viewModel.goToNextView()
                     }
+                    viewModel.isLoading = false
                 }
             }
             

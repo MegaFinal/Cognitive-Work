@@ -22,7 +22,7 @@ struct ChoreListLayout: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                ForEach(Array((viewModel.isFilterOn ? viewModel.filteredChards : viewModel.cardModels).enumerated()), id: \.element.id) { index, chore in
+                ForEach(Array((viewModel.visibleChores).enumerated()), id: \.element.id) { index, chore in
                     ChoreCardListStyle(chore: chore, namespace: namespace, carouselViewModel: viewModel) {
                         viewModel.focusDetailsImmediately(index)
                     }

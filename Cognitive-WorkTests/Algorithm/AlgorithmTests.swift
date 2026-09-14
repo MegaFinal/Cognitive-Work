@@ -147,7 +147,7 @@ struct AlgorithmTests {
             print("Alice chore: \(chore.name), duration: \(chore.duration), frequency: \(chore.frequency.rawValue)")
             if chore.frequency == .daily {
                 let dailyAssignments = await CloudKitManager.shared.fetchRecordsByRecordReference(
-                    for: DailyAssignmentModel.self,
+                    for: RecurrentAssignmentModel.self,
                     recordReferences: chore.dailyAssignmentsReference!
                 )
                 
@@ -177,7 +177,7 @@ struct AlgorithmTests {
             print("Alice chore: \(chore.name), duration: \(chore.duration), frequency: \(chore.frequency.rawValue), dueDate: \(String(describing: chore.dueDate))")
             if chore.frequency == .daily {
                 let dailyAssignments = await CloudKitManager.shared.fetchRecordsByRecordReference(
-                    for: DailyAssignmentModel.self,
+                    for: RecurrentAssignmentModel.self,
                     recordReferences: chore.dailyAssignmentsReference!
                 )
                 for d in (dailyAssignments ?? []).filter({ $0.userReference?.recordID == alice.recordID }) {
@@ -197,7 +197,7 @@ struct AlgorithmTests {
             print("Bob chore: \(chore.name), duration: \(chore.duration), frequency: \(chore.frequency.rawValue), dueDate: \(String(describing: chore.dueDate))")
             if chore.frequency == .daily {
                 let dailyAssignments = await CloudKitManager.shared.fetchRecordsByRecordReference(
-                    for: DailyAssignmentModel.self,
+                    for: RecurrentAssignmentModel.self,
                     recordReferences: chore.dailyAssignmentsReference!
                 )
                 for d in (dailyAssignments ?? []).filter({ $0.userReference?.recordID == bob.recordID }) {

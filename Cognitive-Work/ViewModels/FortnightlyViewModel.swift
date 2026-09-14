@@ -35,8 +35,8 @@ class FortnightlyViewModel {
     /// A list of all available chores.
     var chores: [ChoreModel] = []
     
-    /// A collection of raw daily assignment records fetched from CloudKit.
-    var dailyAssignments: [DailyAssignmentModel] = []
+    /// A collection of raw recurrent assignment records fetched from CloudKit.
+    var recurrentAssignments: [RecurrentAssignmentModel] = []
     
     /// The starting date of the current fortnightly cycle (typically adjusted to start on a specific weekday).
     var startDate: Date = Date()
@@ -68,26 +68,30 @@ class FortnightlyViewModel {
     /// Fetches all users, chores, and daily assignments directly from CloudKit,
     /// and initializes the fortnightly time frame.
     func setupWithFetch() async {
+        // 1. 并行获取用户和任务
         async let fetchU = CloudKitManager.shared.fetchHouseUsers()
         async let fetchC = CloudKitManager.shared.fetchAll(ChoreModel.self)
         
         let (fetchedUsers, fetchedChores) = await (fetchU, fetchC)
         
-        await setup(users: fetchedUsers, chores: fetchedChores)
+        self.users = fetchedUsers
+        self.chores = fetchedChores
         
+        await finishSetup()
     }
     
     /// Handles common post-fetch initialization tasks like loading assignments and calculating the date window.
     private func finishSetup() async {
-        dailyAssignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
+        recurrentAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
         
         let calendar = Calendar.current
         let today = Date()
-        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: today)) else { return }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: today)) {
+            self.startDate = tomorrow
+        }
         
-        self.startDate = tomorrow
+        recurrentAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
         
-        // Process and populate usage entries for UI rendering
         await loadUsageEntries()
         
         isLoading = false
@@ -98,19 +102,38 @@ class FortnightlyViewModel {
     func loadUsageEntries() async {
         var entries: [DailyUsageEntry] = []
         
+        var assignmentDict: [CKRecord.ID: RecurrentAssignmentModel] = [:]
+        for assignment in recurrentAssignments {
+            if let id = assignment.recordID {
+                assignmentDict[id] = assignment
+            }
+        }
+        
+        let userIDs = Set(users.compactMap { $0.recordID })
+        
         for chore in chores {
             guard let choreID = chore.recordID else { continue }
             
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                let relatedAssignments = dailyAssignments.filter { assignment in
-                    refs.contains { $0.recordID == assignment.recordID }
-                }
-                
-                for assignment in relatedAssignments {
-                    guard let userID = assignment.user?.recordID else { continue }
+                for ref in refs {
+                    let assignmentID = ref.recordID
+                    
+                    guard let assignment = assignmentDict[assignmentID] else { continue }
+                    
+                    let userID: CKRecord.ID?
+                    if let userRef = assignment.userReference {
+                        userID = userRef.recordID
+                    } else if let userObj = await assignment.user {
+                        userID = userObj.recordID
+                    } else {
+                        userID = nil
+                    }
+                    
+                    guard let finalUserID = userID, userIDs.contains(finalUserID) else { continue }
+                    
                     entries.append(DailyUsageEntry(
                         day: assignment.day,
-                        userID: userID,
+                        userID: finalUserID,
                         choreID: choreID,
                         minutes: chore.duration,
                         choreName: chore.name
@@ -121,13 +144,13 @@ class FortnightlyViewModel {
                       let responsibleRef = chore.currentResponsibleReference
                 else { continue }
                 
-                guard let user = self.users.first(where: { $0.recordID == responsibleRef.recordID }),
-                      let userID = user.recordID
-                else { continue }
+                let responsibleID = responsibleRef.recordID
+                
+                guard userIDs.contains(responsibleID) else { continue }
                 
                 entries.append(DailyUsageEntry(
                     day: dueDate,
-                    userID: userID,
+                    userID: responsibleID,
                     choreID: choreID,
                     minutes: chore.duration,
                     choreName: chore.name
@@ -139,5 +162,4 @@ class FortnightlyViewModel {
             self.usageEntries = entries
         }
     }
-
 }

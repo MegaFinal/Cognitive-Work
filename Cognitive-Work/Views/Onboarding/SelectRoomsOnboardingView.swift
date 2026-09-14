@@ -29,7 +29,7 @@ struct SelectRoomsOnboardingView: View {
     @State private var isShowingCustomRoomSheet = false
     
     /// The two-column grid layout used to display room cards
-    var columns = [GridItem(), GridItem()]
+    let columns = [GridItem(), GridItem()]
 
     // MARK: - Body
 
@@ -49,10 +49,14 @@ struct SelectRoomsOnboardingView: View {
                             isSelected: roomDraft.isSelected
                         )
                         .onTapGesture {
-                            if roomDraft.isAddButton {
-                                isShowingCustomRoomSheet = true
-                            } else {
-                                viewModel.toggleRoomSelection(id: roomDraft.id)
+                            if !viewModel.isLoading {
+                                if roomDraft.isAddButton {
+                                    isShowingCustomRoomSheet = true
+                                } else {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        viewModel.toggleRoomSelection(id: roomDraft.id)
+                                    }
+                                }
                             }
                         }
                     }
@@ -65,7 +69,7 @@ struct SelectRoomsOnboardingView: View {
                         if !viewModel.isLoading {
                             viewModel.goToNextView()
                         }
-                    }
+                  }
                 }
             }
             Spacer()

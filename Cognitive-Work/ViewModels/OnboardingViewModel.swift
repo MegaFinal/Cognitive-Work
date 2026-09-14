@@ -108,71 +108,68 @@ class OnboardingViewModel {
             errorMessage = "Seu perfil ainda não foi salvo. Volte e crie o perfil antes de criar a casa."
             return
         }
-        
+         
         isLoading = true
         errorMessage = nil
-        
+         
         // Clears the spinner on *every* exit, including the early returns below. Without it,
         // any of those returns leaves the button spinning forever with no way out.
         defer { isLoading = false }
+         
+        // Pre-compute the house's recordID and zoneID locally to avoid a sequential network round-trip.
+        let zoneID = CloudKitManager.shared.houseZoneID
+        let houseRecordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
+        let houseCascadeRef = CKRecord.Reference(recordID: houseRecordID, action: .none)
         
+        // Construct the HouseModel and its underlying CKRecord.
         let userReference = CKRecord.Reference(recordID: userRecordID, action: .none)
         let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference])
-        if let savedHouse = await CloudKitManager.shared.create(newHouse) {
-            print("salvou casa")
+        let houseRecord = CKRecord(recordType: HouseModel.recordType, recordID: houseRecordID)
+        newHouse.populate(record: houseRecord)
+         
+        // Prepare the user copy record and map all properties.
+        let assetCopy = user.profilePicture.flatMap { try? duplicateCKAsset($0) }
+        let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName ?? "error to fetch users id"
+         
+        let userCopy = UserModel(
+            name: user.name,
+            profilePicture: assetCopy,
+            tier: user.tier,
+            coins: user.coins,
+            points: user.points,
+            badges: user.badgesReference,
+            tasks: user.choresReference,
+            availableTime: user.availableTimeReference,
+            house: houseCascadeRef,
+            coupons: user.couponsReference,
+            couponLimit: user.couponLimit,
+            ownerRecordName: ownerRecordName
+        )
+         
+        let copyRecordID = CloudKitManager.shared.houseUserRecordID(
+            for: userRecordID,
+            inHouseZone: zoneID
+        )
+        let userCopyRecord = CKRecord(recordType: UserModel.recordType, recordID: copyRecordID)
+        userCopy.populate(record: userCopyRecord)
+        userCopyRecord.parent = houseCascadeRef
+         
+        // Use batchSave to upload both the house and the user copy in a single network request.
+        let success = await CloudKitManager.shared.batchSave(
+            records: [houseRecord, userCopyRecord],
+            zoneID: zoneID
+        )
+         
+        if success {
+            let savedHouse = HouseModel(record: houseRecord)
             self.currentHouse = savedHouse
             self.stateMachine.house = savedHouse
-            
-            guard let houseRecordID = savedHouse.recordID else {
-                errorMessage = "A casa foi criada, mas o CloudKit não devolveu o identificador dela. Tente de novo."
-                return
-            }
-            
-            let houseCascadeRef = CKRecord.Reference(recordID: houseRecordID, action: .none)
-            
-            // The picture is optional: a member without one still needs their in-house copy
-            // created, so this must not bail out of the whole flow.
-            let assetCopy = user.profilePicture.flatMap { try? duplicateCKAsset($0) }
-            
-            let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName ?? "error to fetch users id"
-            
-            let userCopy = UserModel(
-                name: user.name ,
-                profilePicture: assetCopy,
-                tier: user.tier,
-                coins: user.coins,
-                points: user.points,
-                badges: user.badgesReference,
-                tasks: user.choresReference,
-                availableTime: user.availableTimeReference,
-                house: houseCascadeRef,
-                coupons: user.couponsReference,
-                couponLimit: user.couponLimit,
-                ownerRecordName: ownerRecordName,
-            )
-            print("make user copy")
-            
-            let copyRecordID = CloudKitManager.shared.houseUserRecordID(
-                for: userRecordID,
-                inHouseZone: houseRecordID.zoneID
-            )
-            
-            let savedUserCopy = await CloudKitManager.shared.create(
-                userCopy,
-                id: copyRecordID,
-                parent: houseCascadeRef
-            )
-
-            if let savedUserCopy {
-                self.currentUser = savedUserCopy
-                self.stateMachine.user = savedUserCopy
-            }
-
-            print("creat user copy")
-            
+             
+            let savedUserCopy = UserModel(record: userCopyRecord)
+            self.currentUser = savedUserCopy
+            self.stateMachine.user = savedUserCopy
+             
             try? await CloudKitManager.shared.createSharedSubscription()
-            
-            print("creat Subscription")
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar a casa."
         }
@@ -209,45 +206,50 @@ class OnboardingViewModel {
     /// - Requires ``currentHouse`` to already be set.
     @MainActor
     func saveSelectedRooms() async {
-        guard let house = currentHouse else { return }
+        guard let house = currentHouse,
+              let zoneID = house.recordID?.zoneID else { return }
         isLoading = true
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
+        let houseReference = house.reference(action: .deleteSelf)
+        let parentReference = house.reference(action: .none)
         
-        let roomToRepresentChoresToAllHome = RoomModel(name: "Casa",
-                                  house: house.reference(action: .deleteSelf),
-                                  color: .orange)
+        var roomModels = selectedDrafts.map { draft in
+            RoomModel(name: draft.name, house: houseReference, color: draft.color)
+        }
         
+        let roomToRepresentChoresToAllHome = RoomModel(
+            name: "Casa",
+            house: houseReference,
+            color: .orange
+        )
+        roomModels.append(roomToRepresentChoresToAllHome)
         
-        var savedRooms = await withTaskGroup(of: RoomModel?.self) { group in
-            for draft in selectedDrafts {
-                group.addTask {
-                    let roomModel = await RoomModel(name: draft.name,
-                                                    house: house.reference(action: .deleteSelf),
-                                                    color: draft.color)
-                    return await CloudKitManager.shared.create(roomModel, parent: house.reference(action: .none))
-                }
+        var recordsToSave: [CKRecord] = []
+        for roomModel in roomModels {
+            let record = CKRecord(recordType: RoomModel.recordType, zoneID: zoneID)
+            roomModel.populate(record: record)
+            
+            record.parent = parentReference
+            
+            recordsToSave.append(record)
+        }
+        
+        let successBatch = await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: zoneID)
+        
+        if successBatch {
+            for (index, record) in recordsToSave.enumerated() {
+                roomModels[index].recordID = record.recordID
             }
             
-            var results: [RoomModel] = []
-            for await result in group {
-                if let savedRoom = result {
-                    results.append(savedRoom)
-                }
+            let successAppend = await house.appendRoom(rooms: roomModels)
+            if successAppend {
+                self.currentHouse = house
+            } else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao atrelar cômodos."
             }
-            return results
-        }
-        
-        if let savedDefault = await CloudKitManager.shared.create(roomToRepresentChoresToAllHome,parent: house.reference(action: .none)) {
-            savedRooms.append(savedDefault)
-        }
-        
-        let success = await house.appendRoom(rooms: savedRooms)
-        
-        if success {
-            self.currentHouse = house
         } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao atrelar cômodos."
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao salvar cômodos."
         }
         
         isLoading = false
@@ -279,39 +281,63 @@ class OnboardingViewModel {
     func createDefaultChores() async {
         isLoading = true
         
-        if let rooms = await currentHouse?.room {
+        guard let rooms = currentHouse?.room,
+              let houseRecordID = currentHouse?.recordID else {
+            isLoading = false
+            return
+        }
+        
+        let zoneID = houseRecordID.zoneID
+        let parentReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
+        
+        let existingChores = await CloudKitManager.shared.fetchAll(
+            ChoreModel.self,
+            predicate: NSPredicate(format: "room != nil")
+        )
+        
+        let existingSet = Set(existingChores.map {
+            "\($0.roomReference?.recordID.recordName ?? "")_\($0.name)"
+        })
+        
+        var recordsToCreate: [CKRecord] = []
+        
+        for choreDTO in selectedChores {
+            guard let choreRoom = rooms.first(where: { $0.name == choreDTO.roomDTO.name }),
+                  let roomRecordID = choreRoom.recordID else {
+                continue
+            }
             
-            for choreDTO in selectedChores {
-                
-                guard let choreRoom = rooms.first(where: { $0.name == choreDTO.roomDTO.name }) else {
-                    continue
-                }
-                
-                if let recordID = choreRoom.recordID {
-                    let roomReference = CKRecord.Reference(recordID: recordID, action: .none)
-                    
-                    let existing = await CloudKitManager.shared.fetchAll(
-                        ChoreModel.self,
-                        predicate: NSPredicate(format: "room == %@ AND name == %@", roomReference, choreDTO.name)
-                    )
-                    //TODO: Verify vericity of this verification
-                    guard existing.isEmpty else { continue }
-                    
-                    await CloudKitManager.shared.create(
-                        ChoreModel(
-                            name: choreDTO.name,
-                            description: choreDTO.description,
-                            frequency: choreDTO.frequency,
-                            duration: choreDTO.duration,
-                            isPublic: true,
-                            priorityTag: choreDTO.priorityTag,
-                            roomReference: roomReference
-                        ),
-                        parent: roomReference
-                    )
-                }
+            let roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
+            let uniqueKey = "\(roomRecordID.recordName)_\(choreDTO.name)"
+            
+            if existingSet.contains(uniqueKey) {
+                continue
+            }
+            
+            let choreModel = ChoreModel(
+                name: choreDTO.name,
+                description: choreDTO.description,
+                frequency: choreDTO.frequency,
+                duration: choreDTO.duration,
+                isPublic: true,
+                priorityTag: choreDTO.priorityTag,
+                roomReference: roomReference
+            )
+            
+            let record = CKRecord(recordType: ChoreModel.recordType, zoneID: zoneID)
+            choreModel.populate(record: record)
+            record.parent = parentReference
+            
+            recordsToCreate.append(record)
+        }
+        
+        if !recordsToCreate.isEmpty {
+            let success = await CloudKitManager.shared.batchSave(records: recordsToCreate, zoneID: zoneID)
+            if !success {
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar tarefas padrão."
             }
         }
+        
         isLoading = false
     }
     
@@ -330,19 +356,16 @@ class OnboardingViewModel {
     
     func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async {
         isLoading = true
-        var availableTime: [AvailableTimeModel] = []
         
-        for dayOfWeek in daysOfWeekDTO {
-            availableTime.append(
-                AvailableTimeModel(
-                    capacityMinutes: Int(dayOfWeek.freeTime.timeInHours) * 60,
-                    day: Date()
-                )
+        let availableTimes = daysOfWeekDTO.map { dayOfWeek in
+            AvailableTimeModel(
+                capacityMinutes: Int(dayOfWeek.freeTime.timeInHours) * 60,
+                day: Date()
             )
         }
-        async let publicUser = CloudKitManager.shared.fetchMyHouseUser()
-        await publicUser?.setAvailableTimes(availableTime)
-        await currentUser?.setAvailableTimes(availableTime)
+        
+        await currentUser?.setAvailableTimes(availableTimes)
+        
         isLoading = false
     }
     
@@ -365,23 +388,26 @@ class OnboardingViewModel {
     /// - Requires ``currentUser`` to already exist (created via ``createUser()``).
     @MainActor
     func joinHouse() async {
-        await fetchHouse()
+        async let houseTask = try? CloudKitManager.shared.fetchFirst(HouseModel.self)
+        async let ownerIDTask = CloudKitManager.shared.fetchCurrentUserRecordID()
+        
+        currentHouse = await houseTask
+        let ownerRecordName = (await ownerIDTask)?.recordName ?? "error fetch user's ID"
         
         guard let house = currentHouse, let houseRecordID = house.recordID,
-              let profile = currentUser, let profileRecordID = profile.recordID
-        else { return }
+              let profile = currentUser, let profileRecordID = profile.recordID,
+              let profilePicture = profile.profilePicture
+        else {
+            isLoading = false
+            return
+        }
         
         isLoading = true
         errorMessage = nil
         
         let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
-        
-        //TODO: make fallback
-        guard let profilePicture = profile.profilePicture
-        else {return}
         let assetCopy = try? duplicateCKAsset(profilePicture)
         
-        let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName ?? "error fetch user's ID"
         let sharedUser = UserModel(
             name: profile.name,
             profilePicture: assetCopy,
@@ -398,11 +424,14 @@ class OnboardingViewModel {
             inHouseZone: houseRecordID.zoneID
         )
         
-        if let savedUser = await CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none)) {
+        async let saveTask = CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none))
+        async let subTask = CloudKitManager.shared.createSharedSubscription()
+        
+        if let savedUser = await saveTask {
             await house.appendUsers([savedUser])
             self.currentUser = savedUser
             self.stateMachine.user = savedUser
-            try? await CloudKitManager.shared.createSharedSubscription()
+            _ = try? await subTask
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
         }
@@ -447,7 +476,7 @@ class OnboardingViewModel {
 
     @MainActor
     func checkAndAdvanceIfScheduleReady() async {
-        let assignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
+        let assignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
         let scheduleIsReady = !assignments.isEmpty
         guard scheduleIsReady else { return }
 
@@ -466,6 +495,9 @@ class OnboardingViewModel {
     ///   user picks "Criar" or "Entrar" on that screen.
     @MainActor
     func checkExistingAccount() async {
+        
+        guard !isLoading else { return }
+        
         isCheckingAccount = true
         isLoading = true
         
@@ -473,18 +505,20 @@ class OnboardingViewModel {
             isCheckingAccount = false
             isLoading = false
         }
-        let user = await CloudKitManager.shared.fetchMyUser()
-        print(user?.name as Any)
         
-        if let existingUser = await CloudKitManager.shared.fetchMyUser() {
-
+        async let fetchedUser = CloudKitManager.shared.fetchMyUser()
+        async let fetchedHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
+        
+        let user = await fetchedUser
+        let house = await fetchedHouse
+        
+        if let existingUser = user {
             self.currentUser = existingUser
             self.stateMachine.user = existingUser
             
-            if let existingHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self) {
+            if let existingHouse = house {
                 self.currentHouse = existingHouse
                 self.stateMachine.house = existingHouse
-                
                 self.finishOnboarding()
             } else {
                 stateMachine.flow = .notDefined
@@ -493,7 +527,5 @@ class OnboardingViewModel {
                 }
             }
         }
-        print(CloudKitManager.shared.errorMessage)
-        isLoading = false
     }
 }

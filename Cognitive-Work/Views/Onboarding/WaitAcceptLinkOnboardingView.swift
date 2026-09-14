@@ -46,8 +46,12 @@ struct WaitAcceptLinkOnboardingView: View {
             // Check whether the house is already reachable (only true once the share
             // has been accepted) and advance the flow the same way the notification
             // handler in Onboarding.swift does.
-            guard (try? await CloudKitManager.shared.fetchFirst(HouseModel.self)) != nil,
-                  viewModel.currentUser != nil else { return }
+            
+            let houseFetched = await Task.detached(priority: .utility) {
+                return (try? await CloudKitManager.shared.fetchFirst(HouseModel.self)) != nil
+            }.value
+
+            guard houseFetched, viewModel.currentUser != nil else { return }
             
             viewModel.stateMachine.flow = .invitedWithProfile
             await viewModel.joinHouse()

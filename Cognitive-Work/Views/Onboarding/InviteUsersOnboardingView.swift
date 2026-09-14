@@ -117,20 +117,23 @@ struct InviteUsersOnboardingView: View {
         }
         .task(id: viewModel.currentHouse?.recordID) {
             guard let house = viewModel.currentHouse else { return }
-            
+             
             resolvendoShare = true
-            houseShare = await CloudKitManager.shared.resolveShare(for: house)
             
-            do {
-                if let share = houseShare {
+            async let resolvedShare = CloudKitManager.shared.resolveShare(for: house)
+            async let users = viewModel.fetchHouseUsers()
+            
+            if let share = await resolvedShare {
+                houseShare = share
+                do {
                     let url = try await CloudKitManager.shared.generateShareLink(share: share)
                     self.shareURL = url
+                } catch {
+                    print("Erro ao gerar link: \(error.localizedDescription)")
                 }
-            } catch {
-                print("Erro ao gerar link: \(error.localizedDescription)")
             }
             
-            houseUsers = await viewModel.fetchHouseUsers()
+            houseUsers = await users
             resolvendoShare = false
         }
     }

@@ -27,7 +27,7 @@ struct WelcomeOnboardingView: View {
     
     /// The shared view model for navigation and state across the onboarding flow
     @Binding var viewModel: OnboardingViewModel
-        
+    
     let width = UIScreen.main.bounds.width
     let height = UIScreen.main.bounds.height
     
@@ -74,6 +74,10 @@ struct WelcomeOnboardingView: View {
             )
             .onAppear {
                 showICloudAlert = true
+                
+                Task {
+                    await viewModel.checkExistingAccount()
+                }
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     if !isExpanded {
