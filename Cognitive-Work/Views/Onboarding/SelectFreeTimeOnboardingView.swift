@@ -153,8 +153,10 @@ private struct OnboardingCustomSliderComponent: View {
                 caption
             }
         }
-        .onChange(of: selectedFreeTimeLevel) {
-            updateFreeTime()
+        .onChange(of: selectedFreeTimeLevel) { _, newValue in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                dayOfWeek.freeTime = FreeTimeEnum(newValue)
+            }
         }
     }
 
@@ -175,14 +177,6 @@ private struct OnboardingCustomSliderComponent: View {
             Spacer()
         }
         .foregroundStyle(.delimiteTimeTextComponent)
-    }
-
-    // MARK: - Helpers
-
-    /// Converts the current slider selection into a ``FreeTimeEnum`` value and
-    /// stores it in the `dayOfWeek` binding.
-    private func updateFreeTime() {
-        dayOfWeek.freeTime = FreeTimeEnum(selectedFreeTimeLevel)
     }
 }
 

@@ -31,7 +31,7 @@ struct CreateOrEnterHouseOnboardingView: View {
                 title: "Para começarmos",
                 description: "Você pode entrar em uma casa existente através de um convite, ou criar uma nova."
             )
-               
+             
             Spacer()
             
             HStack(spacing: 15) {
@@ -56,25 +56,27 @@ struct CreateOrEnterHouseOnboardingView: View {
                         RoundedRectangle(cornerRadius: 20)
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.25), radius: 5.95, x: 0, y: 4)
-                    )
+                      )
                 }
                 .disabled(viewModel.isLoading)
                 
                 Button {
                     Task {
+                        viewModel.isLoading = true
                         await viewModel.createHouseAndLinkUser()
-                        
+                         
                         if viewModel.currentHouse != nil {
                             viewModel.stateMachine.flow = .houseCreator
                             viewModel.goToNextView()
                         }
+                        viewModel.isLoading = false
                     }
                 } label: {
                     VStack (spacing: 40){
                         if viewModel.isLoading {
                             ProgressView()
                                 .scaleEffect(1.5)
-                                .tint(.white)
+                              .tint(.white)
                         } else {
                             Image(systemName: "house")
                                 .resizable()
