@@ -27,13 +27,8 @@ final class FortnightlyScheduleViewModel {
     
     func generateSchedule() async {
         isLoading = true
-        
         await setup()
-                
-        await TaskSchedulerEngine.schedule(chores: chores,users: users)
-        
-        await setup()
-        
+        await TaskSchedulerEngine.schedule(chores: chores, users: users)
         isLoading = false
     }
 }
