@@ -123,9 +123,20 @@ class CarouselViewModel {
     }
     
     func getUsers(for chore: ChoreModel) -> [UserModel] {
+        // Recurring: users come from the daily assignments
+        if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+            let ids = Set(refs.map { $0.recordID })
+            let userIDs = Set(dailyAssignments.compactMap { assignment -> CKRecord.ID? in
+                guard let id = assignment.recordID, ids.contains(id) else { return nil }
+                return assignment.userReference?.recordID
+            })
+            return userModels.filter { $0.recordID.map { userIDs.contains($0) } ?? false }
+        }
+
+        // One-off: explicit rotation list
         guard let refs = chore.allResponsibleUsersReference else { return [] }
-        let ids = refs.compactMap { $0.recordID }
-        return userModels.filter { ids.contains($0.recordID!) }
+        let ids = Set(refs.compactMap { $0.recordID })
+        return userModels.filter { $0.recordID.map { ids.contains($0) } ?? false }
     }
     
     // MARK: - Layout Control

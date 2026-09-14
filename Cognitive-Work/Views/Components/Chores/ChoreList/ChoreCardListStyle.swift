@@ -114,3 +114,40 @@ struct ChoreCardListStyle: View {
         .transition(.identity)
     }
 }
+
+#Preview("Card em lista") {
+    @Previewable @Namespace var namespace
+
+    let room: RoomModel = {
+        var room = RoomModel(name: "Cozinha", color: .orange)
+        room.recordID = CKRecord.ID(recordName: "preview-room")
+        return room
+    }()
+
+    let chore: ChoreModel = {
+        let chore = ChoreModel(
+            name: "Lavar a louça",
+            description: "Depois do jantar",
+            frequency: .daily,
+            duration: 20,
+            isPublic: true,
+            priorityTag: .medium,
+            roomReference: CKRecord.Reference(
+                recordID: CKRecord.ID(recordName: "preview-room"),
+                action: .none
+            )
+        )
+        chore.symbolName = "dishwasher"
+        return chore
+    }()
+
+    let vm: CarouselViewModel = {
+        let vm = CarouselViewModel()
+        vm.roomModels = [room]
+        return vm
+    }()
+
+    ChoreCardListStyle(chore: chore, namespace: namespace, carouselViewModel: vm) {
+        print("Tapped")
+    }
+}
