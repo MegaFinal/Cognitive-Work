@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// The distinct front-face representation of a chore inside the carousel layout.
 ///
@@ -40,4 +41,36 @@ struct ChoreCarouselCard: View {
         .shadow(color: .black.opacity(0.14), radius: 16.84883, x: 0, y: 4.79682)
         .transition(.identity)
     }
+}
+
+#Preview("Com cômodo") {
+    @Previewable @Namespace var namespace
+
+    let vm: CarouselViewModel = {
+        var room = RoomModel(name: "Cozinha", color: .orange)
+        room.recordID = CKRecord.ID(recordName: "preview-room")
+
+        let vm = CarouselViewModel()
+        vm.roomModels = [room]
+        return vm
+    }()
+
+    let chore: ChoreModel = {
+        let chore = ChoreModel(
+            name: "Lavar a louça",
+            description: "Depois do jantar",
+            frequency: .daily,
+            duration: 20,
+            isPublic: true,
+            priorityTag: .medium,
+            roomReference: CKRecord.Reference(
+                recordID: CKRecord.ID(recordName: "preview-room"),
+                action: .none
+            )
+        )
+        chore.symbolName = "dishwasher"
+        return chore
+    }()
+
+    ChoreCarouselCard(chore: chore, namespace: namespace, carouselViewModel: vm)
 }

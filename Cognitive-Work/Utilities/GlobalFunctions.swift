@@ -74,12 +74,10 @@ func buildScheduleContext(
         if let local = users.first(where: { $0.recordID == ref.recordID }) {
             choreResponsibleMap[choreID] = local
         } else {
-            // Record missing users rather than triggering an immediate network request
             missingUserRefs.insert(ref)
             missingChores.append(chore)
         }
     }
-    
     
     // If there are missing users, fetch them all using a single request
     if !missingUserRefs.isEmpty {
@@ -205,7 +203,7 @@ func scheduleRecurringChores(
             // If no suitable user is found for the day, skip this day
             guard let finalUserID = chosenUserID,
                   let slotID = chosenSlotID else { continue }
-            
+
             // Deduct time slot capacity and accumulate the user's assigned duration
             remainingCapacity[slotID] = max(chosenRemaining - chore.duration, 0)
             userAssignedMinutes[finalUserID, default: 0] += Int(chore.duration)
@@ -214,7 +212,7 @@ func scheduleRecurringChores(
             let chosenUserRef = CKRecord.Reference(recordID: finalUserID, action: .none)
             let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
             result.newAssignments.append(
-                DailyAssignmentModel(day: day, isCompleted: false, user: chosenUserRef, chore: choreRef)
+                RecurrentAssignmentModel(day: day, isCompleted: false, user: chosenUserRef, chore: choreRef)
             )
         }
         
@@ -447,7 +445,7 @@ func scheduleFreeChores(
 ///
 /// - Parameter chores: Every chore currently loaded, as passed into ``TaskSchedulerEngine/schedule(chores:users:)``.
 func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
-    let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly]
+    let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly, .monthly]
     
     // Filter candidate chores
     let candidates = chores.filter {
@@ -464,7 +462,7 @@ func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
             group.addTask {
                 // Verify in the cloud concurrently in the background
                 let resolved = await CloudKitManager.shared.fetchRecordsByRecordReference(
-                    for: DailyAssignmentModel.self,
+                    for: RecurrentAssignmentModel.self,
                     recordReferences: refs
                 )
                 
@@ -503,7 +501,7 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
         var savedRefs: [CKRecord.Reference] = []
         for assignment in result.newAssignments {
             let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-            let record = CKRecord(recordType: DailyAssignmentModel.recordType, recordID: recordID)
+            let record = CKRecord(recordType: RecurrentAssignmentModel.recordType, recordID: recordID)
             assignment.populate(record: record)
             
             // Set the CloudKit Parent reference to establish a parent-child hierarchy between Chore and DailyAssignment.

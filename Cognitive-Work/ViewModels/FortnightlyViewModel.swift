@@ -35,8 +35,8 @@ class FortnightlyViewModel {
     /// A list of all available chores.
     var chores: [ChoreModel] = []
     
-    /// A collection of raw daily assignment records fetched from CloudKit.
-    var dailyAssignments: [DailyAssignmentModel] = []
+    /// A collection of raw recurrent assignment records fetched from CloudKit.
+    var recurrentAssignments: [RecurrentAssignmentModel] = []
     
     /// The starting date of the current fortnightly cycle (typically adjusted to start on a specific weekday).
     var startDate: Date = Date()
@@ -82,14 +82,15 @@ class FortnightlyViewModel {
     
     /// Handles common post-fetch initialization tasks like loading assignments and calculating the date window.
     private func finishSetup() async {
-        // 2. 提前计算好日期，无需等待 assignments 返回才去算
+        recurrentAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        
         let calendar = Calendar.current
         let today = Date()
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: today)) {
             self.startDate = tomorrow
         }
         
-        dailyAssignments = await CloudKitManager.shared.fetchAll(DailyAssignmentModel.self)
+        recurrentAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
         
         await loadUsageEntries()
         
@@ -101,8 +102,8 @@ class FortnightlyViewModel {
     func loadUsageEntries() async {
             var entries: [DailyUsageEntry] = []
             
-            var assignmentDict: [CKRecord.ID: DailyAssignmentModel] = [:]
-            for assignment in dailyAssignments {
+            var assignmentDict: [CKRecord.ID: RecurrentAssignmentModel] = [:]
+            for assignment in recurrentAssignments {
                 if let id = assignment.recordID {
                     assignmentDict[id] = assignment
                 }

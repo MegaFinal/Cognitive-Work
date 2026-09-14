@@ -24,6 +24,7 @@ class CarouselViewModel {
     var cardModels: [ChoreModel] = []
     var roomModels: [RoomModel] = []
     var userModels: [UserModel] = []
+    var dailyAssignments: [RecurrentAssignmentModel] = []
     
     // MARK: - UI & Layout State
     
@@ -57,14 +58,25 @@ class CarouselViewModel {
     var isFilterOn: Bool = false
     var isSelectingFilter = false
     var filterChoices = ChoreFilters()
-    var filteredChards: [ChoreModel] = []
     
     /// The list of chores rendered by the UI, respecting active filters.
     var visibleChores: [ChoreModel] {
-        if isFilterOn {
-            return filteredChards
-        } else {
-            return cardModels.filter { $0.isDone == false }
+        let base = isFilterOn
+        ? applyFilters(to: cardModels)
+        : cardModels.filter { !$0.isDone }
+        
+        return base.sorted { a, b in
+            let dateA = nextDate(for: a)
+            let dateB = nextDate(for: b)
+            
+            switch (dateA, dateB) {
+            case let (dA?, dB?) where dA != dB: return dA < dB
+            case (nil, _?): return false
+            case (_?, nil): return true
+            default: break
+            }
+            
+            return a.priorityTag.intValue > b.priorityTag.intValue
         }
     }
     
@@ -88,13 +100,15 @@ class CarouselViewModel {
         async let fetchC = CloudKitManager.shared.fetchAll(ChoreModel.self)
         async let fetchU = CloudKitManager.shared.fetchHouseUsers()
         async let fetchR = CloudKitManager.shared.fetchAll(RoomModel.self)
+        async let fetchA = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
         
-        let (chores, users, rooms) = await (fetchC, fetchU, fetchR)
+        let (chores, users, rooms, assignments) = await (fetchC, fetchU, fetchR, fetchA)
         
         await MainActor.run {
-            self.cardModels = chores.filter { $0.shouldBeIncluded != true }
+            self.cardModels = chores
             self.userModels = users
             self.roomModels = rooms
+            self.dailyAssignments = assignments
             
             self.hasFetchedInitially = true
             self.isLoading = false
@@ -122,41 +136,55 @@ class CarouselViewModel {
     
     // MARK: - Filtering Logic
     
-    @MainActor
-    func filterByUser() async {
-        var totalChores: [ChoreModel] = cardModels
+    /// Applies the active filters to a list of chores.
+    private func applyFilters(to chores: [ChoreModel]) -> [ChoreModel] {
+        var result = chores
         
         if !filterChoices.users.isEmpty {
-            let selectedUserIDs = filterChoices.users.compactMap { $0.recordID }
+            let selectedUserIDs = Set(filterChoices.users.compactMap { $0.recordID })
             
-            totalChores = totalChores.filter { chore in
-                guard let responsibleID = chore.currentResponsibleReference?.recordID else { return false }
-                return selectedUserIDs.contains(responsibleID)
+            result = result.filter { chore in
+                // One-off: direct responsible
+                if let responsibleID = chore.currentResponsibleReference?.recordID {
+                    return selectedUserIDs.contains(responsibleID)
+                }
+                
+                // Recurring: any assignment belongs to one of the selected users
+                guard let refs = chore.dailyAssignmentsReference else { return false }
+                let ids = Set(refs.map { $0.recordID })
+                
+                return dailyAssignments.contains { assignment in
+                    guard let assignmentID = assignment.recordID,
+                          ids.contains(assignmentID),
+                          let userID = assignment.userReference?.recordID
+                    else { return false }
+                    return selectedUserIDs.contains(userID)
+                }
             }
         }
         
         if !filterChoices.tags.isEmpty {
-            totalChores = totalChores.filter { filterChoices.tags.contains($0.priorityTag) }
+            result = result.filter { filterChoices.tags.contains($0.priorityTag) }
         }
         
         if !filterChoices.frequencies.isEmpty {
-            totalChores = totalChores.filter { filterChoices.frequencies.contains($0.frequency) }
+            result = result.filter { filterChoices.frequencies.contains($0.frequency) }
         }
         
         if let state = filterChoices.state {
-            totalChores = totalChores.filter { $0.isDone == state }
+            result = result.filter { $0.isDone == state }
         }
         
-        self.filteredChards = totalChores
-        self.isFilterOn = true
+        return result
     }
     
-    func addOrRemoveFilter(user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, state: Bool? = nil) async {
-        if let user = user {
-            if !filterChoices.users.contains(user) {
-                filterChoices.users.append(user)
-            } else {
+    /// Changes the filter option
+    func addOrRemoveFilter(user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, state: Bool? = nil) {
+        if let user {
+            if filterChoices.users.contains(user) {
                 filterChoices.users.removeAll { $0 == user }
+            } else {
+                filterChoices.users.append(user)
             }
         }
         
@@ -184,14 +212,31 @@ class CarouselViewModel {
             }
         }
         
-        await filterByUser()
+        isFilterOn = true
     }
     
     func resetFilter() {
         isFilterOn = false
         isSelectingFilter = false
-        filteredChards = []
         filterChoices = ChoreFilters()
+    }
+    
+    /// The next scheduled date for a chore, whether it comes from a daily
+    /// assignment (recurring) or from its own due date (one-off).
+    func nextDate(for chore: ChoreModel) -> Date? {
+        if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+            let ids = Set(refs.map { $0.recordID })
+            let hoje = Calendar.current.startOfDay(for: Date())
+            
+            return dailyAssignments
+                .filter { assignment in
+                    guard let id = assignment.recordID else { return false }
+                    return ids.contains(id) && assignment.day >= hoje
+                }
+                .map(\.day)
+                .min()
+        }
+        return chore.dueDate
     }
     
     // MARK: - Focus & Flip Interactions

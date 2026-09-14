@@ -260,3 +260,49 @@ private struct ProgressIndicatorCard: View {
         .shadow(color: .black.opacity(0.25), radius: 4.07717, x: 0, y: 1.23551)
     }
 }
+
+#Preview("Lista de tarefas") {
+    let vm: CarouselViewModel = {
+        var cozinha = RoomModel(name: "Cozinha", color: .orange)
+        cozinha.recordID = CKRecord.ID(recordName: "preview-cozinha")
+
+        var banheiro = RoomModel(name: "Banheiro", color: .blue)
+        banheiro.recordID = CKRecord.ID(recordName: "preview-banheiro")
+
+        func makeChore(
+            _ name: String,
+            symbol: String,
+            room: RoomModel,
+            frequency: Recurrence,
+            duration: Double,
+            priority: PriorityTag
+        ) -> ChoreModel {
+            let chore = ChoreModel(
+                name: name,
+                description: "Descrição da tarefa \(name.lowercased()).",
+                frequency: frequency,
+                duration: duration,
+                isPublic: true,
+                priorityTag: priority,
+                roomReference: room.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+            )
+            chore.symbolName = symbol
+            chore.recordID = CKRecord.ID(recordName: "preview-\(UUID().uuidString)")
+            return chore
+        }
+
+        let vm = CarouselViewModel()
+        vm.roomModels = [cozinha, banheiro]
+        vm.cardModels = [
+            makeChore("Lavar a louça", symbol: "dishwasher", room: cozinha,
+                      frequency: .daily, duration: 20, priority: .medium),
+            makeChore("Limpar o box", symbol: "shower", room: banheiro,
+                      frequency: .weekly, duration: 45, priority: .high),
+            makeChore("Organizar a despensa", symbol: "cabinet", room: cozinha,
+                      frequency: .monthly, duration: 90, priority: .low)
+        ]
+        return vm
+    }()
+
+    ChoresView(carouselVM: vm)
+}
