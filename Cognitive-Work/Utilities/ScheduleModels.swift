@@ -66,5 +66,5 @@ struct ScheduleResult {
     var chore: ChoreModel
     
     /// An array of newly generated daily assignment models associated with this chore.
-    var newAssignments: [DailyAssignmentModel] = []
+    var newAssignments: [RecurrentAssignmentModel] = []
 }

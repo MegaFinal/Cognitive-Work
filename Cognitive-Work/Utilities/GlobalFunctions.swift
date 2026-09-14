@@ -74,24 +74,22 @@ func buildScheduleContext(
         if let local = users.first(where: { $0.recordID == ref.recordID }) {
             choreResponsibleMap[choreID] = local
         } else {
-            // Record missing users rather than triggering an immediate network request
             missingUserRefs.insert(ref)
             missingChores.append(chore)
         }
+    }
+    
+    // Fetch every missing user in a single request
+    if !missingUserRefs.isEmpty {
+        let fetchedUsers = await CloudKitManager.shared.fetchRecordsByRecordReference(
+            for: UserModel.self,
+            recordReferences: Array(missingUserRefs)
+        ) ?? []
         
-        // If there are missing users, fetch them all using a single request
-        if !missingUserRefs.isEmpty {
-            let fetchedUsers = await CloudKitManager.shared.fetchRecordsByRecordReference(
-                for: UserModel.self,
-                recordReferences: Array(missingUserRefs)
-            ) ?? []
-            
-            // Populate the map in memory
-            for chore in missingChores {
-                guard let ref = chore.currentResponsibleReference, let choreID = chore.recordID else { continue }
-                if let found = fetchedUsers.first(where: { $0.recordID == ref.recordID }) {
-                    choreResponsibleMap[choreID] = found
-                }
+        for chore in missingChores {
+            guard let ref = chore.currentResponsibleReference, let choreID = chore.recordID else { continue }
+            if let found = fetchedUsers.first(where: { $0.recordID == ref.recordID }) {
+                choreResponsibleMap[choreID] = found
             }
         }
     }
@@ -207,12 +205,21 @@ func scheduleRecurringChores(
             // Create cloud references and generate the daily assignment model (DailyAssignmentModel)
             let chosenUserRef = CKRecord.Reference(recordID: chosenUserID, action: CKRecord.ReferenceAction.none)
             let choreRef = CKRecord.Reference(recordID: choreID, action: CKRecord.ReferenceAction.deleteSelf)
-            let assignment = DailyAssignmentModel(
+            let assignment = RecurrentAssignmentModel(
                 day: day,
                 isCompleted: false,
                 user: chosenUserRef,
                 chore: choreRef
             )
+            
+            result.chore.currentResponsibleReference = CKRecord.Reference(recordID: chosenUserID, action: .none)
+            
+            var rotation = result.chore.allResponsibleUsersReference ?? []
+            if !rotation.contains(where: { $0.recordID == chosenUserID }) {
+                rotation.append(CKRecord.Reference(recordID: chosenUserID, action: .none))
+                result.chore.allResponsibleUsersReference = rotation
+            }
+            
             result.newAssignments.append(assignment)
         }
         
@@ -407,7 +414,7 @@ func scheduleFreeChores(
 ///
 /// - Parameter chores: Every chore currently loaded, as passed into ``TaskSchedulerEngine/schedule(chores:users:)``.
 func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
-    let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly]
+    let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly, .monthly]
     
     for chore in chores {
         guard !chore.isDone,
@@ -422,7 +429,7 @@ func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
         // `commitScheduleResults` call, so they're either all in the wrong zone or all fine
         // — there's no realistic case where only some of them are orphaned.
         let resolved = await CloudKitManager.shared.fetchRecordsByRecordReference(
-            for: DailyAssignmentModel.self,
+            for: RecurrentAssignmentModel.self,
             recordReferences: refs
         )
         
@@ -456,7 +463,7 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
         var savedRefs: [CKRecord.Reference] = []
         for assignment in result.newAssignments {
             let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-            let record = CKRecord(recordType: DailyAssignmentModel.recordType, recordID: recordID)
+            let record = CKRecord(recordType: RecurrentAssignmentModel.recordType, recordID: recordID)
             
             assignment.populate(record: record)
             recordsToSave.append(record)

@@ -17,6 +17,8 @@ struct ChoreDetailsCard: View {
     @Bindable var chore: ChoreModel
     @Bindable var carouselViewModel: CarouselViewModel
     
+    var nextDate: Date? { carouselViewModel.nextDate(for: chore) }
+    
     var isShowingBack: Bool
     
     @State private var checkList: [CheckItemModel] = []
@@ -124,9 +126,14 @@ struct ChoreDetailsCard: View {
                     )
                 }
                 
-                Text("Checklist")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                HStack {
+                    Text("Checklist")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    Spacer()
+                    Text(nextDate?.formatted(date: .numeric, time: .omitted) ?? "Sem data definida")
+                        .font(.caption)
+                }
                 
                 VStack(alignment: .leading, spacing: 5) {
                     ForEach($checkList, id: \.id) { $item in
@@ -247,4 +254,39 @@ private struct ChecklistItemButton: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+#Preview("Detalhes") {
+    @Previewable @State var isShowingBack = true
+
+    let room: RoomModel = {
+        var room = RoomModel(name: "Cozinha", color: .orange)
+        room.recordID = CKRecord.ID(recordName: "preview-room")
+        return room
+    }()
+
+    let chore: ChoreModel = {
+        let chore = ChoreModel(
+            name: "Lavar a louça",
+            description: "Lavar tudo que estiver na pia, secar e guardar nos armários.",
+            frequency: .daily,
+            duration: 1200,
+            isPublic: true,
+            priorityTag: .medium,
+            roomReference: CKRecord.Reference(
+                recordID: CKRecord.ID(recordName: "preview-room"),
+                action: .none
+            )
+        )
+        chore.symbolName = "dishwasher"
+        return chore
+    }()
+
+    let vm: CarouselViewModel = {
+        let vm = CarouselViewModel()
+        vm.roomModels = [room]
+        return vm
+    }()
+
+    ChoreDetailsCard(chore: chore, carouselViewModel: vm, isShowingBack: isShowingBack)
 }

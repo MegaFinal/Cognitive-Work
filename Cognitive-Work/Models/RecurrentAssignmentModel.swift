@@ -1,5 +1,5 @@
 //
-//  DailyAssignmentModel.swift
+//  RecurrentAssignmentModel.swift
 //  Cognitive-Work
 //
 //  Created by anshu Li on 18/08/26.
@@ -8,7 +8,7 @@
 import Foundation
 import CloudKit
 
-struct DailyAssignmentModel : CloudKitSyncable{
+struct RecurrentAssignmentModel : CloudKitSyncable{
     static let recordType: String = "DailyAssignmentModel"
     
     var recordID: CKRecord.ID?
