@@ -35,12 +35,15 @@ struct TaskSchedulerEngine {
         // whichever device happens to run this first — otherwise anyone who isn't that
         // device (the owner included) can end up unable to read them back. Resolve the
         // real house zone once, up front, and thread it through to `commitScheduleResults`.
-        let houseZoneID = (try? await CloudKitManager.shared.fetchFirst(HouseModel.self))?.recordID?.zoneID
+        // houseZoneID is independent of chores/users, so initiate it early to run concurrently with the next two steps
+        async let houseTask = CloudKitManager.shared.fetchFirst(HouseModel.self)
         
         // Chores scheduled before the fix above may still be pointing at daily-assignment
         // records that live in the wrong zone and are now unreadable. Clear those stale
         // references so they're picked up by the `recurringChores` filter below and
         // rescheduled correctly this run.
+        // repair must precede buildScheduleContext (as it modifies chore.dailyAssignmentsReference,
+        // which the subsequent recurringChores filter relies on), so these two steps remain sequential
         await repairOrphanedRecurringAssignments(in: chores)
         
         // Build the scheduling context to calculate environment variables such as user available time, capacity, etc.
@@ -50,6 +53,8 @@ struct TaskSchedulerEngine {
             now: now,
             windowEnd: windowEnd
         )
+        // houseZoneID's result is only truly needed here (used by commitScheduleResults), by which time it is most likely ready
+        let houseZoneID = (try? await houseTask)?.recordID?.zoneID
         
         // Define the set of recurring frequencies
         let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly, .monthly]
@@ -98,7 +103,7 @@ struct TaskSchedulerEngine {
             remainingCapacity: &remainingCapacity,
             userAssignedMinutes: &userAssignedMinutes
         )
-        
+
         // Schedule chores that already have a specific responsible user
         allResults += scheduleAssignedChores(
             assignedChores,
@@ -108,7 +113,7 @@ struct TaskSchedulerEngine {
             remainingCapacity: &remainingCapacity,
             userAssignedMinutes: &userAssignedMinutes
         )
-        
+
         // Schedule free chores
         allResults += scheduleFreeChores(
             freeChores,
@@ -124,9 +129,13 @@ struct TaskSchedulerEngine {
         await commitScheduleResults(allResults, users: users, houseZoneID: houseZoneID)
         
         // toogle shouldBeIncluded chores so they can be included on the next 14 days and persists on cloudkit
-        for chore in monthyChoresNotToDo {
-            chore.shouldBeIncluded?.toggle()
-            await CloudKitManager.shared.update(chore)
+        await withTaskGroup(of: Void.self) { group in
+            for chore in monthyChoresNotToDo {
+                chore.shouldBeIncluded?.toggle()
+                group.addTask {
+                    await CloudKitManager.shared.update(chore)
+                }
+            }
         }
     }
     
