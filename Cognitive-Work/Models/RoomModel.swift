@@ -35,10 +35,10 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     
     var relatedChores: [ChoreModel] {
         get async {
-            if let relatedChoresReference {
-                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: relatedChoresReference) ?? []
+            guard let relatedChoresReference, !relatedChoresReference.isEmpty else {
+                return []
             }
-            return []
+            return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: relatedChoresReference) ?? []
         }
     }
     
@@ -110,10 +110,10 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         record["roomColor"] = color.rawValue
     }
     
-    func fertchRelatedChores() async -> [ChoreModel] {
-        if self.relatedChoresReference == nil {
+    func fetchRelatedChores() async -> [ChoreModel] {
+        guard let relatedChoresReference, !relatedChoresReference.isEmpty else {
             return []
         }
-        return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: self.relatedChoresReference!) ?? []
+        return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: relatedChoresReference) ?? []
     }
 }

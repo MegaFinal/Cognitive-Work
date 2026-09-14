@@ -74,9 +74,9 @@ struct SelectChoresOnboardingView: View {
                 else {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading) {
-                            ForEach($rooms) { $room in
+                            ForEach($rooms.indices, id: \.self) { index in
                                 HStack {
-                                    SelectChoreListItem(viewModel: $viewModel, room: $room, height: height, width: width)
+                                    SelectChoreListItem(viewModel: $viewModel, room: $rooms[index], height: height, width: width)
                                 }
                                 .padding(.bottom, height * 0.07)
                             }
@@ -111,78 +111,79 @@ struct SelectChoresOnboardingView: View {
 
 /// A collapsible room section listing the default chores the user can pick.
 private struct SelectChoreListItem: View {
-    @Binding var viewModel: OnboardingViewModel
+     @Binding var viewModel: OnboardingViewModel
     
-    @Binding var room: RoomModel
+     @Binding var room: RoomModel
     
-    @State var isExpanded: Bool = false
-    @State var defaultChores: [ChoreDTO] = []
+     @State var isExpanded: Bool = false
+     @State var defaultChores: [ChoreDTO] = []
     
-    let height: CGFloat
-    let width: CGFloat
+     let height: CGFloat
+     let width: CGFloat
     
-    var body: some View {
-        VStack(alignment: .leading) {
-            Button {
-                isExpanded.toggle()
-            } label: {
-                HStack {
-                    Text(room.name)
-                        .font(.system(size: 24))
-                        .bold()
-                        .padding(.bottom, height * 0.018)
+     var body: some View {
+         VStack(alignment: .leading) {
+             Button {
+                 isExpanded.toggle()
+             } label: {
+                 HStack {
+                     Text(room.name)
+                         .font(.system(size: 24))
+                         .bold()
+                         .padding(.bottom, height * 0.018)
                     
-                    Spacer()
+                     Spacer()
                     
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                }
-            }
-            .fontWeight(.semibold)
-            .foregroundStyle(.black)
+                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                 }
+             }
+             .fontWeight(.semibold)
+             .foregroundStyle(.black)
             
-            Divider()
-                .frame(height: height * 0.001)
-                .overlay(Color.black)
+           Divider()
+               .frame(height: height * 0.001)
+               .overlay(Color.black)
             
-            if isExpanded {
-                ForEach($defaultChores) { $chore in
-                    Button {
-                        if !viewModel.isLoading {
-                            chore.isSelected.toggle()
-                            if chore.isSelected {
-                                if let roomRecordID = room.recordID {
-                                    chore.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
-                                }
-                                viewModel.selectedChores.append(chore)
-                            }
-                            else {
-                                viewModel.selectedChores.removeAll { $0.name == chore.name }
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            Circle()
-                                .background(.clear)
-                                .frame(width: 15, height: 15)
-                                .padding(.trailing, 8)
-                            Text(chore.name)
+           if isExpanded {
+               ForEach($defaultChores) { $chore in
+                   Button {
+                       if !viewModel.isLoading {
+                           chore.isSelected.toggle()
+                           if chore.isSelected {
+                               if let roomRecordID = room.recordID {
+                                   chore.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
+                               }
+                               viewModel.selectedChores.append(chore)
+                           }
+                           else {
+                               viewModel.selectedChores.removeAll { $0.name == chore.name }
+                           }
+                       }
+                   } label: {
+                       HStack {
+                           Circle()
+                               .background(.clear)
+                               .frame(width: 15, height: 15)
+                               .padding(.trailing, 8)
+                           Text(chore.name)
                             
-                            Spacer()
-                        }
-                        .foregroundStyle(chore.isSelected ? .blue : .black)
-                    }
-                }
-            }
-        }
-        .task {
-            if let defaultRoom = DefaultRoomsOnboarding(rawValue: room.name) {
-                defaultChores = defaultRoom.defaultChores
-            }
-        }
-    }
+                           Spacer()
+                       }
+                       .foregroundStyle(chore.isSelected ? .blue : .black)
+                   }
+               }
+           }
+         }
+         .task {
+              guard defaultChores.isEmpty else { return }
+             if let defaultRoom = DefaultRoomsOnboarding(rawValue: room.name) {
+                 defaultChores = defaultRoom.defaultChores
+             }
+         }
+     }
 }
 
 #Preview {
-    @Previewable @State var viewModel = OnboardingViewModel()
-    SelectChoresOnboardingView(viewModel: $viewModel)
+     @Previewable @State var viewModel = OnboardingViewModel()
+     SelectChoresOnboardingView(viewModel: $viewModel)
 }
