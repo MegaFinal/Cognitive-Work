@@ -37,7 +37,7 @@ struct InviteUsersOnboardingView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Adicione seus \nroomies!")
                     .bold()
-                    .font(.title)
+                    .font(.system(size: 28))
                     .foregroundColor(.black)
                 
                 VStack(alignment: .leading) {

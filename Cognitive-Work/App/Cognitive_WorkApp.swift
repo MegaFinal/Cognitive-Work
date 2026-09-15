@@ -15,11 +15,17 @@ struct Cognitive_WorkApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if didOnboard {
-                ContentView()
-            } else {
-                Onboarding(didOnboard: $didOnboard)
+            Group {
+                if didOnboard {
+                    ContentView()
+                } else {
+                    Onboarding(didOnboard: $didOnboard)
+                }
             }
+            // Dynamic Type is not supported: every explicit font uses a fixed size, and this
+            // pins everything else (texts with no `.font`, buttons, navigation titles, sheets)
+            // to the default "Large" content size so it ignores the system text size setting.
+            .dynamicTypeSize(.large)
         }
     }
 }

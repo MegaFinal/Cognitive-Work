@@ -30,8 +30,8 @@ struct Carousel: View {
                     .foregroundStyle(.white)
             }
             else if viewModel.visibleChores.isEmpty {
-                Text("Nenhuma tarefa para hoje")
-                    .font(.headline)
+                Text("Nenhuma tarefa no momento")
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.black)
             }
             else {
@@ -74,7 +74,7 @@ struct Carousel: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .onSwipeDown(action: onSwipeDown)
+        .onPullDownAtTop(action: onSwipeDown)
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
     }
 }

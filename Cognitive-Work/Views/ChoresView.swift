@@ -118,7 +118,7 @@ struct ChoresView: View {
     private var header: some View {
         HStack {
             Text("Suas Tarefas")
-                .font(.largeTitle)
+                .font(.system(size: 34))
                 .fontWeight(.bold)
                 .padding(.horizontal, 30)
                 .padding(.top, 20)
@@ -132,7 +132,7 @@ struct ChoresView: View {
                     }
                 } label: {
                     Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
-                        .font(.title2)
+                        .font(.system(size: 22))
                         .foregroundColor(.black)
                         .padding(8)
                 }
@@ -142,7 +142,7 @@ struct ChoresView: View {
                         carouselVM.isSelectingFilter = true
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease")
-                            .font(.title2)
+                            .font(.system(size: 22))
                             .foregroundColor(.black)
                             .padding(8)
                     }
@@ -188,7 +188,7 @@ struct ChoresView: View {
             .padding(.top, 8)
             .padding(.bottom, 120)
         }
-        .onSwipeDown(action: carouselVM.toggleLayout)
+        .onPullDownAtTop(action: carouselVM.toggleLayout)
         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
     }
     
@@ -241,7 +241,7 @@ private struct ProgressIndicatorCard: View {
     var body: some View {
         VStack {
             Text(title)
-                .font(.caption)
+                .font(.system(size: 12))
                 .fontWeight(.medium)
                 .foregroundColor(.white.opacity(0.8))
                 .padding(.top, 10)
@@ -249,7 +249,7 @@ private struct ProgressIndicatorCard: View {
             Spacer()
             
             Text(data)
-                .font(.subheadline)
+                .font(.system(size: 15))
                 .fontWeight(.bold)
                 .padding(.bottom, 25)
                 .foregroundColor(.white)

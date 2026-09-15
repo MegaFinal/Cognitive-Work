@@ -30,7 +30,7 @@ struct ChoreListLayout: View {
             }
             .padding(.top, 8)
         }
-        .onSwipeDown(action: onSwipeDown)
+        .onPullDownAtTop(action: onSwipeDown)
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
     }
 }

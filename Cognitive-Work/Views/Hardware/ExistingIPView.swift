@@ -43,7 +43,7 @@ struct ExistingIPView: View {
                         .foregroundStyle(.indigo)
                     Text("Parear")
                         .foregroundStyle(.white)
-                        .font(.title2)
+                        .font(.system(size: 22))
                 }
             }
             .padding(.bottom, 20)

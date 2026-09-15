@@ -101,7 +101,7 @@ struct CreateProfileOnboardingView: View {
                 .foregroundStyle(.black.opacity(0.7))
             
             Text("Escolha uma foto e um nome para utilizar no app")
-                .font(.callout)
+                .font(.system(size: 16))
                 .foregroundStyle(.gray)
                 .lineLimit(nil)
         }
