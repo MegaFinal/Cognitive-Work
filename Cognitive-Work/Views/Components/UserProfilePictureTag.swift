@@ -20,16 +20,20 @@ struct UserProfilePictureTag: View {
     var widthMultiplier: Double
     
     var displayedImageData: Data? {
-        if let fileURL = user?.profilePicture?.fileURL {
-            do {
-                return try Data(contentsOf: fileURL)
-            }
-            catch {
-                print("error to convert Image no data")
-                return nil
-            }
+        guard let asset = user?.profilePicture else {
+            print("[\(user?.name ?? "?")] asset nulo")
+            return nil
         }
-        return nil
+        guard let fileURL = asset.fileURL else {
+            print("[\(user?.name ?? "?")] asset sem fileURL")
+            return nil
+        }
+        do {
+            return try Data(contentsOf: fileURL)
+        } catch {
+            print("[\(user?.name ?? "?")] falha ao ler \(fileURL.lastPathComponent): \(error)")
+            return nil
+        }
     }
     
     var body: some View {
@@ -55,14 +59,20 @@ struct UserProfilePictureTag: View {
     }
 }
 
-//TODO: fix preview
-//#Preview {
-//    let mockImageData = UIImage(named: "defaultUser")?.pngData()
-//    
-//    var mockUser = UserModel(
-//        name: "Dayô",
-//        profilePicture: nil, tier: .tier1
-//    )
-//    
-//    UserProfilePictureTag(user: mockUser, widthMultiplier: 0.15)
-//}
+#Preview("Com foto") {
+    let user: UserModel = {
+        let user = UserModel(name: "Dayô", tier: .tier1, ownerRecordName: "preview-owner")
+
+        if let image = UIImage(systemName: "figure.wave")?.withTintColor(.systemBlue),
+           let data = image.pngData() {
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("fish")
+            try? data.write(to: url)
+            user.profilePicture = CKAsset(fileURL: url)
+        }
+
+        return user
+    }()
+
+    return UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+}

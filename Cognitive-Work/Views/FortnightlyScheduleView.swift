@@ -38,5 +38,3 @@ struct FortnightlyScheduleView: View {
         print("Action")
     }
 }
-
-
