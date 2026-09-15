@@ -69,6 +69,10 @@ class OnboardingViewModel {
     /// driven by the initial load, CloudKit pushes, foreground events and a polling fallback.
     private var isCheckingSchedule = false
     
+    /// Session-restore fix: `true` while `Onboarding` reloads the user and house after a
+    /// relaunch. Screens are held back until it is `false`, so no step runs with empty state.
+    var isRestoringSession: Bool = true
+    
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
     ///
@@ -80,19 +84,27 @@ class OnboardingViewModel {
         isLoading = true
         errorMessage = nil
         
-        if let imageData = userProfilePicture?.jpegData(compressionQuality: 0.8) {
-            let imageCKAsset = CloudKitManager.shared.createAsset(from: imageData)
+        // Session-restore fix: the photo is optional in the UI (the button only requires a
+        // name), but the whole body used to be nested inside `if let imageData`, so a profile
+        // without a photo was never created and no error was shown.
+        let imageCKAsset = userProfilePicture?
+            .jpegData(compressionQuality: 0.8)
+            .flatMap { CloudKitManager.shared.createAsset(from: $0) }
+        
+        if let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName {
+            let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1, ownerRecordName: ownerRecordName)
             
-            if let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName {
-                let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1, ownerRecordName: ownerRecordName)
-                
-                if let savedUser = await CloudKitManager.shared.create(newUser) {
-                    self.currentUser = savedUser
-                    self.stateMachine.user = savedUser
-                } else {
-                    errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar usuário."
-                }
+            if let savedUser = await CloudKitManager.shared.create(newUser) {
+                self.currentUser = savedUser
+                self.stateMachine.user = savedUser
+                // Session-restore fix: remember the profile so it can be read back directly
+                // after the app is closed, without depending on a CloudKit query index.
+                CloudKitManager.shared.setCurrentUser(savedUser)
+            } else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar usuário."
             }
+        } else {
+            errorMessage = "Não foi possível acessar sua conta do iCloud. Verifique se você está conectado e tente novamente."
         }
         isLoading = false
     }
@@ -112,6 +124,12 @@ class OnboardingViewModel {
     /// - On failure, populates ``errorMessage``
     @MainActor
     func createHouseAndLinkUser() async {
+        // Session-restore fix: after a relaunch `currentUser` may not be loaded yet (or the
+        // initial load failed). Try once more before reporting a missing profile.
+        if currentUser == nil {
+            await fetchCurrentUser()
+        }
+        
         guard let user = currentUser, let userRecordID = user.recordID else {
             errorMessage = "Seu perfil ainda não foi salvo. Volte e crie o perfil antes de criar a casa."
             return
@@ -386,6 +404,9 @@ class OnboardingViewModel {
             )
         }
         
+        // Session-restore fix: reload the session if it was lost when the app was closed.
+        await reloadSessionIfNeeded()
+        
         // Sync fix: make sure we write to the record housemates can read.
         if let user = currentUser, !CloudKitManager.shared.isHouseUser(user),
            let houseUser = await CloudKitManager.shared.fetchMyHouseUser() {
@@ -540,9 +561,24 @@ class OnboardingViewModel {
     /// ``currentHouse`` live only in memory and are lost when the process ends. Steps past
     /// profile/house creation read those two properties directly, so without this they'd load
     /// a blank screen after a relaunch. Call once when ``Onboarding`` first appears.
+    @MainActor
     func restoreProgressIfNeeded() async {
         guard stateMachine.index > 0 else { return }
-        
+        await reloadSessionIfNeeded()
+    }
+    
+    /// Loads ``currentUser`` and ``currentHouse`` (and mirrors them into ``stateMachine``)
+    /// whenever either is missing.
+    ///
+    /// ## Session-restore fix
+    /// Extracted from ``restoreProgressIfNeeded()`` so screens that write data can call it
+    /// right before writing. Two gaps were also closed:
+    /// - `stateMachine.house` was never restored, so `stateMachine.isOwner` was `nil` after a
+    ///   relaunch — the admin's texts changed and `FortnightlyScheduleView` received
+    ///   `shouldGenerate: false`, never generating the division.
+    /// - `stateMachine.user` was never restored either.
+    @MainActor
+    func reloadSessionIfNeeded() async {
         if currentUser == nil {
             await fetchCurrentUser()
         }
@@ -560,6 +596,10 @@ class OnboardingViewModel {
             currentUser = houseUser
             stateMachine.user = houseUser
         }
+        
+        // Session-restore fix: keep the state machine in step with the restored records.
+        if let currentUser { stateMachine.user = currentUser }
+        if let currentHouse { stateMachine.house = currentHouse }
     }
     
     private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
@@ -622,6 +662,18 @@ class OnboardingViewModel {
         
         let user = await fetchedUser
         let house = await fetchedHouse
+        
+        // Session-restore fix: if onboarding was interrupted mid-flow, resume it instead of
+        // treating the person as a returning user. Before this, an admin who closed the app
+        // after creating the house was sent straight to the main app (rooms, chores and
+        // free time never configured), and a guest whose house fetch briefly failed was thrown
+        // back to "create or enter a house". `restoreProgressIfNeeded()` takes it from here.
+        let hasOnboardingInProgress = stateMachine.flow != .notDefined && stateMachine.index > 0
+        if hasOnboardingInProgress {
+            if let user { currentUser = user; stateMachine.user = user }
+            if let house { currentHouse = house; stateMachine.house = house }
+            return
+        }
         
         if let existingUser = user {
             self.currentUser = existingUser
