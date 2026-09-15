@@ -34,7 +34,7 @@ struct SwipeToCompleteButton: View {
                 
                 Text(isCompleted ? "Concluído" : "Deslize para concluir")
                     .foregroundColor(.black)
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .frame(maxWidth: .infinity)
                     .opacity(isCompleted ? 1.0 : Double(1.0 - (dragOffset / (maxDrag * 0.8))))
                 
@@ -43,7 +43,7 @@ struct SwipeToCompleteButton: View {
                     .frame(width: circleWidth, height: circleWidth)
                     .overlay(
                         Image(systemName: "checkmark")
-                            .font(.title3)
+                            .font(.system(size: 20))
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                     )

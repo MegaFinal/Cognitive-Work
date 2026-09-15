@@ -17,7 +17,7 @@ struct WifiCredentialsView: View {
         NavigationStack {
             VStack(spacing: 20) {
                 Text("Conecte o quadro à sua rede!")
-                    .font(.title3)
+                    .font(.system(size: 20))
                     .bold()
                     .padding(.bottom, 20)
                  
@@ -83,7 +83,7 @@ struct WifiCredentialsView: View {
                 Text("Enviar")
                     .frame(width: 100, height: 44)
                     .foregroundStyle(.white)
-                    .font(.title2)
+                    .font(.system(size: 22))
             }
         }
     }

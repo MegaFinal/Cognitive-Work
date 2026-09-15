@@ -71,7 +71,7 @@ struct GeneralProfileSettingsView: View {
                 }
                 
                 Text("Vibrações ao concluir uma tarefa.")
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .foregroundColor(.secondary)
             }
             
@@ -88,7 +88,7 @@ struct GeneralProfileSettingsView: View {
                 }
                 
                 Text("Pequenos efeitos e animações que servem como um retorno visual.")
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .foregroundColor(.secondary)
             }
             

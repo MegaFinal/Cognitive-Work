@@ -26,7 +26,7 @@ struct StartChoreDivisionOnboardingView: View {
             
             VStack(alignment: .leading, spacing: 20) {
                 Text("Criar divisão de tarefas")
-                    .font(.title.bold())
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.titleGray)
 //               TODO: if isAdmin
                 Text("Para que possamos ajudar no seu dia a dia em sua casa precisamos saber um pouco mais sobre ela!")

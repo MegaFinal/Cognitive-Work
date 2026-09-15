@@ -49,7 +49,7 @@ struct EditProfileView: View {
                     prompt: Text("Seu Nome")
                         .foregroundStyle(.gray)
                 )
-                .font(.largeTitle)
+                .font(.system(size: 34))
                 .frame(width: width * 0.8)
                 .multilineTextAlignment(.center)
                 .bold()
@@ -74,7 +74,7 @@ struct EditProfileView: View {
                     }
                 } label: {
                     Image(systemName: "checkmark")
-                        .font(.caption)
+                        .font(.system(size: 12))
                         .bold()
                         .foregroundColor(.white)
                         .padding(10)

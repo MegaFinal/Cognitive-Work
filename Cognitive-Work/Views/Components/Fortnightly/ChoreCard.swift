@@ -44,10 +44,10 @@ struct ChoreCard: View {
         VStack {
             Text(room?.name ?? "Cômodo")
                 .fontWeight(.regular)
-                .font(.headline)
+                .font(.system(size: 17, weight: .semibold))
             Text(chore.name)
                 .bold()
-                .font(.title)
+                .font(.system(size: 28))
         }
     }
 }

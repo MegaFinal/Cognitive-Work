@@ -40,7 +40,7 @@ struct WaitHouseCreatorSheduleView: View {
                     .padding(.bottom)
                 
                 Text("Aguardando divisão de tarefas...")
-                    .font(.largeTitle)
+                    .font(.system(size: 34))
                     .bold()
                     .multilineTextAlignment(.center)
                 
@@ -77,7 +77,6 @@ struct WaitHouseCreatorSheduleView: View {
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task(priority: .userInitiated) {
                 await viewModel.checkAndAdvanceIfScheduleReady()
-                print("Recebi mudança")
             }
         }
         // Sync fix: pushes that arrived (or were dropped) while the app was in the background

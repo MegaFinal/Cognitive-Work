@@ -53,7 +53,7 @@ struct ResponsibleUserPicker: View {
                 }
             } label: {
                 Image(systemName: "plus")
-                    .font(.title3)
+                    .font(.system(size: 20))
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
                     .frame(width: 38, height: 38)

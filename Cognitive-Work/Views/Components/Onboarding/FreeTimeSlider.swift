@@ -155,7 +155,7 @@ struct FreeTimeSlider: View {
         FreeTimeSlider(rating: $rating, isLoading: .constant(false))
 
         Text("Blocos selecionados: \(rating)")
-            .font(.headline)
+            .font(.system(size: 17, weight: .semibold))
             .contentTransition(.numericText())
             .animation(.default, value: rating)
     }

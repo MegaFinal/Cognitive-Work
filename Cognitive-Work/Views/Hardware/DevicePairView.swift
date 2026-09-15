@@ -27,7 +27,7 @@ struct DevicePairView: View {
     var body: some View {
         VStack(spacing: 0) {
             Text("Pareie seu celular!")
-                .font(.title3)
+                .font(.system(size: 20))
                 .bold()
                 .padding(.bottom, 20)
             TextField("IP do device", text: $hardwareViewModel.deviceIP)
@@ -61,7 +61,7 @@ struct DevicePairView: View {
                     Text("Parear")
                         .frame(width: 150, height: 44)
                         .foregroundStyle(.white)
-                        .font(.title2)
+                        .font(.system(size: 22))
                 }
             }.padding(.bottom, 20)
              
