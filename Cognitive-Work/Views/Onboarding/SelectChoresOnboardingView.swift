@@ -33,10 +33,9 @@ struct SelectChoresOnboardingView: View {
     /// Rooms listed on the screen, each holding its own expansion state.
     @State private var rooms: [RoomModel] = []
     
+    @State private var isLoadingRooms: Bool = true
+    
     /// Placeholder chores rendered inside every expanded room.
-    ///
-    /// > Note: Temporary stand-in for the chores fetched from CloudKit through
-    /// > ``RoomModel/fetchRelatedChores()``.
     @State private var choresDTO: [ChoreDTO] = []
     
     /// Chores the user marked to be split between the residents.
@@ -67,9 +66,14 @@ struct SelectChoresOnboardingView: View {
                         .padding(.bottom, height * 0.025)
                 }
                 
-                if rooms.isEmpty {
+                if isLoadingRooms {
                     ProgressView("Carregando Comodos e Tarefas...")
                         .progressViewStyle(CircularProgressViewStyle())
+                }
+                else if rooms.isEmpty {
+                    Text("Nenhum cômodo padrão foi selecionado para a casa.")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.subTitleGray)
                 }
                 else {
                     ScrollView(showsIndicators: false) {
@@ -102,7 +106,12 @@ struct SelectChoresOnboardingView: View {
             .padding(.trailing, 20)
         }
         .task(id: viewModel.currentHouse?.recordID) {
-            rooms = await viewModel.fetchRooms()
+            isLoadingRooms = true
+            guard viewModel.currentHouse != nil else { return }
+            rooms = await viewModel.fetchRooms().filter {
+                DefaultRoomsOnboarding(rawValue: $0.name) != nil
+            }
+            isLoadingRooms = false
         }
     }
 }

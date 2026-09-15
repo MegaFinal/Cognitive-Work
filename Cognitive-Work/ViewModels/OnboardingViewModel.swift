@@ -50,7 +50,7 @@ class OnboardingViewModel {
         RoomDTO(name: "Área de Serviço", symbol: "washer", color: .purple),
         RoomDTO(name: "Cozinha", symbol: "cooktop", color: .orange),
         RoomDTO(name: "Banheiro", symbol: "toilet", color: .blue),
-        RoomDTO(name: "Outro", symbol: "plus", isAddButton: true, color: .red)
+        RoomDTO(name: "Outro", symbol: "plus", isAddButton: true, color: .white)
     ]
     
     var hasSelectedRooms: Bool {
@@ -217,7 +217,7 @@ class OnboardingViewModel {
     ///   - name: The display name for the new room
     ///   - color: The accent color chosen for the new room
     func addCustomRoom(name: String, color: RoomColor) {
-        let newRoom = RoomDTO(name: name, symbol: "door.left.hand.closed", isSelected: true, color: color)
+        let newRoom = RoomDTO(name: name, symbol: "lamp.table", isSelected: true, color: color)
         let otherButtonIndex = availableRooms.count - 1
         availableRooms.insert(newRoom, at: otherButtonIndex)
     }
