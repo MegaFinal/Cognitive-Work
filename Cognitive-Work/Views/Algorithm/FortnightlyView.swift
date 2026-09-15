@@ -14,6 +14,7 @@ struct FortnightlyView: View {
     
     @State private var viewModel = FortnightlyViewModel()
     @State private var selectedEntry: DailyUsageEntry?
+    @State private var selectedUser: UserModel?
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -62,7 +63,12 @@ struct FortnightlyView: View {
                     users: users,
                     entries: viewModel.usageEntries,
                     startDate: viewModel.startDate,
-                    onSelect: { entry in selectedEntry = entry }
+                    onSelect: { entry in
+                        selectedEntry = entry
+                        selectedUser = viewModel.users.first {
+                            $0.recordID == entry.userID
+                        }
+                    }
                 )
                 
                 legend
@@ -70,7 +76,7 @@ struct FortnightlyView: View {
                 
                 if let entry = selectedEntry,
                    let chore = viewModel.chores.first(where: { $0.recordID == entry.choreID }) {
-                    ChoreCard(chore: chore)
+                    ChoreCard(chore: chore, user: selectedUser)
                 }
             }
         }

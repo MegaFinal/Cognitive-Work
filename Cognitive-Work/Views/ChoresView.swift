@@ -269,14 +269,7 @@ private struct ProgressIndicatorCard: View {
         var banheiro = RoomModel(name: "Banheiro", color: .blue)
         banheiro.recordID = CKRecord.ID(recordName: "preview-banheiro")
 
-        func makeChore(
-            _ name: String,
-            symbol: String,
-            room: RoomModel,
-            frequency: Recurrence,
-            duration: Double,
-            priority: PriorityTag
-        ) -> ChoreModel {
+        func makeChore(_ name: String, symbol: String, room: RoomModel, frequency: Recurrence, duration: Double, priority: PriorityTag) -> ChoreModel {
             let chore = ChoreModel(
                 name: name,
                 description: "Descrição da tarefa \(name.lowercased()).",
