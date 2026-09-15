@@ -9,6 +9,15 @@ import SwiftUI
 
 /// Onboarding step where the house owner waits for every member to finish
 /// filling their free time availability.
+///
+/// ## Sync fix
+/// - The roster was refreshed only by `.task` (once) and `.cloudKitDidChange`. If the admin
+///   opened this screen *before* the guest submitted, and the silent push was throttled or
+///   dropped, the guest stayed "Ainda preenchendo" forever. A foreground re-check and a
+///   polling fallback now close that gap.
+/// - `updateUsers()` can now run several times concurrently (push + foreground + poll). Each
+///   run performs slow network reads, so an older run could finish *after* a newer one and
+///   overwrite fresh data with a stale roster. Only the latest run may publish its result.
 struct WaitUsersFreeTimeOnboardingView: View {
 
     // MARK: - Properties
@@ -19,6 +28,12 @@ struct WaitUsersFreeTimeOnboardingView: View {
     @State private var houseUsers: [UserModel] = []
     @State private var completedUsers: [UserModel] = []
     @State private var pendingUsers: [UserModel] = []
+    
+    /// Sync fix: identifies the most recent `updateUsers()` run; older runs discard their result.
+    @State private var refreshGeneration: Int = 0
+    
+    /// Sync fix: interval of the polling fallback used when no push arrives.
+    private let pollingInterval: Duration = .seconds(15)
 
     var width: CGFloat = UIScreen.main.bounds.width
     var height: CGFloat = UIScreen.main.bounds.height
@@ -84,9 +99,24 @@ struct WaitUsersFreeTimeOnboardingView: View {
 
         .task {
             await updateUsers()
+            
+            // Sync fix: polling fallback, cancelled automatically when the view disappears.
+            while !Task.isCancelled {
+                try? await Task.sleep(for: pollingInterval)
+                guard !Task.isCancelled else { break }
+                await updateUsers()
+            }
         }
 
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            Task {
+                await updateUsers()
+            }
+        }
+        
+        // Sync fix: re-check when the app returns to the foreground, since pushes received
+        // (or dropped) in the background never reach this view.
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             Task {
                 await updateUsers()
             }
@@ -142,12 +172,16 @@ struct WaitUsersFreeTimeOnboardingView: View {
     }
     
     private func updateUsers() async {
-        houseUsers = await viewModel.fetchHouseUsers()
+        // Sync fix: tag this run so a slower, older run can't overwrite a newer result.
+        refreshGeneration += 1
+        let generation = refreshGeneration
+        
+        let fetchedUsers = await viewModel.fetchHouseUsers()
 
         var completed: [UserModel] = []
         var pending: [UserModel] = []
 
-        for user in houseUsers {
+        for user in fetchedUsers {
             let availableTimes = await user.availableTime
 
             if availableTimes.isEmpty {
@@ -157,6 +191,9 @@ struct WaitUsersFreeTimeOnboardingView: View {
             }
         }
 
+        // Sync fix: publish only if no newer refresh started meanwhile.
+        guard generation == refreshGeneration else { return }
+        houseUsers = fetchedUsers
         completedUsers = completed
         pendingUsers = pending
     }

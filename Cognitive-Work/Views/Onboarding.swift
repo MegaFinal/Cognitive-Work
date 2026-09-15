@@ -33,8 +33,12 @@ struct Onboarding: View {
                     Task {
                         if viewModel.currentUser != nil {
                             viewModel.stateMachine.flow = .invitedWithProfile
-                            await viewModel.joinHouse()
-                            viewModel.goToNextView()
+                            // Sync fix: only advance once the guest's in-house record really
+                            // exists. Advancing unconditionally let the guest fill in free time
+                            // with no public record to write it to, so the admin never saw it.
+                            if await viewModel.joinHouse() {
+                                viewModel.goToNextView()
+                            }
                         } else {
                             viewModel.stateMachine.flow = .invitedWithoutProfile
                         }
@@ -42,7 +46,16 @@ struct Onboarding: View {
                 }
         }
         .task {
+            // Sync fix: this debug reset ran on *every* launch of the onboarding flow. For the
+            // guest, `deleteAllRecords()` leaves every shared house, so relaunching the app while
+            // waiting silently removed them from the house and the admin's division could never
+            // reach them. For the admin it wiped the house zone, so the guest's free time had
+            // nowhere to land. Whether sync "worked" therefore depended on whether anyone had
+            // relaunched the app. It now only runs when explicitly opted in for debugging by
+            // adding the `RESET_CLOUDKIT_ON_LAUNCH` compilation condition.
+//            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
             await CloudKitManager.shared.deleteAllRecords()
+//            #endif
             await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {

@@ -52,6 +52,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
         application.registerForRemoteNotifications()
         
+        // Sync fix: subscriptions used to be created only at house creation / join time, and a
+        // failure there was swallowed by `try?`. Re-ensuring them on every launch (the call is
+        // idempotent) repairs a device that would otherwise never receive `.cloudKitDidChange`.
+        Task {
+            try? await CloudKitManager.shared.createSharedSubscription()
+        }
+        
         return true
     }
 }
