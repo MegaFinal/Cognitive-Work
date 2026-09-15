@@ -60,12 +60,19 @@ class CarouselViewModel {
     var filterChoices = ChoreFilters()
     
     /// The list of chores rendered by the UI, respecting active filters.
-    var visibleChores: [ChoreModel] {
+    private(set) var visibleChores: [ChoreModel] = []
+    
+    /// Rebuilds and caches the list of visible chores based on active filters and sorting rules.
+    ///
+    /// This method filters `cardModels` (either applying custom `ChoreFilters` or filtering out completed chores)
+    /// and sorts the resulting array by their next scheduled date and priority tag. The outcome is stored in `visibleChores`
+    /// to prevent expensive O(n log n) computations during high-frequency animations or gesture frames.
+    private func rebuildVisibleChores() {
         let base = isFilterOn
         ? applyFilters(to: cardModels)
         : cardModels.filter { !$0.isDone }
         
-        return base.sorted { a, b in
+        visibleChores = base.sorted { a, b in
             let dateA = nextDate(for: a)
             let dateB = nextDate(for: b)
             
@@ -109,6 +116,9 @@ class CarouselViewModel {
             self.userModels = users
             self.roomModels = rooms
             self.dailyAssignments = assignments
+            
+            // Rebuild visible chores after fetching initial data.
+            self.rebuildVisibleChores()
             
             self.hasFetchedInitially = true
             self.isLoading = false
@@ -224,12 +234,18 @@ class CarouselViewModel {
         }
         
         isFilterOn = true
+        
+        // Rebuild visible chores after changing filters.
+        rebuildVisibleChores()
     }
     
     func resetFilter() {
         isFilterOn = false
         isSelectingFilter = false
         filterChoices = ChoreFilters()
+        
+        //Rebuild visible chores after resetting filters.
+        rebuildVisibleChores()
     }
     
     /// The next scheduled date for a chore, whether it comes from a daily

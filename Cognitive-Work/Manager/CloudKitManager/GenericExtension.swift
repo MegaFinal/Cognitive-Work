@@ -74,10 +74,10 @@ extension CloudKitManager {
         _ type: T.Type,
         predicate: NSPredicate = NSPredicate(value: true)
     ) async -> [T] {
-        /*async*/ let owned = await fetchPrivate(type, predicate: predicate)
-        /*async*/ let shared = await fetchShared(type, predicate: predicate)
-//        let (ownedItems, sharedItems) = await (owned, shared)
-        return owned + shared
+        async let owned = fetchPrivate(type, predicate: predicate)
+        async let shared = fetchShared(type, predicate: predicate)
+        let (ownedItems, sharedItems) = await (owned, shared)
+        return ownedItems + sharedItems
     }
     
     /// Fetches the raw `CKRecord` backing a model, needed for sharing operations.
@@ -203,21 +203,21 @@ extension CloudKitManager {
     }
     
     /// Queries every zone shared with the current user and merges the results.
-    func fetchShared<T: CloudKitSyncable>(
-        _ type: T.Type,
-        predicate: NSPredicate
-    ) async -> [T] {
+    func fetchShared<T: CloudKitSyncable>(_ type: T.Type, predicate: NSPredicate) async -> [T] {
         do {
             let zones = try await sharedDB.allRecordZones()
-            var items: [T] = []
-            
-            for zone in zones {
-                let query = CKQuery(recordType: T.recordType, predicate: predicate)
-                let (results, _) = try await sharedDB.records(matching: query, inZoneWith: zone.zoneID)
-                items.append(contentsOf: results.compactMap { try? $0.1.get() }.compactMap(T.init(record:)))
+            return try await withThrowingTaskGroup(of: [T].self) { group in
+                for zone in zones {
+                    group.addTask {
+                        let query = CKQuery(recordType: T.recordType, predicate: predicate)
+                        let (results, _) = try await self.sharedDB.records(matching: query, inZoneWith: zone.zoneID)
+                        return results.compactMap { try? $0.1.get() }.compactMap(T.init(record:))
+                    }
+                }
+                var all: [T] = []
+                for try await items in group { all.append(contentsOf: items) }
+                return all
             }
-            
-            return items
         } catch {
             errorMessage = "Failed to fetch shared \(T.recordType): \(error.localizedDescription)"
             return []
