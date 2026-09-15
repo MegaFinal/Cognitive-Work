@@ -30,7 +30,7 @@ struct Carousel: View {
                     .foregroundStyle(.white)
             }
             else if viewModel.visibleChores.isEmpty {
-                Text("Nenhuma tarefa no momento")
+                Text("Nenhuma tarefa para hoje")
                     .font(.headline)
                     .foregroundStyle(.black)
             }
