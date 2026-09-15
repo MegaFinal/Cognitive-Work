@@ -186,6 +186,48 @@ extension CloudKitManager {
         return await fetchAll(UserModel.self, predicate: predicate)
     }
     
+    /// Reads every record of `type` stored in one zone, without using `CKQuery`.
+    ///
+    /// Session-restore fix: `CKQuery` only works for fields marked *Queryable* in the CloudKit
+    /// schema. When an index is missing the query throws, the error is swallowed, and callers
+    /// receive `[]` — indistinguishable from "nothing exists". This walks the zone with
+    /// `recordZoneChanges` (the same technique as ``fetchDescendantLevels(of:)``), so it keeps
+    /// working regardless of the schema configuration. Intended as a fallback, not a hot path.
+    ///
+    /// - Parameters:
+    ///   - type: The model type to decode.
+    ///   - zoneID: The zone to scan. The database is picked from the zone's owner.
+    /// - Returns: Every decodable record of that type, or `[]` when the scan fails.
+    func fetchZoneRecords<T: CloudKitSyncable>(
+        _ type: T.Type,
+        inZone zoneID: CKRecordZone.ID
+    ) async -> [T] {
+        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+        var items: [T] = []
+        var token: CKServerChangeToken?
+        
+        repeat {
+            do {
+                let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: token)
+                
+                for (_, result) in changes.modificationResultsByID {
+                    guard let record = try? result.get().record,
+                          record.recordType == T.recordType,
+                          let item = T(record: record)
+                    else { continue }
+                    items.append(item)
+                }
+                
+                token = changes.moreComing ? changes.changeToken : nil
+            } catch {
+                errorMessage = "Failed to scan zone \(zoneID.zoneName): \(error.localizedDescription)"
+                return []
+            }
+        } while token != nil
+        
+        return items
+    }
+    
     /// Queries the current user's own house zone.
     func fetchPrivate<T: CloudKitSyncable>(
         _ type: T.Type,

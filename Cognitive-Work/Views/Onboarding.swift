@@ -25,7 +25,19 @@ struct Onboarding: View {
 
     var body: some View {
         ZStack {
-            stepView(for: viewModel.stateMachine)
+            // Session-restore fix: after a relaunch the persisted step is rendered immediately,
+            // while `currentUser`/`currentHouse` are still being reloaded. Steps could then run
+            // their own `.task`s or accept taps with empty state ("Seu perfil ainda não foi
+            // salvo", "Não foi possível salvar seus horários"). Hold them back until the
+            // session is restored. Fresh starts (step 0) are not affected.
+            Group {
+                if viewModel.isRestoringSession && viewModel.stateMachine.index > 0 {
+                    ProgressView()
+                        .controlSize(.large)
+                } else {
+                    stepView(for: viewModel.stateMachine)
+                }
+            }
                 .onChange(of: viewModel.isOnboardingSkipped) {
                     didOnboard = true
                 }
@@ -46,21 +58,25 @@ struct Onboarding: View {
                 }
         }
         .task {
-            // Sync fix: this debug reset ran on *every* launch of the onboarding flow. For the
-            // guest, `deleteAllRecords()` leaves every shared house, so relaunching the app while
-            // waiting silently removed them from the house and the admin's division could never
-            // reach them. For the admin it wiped the house zone, so the guest's free time had
-            // nowhere to land. Whether sync "worked" therefore depended on whether anyone had
-            // relaunched the app. It now only runs when explicitly opted in for debugging by
-            // adding the `RESET_CLOUDKIT_ON_LAUNCH` compilation condition.
-//            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
+            // Session-restore fix: this guard had been commented out again, which made the app
+            // erase every profile, house and share on each launch while the onboarding progress
+            // (kept in UserDefaults) survived — exactly the "data disappears when I close the
+            // app" behaviour. To reset CloudKit while testing, add `RESET_CLOUDKIT_ON_LAUNCH` to
+            // Build Settings → Active Compilation Conditions (Debug) instead of editing this.
+            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
             await CloudKitManager.shared.deleteAllRecords()
-//            #endif
+            // Session-restore fix: after a reset the saved step points at data that no longer
+            // exists, so start the flow from the beginning too.
+            viewModel.stateMachine.resetProgress()
+            #endif
             await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {
                 await viewModel.restoreProgressIfNeeded()
             }
+            
+            // Session-restore fix: release the steps now that the session is loaded.
+            viewModel.isRestoringSession = false
         }
     }
     
