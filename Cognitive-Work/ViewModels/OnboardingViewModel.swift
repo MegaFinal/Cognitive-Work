@@ -59,6 +59,16 @@ class OnboardingViewModel {
     
     var selectedChores: [ChoreDTO] = []
     
+    var isScheduleReady: Bool = false
+    
+    /// Sync fix: re-entrancy guard for ``joinHouse()``, which can be triggered by the share
+    /// notification and by the accept-link screen at the same time.
+    private var isJoiningHouse = false
+    
+    /// Sync fix: re-entrancy guard for ``checkAndAdvanceIfScheduleReady()``, which is now
+    /// driven by the initial load, CloudKit pushes, foreground events and a polling fallback.
+    private var isCheckingSchedule = false
+    
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
     ///
@@ -224,7 +234,7 @@ class OnboardingViewModel {
         roomModels.append(roomToRepresentChoresToAllHome)
         
         var recordsToSave: [CKRecord] = []
-        for var roomModel in roomModels {
+        for roomModel in roomModels {
             let record = CKRecord(recordType: RoomModel.recordType, zoneID: zoneID)
             roomModel.populate(record: record)
             
@@ -352,19 +362,43 @@ class OnboardingViewModel {
         stateMachine.resetProgress()
     }
     
-    func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async {
+    /// Saves the free time chosen during onboarding on the current user's in-house record.
+    ///
+    /// ## Sync fix
+    /// - Returns whether the write reached CloudKit, so the screen only advances when the
+    ///   admin can actually see the data (it used to advance even when nothing was saved).
+    /// - `Int(timeInHours) * 60` truncated *before* multiplying, so "Até 30 minutos" became
+    ///   `Int(0.5) * 60 == 0`. `setAvailableTimes` skips zero-capacity slots, which left the
+    ///   guest with no availability at all and the admin's screen showing them as pending.
+    /// - After a relaunch, ``currentUser`` could be the *private* profile (invisible to the
+    ///   admin). The in-house record is resolved first so the write lands where the admin reads.
+    @MainActor
+    @discardableResult
+    func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async -> Bool {
         isLoading = true
+        defer { isLoading = false }
         
         let availableTimes = daysOfWeekDTO.map { dayOfWeek in
             AvailableTimeModel(
-                capacityMinutes: Int(dayOfWeek.freeTime.timeInHours) * 60,
+                // Sync fix: multiply first, then round (30 min -> 30, not 0).
+                capacityMinutes: Int((dayOfWeek.freeTime.timeInHours * 60).rounded()),
                 day: Date()
             )
         }
         
-        await currentUser?.setAvailableTimes(availableTimes)
+        // Sync fix: make sure we write to the record housemates can read.
+        if let user = currentUser, !CloudKitManager.shared.isHouseUser(user),
+           let houseUser = await CloudKitManager.shared.fetchMyHouseUser() {
+            currentUser = houseUser
+            stateMachine.user = houseUser
+        }
         
-        isLoading = false
+        guard let user = currentUser,
+              await user.setAvailableTimes(availableTimes) else {
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Não foi possível salvar seus horários. Tente novamente."
+            return false
+        }
+        return true
     }
     
     func fetchHouse() async {
@@ -384,27 +418,47 @@ class OnboardingViewModel {
     /// `recordID` from.
     ///
     /// - Requires ``currentUser`` to already exist (created via ``createUser()``).
+    ///
+    /// ## Sync fix
+    /// - Returns `true` only when the in-house record exists, so callers stop advancing the
+    ///   flow for a guest that was never actually published to the house (the admin could
+    ///   never see their free time).
+    /// - Right after `CKAcceptSharesOperation` finishes, the shared zone is not always listed
+    ///   yet (eventual consistency), so `fetchFirst(HouseModel.self)` could return `nil` and the
+    ///   method bailed out silently. The house lookup is now retried briefly.
+    /// - The profile picture is no longer a hard requirement: a guest without a photo used to
+    ///   hit the `guard` and return with no record and no error (the owner path in
+    ///   `createHouseAndLinkUser()` already treats the photo as optional).
+    /// - `Onboarding`'s `.didAcceptShare` handler and `WaitAcceptLinkOnboardingView.task` can
+    ///   both call this at the same time. A re-entrancy guard and an "already published" check
+    ///   make the call idempotent instead of racing two saves of the same record ID.
     @MainActor
-    func joinHouse() async {
-        async let houseTask = try? CloudKitManager.shared.fetchFirst(HouseModel.self)
+    func joinHouse() async -> Bool {
+        // Sync fix: ignore overlapping calls; the one already running will finish the join.
+        guard !isJoiningHouse else { return false }
+        isJoiningHouse = true
+        defer { isJoiningHouse = false }
+        
+        async let houseTask = resolveJoinedHouse()
         async let ownerIDTask = CloudKitManager.shared.fetchCurrentUserRecordID()
         
         currentHouse = await houseTask
         let ownerRecordName = (await ownerIDTask)?.recordName ?? "error fetch user's ID"
         
         guard let house = currentHouse, let houseRecordID = house.recordID,
-              let profile = currentUser, let profileRecordID = profile.recordID,
-              let profilePicture = profile.profilePicture
+              let profile = currentUser, let profileRecordID = profile.recordID
         else {
+            errorMessage = "Não foi possível encontrar a casa do convite. Tente abrir o link novamente."
             isLoading = false
-            return
+            return false
         }
         
         isLoading = true
         errorMessage = nil
         
         let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
-        let assetCopy = try? duplicateCKAsset(profilePicture)
+        // Sync fix: the photo is optional, mirroring `createHouseAndLinkUser()`.
+        let assetCopy = profile.profilePicture.flatMap { try? duplicateCKAsset($0) }
         
         let sharedUser = UserModel(
             name: profile.name,
@@ -422,19 +476,56 @@ class OnboardingViewModel {
             inHouseZone: houseRecordID.zoneID
         )
         
-        async let saveTask = CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none))
         async let subTask = CloudKitManager.shared.createSharedSubscription()
         
-        if let savedUser = await saveTask {
-            await house.appendUsers([savedUser])
-            self.currentUser = savedUser
-            self.stateMachine.user = savedUser
-            _ = try? await subTask
-        } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
+        // Sync fix: if this device already published its in-house record (resumed session,
+        // or a concurrent call that finished first), reuse it instead of failing on a
+        // duplicate record ID.
+        let existingUser = await CloudKitManager.shared.fetchRecordsByRecordReference(
+            for: UserModel.self,
+            recordReferences: [CKRecord.Reference(recordID: sharedUserID, action: .none)]
+        )?.first
+        
+        var savedUser = existingUser
+        if savedUser == nil {
+            savedUser = await CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none))
+            if let savedUser {
+                await house.appendUsers([savedUser])
+            }
         }
         
+        // Sync fix: always wait for the subscription, so the guest is listening for the
+        // admin's division before it moves on to the waiting screen.
+        _ = try? await subTask
+        
         isLoading = false
+        
+        if let savedUser {
+            self.currentUser = savedUser
+            self.stateMachine.user = savedUser
+            return true
+        } else {
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
+            return false
+        }
+    }
+    
+    /// Resolves the house that was just joined through a share.
+    ///
+    /// Sync fix helper for ``joinHouse()``: the shared zone may take a moment to become visible
+    /// after the share is accepted, so an empty result is retried a few times before giving up.
+    private func resolveJoinedHouse() async -> HouseModel? {
+        let attempts = 4
+        for attempt in 0..<attempts {
+            if let house = try? await CloudKitManager.shared.fetchFirst(HouseModel.self) {
+                return house
+            }
+            // 1s, 2s, 3s back-off between attempts (no wait after the last one).
+            if attempt < attempts - 1 {
+                try? await Task.sleep(for: .seconds(attempt + 1))
+            }
+        }
+        return nil
     }
     
     /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
@@ -458,6 +549,17 @@ class OnboardingViewModel {
         if currentHouse == nil {
             await fetchHouse()
         }
+        
+        // Sync fix: `fetchCurrentUser()` returns the *private* profile. Once a house exists,
+        // every later step (free time, waiting screens) must work with the in-house copy,
+        // otherwise a relaunch in the middle of onboarding made the guest's free time land on a
+        // record the admin can't see.
+        if currentHouse != nil,
+           let user = currentUser, !CloudKitManager.shared.isHouseUser(user),
+           let houseUser = await CloudKitManager.shared.fetchMyHouseUser() {
+            currentUser = houseUser
+            stateMachine.user = houseUser
+        }
     }
     
     private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
@@ -468,6 +570,30 @@ class OnboardingViewModel {
         
         try FileManager.default.copyItem(at: origem, to: destino)
         return CKAsset(fileURL: destino)
+    }
+    
+    // MARK: - Algorithm
+
+    /// Advances the guest past the waiting screen once the admin's division exists.
+    ///
+    /// ## Sync fix
+    /// This is now called from several triggers (initial load, CloudKit push, app returning
+    /// to the foreground, polling fallback). The re-entrancy guard keeps overlapping calls from
+    /// running concurrent queries, and the step is re-checked *after* the network call because
+    /// the flow may have moved on while it was in flight — so the guest can never advance twice.
+    @MainActor
+    func checkAndAdvanceIfScheduleReady() async {
+        guard !isCheckingSchedule else { return }
+        isCheckingSchedule = true
+        defer { isCheckingSchedule = false }
+        
+        let assignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        let scheduleIsReady = !assignments.isEmpty
+        guard scheduleIsReady else { return }
+
+        isScheduleReady = true
+        guard stateMachine.current == .waitAdminScheduling else { return }
+        goToNextView()
     }
     
     // MARK: - Auto Login / Initial Validation

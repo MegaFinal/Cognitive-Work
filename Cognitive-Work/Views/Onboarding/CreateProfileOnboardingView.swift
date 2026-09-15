@@ -53,7 +53,12 @@ struct CreateProfileOnboardingView: View {
                         // so the user actually ends up linked to the house instead of
                         // just holding an accepted CloudKit share with no house record.
                         if viewModel.stateMachine.flow == .invitedWithoutProfile {
-                            await viewModel.joinHouse()
+                            // Sync fix: don't advance a guest who wasn't published to the
+                            // house; the alert below shows `joinHouse()`'s error instead.
+                            guard await viewModel.joinHouse() else {
+                                viewModel.isLoading = false
+                                return
+                            }
                         }
                         viewModel.goToNextView()
                     }

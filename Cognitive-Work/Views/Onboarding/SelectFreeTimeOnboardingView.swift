@@ -71,8 +71,12 @@ struct SelectFreeTimeOnboardingView: View {
                 
                 OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading,isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })) {
                     viewModel.isLoading = true
-                    await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder)
-                    viewModel.goToNextView()
+                    // Sync fix: advance only after the free time is confirmed on the server.
+                    // Moving on regardless left the user "waiting" while the other device
+                    // could never see any availability for them.
+                    if await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) {
+                        viewModel.goToNextView()
+                    }
                     viewModel.isLoading = false
                 }
                 .multilineTextAlignment(.trailing)
@@ -80,6 +84,15 @@ struct SelectFreeTimeOnboardingView: View {
             }
             .padding(.horizontal, width * 0.0865)
             .navigationBarBackButtonHidden()
+        }
+        // Sync fix: report a failed save instead of silently staying (or moving) on.
+        .alert("Não deu para salvar seus horários", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
 }

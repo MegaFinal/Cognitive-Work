@@ -55,6 +55,10 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Maximum number of coupons the user may hold at once.
     var couponLimit: Int
     
+//    var hasSelectedFreeTime: Bool {
+//        return !availableTime.isEmpty
+//    }
+    
     var chores: [ChoreModel] {
         get async {
             if let choresReference {
@@ -194,6 +198,11 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         
         var recordsToSave: [CKRecord] = []
         
+        // Sync fix: CloudKit parent references must use `.none`; normalise the house reference.
+        let parentReference = houseReference.map {
+            CKRecord.Reference(recordID: $0.recordID, action: .none)
+        }
+        
         for (offset, time) in times.enumerated() {
             
             guard time.capacityMinutes > 0 else { continue }
@@ -207,23 +216,35 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
                 
                 let newID = CKRecord.ID(recordName: UUID().uuidString, zoneID: recordID.zoneID)
                 let record = CKRecord(recordType: AvailableTimeModel.recordType, recordID: newID)
+                record.parent = houseReference
                 
                 let linked = AvailableTimeModel(
                     capacityMinutes: time.capacityMinutes,
                     day: futureDay,
                     user: userRef
                 )
-                linked.populate(record: record)
                 
-                recordsToSave.append(record)
-                newRefs.append(CKRecord.Reference(recordID: newID, action: .none))
+                // Sync fix: pass the house as `parent`. The `record.parent` assignment above is
+                // made on a record that is never saved, so the slots were created with no parent.
+                // A guest can only create records inside a hierarchically shared house when
+                // their parent belongs to that share, so every one of these saves was rejected
+                // for invited members and the admin never saw their free time.
+                if let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID, parent: parentReference),
+                   let savedID = saved.recordID {
+                    newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
+                }
             }
         }
+        
+        // Sync fix: if slots were requested but none could be saved, report failure instead of
+        // overwriting the user's availability with an empty list and returning success.
+        let requestedSlots = times.contains { $0.capacityMinutes > 0 }
+        guard !requestedSlots || !newRefs.isEmpty else { return false }
         
         if !recordsToSave.isEmpty {
                 let saveSuccess = await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: recordID.zoneID)
                 guard saveSuccess else { return false }
-            }
+        }
         
         self.availableTimeReference = newRefs
         

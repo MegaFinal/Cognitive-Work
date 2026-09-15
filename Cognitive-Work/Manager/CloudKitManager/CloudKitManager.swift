@@ -99,7 +99,13 @@ class CloudKitManager {
             format: "ownerRecordName == %@",
             recordID.recordName
         )
-        let user = await fetchPrivate(UserModel.self, predicate: predicate).first
+        // Sync fix: for a house owner, the private zone holds *both* the private profile and
+        // the in-house copy (see `houseUserRecordID(for:inHouseZone:)`), and both carry the same
+        // `ownerRecordName`. Taking `.first` returned either one depending on server ordering,
+        // so the "private profile" was sometimes the house copy. Prefer the real profile and
+        // only fall back to whatever matched.
+        let matches = await fetchPrivate(UserModel.self, predicate: predicate)
+        let user = matches.first(where: { !isHouseUser($0) }) ?? matches.first
         return user
         
     }
@@ -124,10 +130,34 @@ class CloudKitManager {
         for privateRecordID: CKRecord.ID,
         inHouseZone zoneID: CKRecordZone.ID
     ) -> CKRecord.ID {
-        CKRecord.ID(
-            recordName: privateRecordID.recordName + houseUserSuffix,
+        // Sync fix: the derivation is now idempotent. Callers such as
+        // `OnboardingViewModel.joinHouse()` pass whatever `currentUser` holds, which after a
+        // resumed session can already be the house copy. Appending the suffix again produced
+        // `"…-house-house"`: the guest's public record (and therefore their free time) was
+        // written under a name nobody ever reads, so the admin kept seeing them as pending.
+        let baseName = recordNameStrippingHouseSuffix(privateRecordID.recordName)
+        return CKRecord.ID(
+            recordName: baseName + houseUserSuffix,
             zoneID: zoneID
         )
+    }
+    
+    /// Removes the in-house suffix from a `recordName`, if present.
+    ///
+    /// Sync fix helper: inverse of ``houseUserRecordID(for:inHouseZone:)``, so a house copy can
+    /// always be traced back to the private profile it was derived from.
+    private func recordNameStrippingHouseSuffix(_ recordName: String) -> String {
+        guard recordName.hasSuffix(houseUserSuffix) else { return recordName }
+        return String(recordName.dropLast(houseUserSuffix.count))
+    }
+    
+    /// Whether `user` is an in-house copy (visible to housemates) rather than the private profile.
+    ///
+    /// Sync fix helper: lets callers make sure free time and chores are written to the record
+    /// the other device actually reads.
+    func isHouseUser(_ user: UserModel) -> Bool {
+        guard let recordName = user.recordID?.recordName else { return false }
+        return recordName.hasSuffix(houseUserSuffix)
     }
     
     func fetchCurrentUserRecordID() async -> CKRecord.ID? {
@@ -330,6 +360,23 @@ class CloudKitManager {
     /// `shouldSendContentAvailable`.
     ///
     /// - Throws: A CloudKit error if either subscription cannot be saved.
+    ///
+    /// ## Sync fix
+    ///
+    /// The two saves used to run back to back inside a single throwing body, so the first
+    /// failure aborted the second one. That made delivery depend on the order of events:
+    /// - The admin needs `private-changes` (guest writes land in the admin's own zone).
+    /// - The guest needs `shared-changes` (the admin's division reaches them through the
+    ///   shared database), but it was saved *second* and was skipped whenever the private
+    ///   save failed first (offline moment, account hiccup, a concurrent call).
+    /// - The only call sites were house creation and `joinHouse()`, both wrapped in `try?`,
+    ///   so any failure was silent and never retried.
+    ///
+    /// Now each database is handled independently, subscriptions that already exist on the
+    /// server are left alone (the call is idempotent), and the method is also invoked on every
+    /// launch from `AppDelegate`, so a subscription that failed once is repaired next time.
+    /// The first error is still rethrown after *both* databases were attempted, keeping the
+    /// original contract for callers.
     func createSharedSubscription() async throws {
         let sharedSubscription = CKDatabaseSubscription(
             subscriptionID: "shared-changes"
@@ -345,8 +392,37 @@ class CloudKitManager {
         sharedSubscription.notificationInfo = notificationInfo
         privateSubscription.notificationInfo = notificationInfo
         
-        try await privateDB.save(privateSubscription)
-        try await sharedDB.save(sharedSubscription)
+        // Sync fix: attempt both, independently, and remember only the first failure.
+        var firstError: Error?
+        
+        for (database, subscription) in [
+            (privateDB, privateSubscription),
+            (sharedDB, sharedSubscription)
+        ] {
+            do {
+                try await saveSubscriptionIfNeeded(subscription, in: database)
+            } catch {
+                errorMessage = "Failed to save subscription \(subscription.subscriptionID): \(error.localizedDescription)"
+                if firstError == nil { firstError = error }
+            }
+        }
+        
+        if let firstError { throw firstError }
+    }
+    
+    /// Saves `subscription` only when the database doesn't already hold one with the same ID.
+    ///
+    /// Sync fix helper for ``createSharedSubscription()``: makes repeated calls (every launch,
+    /// every join) cheap and free of "already exists" failures.
+    private func saveSubscriptionIfNeeded(
+        _ subscription: CKDatabaseSubscription,
+        in database: CKDatabase
+    ) async throws {
+        let existing = try await database.allSubscriptions()
+        guard !existing.contains(where: { $0.subscriptionID == subscription.subscriptionID }) else {
+            return
+        }
+        _ = try await database.save(subscription)
     }
     
     /// Saves a share and returns the invitation link CloudKit assigned to it.
