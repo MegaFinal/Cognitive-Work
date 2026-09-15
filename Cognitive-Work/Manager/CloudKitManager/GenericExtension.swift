@@ -176,14 +176,38 @@ extension CloudKitManager {
     /// - Returns: The users whose `house` reference points at that house. Empty when no house
     ///   is resolved or none match.
     func fetchHouseUsers(of house: HouseModel? = nil) async -> [UserModel] {
-        let defaultHosue = try? await fetchFirst(HouseModel.self)
-        let resolvedHouse = house ?? defaultHosue
+        let defaultHouse = try? await fetchFirst(HouseModel.self)
+        let resolvedHouse = house ?? defaultHouse
         
         guard let houseID = resolvedHouse?.recordID else { return [] }
         
         let reference = CKRecord.Reference(recordID: houseID, action: .none)
         let predicate = NSPredicate(format: "house == %@", reference)
-        return await fetchAll(UserModel.self, predicate: predicate)
+        let users = await fetchAll(UserModel.self, predicate: predicate)
+        
+        return deduplicatedByOwner(users)
+    }
+    
+    /// Deduplicates users who might have both a "private profile" and an "in-house copy"
+    /// sharing the same `ownerRecordName`.
+    ///
+    /// Prefers the record that has a non-nil `houseReference` (the actual in-house copy).
+    private func deduplicatedByOwner(_ users: [UserModel]) -> [UserModel] {
+        var bestByOwner: [String: UserModel] = [:]
+        
+        for user in users {
+            let key = user.ownerRecordName
+            if let existing = bestByOwner[key] {
+                // Prefer the one with a house reference (the in-house copy)
+                if existing.houseReference == nil && user.houseReference != nil {
+                    bestByOwner[key] = user
+                }
+            } else {
+                bestByOwner[key] = user
+            }
+        }
+        
+        return Array(bestByOwner.values)
     }
     
     /// Queries the current user's own house zone.

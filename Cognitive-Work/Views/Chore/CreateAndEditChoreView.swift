@@ -16,7 +16,20 @@ struct CreateAndEditChoreView: View {
     
     init(originalModel: ChoreModel, availableHouseUsers: [UserModel]) {
         self.originalModel = originalModel
-        self._availableHouseUsers = State(initialValue: availableHouseUsers)
+        
+        var bestByOwner: [String: UserModel] = [:]
+        for user in availableHouseUsers {
+            let key = user.ownerRecordName
+            if let existing = bestByOwner[key] {
+                if existing.houseReference == nil && user.houseReference != nil {
+                    bestByOwner[key] = user
+                }
+            } else {
+                bestByOwner[key] = user
+            }
+        }
+        
+        self._availableHouseUsers = State(initialValue: Array(bestByOwner.values))
     }
     
     /// The persisted chore being edited, or an unsaved chore instance when creating a new one.
@@ -162,7 +175,7 @@ struct CreateAndEditChoreView: View {
                                 .imageScale(.small)
                         }
                     }
-//                    ChoreTagPicker(chore: $choreDTO, type: .room, availableRooms: availableRooms)
+                    //                    ChoreTagPicker(chore: $choreDTO, type: .room, availableRooms: availableRooms)
                 }
             }
             .frame(width: width * 0.65)
@@ -315,12 +328,12 @@ fileprivate class MockChoreModel: ChoreModel {
 //    let user2 = UserModel(name: "João", tier: .tier1, recordID: CKRecord.ID(recordName: "user2"))
 //    let user3 = UserModel(name: "Maria", tier: .tier2, recordID: CKRecord.ID(recordName: "user3"))
 //    let allUsers = [user1, user2, user3]
-//    
+//
 //    let check1 = CheckItemModel(name: "Limpar o espelho", isDone: true)
 //    check1.recordID = CKRecord.ID(recordName: "check1")
 //    let check2 = CheckItemModel(name: "Lavar o chão", isDone: false)
 //    check2.recordID = CKRecord.ID(recordName: "check2")
-//    
+//
 //    let mockChore = MockChoreModel(
 //        name: "Lavar Banheiro",
 //        description: "Deixar tudo brilhando e cheiroso",
@@ -330,11 +343,11 @@ fileprivate class MockChoreModel: ChoreModel {
 //        isPublic: false,
 //        priorityTag: .urgent
 //    )
-//    
+//
 //    mockChore.recordID = CKRecord.ID(recordName: "chore_existente")
 //    mockChore.mockUsers = [user1, user2]
 //    mockChore.mockChecklist = [check1, check2]
-//    
+//
 //    NavigationStack {
 //        CreateAndEditChoreView(
 //            originalModel: mockChore,
