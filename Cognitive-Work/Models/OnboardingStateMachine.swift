@@ -78,10 +78,11 @@ class OnboardingStateMachine {
                 .createProfile,
                 .createOrEnterHome,
                 .chooseRooms,
-                .inviteAndConfirmJoin,
-                .setUpScheduleChores,
                 .chooseChores,
                 .chooseFreeTime,
+                .inviteAndConfirmJoin,
+                .setUpScheduleChores,
+                .waitGuestsFreeTime,
                 .scheduleChores
             ]
         case .invitedWithProfile:
@@ -92,8 +93,8 @@ class OnboardingStateMachine {
                 .waitAcceptLink,
                 .inviteAndConfirmJoin,
                 .setUpScheduleChores,
-                .chooseChores,
                 .chooseFreeTime,
+                .waitAdminScheduling,
                 .scheduleChores
             ]
         case .invitedWithoutProfile:
@@ -102,8 +103,8 @@ class OnboardingStateMachine {
                 .createProfile,
                 .inviteAndConfirmJoin,
                 .setUpScheduleChores,
-                .chooseChores,
                 .chooseFreeTime,
+                .waitAdminScheduling,
                 .scheduleChores
             ]
         case .notDefined:

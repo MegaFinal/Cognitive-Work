@@ -101,11 +101,11 @@ struct InviteUsersOnboardingView: View {
             }
             .padding(.top)
             
-            if !isFromSettings {
-                OnboardingSkipButton() {
-                    viewModel.finishOnboarding()
-                }
-            }
+//            if !isFromSettings {
+//                OnboardingSkipButton() {
+//                    viewModel.finishOnboarding()
+//                }
+//            }
         }
         .frame(width: width * 0.84)
         .navigationBarBackButtonHidden(!isFromSettings)

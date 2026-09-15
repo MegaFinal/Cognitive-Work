@@ -11,7 +11,7 @@ import SwiftUI
 @Observable
 @MainActor
 
-final class FortnightlyScheduleViewModel {
+final class ScheduleViewModel {
     var users: [UserModel] = []
     var chores: [ChoreModel] = []
     var errorMessage: String?
@@ -29,6 +29,29 @@ final class FortnightlyScheduleViewModel {
         isLoading = true
         await setup()
         await TaskSchedulerEngine.schedule(chores: chores, users: users)
+        isLoading = false
+    }
+    
+    func loadSchedule(shouldGenerate: Bool) async {
+        isLoading = true
+
+        if shouldGenerate {
+            await setup()
+
+            await TaskSchedulerEngine.schedule(
+                chores: chores,
+                users: users
+            )
+
+            // TODO: implement notification for users when its done loading?
+            NotificationCenter.default.post(
+                name: .cloudKitDidChange,
+                object: nil
+            )
+        }
+
+        await setup()
+        
         isLoading = false
     }
 }

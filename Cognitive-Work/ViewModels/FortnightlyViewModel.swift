@@ -100,66 +100,66 @@ class FortnightlyViewModel {
     // MARK: - Data Processing
     /// Processes raw chores and assignments into a clean array of `DailyUsageEntry` objects.
     func loadUsageEntries() async {
-            var entries: [DailyUsageEntry] = []
-            
-            var assignmentDict: [CKRecord.ID: RecurrentAssignmentModel] = [:]
-            for assignment in recurrentAssignments {
-                if let id = assignment.recordID {
-                    assignmentDict[id] = assignment
-                }
+        var entries: [DailyUsageEntry] = []
+        
+        var assignmentDict: [CKRecord.ID: RecurrentAssignmentModel] = [:]
+        for assignment in recurrentAssignments {
+            if let id = assignment.recordID {
+                assignmentDict[id] = assignment
             }
+        }
+        
+        let userIDs = Set(users.compactMap { $0.recordID })
+        
+        for chore in chores {
+            guard let choreID = chore.recordID else { continue }
             
-            let userIDs = Set(users.compactMap { $0.recordID })
-            
-            for chore in chores {
-                guard let choreID = chore.recordID else { continue }
-                
-                if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                    for ref in refs {
-                        let assignmentID = ref.recordID
-                        
-                        guard let assignment = assignmentDict[assignmentID] else { continue }
-                        
-                        let userID: CKRecord.ID?
-                        if let userRef = assignment.userReference {
-                            userID = userRef.recordID
-                        } else if let userObj = await assignment.user {
-                            userID = userObj.recordID
-                        } else {
-                            userID = nil
-                        }
-                        
-                        guard let finalUserID = userID, userIDs.contains(finalUserID) else { continue }
-                        
-                        entries.append(DailyUsageEntry(
-                            day: assignment.day,
-                            userID: finalUserID,
-                            choreID: choreID,
-                            minutes: chore.duration,
-                            choreName: chore.name
-                        ))
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+                for ref in refs {
+                    let assignmentID = ref.recordID
+                    
+                    guard let assignment = assignmentDict[assignmentID] else { continue }
+                    
+                    let userID: CKRecord.ID?
+                    if let userRef = assignment.userReference {
+                        userID = userRef.recordID
+                    } else if let userObj = await assignment.user {
+                        userID = userObj.recordID
+                    } else {
+                        userID = nil
                     }
-                } else {
-                    guard let dueDate = chore.dueDate,
-                          let responsibleRef = chore.currentResponsibleReference
-                    else { continue }
                     
-                    let responsibleID = responsibleRef.recordID
-                    
-                    guard userIDs.contains(responsibleID) else { continue }
+                    guard let finalUserID = userID, userIDs.contains(finalUserID) else { continue }
                     
                     entries.append(DailyUsageEntry(
-                        day: dueDate,
-                        userID: responsibleID,
+                        day: assignment.day,
+                        userID: finalUserID,
                         choreID: choreID,
                         minutes: chore.duration,
                         choreName: chore.name
                     ))
                 }
-            }
-            
-            await MainActor.run {
-                self.usageEntries = entries
+            } else {
+                guard let dueDate = chore.dueDate,
+                      let responsibleRef = chore.currentResponsibleReference
+                else { continue }
+                
+                let responsibleID = responsibleRef.recordID
+                
+                guard userIDs.contains(responsibleID) else { continue }
+                
+                entries.append(DailyUsageEntry(
+                    day: dueDate,
+                    userID: responsibleID,
+                    choreID: choreID,
+                    minutes: chore.duration,
+                    choreName: chore.name
+                ))
             }
         }
+        
+        await MainActor.run {
+            self.usageEntries = entries
+        }
+    }
 }

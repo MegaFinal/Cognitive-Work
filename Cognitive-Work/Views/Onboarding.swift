@@ -25,7 +25,19 @@ struct Onboarding: View {
 
     var body: some View {
         ZStack {
-            stepView(for: viewModel.stateMachine)
+            // Session-restore fix: after a relaunch the persisted step is rendered immediately,
+            // while `currentUser`/`currentHouse` are still being reloaded. Steps could then run
+            // their own `.task`s or accept taps with empty state ("Seu perfil ainda não foi
+            // salvo", "Não foi possível salvar seus horários"). Hold them back until the
+            // session is restored. Fresh starts (step 0) are not affected.
+            Group {
+                if viewModel.isRestoringSession && viewModel.stateMachine.index > 0 {
+                    ProgressView()
+                        .controlSize(.large)
+                } else {
+                    stepView(for: viewModel.stateMachine)
+                }
+            }
                 .onChange(of: viewModel.isOnboardingSkipped) {
                     didOnboard = true
                 }
@@ -33,8 +45,12 @@ struct Onboarding: View {
                     Task {
                         if viewModel.currentUser != nil {
                             viewModel.stateMachine.flow = .invitedWithProfile
-                            await viewModel.joinHouse()
-                            viewModel.goToNextView()
+                            // Sync fix: only advance once the guest's in-house record really
+                            // exists. Advancing unconditionally let the guest fill in free time
+                            // with no public record to write it to, so the admin never saw it.
+                            if await viewModel.joinHouse() {
+                                viewModel.goToNextView()
+                            }
                         } else {
                             viewModel.stateMachine.flow = .invitedWithoutProfile
                         }
@@ -42,12 +58,25 @@ struct Onboarding: View {
                 }
         }
         .task {
+            // Session-restore fix: this guard had been commented out again, which made the app
+            // erase every profile, house and share on each launch while the onboarding progress
+            // (kept in UserDefaults) survived — exactly the "data disappears when I close the
+            // app" behaviour. To reset CloudKit while testing, add `RESET_CLOUDKIT_ON_LAUNCH` to
+            // Build Settings → Active Compilation Conditions (Debug) instead of editing this.
+            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
             await CloudKitManager.shared.deleteAllRecords()
+            // Session-restore fix: after a reset the saved step points at data that no longer
+            // exists, so start the flow from the beginning too.
+            viewModel.stateMachine.resetProgress()
+            #endif
             await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {
                 await viewModel.restoreProgressIfNeeded()
             }
+            
+            // Session-restore fix: release the steps now that the session is loaded.
+            viewModel.isRestoringSession = false
         }
     }
     
@@ -59,26 +88,44 @@ struct Onboarding: View {
         switch stateMachine.current {
         case .welcome:
             WelcomeOnboardingView(viewModel: $viewModel)
+            
         case .createProfile:
             CreateProfileOnboardingView(viewModel: $viewModel)
+            
         case .createOrEnterHome:
             CreateOrEnterHouseOnboardingView(viewModel: $viewModel)
+            
         case .waitAcceptLink:
             WaitAcceptLinkOnboardingView(viewModel: $viewModel)
+            
         case .chooseRooms:
             SelectRoomsOnboardingView(viewModel: $viewModel)
+            
         case .inviteAndConfirmJoin:
             InviteUsersOnboardingView(viewModel: $viewModel, isFromSettings: false)
+            
         case .setUpScheduleChores:
             StartChoreDivisionOnboardingView(viewModel: $viewModel)
+            
         case .chooseChores:
             SelectChoresOnboardingView(viewModel: $viewModel)
+            
         case .chooseFreeTime:
             SelectFreeTimeOnboardingView(viewModel: $viewModel)
+            
+        case .waitAdminScheduling:
+            WaitHouseCreatorSheduleView(viewModel: $viewModel)
+            
         case .scheduleChores:
-            FortnightlyScheduleView() {
-                viewModel.finishOnboarding()
-            }
+            FortnightlyScheduleView(shouldGenerate: viewModel.stateMachine.isOwner ?? false) {
+                    viewModel.finishOnboarding()
+                }
+        case .waitGuestsFreeTime:
+            WaitUsersFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: false)
+            
+//        case .choreScheduleResult:
+//            FortnightlyView()
+            
         case .none:
             EmptyView()
         }

@@ -59,6 +59,20 @@ class OnboardingViewModel {
     
     var selectedChores: [ChoreDTO] = []
     
+    var isScheduleReady: Bool = false
+    
+    /// Sync fix: re-entrancy guard for ``joinHouse()``, which can be triggered by the share
+    /// notification and by the accept-link screen at the same time.
+    private var isJoiningHouse = false
+    
+    /// Sync fix: re-entrancy guard for ``checkAndAdvanceIfScheduleReady()``, which is now
+    /// driven by the initial load, CloudKit pushes, foreground events and a polling fallback.
+    private var isCheckingSchedule = false
+    
+    /// Session-restore fix: `true` while `Onboarding` reloads the user and house after a
+    /// relaunch. Screens are held back until it is `false`, so no step runs with empty state.
+    var isRestoringSession: Bool = true
+    
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
     ///
@@ -70,19 +84,27 @@ class OnboardingViewModel {
         isLoading = true
         errorMessage = nil
         
-        if let imageData = userProfilePicture?.jpegData(compressionQuality: 0.8) {
-            let imageCKAsset = CloudKitManager.shared.createAsset(from: imageData)
+        // Session-restore fix: the photo is optional in the UI (the button only requires a
+        // name), but the whole body used to be nested inside `if let imageData`, so a profile
+        // without a photo was never created and no error was shown.
+        let imageCKAsset = userProfilePicture?
+            .jpegData(compressionQuality: 0.8)
+            .flatMap { CloudKitManager.shared.createAsset(from: $0) }
+        
+        if let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName {
+            let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1, ownerRecordName: ownerRecordName)
             
-            if let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName {
-                let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1, ownerRecordName: ownerRecordName)
-                
-                if let savedUser = await CloudKitManager.shared.create(newUser) {
-                    self.currentUser = savedUser
-                    self.stateMachine.user = savedUser
-                } else {
-                    errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar usuário."
-                }
+            if let savedUser = await CloudKitManager.shared.create(newUser) {
+                self.currentUser = savedUser
+                self.stateMachine.user = savedUser
+                // Session-restore fix: remember the profile so it can be read back directly
+                // after the app is closed, without depending on a CloudKit query index.
+                CloudKitManager.shared.setCurrentUser(savedUser)
+            } else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar usuário."
             }
+        } else {
+            errorMessage = "Não foi possível acessar sua conta do iCloud. Verifique se você está conectado e tente novamente."
         }
         isLoading = false
     }
@@ -102,6 +124,12 @@ class OnboardingViewModel {
     /// - On failure, populates ``errorMessage``
     @MainActor
     func createHouseAndLinkUser() async {
+        // Session-restore fix: after a relaunch `currentUser` may not be loaded yet (or the
+        // initial load failed). Try once more before reporting a missing profile.
+        if currentUser == nil {
+            await fetchCurrentUser()
+        }
+        
         guard let user = currentUser, let userRecordID = user.recordID else {
             errorMessage = "Seu perfil ainda não foi salvo. Volte e crie o perfil antes de criar a casa."
             return
@@ -224,7 +252,7 @@ class OnboardingViewModel {
         roomModels.append(roomToRepresentChoresToAllHome)
         
         var recordsToSave: [CKRecord] = []
-        for var roomModel in roomModels {
+        for roomModel in roomModels {
             let record = CKRecord(recordType: RoomModel.recordType, zoneID: zoneID)
             roomModel.populate(record: record)
             
@@ -352,19 +380,46 @@ class OnboardingViewModel {
         stateMachine.resetProgress()
     }
     
-    func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async {
+    /// Saves the free time chosen during onboarding on the current user's in-house record.
+    ///
+    /// ## Sync fix
+    /// - Returns whether the write reached CloudKit, so the screen only advances when the
+    ///   admin can actually see the data (it used to advance even when nothing was saved).
+    /// - `Int(timeInHours) * 60` truncated *before* multiplying, so "Até 30 minutos" became
+    ///   `Int(0.5) * 60 == 0`. `setAvailableTimes` skips zero-capacity slots, which left the
+    ///   guest with no availability at all and the admin's screen showing them as pending.
+    /// - After a relaunch, ``currentUser`` could be the *private* profile (invisible to the
+    ///   admin). The in-house record is resolved first so the write lands where the admin reads.
+    @MainActor
+    @discardableResult
+    func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async -> Bool {
         isLoading = true
+        defer { isLoading = false }
         
         let availableTimes = daysOfWeekDTO.map { dayOfWeek in
             AvailableTimeModel(
-                capacityMinutes: Int(dayOfWeek.freeTime.timeInHours) * 60,
+                // Sync fix: multiply first, then round (30 min -> 30, not 0).
+                capacityMinutes: Int((dayOfWeek.freeTime.timeInHours * 60).rounded()),
                 day: Date()
             )
         }
         
-        await currentUser?.setAvailableTimes(availableTimes)
+        // Session-restore fix: reload the session if it was lost when the app was closed.
+        await reloadSessionIfNeeded()
         
-        isLoading = false
+        // Sync fix: make sure we write to the record housemates can read.
+        if let user = currentUser, !CloudKitManager.shared.isHouseUser(user),
+           let houseUser = await CloudKitManager.shared.fetchMyHouseUser() {
+            currentUser = houseUser
+            stateMachine.user = houseUser
+        }
+        
+        guard let user = currentUser,
+              await user.setAvailableTimes(availableTimes) else {
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Não foi possível salvar seus horários. Tente novamente."
+            return false
+        }
+        return true
     }
     
     func fetchHouse() async {
@@ -384,27 +439,47 @@ class OnboardingViewModel {
     /// `recordID` from.
     ///
     /// - Requires ``currentUser`` to already exist (created via ``createUser()``).
+    ///
+    /// ## Sync fix
+    /// - Returns `true` only when the in-house record exists, so callers stop advancing the
+    ///   flow for a guest that was never actually published to the house (the admin could
+    ///   never see their free time).
+    /// - Right after `CKAcceptSharesOperation` finishes, the shared zone is not always listed
+    ///   yet (eventual consistency), so `fetchFirst(HouseModel.self)` could return `nil` and the
+    ///   method bailed out silently. The house lookup is now retried briefly.
+    /// - The profile picture is no longer a hard requirement: a guest without a photo used to
+    ///   hit the `guard` and return with no record and no error (the owner path in
+    ///   `createHouseAndLinkUser()` already treats the photo as optional).
+    /// - `Onboarding`'s `.didAcceptShare` handler and `WaitAcceptLinkOnboardingView.task` can
+    ///   both call this at the same time. A re-entrancy guard and an "already published" check
+    ///   make the call idempotent instead of racing two saves of the same record ID.
     @MainActor
-    func joinHouse() async {
-        async let houseTask = try? CloudKitManager.shared.fetchFirst(HouseModel.self)
+    func joinHouse() async -> Bool {
+        // Sync fix: ignore overlapping calls; the one already running will finish the join.
+        guard !isJoiningHouse else { return false }
+        isJoiningHouse = true
+        defer { isJoiningHouse = false }
+        
+        async let houseTask = resolveJoinedHouse()
         async let ownerIDTask = CloudKitManager.shared.fetchCurrentUserRecordID()
         
         currentHouse = await houseTask
         let ownerRecordName = (await ownerIDTask)?.recordName ?? "error fetch user's ID"
         
         guard let house = currentHouse, let houseRecordID = house.recordID,
-              let profile = currentUser, let profileRecordID = profile.recordID,
-              let profilePicture = profile.profilePicture
+              let profile = currentUser, let profileRecordID = profile.recordID
         else {
+            errorMessage = "Não foi possível encontrar a casa do convite. Tente abrir o link novamente."
             isLoading = false
-            return
+            return false
         }
         
         isLoading = true
         errorMessage = nil
         
         let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
-        let assetCopy = try? duplicateCKAsset(profilePicture)
+        // Sync fix: the photo is optional, mirroring `createHouseAndLinkUser()`.
+        let assetCopy = profile.profilePicture.flatMap { try? duplicateCKAsset($0) }
         
         let sharedUser = UserModel(
             name: profile.name,
@@ -422,19 +497,56 @@ class OnboardingViewModel {
             inHouseZone: houseRecordID.zoneID
         )
         
-        async let saveTask = CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none))
         async let subTask = CloudKitManager.shared.createSharedSubscription()
         
-        if let savedUser = await saveTask {
-            await house.appendUsers([savedUser])
-            self.currentUser = savedUser
-            self.stateMachine.user = savedUser
-            _ = try? await subTask
-        } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
+        // Sync fix: if this device already published its in-house record (resumed session,
+        // or a concurrent call that finished first), reuse it instead of failing on a
+        // duplicate record ID.
+        let existingUser = await CloudKitManager.shared.fetchRecordsByRecordReference(
+            for: UserModel.self,
+            recordReferences: [CKRecord.Reference(recordID: sharedUserID, action: .none)]
+        )?.first
+        
+        var savedUser = existingUser
+        if savedUser == nil {
+            savedUser = await CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none))
+            if let savedUser {
+                await house.appendUsers([savedUser])
+            }
         }
         
+        // Sync fix: always wait for the subscription, so the guest is listening for the
+        // admin's division before it moves on to the waiting screen.
+        _ = try? await subTask
+        
         isLoading = false
+        
+        if let savedUser {
+            self.currentUser = savedUser
+            self.stateMachine.user = savedUser
+            return true
+        } else {
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
+            return false
+        }
+    }
+    
+    /// Resolves the house that was just joined through a share.
+    ///
+    /// Sync fix helper for ``joinHouse()``: the shared zone may take a moment to become visible
+    /// after the share is accepted, so an empty result is retried a few times before giving up.
+    private func resolveJoinedHouse() async -> HouseModel? {
+        let attempts = 4
+        for attempt in 0..<attempts {
+            if let house = try? await CloudKitManager.shared.fetchFirst(HouseModel.self) {
+                return house
+            }
+            // 1s, 2s, 3s back-off between attempts (no wait after the last one).
+            if attempt < attempts - 1 {
+                try? await Task.sleep(for: .seconds(attempt + 1))
+            }
+        }
+        return nil
     }
     
     /// Fetches the current user's own profile record, used to re-hydrate ``currentUser``
@@ -449,15 +561,45 @@ class OnboardingViewModel {
     /// ``currentHouse`` live only in memory and are lost when the process ends. Steps past
     /// profile/house creation read those two properties directly, so without this they'd load
     /// a blank screen after a relaunch. Call once when ``Onboarding`` first appears.
+    @MainActor
     func restoreProgressIfNeeded() async {
         guard stateMachine.index > 0 else { return }
-        
+        await reloadSessionIfNeeded()
+    }
+    
+    /// Loads ``currentUser`` and ``currentHouse`` (and mirrors them into ``stateMachine``)
+    /// whenever either is missing.
+    ///
+    /// ## Session-restore fix
+    /// Extracted from ``restoreProgressIfNeeded()`` so screens that write data can call it
+    /// right before writing. Two gaps were also closed:
+    /// - `stateMachine.house` was never restored, so `stateMachine.isOwner` was `nil` after a
+    ///   relaunch — the admin's texts changed and `FortnightlyScheduleView` received
+    ///   `shouldGenerate: false`, never generating the division.
+    /// - `stateMachine.user` was never restored either.
+    @MainActor
+    func reloadSessionIfNeeded() async {
         if currentUser == nil {
             await fetchCurrentUser()
         }
         if currentHouse == nil {
             await fetchHouse()
         }
+        
+        // Sync fix: `fetchCurrentUser()` returns the *private* profile. Once a house exists,
+        // every later step (free time, waiting screens) must work with the in-house copy,
+        // otherwise a relaunch in the middle of onboarding made the guest's free time land on a
+        // record the admin can't see.
+        if currentHouse != nil,
+           let user = currentUser, !CloudKitManager.shared.isHouseUser(user),
+           let houseUser = await CloudKitManager.shared.fetchMyHouseUser() {
+            currentUser = houseUser
+            stateMachine.user = houseUser
+        }
+        
+        // Session-restore fix: keep the state machine in step with the restored records.
+        if let currentUser { stateMachine.user = currentUser }
+        if let currentHouse { stateMachine.house = currentHouse }
     }
     
     private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
@@ -468,6 +610,30 @@ class OnboardingViewModel {
         
         try FileManager.default.copyItem(at: origem, to: destino)
         return CKAsset(fileURL: destino)
+    }
+    
+    // MARK: - Algorithm
+
+    /// Advances the guest past the waiting screen once the admin's division exists.
+    ///
+    /// ## Sync fix
+    /// This is now called from several triggers (initial load, CloudKit push, app returning
+    /// to the foreground, polling fallback). The re-entrancy guard keeps overlapping calls from
+    /// running concurrent queries, and the step is re-checked *after* the network call because
+    /// the flow may have moved on while it was in flight — so the guest can never advance twice.
+    @MainActor
+    func checkAndAdvanceIfScheduleReady() async {
+        guard !isCheckingSchedule else { return }
+        isCheckingSchedule = true
+        defer { isCheckingSchedule = false }
+        
+        let assignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        let scheduleIsReady = !assignments.isEmpty
+        guard scheduleIsReady else { return }
+
+        isScheduleReady = true
+        guard stateMachine.current == .waitAdminScheduling else { return }
+        goToNextView()
     }
     
     // MARK: - Auto Login / Initial Validation
@@ -496,6 +662,18 @@ class OnboardingViewModel {
         
         let user = await fetchedUser
         let house = await fetchedHouse
+        
+        // Session-restore fix: if onboarding was interrupted mid-flow, resume it instead of
+        // treating the person as a returning user. Before this, an admin who closed the app
+        // after creating the house was sent straight to the main app (rooms, chores and
+        // free time never configured), and a guest whose house fetch briefly failed was thrown
+        // back to "create or enter a house". `restoreProgressIfNeeded()` takes it from here.
+        let hasOnboardingInProgress = stateMachine.flow != .notDefined && stateMachine.index > 0
+        if hasOnboardingInProgress {
+            if let user { currentUser = user; stateMachine.user = user }
+            if let house { currentHouse = house; stateMachine.house = house }
+            return
+        }
         
         if let existingUser = user {
             self.currentUser = existingUser
