@@ -102,9 +102,9 @@ struct ChoreCardListStyle: View {
                                 }
                             }
                         }
+                        .padding(.bottom, 16)
                     }
                 }
-                .padding(.bottom, 12)
             }
             .padding(.horizontal, 28)
         }
@@ -150,4 +150,5 @@ struct ChoreCardListStyle: View {
     ChoreCardListStyle(chore: chore, namespace: namespace, carouselViewModel: vm) {
         print("Tapped")
     }
+//    .frame(width: 200, height: 120)
 }
