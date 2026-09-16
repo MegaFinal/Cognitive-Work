@@ -9,8 +9,9 @@ import SwiftUI
 
 struct HouseSettingsView: View {
     @Bindable var viewModel: HouseEditViewModel
-    
     @State private var showDeleteConfirmation = false
+    
+    @AppStorage("didOnboard") private var didOnboard: Bool = true
     
     var body: some View {
         VStack(spacing: 30) {
@@ -61,6 +62,7 @@ struct HouseSettingsView: View {
             Button("Excluir", role: .destructive) {
                 Task {
                     await viewModel.deleteHouse()
+                    didOnboard = false
                 }
             }
         } message: {
