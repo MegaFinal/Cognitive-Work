@@ -12,14 +12,27 @@ import CloudKit
 
 /// A compact row representation of a chore, utilized in the vertical list layout mode.
 struct ChoreCardListStyle: View {
-    @State var chore: ChoreModel
+    var chore: ChoreModel
     let namespace: Namespace.ID
     
-    var carouselViewModel: CarouselViewModel
+    @Bindable var carouselViewModel: CarouselViewModel
     var onTap: () -> Void = {}
     
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
-    var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
+    
+    var nextDate: Date? { carouselViewModel.nextDate(for: chore) }
+    
+    var targetAssignments: [RecurrentAssignmentModel] {
+        carouselViewModel.getAssignments(for: chore, on: nextDate)
+    }
+    
+    var occurrenceResponsibleUsers: [UserModel] {
+        let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+        return carouselViewModel.userModels.filter { user in
+            guard let id = user.recordID else { return false }
+            return userIDs.contains(id)
+        }
+    }
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -44,9 +57,8 @@ struct ChoreCardListStyle: View {
                 
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 10) {
-                        // MARK: - Responsible users
                         HStack(spacing: -5) {
-                            ForEach(allResponsibleUsers, id: \.recordID) { user in
+                            ForEach(occurrenceResponsibleUsers, id: \.recordID) { user in
                                 UserProfilePictureTag(user: user, widthMultiplier: 0.07)
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
@@ -112,42 +124,5 @@ struct ChoreCardListStyle: View {
         .frame(minHeight: height * 0.14)
         .onTapGesture(perform: onTap)
         .transition(.identity)
-    }
-}
-
-#Preview("Card em lista") {
-    @Previewable @Namespace var namespace
-
-    let room: RoomModel = {
-        var room = RoomModel(name: "Cozinha", color: .orange)
-        room.recordID = CKRecord.ID(recordName: "preview-room")
-        return room
-    }()
-
-    let chore: ChoreModel = {
-        let chore = ChoreModel(
-            name: "Lavar a louça",
-            description: "Depois do jantar",
-            frequency: .daily,
-            duration: 20,
-            isPublic: true,
-            priorityTag: .medium,
-            roomReference: CKRecord.Reference(
-                recordID: CKRecord.ID(recordName: "preview-room"),
-                action: .none
-            )
-        )
-        chore.symbolName = "dishwasher"
-        return chore
-    }()
-
-    let vm: CarouselViewModel = {
-        let vm = CarouselViewModel()
-        vm.roomModels = [room]
-        return vm
-    }()
-
-    ChoreCardListStyle(chore: chore, namespace: namespace, carouselViewModel: vm) {
-        print("Tapped")
     }
 }
