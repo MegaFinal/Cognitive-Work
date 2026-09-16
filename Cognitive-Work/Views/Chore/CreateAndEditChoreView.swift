@@ -100,6 +100,7 @@ struct CreateAndEditChoreView: View {
                     TextField("Descrição da Tarefa", text: $choreDTO.description, axis: .vertical)
                         .font(.system(size: 17))
                         .foregroundColor(.gray)
+                        .characterLimit(250, text: $choreDTO.description)
                 }
                 
                 // MARK: - Checklist
@@ -170,6 +171,7 @@ struct CreateAndEditChoreView: View {
                     )
                     .font(.system(size: 28))
                     .bold()
+                    .characterLimit(18, text: $choreDTO.name)
                     
                     Capsule()
                         .frame(height: height * 0.0015)
