@@ -46,6 +46,7 @@ struct SelectRoomsOnboardingView: View {
                         OnboardingRoomCard(
                             text: roomDraft.name,
                             symbol: roomDraft.symbol,
+                            color: roomDraft.color,
                             isSelected: roomDraft.isSelected
                         )
                         .onTapGesture {
@@ -98,6 +99,7 @@ private struct OnboardingRoomCard: View {
     
     var text: String
     var symbol: String
+    var color: RoomColor
     var isSelected: Bool = false
     
     var body: some View {
@@ -118,7 +120,7 @@ private struct OnboardingRoomCard: View {
         .frame(width: width * 0.42, height: height * 0.2)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .foregroundColor(isSelected ? .blue : .white)
+                .foregroundColor(isSelected ? color.uiColor : .white)
                 .shadow(color: .black.opacity(0.25), radius: 6.85, x: 0, y: 4)
         )
     }

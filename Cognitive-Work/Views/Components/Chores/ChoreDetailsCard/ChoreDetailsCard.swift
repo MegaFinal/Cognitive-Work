@@ -86,8 +86,10 @@ struct ChoreDetailsCard: View {
                 .fontWeight(.thin)
             
             Text(chore.name)
-                .font(.title)
+                .font(.system(size: 25))
                 .fontWeight(.semibold)
+                .multilineTextAlignment(.center)
+                .frame(width: width * 0.7)
             
             HStack(spacing: 12) {
                 CapsuleTag(
@@ -120,13 +122,13 @@ struct ChoreDetailsCard: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(chore.description)
-                    .font(.footnote)
+                    .font(.system(size: 14))
                     .frame(width: width * 0.75, alignment: .leading)
                 
                 HStack {
                     Text("Cômodo")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
                     
                     Spacer()
                     
@@ -140,11 +142,11 @@ struct ChoreDetailsCard: View {
                 
                 HStack {
                     Text("Checklist")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
                     Spacer()
                     Text(nextDate?.formatted(date: .numeric, time: .omitted) ?? "Sem data definida")
-                        .font(.caption)
+                        .font(.system(size: 12))
                 }
                 
                 VStack(alignment: .leading, spacing: 5) {
@@ -167,10 +169,10 @@ struct ChoreDetailsCard: View {
                 }
             } label: {
                 Text("Adiar 1 semana")
-                    .font(.footnote)
+                    .font(.system(size: 13))
                     .foregroundColor(.black)
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal, 25)
             .padding(.vertical, 10)
             .background(.gray.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 22))
@@ -183,7 +185,7 @@ struct ChoreDetailsCard: View {
                 }
             } label: {
                 Text("Adiar 1 dia")
-                    .font(.footnote)
+                    .font(.system(size: 13))
                     .foregroundColor(.black)
             }
             .padding(.horizontal, 32)
@@ -257,12 +259,12 @@ private struct ChecklistItemButton: View {
             HStack {
                 Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(item.isDone ? .black : .gray)
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .semibold))
                 
                 Text(item.name)
                     .strikethrough(item.isDone, color: .gray)
                     .foregroundColor(item.isDone ? .gray : .black)
-                    .font(.footnote)
+                    .font(.system(size: 13))
                     .multilineTextAlignment(.leading)
             }
         }
@@ -270,7 +272,7 @@ private struct ChecklistItemButton: View {
     }
 }
 
-#Preview("Detalhes") {
+#Preview {
     @Previewable @State var isShowingBack = true
     
     let room: RoomModel = {
@@ -292,7 +294,7 @@ private struct ChecklistItemButton: View {
                 action: .none
             )
         )
-        chore.symbolName = "dishwasher"
+        chore.symbolName = "toilet"
         return chore
     }()
     

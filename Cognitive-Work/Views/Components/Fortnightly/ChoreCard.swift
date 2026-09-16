@@ -13,6 +13,7 @@ struct ChoreCard: View {
     var height = UIScreen.main.bounds.height
     
     let chore: ChoreModel
+    let user: UserModel?
     @State var room: RoomModel? = nil
     
     var body: some View {
@@ -27,7 +28,7 @@ struct ChoreCard: View {
                     .padding(.horizontal)
                 
                 
-                ChorePriority(chore: chore)
+                ChorePriority(chore: chore, user: user)
             }
         }
         .foregroundColor(.white)
@@ -44,10 +45,10 @@ struct ChoreCard: View {
         VStack {
             Text(room?.name ?? "Cômodo")
                 .fontWeight(.regular)
-                .font(.headline)
+                .font(.system(size: 17, weight: .semibold))
             Text(chore.name)
                 .bold()
-                .font(.title)
+                .font(.system(size: 28))
         }
     }
 }
@@ -62,7 +63,7 @@ private struct ChorePriority: View {
                 .frame(width: 2)
             
             VStack(alignment: .leading) {
-                UserProfilePictureTag(user: user, widthMultiplier: 0.05)
+                UserProfilePictureTag(user: user, widthMultiplier: 0.08)
 
                 CapsuleTag(
                     tagName: chore.priorityTag.rawValue,
@@ -78,9 +79,6 @@ private struct ChorePriority: View {
                     verticalPadding: 1.5
                 )
             }
-        }
-        .task {
-            user = await chore.currentResponsible ?? nil
         }
         .frame(height: 100)
     }
@@ -100,5 +98,5 @@ private struct ChorePriority: View {
         priorityTag: .urgent
     )
     
-    ChoreCard(chore: mockChore)
+    ChoreCard(chore: mockChore, user: nil)
 }

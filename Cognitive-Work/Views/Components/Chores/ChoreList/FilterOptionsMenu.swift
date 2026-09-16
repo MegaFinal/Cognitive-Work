@@ -73,7 +73,7 @@ struct FilterOptionsMenu: View {
             } label: {
                 HStack {
                     Text("Limpar filtro")
-                        .font(.headline)
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "eraser")
@@ -104,7 +104,7 @@ private struct FilterHeaderButton: View {
         } label: {
             HStack {
                 Text(headerText)
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "chevron.forward")

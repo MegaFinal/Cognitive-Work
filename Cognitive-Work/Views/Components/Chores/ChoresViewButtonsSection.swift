@@ -23,7 +23,7 @@ struct ChoresViewButtonsSection: View {
 //                // TODO: - Get task from list of unasigned tasks
 //            } label: {
 //                Image(systemName: "hand.rays")
-//                    .font(.title)
+//                    .font(.system(size: 28))
 //                    .padding(15)
 //                    .foregroundColor(.black)
 //                    .contentShape(Circle())
@@ -39,7 +39,7 @@ struct ChoresViewButtonsSection: View {
                 showCreateView = true
             } label: {
                 Image(systemName: "plus")
-                    .font(.title)
+                    .font(.system(size: 28))
                     .foregroundColor(.white)
                     .padding(20)
                     .contentShape(Circle())

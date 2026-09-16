@@ -87,10 +87,10 @@ struct ChoreCardListStyle: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(room?.name ?? "Room not found")
-                                    .font(.caption)
+                                    .font(.system(size: 12))
                                 
                                 Text(chore.name)
-                                    .font(.title2)
+                                    .font(.system(size: 22))
                                     .bold()
                             }
                             .foregroundColor(.white)
@@ -110,7 +110,7 @@ struct ChoreCardListStyle: View {
                                     
                                     Image(systemName: chore.isDone ? "checkmark.circle.fill" : "circle.fill")
                                         .foregroundColor(chore.isDone ? .black : .white)
-                                        .font(.title)
+                                        .font(.system(size: 28))
                                 }
                             }
                         }

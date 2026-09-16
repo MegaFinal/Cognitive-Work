@@ -24,7 +24,7 @@ struct CapsuleTag: View {
     
     var body: some View {
         Text(tagName)
-            .font(.footnote)
+            .font(.system(size: 13))
             .foregroundColor(.white)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)

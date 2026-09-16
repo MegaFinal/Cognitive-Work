@@ -88,17 +88,17 @@ struct CreateAndEditChoreView: View {
                         ChoreTagPicker(chore: $choreDTO, type: .frequency)
                     }
                 }
-                .font(.subheadline)
+                .font(.system(size: 15))
                 .fontWeight(.semibold)
                 
                 // MARK: - Description
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Descrição")
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                         .fontWeight(.semibold)
                     
                     TextField("Descrição da Tarefa", text: $choreDTO.description, axis: .vertical)
-                        .font(.body)
+                        .font(.system(size: 17))
                         .foregroundColor(.gray)
                 }
                 
@@ -108,7 +108,7 @@ struct CreateAndEditChoreView: View {
                 // MARK: - Responsible Users
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Responsáveis")
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                         .fontWeight(.semibold)
                     
                     ResponsibleUserPicker(availableUsers: availableHouseUsers, selectedUsers: $choreDTO.responsibleUsers)
@@ -168,7 +168,7 @@ struct CreateAndEditChoreView: View {
                         prompt: Text("Nome da Tarefa")
                             .foregroundStyle(.black)
                     )
-                    .font(.title)
+                    .font(.system(size: 28))
                     .bold()
                     
                     Capsule()
@@ -215,7 +215,7 @@ struct CreateAndEditChoreView: View {
         VStack {
             HStack {
                 Text("Checklist")
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .fontWeight(.semibold)
                 
                 Spacer()
@@ -242,7 +242,7 @@ struct CreateAndEditChoreView: View {
         VStack {
             HStack {
                 Text("Essa tarefa é para a casa?")
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .fontWeight(.semibold)
                 
                 Spacer()
@@ -255,7 +255,7 @@ struct CreateAndEditChoreView: View {
             .frame(width: width * 0.9)
             
             Text("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
-                .font(.subheadline)
+                .font(.system(size: 15))
                 .italic()
                 .foregroundColor(.gray)
         }

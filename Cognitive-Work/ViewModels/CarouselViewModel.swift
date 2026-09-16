@@ -68,9 +68,11 @@ class CarouselViewModel {
     /// and sorts the resulting array by their next scheduled date and priority tag. The outcome is stored in `visibleChores`
     /// to prevent expensive O(n log n) computations during high-frequency animations or gesture frames.
     private func rebuildVisibleChores() {
-        let base = isFilterOn
-        ? applyFilters(to: cardModels)
-        : cardModels.filter { !$0.isDone }
+        
+        let base = layoutMode == .grid ? cardModels.filter { chore in
+            guard !chore.isDone, let date = nextDate(for: chore) else {return false}
+            return Calendar.current.isDateInToday(date)
+        } : (isFilterOn ? applyFilters(to: cardModels) : cardModels.filter { !$0.isDone })
         
         visibleChores = base.sorted { a, b in
             let dateA = nextDate(for: a)
@@ -189,6 +191,7 @@ class CarouselViewModel {
     
     func toggleLayout() {
         layoutMode = layoutMode == .grid ? .list : .grid
+        rebuildVisibleChores()
     }
     
     // MARK: - Filtering Logic
