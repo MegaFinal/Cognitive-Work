@@ -8,7 +8,7 @@
 import Foundation
 import CloudKit
 
-struct RecurrentAssignmentModel : CloudKitSyncable{
+class RecurrentAssignmentModel : CloudKitSyncable{
     static let recordType: String = "DailyAssignmentModel"
     
     var recordID: CKRecord.ID?
@@ -43,7 +43,7 @@ struct RecurrentAssignmentModel : CloudKitSyncable{
         self.choreReference = chore
     }
     
-    init?(record: CKRecord) {
+    required init?(record: CKRecord) {
         guard
             let isCompleted = record["isCompleted"] as? Bool,
             let day = record["day"] as? Date
@@ -61,11 +61,7 @@ struct RecurrentAssignmentModel : CloudKitSyncable{
     func populate(record: CKRecord) {
         record["isCompleted"] = isCompleted
         record["day"] = day
-        if let userReference {
-            record["user"] = userReference
-        }
-        if let choreReference {
-            record["chore"] = choreReference
-        }
+        record["user"] = userReference
+        record["chore"] = choreReference
     }
 }

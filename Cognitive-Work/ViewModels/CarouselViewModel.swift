@@ -127,6 +127,42 @@ class CarouselViewModel {
         }
     }
     
+    /// Refreshes the chores and recurrent assignments after a chore or its responsible user has been modified.
+    func refreshAfterChoreUpdate() async {
+        async let fetchC = CloudKitManager.shared.fetchAll(ChoreModel.self)
+        async let fetchA = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        
+        let (chores, assignments) = await (fetchC, fetchA)
+        
+        await MainActor.run {
+            self.cardModels = chores
+            self.dailyAssignments = assignments
+            self.rebuildVisibleChores()
+        }
+    }
+    
+    /// Retrieves all assignment records corresponding to a specific chore on a given date.
+    func getAssignments(for chore: ChoreModel, on date: Date?) -> [RecurrentAssignmentModel] {
+        guard let date,
+              let refs = chore.dailyAssignmentsReference,
+              !refs.isEmpty
+        else { return [] }
+        
+        let ids = Set(refs.map { $0.recordID })
+        let target = Calendar.current.startOfDay(for: date)
+        
+        return dailyAssignments.filter { assignment in
+            guard let id = assignment.recordID, ids.contains(id) else { return false }
+            return Calendar.current.isDate(assignment.day, inSameDayAs: target)
+        }
+    }
+    
+    /// Retrieves all assignment records for a visible chore on its next scheduled date.
+    func getAssignmentsForActiveContext(for chore: ChoreModel) -> [RecurrentAssignmentModel] {
+        guard let targetDate = nextDate(for: chore) else { return [] }
+        return getAssignments(for: chore, on: targetDate)
+    }
+    
     // MARK: - Synchronous Data Helpers
     
     func getRoom(for chore: ChoreModel) -> RoomModel? {
@@ -144,7 +180,7 @@ class CarouselViewModel {
             })
             return userModels.filter { $0.recordID.map { userIDs.contains($0) } ?? false }
         }
-
+        
         // One-off: explicit rotation list
         guard let refs = chore.allResponsibleUsersReference else { return [] }
         let ids = Set(refs.compactMap { $0.recordID })

@@ -90,7 +90,27 @@ class CloudKitManager {
     ///
     /// - Returns: The current user's profile, or `nil` when nothing was ever persisted or the
     ///   fetch fails.
+    ///
+    /// ## Session-restore fix
+    /// This used to rely *only* on a `CKQuery` over `ownerRecordName`. When that field isn't
+    /// indexed (or the query fails for any other reason) the error was swallowed and the method
+    /// returned `nil`, so after closing the app mid-onboarding every screen lost the profile
+    /// ("Seu perfil ainda não foi salvo", "Não foi possível salvar seus horários"). The lookup
+    /// now tries, in order:
+    /// 1. a direct read by the `recordName` saved with ``setCurrentUser(_:)`` (no index needed);
+    /// 2. the original query;
+    /// 3. an index-free scan of the private house zone.
+    /// Whatever succeeds is remembered for the next launch.
     func fetchMyUser() async -> UserModel? {
+        // Session-restore fix, step 1: direct read by the remembered record name.
+        if let recordName = UserDefaults.standard.string(forKey: currentUserRecordNameKey) {
+            let storedID = CKRecord.ID(recordName: recordName, zoneID: houseZoneID)
+            if let record = try? await privateDB.record(for: storedID),
+               let user = UserModel(record: record) {
+                return user
+            }
+        }
+        
         guard let recordID = await fetchCurrentUserRecordID()
         else { return nil }
         
@@ -105,9 +125,32 @@ class CloudKitManager {
         // so the "private profile" was sometimes the house copy. Prefer the real profile and
         // only fall back to whatever matched.
         let matches = await fetchPrivate(UserModel.self, predicate: predicate)
-        let user = matches.first(where: { !isHouseUser($0) }) ?? matches.first
-        return user
+        if let user = matches.first(where: { !isHouseUser($0) }) ?? matches.first {
+            // Session-restore fix: remember it so the next launch takes step 1.
+            setCurrentUser(user)
+            return user
+        }
         
+        // Session-restore fix, step 3: index-free fallback over the private house zone.
+        let scanned = await fetchZoneRecords(UserModel.self, inZone: houseZoneID)
+            .filter { $0.ownerRecordName == recordID.recordName }
+        if let user = scanned.first(where: { !isHouseUser($0) }) ?? scanned.first {
+            setCurrentUser(user)
+            return user
+        }
+        
+        return nil
+    }
+    
+    /// Remembers which private profile belongs to this device.
+    ///
+    /// Session-restore fix: ``isCurrentUser(_:)`` and ``clearCurrentUser()`` already used this
+    /// key, but nothing ever wrote it, so the profile could only be recovered through a query.
+    /// House copies are ignored: the stored name must always point at the private profile, from
+    /// which the house copy is derived (see ``houseUserRecordID(for:inHouseZone:)``).
+    func setCurrentUser(_ user: UserModel) {
+        guard let recordID = user.recordID, !isHouseUser(user) else { return }
+        UserDefaults.standard.set(recordID.recordName, forKey: currentUserRecordNameKey)
     }
     
     /// The `recordID` a user's in-house copy must be created with.
@@ -543,6 +586,7 @@ extension CloudKitManager {
     func deleteAllPrivateRecords() async -> Bool {
         do {
             _ = try await privateDB.deleteRecordZone(withID: houseZoneID)
+            clearCurrentUser()
         } catch {
             errorMessage = "Failed to delete zone: \(error.localizedDescription)"
             return false

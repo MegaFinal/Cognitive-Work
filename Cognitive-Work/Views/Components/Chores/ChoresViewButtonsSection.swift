@@ -13,6 +13,8 @@ struct ChoresViewButtonsSection: View {
     @State private var houseUsers: [UserModel] = []
     @State private var showCreateView = false
     
+    @Bindable var carouselViewModel: CarouselViewModel
+    
     var body: some View {
         HStack {
             Spacer()
@@ -21,7 +23,7 @@ struct ChoresViewButtonsSection: View {
 //                // TODO: - Get task from list of unasigned tasks
 //            } label: {
 //                Image(systemName: "hand.rays")
-//                    .font(.title)
+//                    .font(.system(size: 28))
 //                    .padding(15)
 //                    .foregroundColor(.black)
 //                    .contentShape(Circle())
@@ -37,7 +39,7 @@ struct ChoresViewButtonsSection: View {
                 showCreateView = true
             } label: {
                 Image(systemName: "plus")
-                    .font(.title)
+                    .font(.system(size: 28))
                     .foregroundColor(.white)
                     .padding(20)
                     .contentShape(Circle())
@@ -61,7 +63,7 @@ struct ChoresViewButtonsSection: View {
                     isPublic: true,
                     priorityTag: .low
                 ),
-                availableHouseUsers: houseUsers
+                availableHouseUsers: houseUsers, carouselViewModel: carouselViewModel
             )
         }
         .task {
@@ -70,6 +72,6 @@ struct ChoresViewButtonsSection: View {
     }
 }
 
-#Preview {
-    ChoresViewButtonsSection()
-}
+//#Preview {
+//    ChoresViewButtonsSection()
+//}

@@ -44,7 +44,7 @@ struct NewRoomSheet: View {
                 VStack {
                     TextField("Nome do Cômodo", text: $text)
                         .frame(width: width * 0.75)
-                        .font(.largeTitle)
+                        .font(.system(size: 34))
                         .bold()
                         .multilineTextAlignment(.center)
                     

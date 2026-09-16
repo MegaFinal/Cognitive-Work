@@ -14,22 +14,48 @@ import CloudKit
 /// is only modified and persisted to CloudKit when the user explicitly confirms the changes.
 struct CreateAndEditChoreView: View {
     
-    init(originalModel: ChoreModel, availableHouseUsers: [UserModel]) {
+    init(originalModel: ChoreModel,
+         availableHouseUsers: [UserModel],
+         carouselViewModel: CarouselViewModel,
+         targetAssignments: [RecurrentAssignmentModel] = []) {
         self.originalModel = originalModel
-        self._availableHouseUsers = State(initialValue: availableHouseUsers)
+        self.carouselViewModel = carouselViewModel
+        self.targetAssignments = targetAssignments
+        
+        var bestByOwner: [String: UserModel] = [:]
+        for user in availableHouseUsers {
+            let key = user.ownerRecordName
+            if let existing = bestByOwner[key] {
+                if existing.houseReference == nil && user.houseReference != nil {
+                    bestByOwner[key] = user
+                }
+            } else {
+                bestByOwner[key] = user
+            }
+        }
+        
+        self._availableHouseUsers = State(initialValue: Array(bestByOwner.values))
+        self._choreDTO = State(initialValue: ChoreDTO(from: originalModel, users: [], checklist: [], room: nil))
+                 
+        self._availableRooms = State(initialValue: [])
+        self._isSaving = State(initialValue: false)
     }
     
     /// The persisted chore being edited, or an unsaved chore instance when creating a new one.
     var originalModel: ChoreModel
     
+    var targetAssignments: [RecurrentAssignmentModel]
+    
     @State private var availableHouseUsers: [UserModel]
     @State private var availableRooms: [RoomModel] = []
     
     /// A local copy of the chore's editable fields to prevent wrong modifications.
-    @State private var choreDTO = ChoreDTO()
+    @State private var choreDTO: ChoreDTO
     
     /// Indicates whether an asynchronous save operation is currently in progress.
     @State private var isSaving = false
+    
+    @Bindable var carouselViewModel: CarouselViewModel
     
     @Environment(\.dismiss) private var dismiss
     
@@ -62,17 +88,17 @@ struct CreateAndEditChoreView: View {
                         ChoreTagPicker(chore: $choreDTO, type: .frequency)
                     }
                 }
-                .font(.subheadline)
+                .font(.system(size: 15))
                 .fontWeight(.semibold)
                 
                 // MARK: - Description
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Descrição")
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                         .fontWeight(.semibold)
                     
                     TextField("Descrição da Tarefa", text: $choreDTO.description, axis: .vertical)
-                        .font(.body)
+                        .font(.system(size: 17))
                         .foregroundColor(.gray)
                         .characterLimit(250, text: $choreDTO.description)
                 }
@@ -83,7 +109,7 @@ struct CreateAndEditChoreView: View {
                 // MARK: - Responsible Users
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Responsáveis")
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                         .fontWeight(.semibold)
                     
                     ResponsibleUserPicker(availableUsers: availableHouseUsers, selectedUsers: $choreDTO.responsibleUsers)
@@ -101,8 +127,23 @@ struct CreateAndEditChoreView: View {
             .frame(width: width * 0.9)
         }
         .task {
-            await loadDraftIfNeeded()
             availableRooms = await CloudKitManager.shared.fetchAll(RoomModel.self)
+            choreDTO.room = await originalModel.room
+             
+            let checklistModels = await originalModel.checkList
+            choreDTO.checklist = checklistModels.map(CheckItemDTO.init(from:))
+            choreDTO.hasChecklist = !choreDTO.checklist.isEmpty
+             
+            if !targetAssignments.isEmpty {
+                let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+                choreDTO.responsibleUsers = availableHouseUsers.filter { user in
+                    guard let id = user.recordID else { return false }
+                    return userIDs.contains(id)
+                }
+            } else if let refs = originalModel.allResponsibleUsersReference {
+                let userIDs = Set(refs.map { $0.recordID })
+                choreDTO.responsibleUsers = availableHouseUsers.filter { userIDs.contains($0.recordID ?? CKRecord.ID(recordName: "")) }
+            }
         }
     }
     
@@ -128,7 +169,7 @@ struct CreateAndEditChoreView: View {
                         prompt: Text("Nome da Tarefa")
                             .foregroundStyle(.black)
                     )
-                    .font(.title)
+                    .font(.system(size: 28))
                     .bold()
                     .characterLimit(18, text: $choreDTO.name)
                     
@@ -164,7 +205,6 @@ struct CreateAndEditChoreView: View {
                                 .imageScale(.small)
                         }
                     }
-//                    ChoreTagPicker(chore: $choreDTO, type: .room, availableRooms: availableRooms)
                 }
             }
             .frame(width: width * 0.65)
@@ -177,7 +217,7 @@ struct CreateAndEditChoreView: View {
         VStack {
             HStack {
                 Text("Checklist")
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .fontWeight(.semibold)
                 
                 Spacer()
@@ -204,7 +244,7 @@ struct CreateAndEditChoreView: View {
         VStack {
             HStack {
                 Text("Essa tarefa é para a casa?")
-                    .font(.subheadline)
+                    .font(.system(size: 15))
                     .fontWeight(.semibold)
                 
                 Spacer()
@@ -217,7 +257,7 @@ struct CreateAndEditChoreView: View {
             .frame(width: width * 0.9)
             
             Text("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
-                .font(.subheadline)
+                .font(.system(size: 15))
                 .italic()
                 .foregroundColor(.gray)
         }
@@ -257,7 +297,10 @@ struct CreateAndEditChoreView: View {
     @MainActor
     private func confirmAndSave() async {
         isSaving = true
-        await originalModel.save(from: choreDTO)
+        
+        await originalModel.save(from: choreDTO, targetAssignments: targetAssignments)
+        await carouselViewModel.refreshAfterChoreUpdate()
+        
         isSaving = false
         dismiss()
     }
@@ -279,68 +322,4 @@ struct CreateAndEditChoreView: View {
             }
         }
     }
-    
-    /// Pre-populates the local copy if editing an existing chore.
-    /// A new chore maintains the empty default copy provided by `ChoreDTO()`.
-    private func loadDraftIfNeeded() async {
-        guard originalModel.recordID != nil else { return }
-        
-        async let checklistModels = originalModel.checkList
-        async let responsibleUsers = originalModel.allResponsibleUsers
-        async let room = originalModel.room
-        
-        choreDTO.duration = originalModel.duration
-        choreDTO.frequency = originalModel.frequency
-        choreDTO.priorityTag = originalModel.priorityTag
-        choreDTO.name = originalModel.name
-        choreDTO.symbolName = originalModel.symbolName
-        choreDTO.originalRecordID = originalModel.recordID
-        choreDTO.room = await room
-        choreDTO.checklist = await checklistModels.map(CheckItemDTO.init(from:))
-        choreDTO.responsibleUsers = await responsibleUsers
-    }
 }
-
-// MARK: - Mock for Preview
-fileprivate class MockChoreModel: ChoreModel {
-    var mockUsers: [UserModel] = []
-    var mockChecklist: [CheckItemModel] = []
-    var mockRoom: RoomModel? = nil
-    
-    override var allResponsibleUsers: [UserModel] { get async { mockUsers } }
-    override var checkList: [CheckItemModel] { get async { mockChecklist } }
-    override var room: RoomModel? { get async { mockRoom } }
-}
-//TODO: FIX PREVIEW
-//#Preview {
-//    let user1 = UserModel(name: "Dayô", tier: .tier1, recordID: CKRecord.ID(recordName: "user1"))
-//    let user2 = UserModel(name: "João", tier: .tier1, recordID: CKRecord.ID(recordName: "user2"))
-//    let user3 = UserModel(name: "Maria", tier: .tier2, recordID: CKRecord.ID(recordName: "user3"))
-//    let allUsers = [user1, user2, user3]
-//    
-//    let check1 = CheckItemModel(name: "Limpar o espelho", isDone: true)
-//    check1.recordID = CKRecord.ID(recordName: "check1")
-//    let check2 = CheckItemModel(name: "Lavar o chão", isDone: false)
-//    check2.recordID = CKRecord.ID(recordName: "check2")
-//    
-//    let mockChore = MockChoreModel(
-//        name: "Lavar Banheiro",
-//        description: "Deixar tudo brilhando e cheiroso",
-//        isDone: false,
-//        frequency: .weekly,
-//        duration: 1800,
-//        isPublic: false,
-//        priorityTag: .urgent
-//    )
-//    
-//    mockChore.recordID = CKRecord.ID(recordName: "chore_existente")
-//    mockChore.mockUsers = [user1, user2]
-//    mockChore.mockChecklist = [check1, check2]
-//    
-//    NavigationStack {
-//        CreateAndEditChoreView(
-//            originalModel: mockChore,
-//            availableHouseUsers: allUsers
-//        )
-//    }
-//}

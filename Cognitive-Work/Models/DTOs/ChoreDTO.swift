@@ -71,7 +71,15 @@ final class ChoreDTO: Identifiable {
     /// Reference to the room this chore belongs to.
     var roomDTO: RoomDTO
     
-    var room: RoomModel?
+    var room: RoomModel? {
+        didSet {
+            if let roomRecordID = room?.recordID {
+                roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
+            } else {
+                roomReference = nil
+            }
+        }
+    }
     var roomReference: CKRecord.Reference?
     
     /// Every user in the rotation for this chore.
@@ -82,6 +90,8 @@ final class ChoreDTO: Identifiable {
     
     /// Whether the chore currently has a checklist enabled in the UI.
     var hasChecklist: Bool = false
+    
+    var dailyAssignmentsReference: [CKRecord.Reference]? = nil
 
     // MARK: - Initialization
     
@@ -122,6 +132,8 @@ final class ChoreDTO: Identifiable {
         self.responsibleUsers = users
         self.checklist = checklist
         self.hasChecklist = !checklist.isEmpty
+        
+        self.dailyAssignmentsReference = model.dailyAssignmentsReference
         
         if let roomModel = room, let roomRecordID = roomModel.recordID {
             self.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)

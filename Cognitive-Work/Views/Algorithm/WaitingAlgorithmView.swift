@@ -30,7 +30,7 @@ struct WaitingAlgorithmView: View {
                 .frame(width: width * 0.4)
                 .padding(.bottom)
             Text("Levantando escalas...")
-                .font(.largeTitle)
+                .font(.system(size: 34))
                 .bold()
             
             VStack(alignment: .center, spacing: 5){

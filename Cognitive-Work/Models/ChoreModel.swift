@@ -224,11 +224,11 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["priorityTag"] = priorityTag.rawValue
         record["image"] = image
         
-        record["checkList"] = checkListReference?.isEmpty == false ? checkListReference : nil
+        record["checkList"] = checkListReference ?? []
         record["currentResponsible"] = currentResponsibleReference
-        record["allResponsibleUsers"] = allResponsibleUsersReference?.isEmpty == false ? allResponsibleUsersReference : nil
+        record["allResponsibleUsers"] = allResponsibleUsersReference ?? []
         record["room"] = roomReference
-        record["dailyAssignment"] = dailyAssignmentsReference?.isEmpty == false ? dailyAssignmentsReference : nil
+        record["dailyAssignment"] = dailyAssignmentsReference ?? []
     }
     
     func postpone(byDays days: Int) async {
@@ -252,19 +252,22 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// checklist items are created. On failure at any step, the method returns early and
     /// leaves ``CloudKitManager/errorMessage`` set with the reason.
     ///
-    /// - Parameter choreDTO: The edited values collected by the create/edit screen.
-    func save(from choreDTO: ChoreDTO) async {
+    /// - Parameters:
+    ///   - choreDTO: The edited values collected by the create/edit screen.
+    ///   - targetAssignments: Optional recurrent assignment instances to update if this is an occurrence of a recurring chore.
+    func save(from choreDTO: ChoreDTO, targetAssignments: [RecurrentAssignmentModel] = []) async {
+        // Copy user-editable fields from the DTO onto the model
         applyEditableFields(from: choreDTO)
         
+        // Validate required CloudKit reference properties from the related room and house
         guard let house = await room?.house,
-                let zoneID = house.recordID?.zoneID,
+              let zoneID = house.recordID?.zoneID,
               let houseReference = await room?.houseReference
-        else {
-            return
-        }
+        else { return }
         
         let parentReference = CKRecord.Reference(recordID: houseReference.recordID, action: .none)
-
+        
+        // Create the record in CloudKit if it's new, ensuring it obtains a valid recordID
         if recordID == nil {
             guard let createdChore = await CloudKitManager.shared.create(self, zoneID: zoneID, parent: parentReference)
             else { return }
@@ -274,8 +277,18 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         guard let choreRecordID = recordID else { return }
         let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
         
+        // Sync and associate checklist items with the saved chore reference
         self.checkListReference = await CheckItemModel.sync(from: choreDTO.checklist, parent: choreReference)
         
+        // Handle recurrent assignments if specific occurrences are being targeted
+        if !targetAssignments.isEmpty {
+            await updateRecurrentAssignments(
+                for: choreDTO.responsibleUsers,
+                targetAssignments: targetAssignments
+            )
+        }
+        
+        // Perform a final update to persist all modified fields to CloudKit
         await CloudKitManager.shared.update(self)
     }
     
@@ -289,8 +302,48 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         isPublic = choreDTO.isPublic
         symbolName = choreDTO.symbolName
         roomReference = choreDTO.roomReference
+        
         allResponsibleUsersReference = choreDTO.responsibleUsers.compactMap { responsibleUser in
             responsibleUser.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
         }
     }
+    
+    /// Updates the user references for specific occurrences of a recurring chore based on selected users.
+    private func updateRecurrentAssignments(
+        for selectedUsers: [UserModel],
+        targetAssignments: [RecurrentAssignmentModel]) async {
+            let selectedUserIDs = Set(selectedUsers.compactMap { $0.recordID })
+            var modelsToUpdate: [RecurrentAssignmentModel] = []
+            
+            // Clear user references for records that are no longer selected
+            for assignment in targetAssignments {
+                guard let userID = assignment.userReference?.recordID,
+                      !selectedUserIDs.contains(userID)
+                else { continue }
+                
+                assignment.userReference = nil
+                modelsToUpdate.append(assignment)
+            }
+            
+            // Fill available slots with newly selected users who aren't yet assigned
+            var freeSlots = targetAssignments.filter { $0.userReference == nil }
+            let alreadyAssignedUserIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+            let needsAssignment = selectedUsers.filter {
+                guard let id = $0.recordID else { return false }
+                return !alreadyAssignedUserIDs.contains(id)
+            }
+            
+            for user in needsAssignment {
+                guard let userID = user.recordID else { continue }
+                guard !freeSlots.isEmpty else { break }
+                let slot = freeSlots.removeFirst()
+                slot.userReference = CKRecord.Reference(recordID: userID, action: .none)
+                modelsToUpdate.append(slot)
+            }
+            
+            // Batch update the modified assignment models in CloudKit
+            if !modelsToUpdate.isEmpty {
+                await CloudKitManager.shared.batchUpdate(modelsToUpdate)
+            }
+        }
 }

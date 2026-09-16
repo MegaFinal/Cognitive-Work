@@ -23,15 +23,21 @@ struct ChoreCarouselCard: View {
     var height = UIScreen.main.bounds.height
     
     var body: some View {
-        VStack {
-            Text(chore.name)
-                .font(.title)
-                .fontWeight(.semibold)
+        ZStack {
+            VStack {
+                Text(chore.name)
+                    .font(.system(size: 26))
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
+                    .frame(width: width * 0.6)
+                Spacer()
+            }
+            .padding(.top, 30)
             
             Image(systemName: chore.symbolName)
                 .resizable()
-                .scaledToFit()
-                .frame(width: width * 0.3, height: height * 0.3)
+                .scaledToFill()
+                .frame(width: width * 0.17, height: height * 0.17)
                 .fontWeight(.ultraLight)
         }
         .foregroundColor(.white)
@@ -57,7 +63,7 @@ struct ChoreCarouselCard: View {
 
     let chore: ChoreModel = {
         let chore = ChoreModel(
-            name: "Lavar a louça",
+            name: "Repor papel e produtos de higiene",
             description: "Depois do jantar",
             frequency: .daily,
             duration: 20,
@@ -68,7 +74,7 @@ struct ChoreCarouselCard: View {
                 action: .none
             )
         )
-        chore.symbolName = "dishwasher"
+        chore.symbolName = "toilet"
         return chore
     }()
 

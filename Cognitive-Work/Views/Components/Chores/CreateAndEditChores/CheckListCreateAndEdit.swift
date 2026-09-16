@@ -25,13 +25,13 @@ struct CheckListCreateAndEdit: View {
                     } label: {
                         Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
                             .foregroundColor(item.isDone ? .black : .gray)
-                            .font(.headline)
+                            .font(.system(size: 17, weight: .semibold))
                     }
                     
                     TextField("Novo item", text: $item.name)
                         .strikethrough(item.isDone, color: .gray)
                         .foregroundColor(item.isDone ? .gray : .black)
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                     
                     Spacer()
                     
@@ -53,7 +53,7 @@ struct CheckListCreateAndEdit: View {
                 HStack {
                     Image(systemName: "plus.circle.fill")
                     Text("Adicionar item")
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                 }
                 .foregroundColor(.blue)
                 .padding(.top, 5)

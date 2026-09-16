@@ -26,6 +26,18 @@ struct ChoreDetailsCard: View {
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
+    var targetAssignments: [RecurrentAssignmentModel] {
+        carouselViewModel.getAssignments(for: chore, on: nextDate)
+    }
+    
+    var occurrenceResponsibleUsers: [UserModel] {
+        let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+        return carouselViewModel.userModels.filter { user in
+            guard let id = user.recordID else { return false }
+            return userIDs.contains(id)
+        }
+    }
+    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
@@ -74,8 +86,10 @@ struct ChoreDetailsCard: View {
                 .fontWeight(.thin)
             
             Text(chore.name)
-                .font(.title)
+                .font(.system(size: 25))
                 .fontWeight(.semibold)
+                .multilineTextAlignment(.center)
+                .frame(width: width * 0.7)
             
             HStack(spacing: 12) {
                 CapsuleTag(
@@ -108,13 +122,13 @@ struct ChoreDetailsCard: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(chore.description)
-                    .font(.footnote)
+                    .font(.system(size: 14))
                     .frame(width: width * 0.75, alignment: .leading)
                 
                 HStack {
                     Text("Cômodo")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
                     
                     Spacer()
                     
@@ -128,11 +142,11 @@ struct ChoreDetailsCard: View {
                 
                 HStack {
                     Text("Checklist")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
                     Spacer()
                     Text(nextDate?.formatted(date: .numeric, time: .omitted) ?? "Sem data definida")
-                        .font(.caption)
+                        .font(.system(size: 12))
                 }
                 
                 VStack(alignment: .leading, spacing: 5) {
@@ -155,10 +169,10 @@ struct ChoreDetailsCard: View {
                 }
             } label: {
                 Text("Adiar 1 semana")
-                    .font(.footnote)
+                    .font(.system(size: 13))
                     .foregroundColor(.black)
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal, 25)
             .padding(.vertical, 10)
             .background(.gray.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 22))
@@ -171,7 +185,7 @@ struct ChoreDetailsCard: View {
                 }
             } label: {
                 Text("Adiar 1 dia")
-                    .font(.footnote)
+                    .font(.system(size: 13))
                     .foregroundColor(.black)
             }
             .padding(.horizontal, 32)
@@ -198,16 +212,18 @@ struct ChoreDetailsCard: View {
             
             Spacer()
             
-            if allResponsibleUsers.count == 1 {
-                UserProfilePictureTag(user: allResponsibleUsers.first, widthMultiplier: 0.1)
+            if occurrenceResponsibleUsers.count == 1 {
+                UserProfilePictureTag(user: occurrenceResponsibleUsers.first, widthMultiplier: 0.1)
             } else {
-                UserProfilePictureList(users: allResponsibleUsers, widthMultiplier: 0.1)
+                UserProfilePictureList(users: occurrenceResponsibleUsers, widthMultiplier: 0.1)
             }
             
             NavigationLink {
                 CreateAndEditChoreView(
                     originalModel: chore,
-                    availableHouseUsers: allResponsibleUsers
+                    availableHouseUsers: carouselViewModel.userModels,
+                    carouselViewModel: carouselViewModel,
+                    targetAssignments: targetAssignments
                 )
             } label: {
                 Image(systemName: "pencil")
@@ -243,12 +259,12 @@ private struct ChecklistItemButton: View {
             HStack {
                 Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(item.isDone ? .black : .gray)
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .semibold))
                 
                 Text(item.name)
                     .strikethrough(item.isDone, color: .gray)
                     .foregroundColor(item.isDone ? .gray : .black)
-                    .font(.footnote)
+                    .font(.system(size: 13))
                     .multilineTextAlignment(.leading)
             }
         }
@@ -256,15 +272,15 @@ private struct ChecklistItemButton: View {
     }
 }
 
-#Preview("Detalhes") {
+#Preview {
     @Previewable @State var isShowingBack = true
-
+    
     let room: RoomModel = {
         var room = RoomModel(name: "Cozinha", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()
-
+    
     let chore: ChoreModel = {
         let chore = ChoreModel(
             name: "Lavar a louça",
@@ -278,15 +294,15 @@ private struct ChecklistItemButton: View {
                 action: .none
             )
         )
-        chore.symbolName = "dishwasher"
+        chore.symbolName = "toilet"
         return chore
     }()
-
+    
     let vm: CarouselViewModel = {
         let vm = CarouselViewModel()
         vm.roomModels = [room]
         return vm
     }()
-
+    
     ChoreDetailsCard(chore: chore, carouselViewModel: vm, isShowingBack: isShowingBack)
 }

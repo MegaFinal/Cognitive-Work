@@ -25,6 +25,7 @@ struct UserProfileView: View {
     @State private var viewModelUser: UserProfileViewModel
     @State private var viewModelHouse = HouseEditViewModel()
     @State private var viewModelHardware = HardwareViewModel()
+    @State private var viewModelOnboarding = OnboardingViewModel()
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -42,7 +43,8 @@ struct UserProfileView: View {
                 SettingsButtonsSection(
                     viewModelUser: viewModelUser,
                     viewModelHouse: viewModelHouse,
-                    viewModelHardware: $viewModelHardware
+                    viewModelHardware: $viewModelHardware,
+                    viewModelOnboarding: $viewModelOnboarding
                 )
                 
                 Spacer()
@@ -122,11 +124,11 @@ struct UserProfileView: View {
                 }
                 
                 Text(viewModelUser.user?.name ?? "")
-                    .font(.title2)
+                    .font(.system(size: 22))
                     .bold()
                 
                 Text(viewModelUser.user?.tier.rawValue ?? "Ranking")
-                    .font(.title3)
+                    .font(.system(size: 20))
                     .fontWeight(.light)
             }
             .padding(.top, (height * 0.25) - (width * 0.25))
@@ -138,6 +140,7 @@ private struct SettingsButtonsSection: View {
     var viewModelUser: UserProfileViewModel
     var viewModelHouse: HouseEditViewModel
     @Binding var viewModelHardware: HardwareViewModel
+    @Binding var viewModelOnboarding: OnboardingViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
@@ -166,6 +169,18 @@ private struct SettingsButtonsSection: View {
             .padding(.horizontal)
             
             NavigationLink {
+                SelectFreeTimeOnboardingView(viewModel: $viewModelOnboarding, isFromSettings: true)
+            } label: {
+                HStack {
+                    Text("Alterar Tempo Livre")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
+            NavigationLink {
                 Group {
                     if viewModelHardware.hardwareIp != nil {
                         ExistingIPView(
@@ -182,4 +197,12 @@ private struct SettingsButtonsSection: View {
             .padding(.horizontal)
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview {
+    let mockViewModel = UserProfileViewModel()
+    
+    return UserProfileView(viewModelUser: mockViewModel)
 }

@@ -12,14 +12,27 @@ import CloudKit
 
 /// A compact row representation of a chore, utilized in the vertical list layout mode.
 struct ChoreCardListStyle: View {
-    @State var chore: ChoreModel
+    var chore: ChoreModel
     let namespace: Namespace.ID
     
-    var carouselViewModel: CarouselViewModel
+    @Bindable var carouselViewModel: CarouselViewModel
     var onTap: () -> Void = {}
     
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
-    var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
+    
+    var nextDate: Date? { carouselViewModel.nextDate(for: chore) }
+    
+    var targetAssignments: [RecurrentAssignmentModel] {
+        carouselViewModel.getAssignments(for: chore, on: nextDate)
+    }
+    
+    var occurrenceResponsibleUsers: [UserModel] {
+        let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+        return carouselViewModel.userModels.filter { user in
+            guard let id = user.recordID else { return false }
+            return userIDs.contains(id)
+        }
+    }
     
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
@@ -44,9 +57,8 @@ struct ChoreCardListStyle: View {
                 
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 10) {
-                        // MARK: - Responsible users
                         HStack(spacing: -5) {
-                            ForEach(allResponsibleUsers, id: \.recordID) { user in
+                            ForEach(occurrenceResponsibleUsers, id: \.recordID) { user in
                                 UserProfilePictureTag(user: user, widthMultiplier: 0.07)
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
@@ -75,10 +87,10 @@ struct ChoreCardListStyle: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(room?.name ?? "Room not found")
-                                    .font(.caption)
+                                    .font(.system(size: 12))
                                 
                                 Text(chore.name)
-                                    .font(.title2)
+                                    .font(.system(size: 22))
                                     .bold()
                             }
                             .foregroundColor(.white)
@@ -98,7 +110,7 @@ struct ChoreCardListStyle: View {
                                     
                                     Image(systemName: chore.isDone ? "checkmark.circle.fill" : "circle.fill")
                                         .foregroundColor(chore.isDone ? .black : .white)
-                                        .font(.title)
+                                        .font(.system(size: 28))
                                 }
                             }
                         }
@@ -150,5 +162,4 @@ struct ChoreCardListStyle: View {
     ChoreCardListStyle(chore: chore, namespace: namespace, carouselViewModel: vm) {
         print("Tapped")
     }
-//    .frame(width: 200, height: 120)
 }

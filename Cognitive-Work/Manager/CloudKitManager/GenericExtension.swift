@@ -176,14 +176,80 @@ extension CloudKitManager {
     /// - Returns: The users whose `house` reference points at that house. Empty when no house
     ///   is resolved or none match.
     func fetchHouseUsers(of house: HouseModel? = nil) async -> [UserModel] {
-        let defaultHosue = try? await fetchFirst(HouseModel.self)
-        let resolvedHouse = house ?? defaultHosue
+        let defaultHouse = try? await fetchFirst(HouseModel.self)
+        let resolvedHouse = house ?? defaultHouse
         
         guard let houseID = resolvedHouse?.recordID else { return [] }
         
         let reference = CKRecord.Reference(recordID: houseID, action: .none)
         let predicate = NSPredicate(format: "house == %@", reference)
-        return await fetchAll(UserModel.self, predicate: predicate)
+        let users = await fetchAll(UserModel.self, predicate: predicate)
+        
+        return deduplicatedByOwner(users)
+    }
+    
+    /// Deduplicates users who might have both a "private profile" and an "in-house copy"
+    /// sharing the same `ownerRecordName`.
+    ///
+    /// Prefers the record that has a non-nil `houseReference` (the actual in-house copy).
+    private func deduplicatedByOwner(_ users: [UserModel]) -> [UserModel] {
+        var bestByOwner: [String: UserModel] = [:]
+        
+        for user in users {
+            let key = user.ownerRecordName
+            if let existing = bestByOwner[key] {
+                // Prefer the one with a house reference (the in-house copy)
+                if existing.houseReference == nil && user.houseReference != nil {
+                    bestByOwner[key] = user
+                }
+            } else {
+                bestByOwner[key] = user
+            }
+        }
+        
+        return Array(bestByOwner.values)
+    }
+    
+    /// Reads every record of `type` stored in one zone, without using `CKQuery`.
+    ///
+    /// Session-restore fix: `CKQuery` only works for fields marked *Queryable* in the CloudKit
+    /// schema. When an index is missing the query throws, the error is swallowed, and callers
+    /// receive `[]` — indistinguishable from "nothing exists". This walks the zone with
+    /// `recordZoneChanges` (the same technique as ``fetchDescendantLevels(of:)``), so it keeps
+    /// working regardless of the schema configuration. Intended as a fallback, not a hot path.
+    ///
+    /// - Parameters:
+    ///   - type: The model type to decode.
+    ///   - zoneID: The zone to scan. The database is picked from the zone's owner.
+    /// - Returns: Every decodable record of that type, or `[]` when the scan fails.
+    func fetchZoneRecords<T: CloudKitSyncable>(
+        _ type: T.Type,
+        inZone zoneID: CKRecordZone.ID
+    ) async -> [T] {
+        let database = zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
+        var items: [T] = []
+        var token: CKServerChangeToken?
+        
+        repeat {
+            do {
+                let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: token)
+                
+                for (_, result) in changes.modificationResultsByID {
+                    guard let record = try? result.get().record,
+                          record.recordType == T.recordType,
+                          let item = T(record: record)
+                    else { continue }
+                    items.append(item)
+                }
+                
+                token = changes.moreComing ? changes.changeToken : nil
+            } catch {
+                errorMessage = "Failed to scan zone \(zoneID.zoneName): \(error.localizedDescription)"
+                return []
+            }
+        } while token != nil
+        
+        return items
     }
     
     /// Queries the current user's own house zone.

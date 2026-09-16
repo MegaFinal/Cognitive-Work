@@ -53,4 +53,28 @@ enum FreeTimeEnum: String{
             self = .none
         }
     }
+    
+    var level: Int {
+        switch self {
+        case .none: return 0
+        case .thirtyMinutes: return 1
+        case .oneHour: return 2
+        case .twoHours: return 3
+        case .threeHours: return 4
+        case .fourHours: return 5
+        case .fiveHours: return 6
+        }
+    }
+    
+    init(minutes: Int) {
+        switch minutes {
+        case ..<1: self = .none
+        case ...30: self = .thirtyMinutes
+        case ...60: self = .oneHour
+        case ...120: self = .twoHours
+        case ...180: self = .threeHours
+        case ...240: self = .fourHours
+        default: self = .fiveHours
+        }
+    }
 }

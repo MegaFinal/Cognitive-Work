@@ -65,7 +65,7 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
             RoomDTO(
                 name: rawValue,
                 symbol: "shower.fill",
-                color: .red )
+                color: .white )
             
         case .homeOffice:
             RoomDTO(

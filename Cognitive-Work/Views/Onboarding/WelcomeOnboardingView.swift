@@ -43,7 +43,7 @@ struct WelcomeOnboardingView: View {
                         if !isExpanded {
                             Text("Seu facilitador de organização doméstica!")
                                 .foregroundColor(.gray)
-                                .font(.title2)
+                                .font(.system(size: 22))
                                 .frame(width: width * 0.7)
                                 .multilineTextAlignment(.center)
                                 .transition(.opacity)
@@ -112,9 +112,8 @@ struct WelcomeOnboardingView: View {
             
             OnboardingProgressButton(text: "Começar", isLoading: viewModel.isLoading) {
                 await viewModel.checkExistingAccount()
-                if viewModel.currentUser == nil {
                     viewModel.goToNextView()
-                }
+                
             }
         }
         .frame(width: width * 0.8)
@@ -128,7 +127,7 @@ struct WelcomeOnboardingView: View {
     private var swipeIndicator: some View {
         VStack(spacing: 10) {
             Image(systemName: "chevron.up")
-                .font(.largeTitle)
+                .font(.system(size: 34))
             
             Text("Deslize para cima para continuar")
         }
