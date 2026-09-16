@@ -26,6 +26,18 @@ struct ChoreDetailsCard: View {
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
+    var targetAssignments: [RecurrentAssignmentModel] {
+        carouselViewModel.getAssignments(for: chore, on: nextDate)
+    }
+    
+    var occurrenceResponsibleUsers: [UserModel] {
+        let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+        return carouselViewModel.userModels.filter { user in
+            guard let id = user.recordID else { return false }
+            return userIDs.contains(id)
+        }
+    }
+    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
@@ -200,16 +212,18 @@ struct ChoreDetailsCard: View {
             
             Spacer()
             
-            if allResponsibleUsers.count == 1 {
-                UserProfilePictureTag(user: allResponsibleUsers.first, widthMultiplier: 0.08)
+            if occurrenceResponsibleUsers.count == 1 {
+                UserProfilePictureTag(user: occurrenceResponsibleUsers.first, widthMultiplier: 0.1)
             } else {
-                UserProfilePictureList(users: allResponsibleUsers, widthMultiplier: 0.08)
+                UserProfilePictureList(users: occurrenceResponsibleUsers, widthMultiplier: 0.1)
             }
             
             NavigationLink {
                 CreateAndEditChoreView(
                     originalModel: chore,
-                    availableHouseUsers: allResponsibleUsers
+                    availableHouseUsers: carouselViewModel.userModels,
+                    carouselViewModel: carouselViewModel,
+                    targetAssignments: targetAssignments
                 )
             } label: {
                 Image(systemName: "pencil")
@@ -260,13 +274,13 @@ private struct ChecklistItemButton: View {
 
 #Preview {
     @Previewable @State var isShowingBack = true
-
+    
     let room: RoomModel = {
         var room = RoomModel(name: "Cozinha", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()
-
+    
     let chore: ChoreModel = {
         let chore = ChoreModel(
             name: "Lavar a louça",
@@ -283,12 +297,12 @@ private struct ChecklistItemButton: View {
         chore.symbolName = "toilet"
         return chore
     }()
-
+    
     let vm: CarouselViewModel = {
         let vm = CarouselViewModel()
         vm.roomModels = [room]
         return vm
     }()
-
+    
     ChoreDetailsCard(chore: chore, carouselViewModel: vm, isShowingBack: isShowingBack)
 }
