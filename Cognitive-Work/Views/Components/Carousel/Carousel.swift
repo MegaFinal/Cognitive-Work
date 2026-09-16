@@ -33,6 +33,8 @@ struct Carousel: View {
                 Text("Nenhuma tarefa no momento")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
             }
             else {
                 // Only render cards near the current viewport to avoid heavy layout costs for off-screen items.
