@@ -19,7 +19,10 @@ struct ChoresView: View {
     
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .gray
-    
+
+    /// Today's chore statistics
+    @State private var dashboard: DashboardModel?
+
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
@@ -108,6 +111,9 @@ struct ChoresView: View {
             await carouselVM.fetchAllData()
             updateActiveRoomColor()
         }
+        .task {
+            await loadDashboard()
+        }
         .task(id: carouselVM.activeIndex) {
             updateActiveRoomColor()
         }
@@ -167,13 +173,27 @@ struct ChoresView: View {
     }
     
     /// Informational segment displaying metric-based progress cards.
+    ///
+    /// Each card is bound to a different statistic from ``dashboard``
     private var progressSection: some View {
         let cardColor = carouselVM.layoutMode == .grid ? activeRoomColor : .black
-        
+
         return HStack(spacing: 10) {
-            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min", color: cardColor)
-            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min", color: cardColor)
-            ProgressIndicatorCard(title: "Tempo médio", data: "1h 30min", color: cardColor)
+            ProgressIndicatorCard(
+                title: "Tempo médio",
+                data: dashboard?.totalTimeFormatted ?? "0h00",
+                color: cardColor
+            )
+            ProgressIndicatorCard(
+                title: "A fazer",
+                data: "\(dashboard?.toDo ?? 0) tarefas",
+                color: cardColor
+            )
+            ProgressIndicatorCard(
+                title: "Concluído",
+                data: dashboard?.completionPercentageString ?? "0%",
+                color: cardColor
+            )
         }
         .padding(.horizontal, 30)
         .animation(.easeInOut, value: activeRoomColor)
@@ -206,7 +226,7 @@ struct ChoresView: View {
             carouselVM.clearFocusedDetails()
         }
     }
-    
+
     /// Updates the background color of the progress section locally to match the focused chore's room color.
     private func updateActiveRoomColor() {
         guard !carouselVM.visibleChores.isEmpty,
@@ -214,14 +234,23 @@ struct ChoresView: View {
             activeRoomColor = .gray
             return
         }
-        
+
         let centeredChore = carouselVM.visibleChores[carouselVM.activeIndex]
-        
+
         if let room = carouselVM.getRoom(for: centeredChore) {
             activeRoomColor = room.color.uiColor
         } else {
             activeRoomColor = .gray
         }
+    }
+
+    /// Loads the signed-in user's profile and uses it to build and populate
+    private func loadDashboard() async {
+        guard let user = await CloudKitManager.shared.fetchMyUser() else { return }
+
+        let model = DashboardModel(user: user)
+        await model.setup()
+        self.dashboard = model
     }
 }
 
