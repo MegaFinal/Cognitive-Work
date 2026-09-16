@@ -13,6 +13,8 @@ struct ChoresViewButtonsSection: View {
     @State private var houseUsers: [UserModel] = []
     @State private var showCreateView = false
     
+    @Bindable var carouselViewModel: CarouselViewModel
+    
     var body: some View {
         HStack {
             Spacer()
@@ -61,7 +63,7 @@ struct ChoresViewButtonsSection: View {
                     isPublic: true,
                     priorityTag: .low
                 ),
-                availableHouseUsers: houseUsers
+                availableHouseUsers: houseUsers, carouselViewModel: carouselViewModel
             )
         }
         .task {
@@ -70,6 +72,6 @@ struct ChoresViewButtonsSection: View {
     }
 }
 
-#Preview {
-    ChoresViewButtonsSection()
-}
+//#Preview {
+//    ChoresViewButtonsSection()
+//}

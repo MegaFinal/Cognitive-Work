@@ -52,7 +52,7 @@ struct ChoresView: View {
                 
                 VStack {
                     Spacer()
-                    ChoresViewButtonsSection()
+                    ChoresViewButtonsSection(carouselViewModel: carouselVM)
                 }
                 
                 // MARK: - Darkening the view if there's a focused card
@@ -106,8 +106,12 @@ struct ChoresView: View {
         }
         .task {
             await carouselVM.fetchAllData()
+            updateActiveRoomColor()
         }
         .task(id: carouselVM.activeIndex) {
+            updateActiveRoomColor()
+        }
+        .task(id: carouselVM.cardModels.count) {
             updateActiveRoomColor()
         }
     }
