@@ -422,6 +422,26 @@ class OnboardingViewModel {
         return true
     }
     
+    /// Loads the free time currently saved for the user, keyed by the row index used in
+    /// `SelectFreeTimeOnboardingView.weekOrder` (0 = Monday … 6 = Sunday).
+    ///
+    /// Used when the screen is opened from the profile to edit existing values.
+    @MainActor
+    func fetchCurrentFreeTime() async -> [Int: FreeTimeEnum] {
+        await reloadSessionIfNeeded()
+        guard let user = currentUser else { return [:] }
+        
+        let calendar = Calendar.current
+        var minutesByIndex: [Int: Int] = [:]
+        
+        for slot in await user.availableTime {
+            let index = (calendar.component(.weekday, from: slot.day) + 5) % 7
+            minutesByIndex[index] = max(minutesByIndex[index] ?? 0, slot.capacityMinutes)
+        }
+        
+        return minutesByIndex.mapValues { FreeTimeEnum(minutes: $0) }
+    }
+    
     func fetchHouse() async {
         currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
     }

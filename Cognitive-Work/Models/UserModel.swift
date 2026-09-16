@@ -9,7 +9,7 @@ import CloudKit
 /// A member of a house, including their gamification progress.
 class UserModel: CloudKitSyncable, Identifiable, Hashable {
     private let localID = UUID().uuidString
-
+    
     var id: String {
         recordID?.recordName ?? localID
     }
@@ -55,9 +55,9 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Maximum number of coupons the user may hold at once.
     var couponLimit: Int
     
-//    var hasSelectedFreeTime: Bool {
-//        return !availableTime.isEmpty
-//    }
+    //    var hasSelectedFreeTime: Bool {
+    //        return !availableTime.isEmpty
+    //    }
     
     var chores: [ChoreModel] {
         get async {
@@ -192,6 +192,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
             return false
         }
         
+        let previousRefs = availableTimeReference ?? []
+        
         let calendar: Calendar = .current
         let userRef = CKRecord.Reference(recordID: recordID, action: .deleteSelf)
         var newRefs: [CKRecord.Reference] = []
@@ -242,13 +244,20 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         guard !requestedSlots || !newRefs.isEmpty else { return false }
         
         if !recordsToSave.isEmpty {
-                let saveSuccess = await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: recordID.zoneID)
-                guard saveSuccess else { return false }
+            let saveSuccess = await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: recordID.zoneID)
+            guard saveSuccess else { return false }
         }
         
         self.availableTimeReference = newRefs
         
-        return await CloudKitManager.shared.update(self)
+        guard await CloudKitManager.shared.update(self) else { return false }
+        
+        let previousIDs = previousRefs.map(\.recordID)
+        if !previousIDs.isEmpty {
+            await CloudKitManager.shared.delete(recordIDs: previousIDs, zoneID: recordID.zoneID)
+        }
+        
+        return true
     }
     
     @discardableResult
@@ -265,7 +274,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         // if they don't have records, compare memory space
         return lhs === rhs
     }
-
+    
     // To conform to Hashable -> creates hash
     func hash(into hasher: inout Hasher) {
         if let recordID {
