@@ -14,7 +14,9 @@ struct HouseEditView: View {
     
     var body: some View {
         VStack {
-            if viewModel.house != nil {
+            if viewModel.isLoading {
+                ProgressView()
+            } else if viewModel.house != nil {
                 if viewModel.isUserAdmin {
                     Button {
                         Task {
@@ -30,8 +32,6 @@ struct HouseEditView: View {
                     }
                     .disabled(viewModel.isDeleting)
                 }
-            } else if viewModel.isLoading {
-                ProgressView()
             } else {
                 Text("Nenhuma casa encontrada.")
                     .foregroundColor(.gray)

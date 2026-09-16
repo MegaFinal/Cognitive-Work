@@ -112,9 +112,8 @@ struct WelcomeOnboardingView: View {
             
             OnboardingProgressButton(text: "Começar", isLoading: viewModel.isLoading) {
                 await viewModel.checkExistingAccount()
-                if viewModel.currentUser == nil {
                     viewModel.goToNextView()
-                }
+                
             }
         }
         .frame(width: width * 0.8)

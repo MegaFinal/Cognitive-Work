@@ -64,7 +64,7 @@ struct Onboarding: View {
             // app" behaviour. To reset CloudKit while testing, add `RESET_CLOUDKIT_ON_LAUNCH` to
             // Build Settings → Active Compilation Conditions (Debug) instead of editing this.
 //            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
-            await CloudKitManager.shared.deleteAllRecords()
+//            await CloudKitManager.shared.deleteAllRecords()
             // Session-restore fix: after a reset the saved step points at data that no longer
             // exists, so start the flow from the beginning too.
             viewModel.stateMachine.resetProgress()
