@@ -15,7 +15,16 @@ import CloudKit
 /// postponement actions, and a completion swipe toggle.
 struct ChoreDetailsCard: View {
     @Bindable var chore: ChoreModel
+    /// The specific occurrence this card represents, when opened from the list
+    /// layout. `nil` in the grid, where the card stands for the chore as a whole.
+    var recurrentAssignment: RecurrentAssignmentModel?
+    
     @Bindable var carouselViewModel: CarouselViewModel
+    
+    /// The day being shown: this occurrence's own day, or the chore's next date.
+    var occurrenceDate: Date? {
+        recurrentAssignment?.day ?? nextDate
+    }
     
     var nextDate: Date? { carouselViewModel.nextDate(for: chore) }
     
@@ -27,7 +36,9 @@ struct ChoreDetailsCard: View {
     var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
     var targetAssignments: [RecurrentAssignmentModel] {
-        carouselViewModel.getAssignments(for: chore, on: nextDate)
+        // A card opened from a specific occurrence shows only that one
+        if let recurrentAssignment { return [recurrentAssignment] }
+        return carouselViewModel.getAssignments(for: chore, on: nextDate)
     }
     
     var occurrenceResponsibleUsers: [UserModel] {
@@ -145,7 +156,7 @@ struct ChoreDetailsCard: View {
                         .font(.system(size: 15))
                         .fontWeight(.semibold)
                     Spacer()
-                    Text(nextDate?.formatted(date: .numeric, time: .omitted) ?? "Sem data definida")
+                    Text(occurrenceDate?.formatted(date: .numeric, time: .omitted) ?? "Sem data definida")
                         .font(.system(size: 12))
                 }
                 

@@ -25,6 +25,7 @@ class CarouselViewModel {
     var roomModels: [RoomModel] = []
     var userModels: [UserModel] = []
     var dailyAssignments: [RecurrentAssignmentModel] = []
+    private var assignmentsByChore: [CKRecord.ID: [RecurrentAssignmentModel]] = [:]
     
     // MARK: - UI & Layout State
     
@@ -47,6 +48,11 @@ class CarouselViewModel {
     private var flippedIndices: Set<Int> = []
     /// Tracks which cards should render their back face based on animation timing.
     private var backVisibleIndices: Set<Int> = []
+    /// The occurrence backing the details card in the list layout.
+    var focusedOccurrence: ChoreOccurrence? {
+        guard let focusedIndex, visibleOccurrences.indices.contains(focusedIndex) else { return nil }
+        return visibleOccurrences[focusedIndex]
+    }
     
     // Constants for animation tuning
     private let flipDuration: Double = 0.6
@@ -61,6 +67,79 @@ class CarouselViewModel {
     
     /// The list of chores rendered by the UI, respecting active filters.
     private(set) var visibleChores: [ChoreModel] = []
+    
+    /// Occurrences rendered by the list layout — one row per scheduled day.
+    private(set) var visibleOccurrences: [ChoreOccurrence] = []
+    
+    /// How many future occurrences of the same chore the list shows.
+    private let occurrencesPerChore = 3
+    
+    /// Rebuilds the flattened list of occurrences from the currently visible chores.
+    ///
+    /// Recurring chores contribute one row per future assignment (capped by
+    /// `occurrencesPerChore`); one-off chores contribute a single row.
+    private func rebuildVisibleOccurrences() {
+        let selectedUserIDs = Set(filterChoices.users.compactMap { $0.recordID })
+        var occurrences: [ChoreOccurrence] = []
+        
+        for chore in visibleChores {
+            let assignments = futureAssignments(for: chore)
+            
+            if assignments.isEmpty {
+                // One-off chore: filtered by its own responsible and done state
+                if isFilterOn {
+                    if !selectedUserIDs.isEmpty,
+                       let responsibleID = chore.currentResponsibleReference?.recordID,
+                       !selectedUserIDs.contains(responsibleID) { continue }
+                    
+                    if let state = filterChoices.state, chore.isDone != state { continue }
+                }
+                occurrences.append(ChoreOccurrence(chore: chore, assignment: nil))
+            } else {
+                let matching = assignments.filter { assignment in
+                    guard isFilterOn else { return true }
+                    
+                    if !selectedUserIDs.isEmpty {
+                        guard let userID = assignment.userReference?.recordID,
+                              selectedUserIDs.contains(userID) else { return false }
+                    }
+                    
+                    if let state = filterChoices.state, assignment.isCompleted != state {
+                        return false
+                    }
+                    
+                    return true
+                }
+                
+                for assignment in matching.prefix(occurrencesPerChore) {
+                    occurrences.append(ChoreOccurrence(chore: chore, assignment: assignment))
+                }
+            }
+        }
+        
+        // Chronological across all chores, so the user reads the list as a schedule
+        visibleOccurrences = occurrences.sorted { a, b in
+            // Completed occurrences sink to the bottom, whatever their date
+            let doneA = a.assignment?.isCompleted ?? a.chore.isDone
+            let doneB = b.assignment?.isCompleted ?? b.chore.isDone
+            if doneA != doneB { return !doneA }
+            
+            switch (a.day, b.day) {
+            case let (dA?, dB?) where dA != dB: return dA < dB
+            case (nil, _?): return false
+            case (_?, nil): return true
+            default: break
+            }
+            
+            return a.chore.priorityTag.intValue > b.chore.priorityTag.intValue
+        }
+    }
+    
+    /// Recomputes the visible lists after a local change, without hitting CloudKit.
+    @MainActor
+    func refreshVisible() {
+        rebuildVisibleChores()
+    }
     
     /// Rebuilds and caches the list of visible chores based on active filters and sorting rules.
     ///
@@ -87,6 +166,8 @@ class CarouselViewModel {
             
             return a.priorityTag.intValue > b.priorityTag.intValue
         }
+        
+        rebuildVisibleOccurrences()
     }
     
     var hasFocusedCard: Bool {
@@ -200,39 +281,12 @@ class CarouselViewModel {
     private func applyFilters(to chores: [ChoreModel]) -> [ChoreModel] {
         var result = chores
         
-        if !filterChoices.users.isEmpty {
-            let selectedUserIDs = Set(filterChoices.users.compactMap { $0.recordID })
-            
-            result = result.filter { chore in
-                // One-off: direct responsible
-                if let responsibleID = chore.currentResponsibleReference?.recordID {
-                    return selectedUserIDs.contains(responsibleID)
-                }
-                
-                // Recurring: any assignment belongs to one of the selected users
-                guard let refs = chore.dailyAssignmentsReference else { return false }
-                let ids = Set(refs.map { $0.recordID })
-                
-                return dailyAssignments.contains { assignment in
-                    guard let assignmentID = assignment.recordID,
-                          ids.contains(assignmentID),
-                          let userID = assignment.userReference?.recordID
-                    else { return false }
-                    return selectedUserIDs.contains(userID)
-                }
-            }
-        }
-        
         if !filterChoices.tags.isEmpty {
             result = result.filter { filterChoices.tags.contains($0.priorityTag) }
         }
         
         if !filterChoices.frequencies.isEmpty {
             result = result.filter { filterChoices.frequencies.contains($0.frequency) }
-        }
-        
-        if let state = filterChoices.state {
-            result = result.filter { $0.isDone == state }
         }
         
         return result
@@ -287,22 +341,26 @@ class CarouselViewModel {
         rebuildVisibleChores()
     }
     
+    /// Every future assignment of a chore, sorted by day.
+    /// Returns an empty array for one-off chores, which have no assignments.
+    func futureAssignments(for chore: ChoreModel) -> [RecurrentAssignmentModel] {
+        guard let refs = chore.dailyAssignmentsReference, !refs.isEmpty else { return [] }
+        
+        let ids = Set(refs.map { $0.recordID })
+        let hoje = Calendar.current.startOfDay(for: Date())
+        
+        return dailyAssignments
+            .filter { assignment in
+                guard let id = assignment.recordID, ids.contains(id) else { return false }
+                return assignment.day >= hoje
+            }
+            .sorted { $0.day < $1.day }
+    }
+    
     /// The next scheduled date for a chore, whether it comes from a daily
     /// assignment (recurring) or from its own due date (one-off).
     func nextDate(for chore: ChoreModel) -> Date? {
-        if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-            let ids = Set(refs.map { $0.recordID })
-            let hoje = Calendar.current.startOfDay(for: Date())
-            
-            return dailyAssignments
-                .filter { assignment in
-                    guard let id = assignment.recordID else { return false }
-                    return ids.contains(id) && assignment.day >= hoje
-                }
-                .map(\.day)
-                .min()
-        }
-        return chore.dueDate
+        futureAssignments(for: chore).first?.day ?? chore.dueDate
     }
     
     // MARK: - Focus & Flip Interactions

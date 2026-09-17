@@ -76,7 +76,31 @@ struct ShareHouseButton: View {
 }
 
 
-#Preview {
-//    ShareHouseButton()
+#Preview("Convite pronto") {
+    @Previewable @State var share: CKShare? = CKShare(
+        rootRecord: CKRecord(recordType: HouseModel.recordType)
+    )
+    @Previewable @State var shareURL: URL? = nil
+    @Previewable @State var showSheet = false
+
+    ShareHouseButton(
+        viewModel: OnboardingViewModel(),
+        share: $share,
+        shareURL: $shareURL,
+        showSheet: $showSheet
+    )
+}
+
+#Preview("Sem convite") {
+    @Previewable @State var share: CKShare? = nil
+    @Previewable @State var shareURL: URL? = nil
+    @Previewable @State var showSheet = false
+
+    ShareHouseButton(
+        viewModel: OnboardingViewModel(),
+        share: $share,
+        shareURL: $shareURL,
+        showSheet: $showSheet
+    )
 }
 

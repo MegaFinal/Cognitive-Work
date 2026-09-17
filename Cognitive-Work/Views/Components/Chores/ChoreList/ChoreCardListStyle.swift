@@ -13,6 +13,7 @@ import CloudKit
 /// A compact row representation of a chore, utilized in the vertical list layout mode.
 struct ChoreCardListStyle: View {
     var chore: ChoreModel
+    var recurrentAssignment: RecurrentAssignmentModel?
     let namespace: Namespace.ID
     
     @Bindable var carouselViewModel: CarouselViewModel
@@ -23,7 +24,10 @@ struct ChoreCardListStyle: View {
     var nextDate: Date? { carouselViewModel.nextDate(for: chore) }
     
     var targetAssignments: [RecurrentAssignmentModel] {
-        carouselViewModel.getAssignments(for: chore, on: nextDate)
+        if let recurrentAssignment {
+            return [recurrentAssignment]
+        }
+        return carouselViewModel.getAssignments(for: chore, on: nextDate)
     }
     
     var occurrenceResponsibleUsers: [UserModel] {
@@ -32,6 +36,10 @@ struct ChoreCardListStyle: View {
             guard let id = user.recordID else { return false }
             return userIDs.contains(id)
         }
+    }
+    
+    var isOccurrenceDone: Bool {
+        recurrentAssignment?.isCompleted ?? chore.isDone
     }
     
     var width = UIScreen.main.bounds.width
@@ -100,16 +108,21 @@ struct ChoreCardListStyle: View {
                             // Completion button
                             Button {
                                 Task {
-                                    await chore.toggle()
+                                    if let recurrentAssignment {
+                                        await recurrentAssignment.toggle()
+                                    } else {
+                                        await chore.toggle()
+                                    }
+                                    carouselViewModel.refreshVisible()
                                 }
                             } label: {
                                 ZStack {
                                     Circle()
                                         .foregroundColor(.white)
                                         .frame(width: width * 0.05)
-                                    
-                                    Image(systemName: chore.isDone ? "checkmark.circle.fill" : "circle.fill")
-                                        .foregroundColor(chore.isDone ? .black : .white)
+
+                                    Image(systemName: isOccurrenceDone ? "checkmark.circle.fill" : "circle.fill")
+                                        .foregroundColor(isOccurrenceDone ? .black : .white)
                                         .font(.system(size: 28))
                                 }
                             }

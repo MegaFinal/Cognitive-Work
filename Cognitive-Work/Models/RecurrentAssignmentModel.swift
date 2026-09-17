@@ -8,7 +8,8 @@
 import Foundation
 import CloudKit
 
-class RecurrentAssignmentModel : CloudKitSyncable{
+@Observable
+class RecurrentAssignmentModel: CloudKitSyncable {
     static let recordType: String = "DailyAssignmentModel"
     
     var recordID: CKRecord.ID?
@@ -63,5 +64,11 @@ class RecurrentAssignmentModel : CloudKitSyncable{
         record["day"] = day
         record["user"] = userReference
         record["chore"] = choreReference
+    }
+    
+    @discardableResult
+    func toggle() async -> Bool {
+        isCompleted.toggle()
+        return await CloudKitManager.shared.update(self)
     }
 }
