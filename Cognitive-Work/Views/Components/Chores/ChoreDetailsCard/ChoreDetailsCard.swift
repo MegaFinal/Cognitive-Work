@@ -213,9 +213,9 @@ struct ChoreDetailsCard: View {
             Spacer()
             
             if occurrenceResponsibleUsers.count == 1 {
-                UserProfilePictureTag(user: occurrenceResponsibleUsers.first, widthMultiplier: 0.1)
+                UserProfilePictureTag(user: occurrenceResponsibleUsers.first, widthMultiplier: 0.08)
             } else {
-                UserProfilePictureList(users: occurrenceResponsibleUsers, widthMultiplier: 0.1)
+                UserProfilePictureList(users: occurrenceResponsibleUsers, widthMultiplier: 0.08)
             }
             
             NavigationLink {
