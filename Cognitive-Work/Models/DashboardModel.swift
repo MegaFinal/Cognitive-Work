@@ -43,17 +43,34 @@ class DashboardModel: Identifiable {
     /// Fetches today's chores assigned to ``user`` from CloudKit and
     /// recomputes every statistic.
     func setup() async {
-        let fetchedChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        async let fetchC = CloudKitManager.shared.fetchAll(ChoreModel.self)
+        async let fetchA = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        let (fetchedChores, assignments) = await (fetchC, fetchA)
 
         guard let targetUserID = user.recordID else { return }
 
+        let today = Calendar.current.startOfDay(for: Date())
+
         let filtered = fetchedChores.filter { chore in
-            guard let responsibleID = chore.currentResponsibleReference?.recordID,
-                  let dueDate = chore.dueDate,
-                  Calendar.current.isDateInToday(dueDate) else {
-                return false
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+                let ids = Set(refs.map { $0.recordID })
+                
+                return assignments.contains { assignment in
+                    guard let assignmentID = assignment.recordID,
+                          ids.contains(assignmentID),
+                          let responsibleID = assignment.userReference?.recordID
+                    else { return false }
+                    
+                    return responsibleID == targetUserID
+                        && Calendar.current.isDate(assignment.day, inSameDayAs: today)
+                }
+            } else {
+                guard let responsibleID = chore.currentResponsibleReference?.recordID,
+                      let dueDate = chore.dueDate,
+                      Calendar.current.isDateInToday(dueDate)
+                else { return false }
+                return responsibleID == targetUserID
             }
-            return responsibleID == targetUserID
         }
         self.todayChores = filtered
 

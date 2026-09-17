@@ -244,9 +244,9 @@ struct ChoresView: View {
         }
     }
 
-    /// Loads the signed-in user's profile and uses it to build and populate
+    /// Loads the signed-in user's profile and uses it to build and populate``dashboard``.
     private func loadDashboard() async {
-        guard let user = await CloudKitManager.shared.fetchMyUser() else { return }
+        guard let user = await CloudKitManager.shared.fetchMyHouseUser() else { return }
 
         let model = DashboardModel(user: user)
         await model.setup()
