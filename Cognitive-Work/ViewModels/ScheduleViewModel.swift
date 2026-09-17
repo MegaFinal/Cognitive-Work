@@ -11,7 +11,7 @@ import SwiftUI
 @Observable
 @MainActor
 
-final class ScheduleViewModel {
+final class ScheduleViewModel {    
     var users: [UserModel] = []
     var chores: [ChoreModel] = []
     var errorMessage: String?

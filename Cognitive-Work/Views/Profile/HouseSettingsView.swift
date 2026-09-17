@@ -9,6 +9,8 @@ import SwiftUI
 
 struct HouseSettingsView: View {
     @Bindable var viewModel: HouseEditViewModel
+    @State var showChoreResetConfirmation = false
+    @State private var isResetting = false
     @State private var showDeleteConfirmation = false
     
     @AppStorage("didOnboard") private var didOnboard: Bool = true
@@ -29,16 +31,21 @@ struct HouseSettingsView: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
-//            Button {}
-//            label: {
-//                HStack {
-//                    Text("Reiniciar divisão de tarefas")
-//                    Spacer()
-//                    Image(systemName: "chevron.right")
-//                }
-//            }
-//            .buttonStyle(.plain)
-//            .padding(.horizontal)
+            // MARK: - Reset chores assignments
+            if viewModel.isUserAdmin {
+                Button {
+                    showChoreResetConfirmation = true
+                }
+                label: {
+                    HStack {
+                        Text("Reiniciar divisão de tarefas")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal)
+            }
             
             Spacer()
             
@@ -71,6 +78,21 @@ struct HouseSettingsView: View {
         .task {
             await viewModel.checkAdminStatus()
         }
+        
+        .alert("Deseja reiniciar a divisão de tarefas?", isPresented: $showChoreResetConfirmation) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Reiniciar", role: .destructive) {
+                isResetting = true
+            }
+        } message: {
+            Text("Ao clicar em \"Reiniciar\" a divisão de tarefas atual será excluída.")
+        }
+        
+        .navigationDestination(isPresented: $isResetting) {
+            FortnightlyScheduleView(shouldGenerate: true) {
+                isResetting = false
+            }
+        }
     }
     
     // MARK: - Helpers
@@ -79,6 +101,7 @@ struct HouseSettingsView: View {
         inviteViewModel.currentHouse = viewModel.house
         return inviteViewModel
     }
+    
 }
 
 #Preview {
