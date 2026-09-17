@@ -99,6 +99,30 @@ struct ChoresView: View {
                     .zIndex(2)
                     .transition(.scale)
                 }
+                
+                // MARK: - Unassigned chores popup, always on top of everything else
+                if carouselVM.isShowingUnassignedList {
+                    
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .ignoresSafeArea()
+                        .zIndex(2000)
+                        .onTapGesture {
+                            carouselVM.dismissUnassignedList()
+                        }
+                    
+                    UnassignmentList(
+                        items: carouselVM.unassignedItems,
+                        onPick: { item in
+                            Task { await carouselVM.pickForMyself(item) }
+                        }, carouselViewModel: carouselVM
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .padding(.trailing, 105)
+                    .padding(.bottom, 20)
+                    .zIndex(2100)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .bottomTrailing)))
+                }
             }
             .background(
                 Color(.white)
@@ -324,10 +348,10 @@ struct ChoreOccurrence: Identifiable {
     let vm: CarouselViewModel = {
         var cozinha = RoomModel(name: "Cozinha", color: .orange)
         cozinha.recordID = CKRecord.ID(recordName: "preview-cozinha")
-
+        
         var banheiro = RoomModel(name: "Banheiro", color: .blue)
         banheiro.recordID = CKRecord.ID(recordName: "preview-banheiro")
-
+        
         func makeChore(_ name: String, symbol: String, room: RoomModel, frequency: Recurrence, duration: Double, priority: PriorityTag) -> ChoreModel {
             let chore = ChoreModel(
                 name: name,
@@ -342,7 +366,7 @@ struct ChoreOccurrence: Identifiable {
             chore.recordID = CKRecord.ID(recordName: "preview-\(UUID().uuidString)")
             return chore
         }
-
+        
         let vm = CarouselViewModel()
         vm.roomModels = [cozinha, banheiro]
         vm.cardModels = [
@@ -355,6 +379,6 @@ struct ChoreOccurrence: Identifiable {
         ]
         return vm
     }()
-
+    
     ChoresView(carouselVM: vm)
 }
