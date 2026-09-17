@@ -492,4 +492,115 @@ class CarouselViewModel {
             activeIndex = rounded >= 0 ? rounded : count + rounded
         }
     }
+    
+    // MARK: - UnassignedItem
+    
+    /// A chore (or a single occurrence of a recurring chore) that currently has nobody responsible for it.
+    struct UnassignedItem: Identifiable {
+        enum ChoreType {
+            /// A one-off chore with no responsible users at all.
+            case oneOff
+            /// One specific day of a recurring chore that has no user assigned yet.
+            case recurring(assignment: RecurrentAssignmentModel)
+        }
+        
+        let id: String
+        let chore: ChoreModel
+        let choreType: ChoreType
+        /// The date to show next to the chore, when there is one.
+        let displayDate: Date?
+    }
+    
+    /// Every chore — or single occurrence of a recurring chore — that has nobody responsible for it yet.
+    ///
+    /// Computed purely from data already in memory (`cardModels`, `dailyAssignments`), so this is safe
+    /// to read from the view every time it renders.
+    var unassignedItems: [UnassignedItem] {
+        let today = Calendar.current.startOfDay(for: Date())
+        var items: [UnassignedItem] = []
+        
+        for chore in cardModels where !chore.isDone {
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+                // Recurring chore: look for occurrences that are today or in the future
+                // and still have no one assigned.
+                let ids = Set(refs.map { $0.recordID })
+                let openSlots = dailyAssignments.filter { assignment in
+                    guard let id = assignment.recordID, ids.contains(id) else { return false }
+                    return assignment.userReference == nil && assignment.day >= today
+                }
+                
+                for assignment in openSlots {
+                    items.append(
+                        UnassignedItem(
+                            id: assignment.recordID?.recordName ?? UUID().uuidString,
+                            chore: chore,
+                            choreType: .recurring(assignment: assignment),
+                            displayDate: assignment.day
+                        )
+                    )
+                }
+            } else {
+                // One-off chore: unassigned when it has no one in its rotation.
+                let hasResponsible = chore.currentResponsibleReference != nil
+                || !(chore.allResponsibleUsersReference?.isEmpty ?? true)
+                
+                if !hasResponsible {
+                    items.append(
+                        UnassignedItem(
+                            id: chore.recordID?.recordName ?? UUID().uuidString,
+                            chore: chore,
+                            choreType: .oneOff,
+                            displayDate: chore.dueDate
+                        )
+                    )
+                }
+            }
+        }
+        
+        // Sort items in ascending order by displayDate, placing items with nil dates at the end
+        return items.sorted { ($0.displayDate ?? .distantFuture) < ($1.displayDate ?? .distantFuture) }
+    }
+    
+    /// Assigns the current user to an unassigned chore or occurrence, then refreshes local caches.
+    @MainActor
+    func pickForMyself(_ item: UnassignedItem) async {
+        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
+              let myUserID = myUser.recordID
+        else { return }
+        
+        let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
+        
+        switch item.choreType {
+        case .oneOff:
+            item.chore.currentResponsibleReference = userRef
+            var refs = item.chore.allResponsibleUsersReference ?? []
+            if !refs.contains(where: { $0.recordID == myUserID }) {
+                refs.append(userRef)
+            }
+            item.chore.allResponsibleUsersReference = refs
+            await CloudKitManager.shared.update(item.chore)
+            
+        case .recurring(let assignment):
+            assignment.userReference = userRef
+            await CloudKitManager.shared.update(assignment)
+        }
+        
+        await refreshAfterChoreUpdate()
+    }
+    
+    /// Whether the "unassigned chores" popup is currently visible.
+    var isShowingUnassignedList: Bool = false
+    
+    func toggleUnassignedList() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            isShowingUnassignedList.toggle()
+        }
+    }
+    
+    func dismissUnassignedList() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            isShowingUnassignedList = false
+        }
+    }
+    
 }
