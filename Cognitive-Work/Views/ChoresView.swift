@@ -82,11 +82,12 @@ struct ChoresView: View {
                         Spacer()
                     }
                     .zIndex(2)
-                } else if let focusedChore = carouselVM.focusedChoreForDetails {
+                } else if let occurrence = carouselVM.focusedOccurrence {
                     VStack {
                         Spacer()
                         CarouselCardFrame(
-                            chore: focusedChore,
+                            chore: occurrence.chore,
+                            recurrentAssignment: occurrence.assignment,
                             carouselViewModel: carouselVM,
                             namespace: cardAnimation,
                             isFocused: true,
@@ -203,8 +204,13 @@ struct ChoresView: View {
     private var choreList: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
-                ForEach(Array(carouselVM.visibleChores.enumerated()), id: \.element.id) { index, chore in
-                    ChoreCardListStyle(chore: chore, namespace: cardAnimation, carouselViewModel: carouselVM) {
+                ForEach(Array(carouselVM.visibleOccurrences.enumerated()), id: \.element.id) { index, occurrence in
+                    ChoreCardListStyle(
+                        chore: occurrence.chore,
+                        recurrentAssignment: occurrence.assignment,
+                        namespace: cardAnimation,
+                        carouselViewModel: carouselVM
+                    ) {
                         carouselVM.focusDetailsImmediately(index)
                     }
                 }
@@ -291,6 +297,26 @@ private struct ProgressIndicatorCard: View {
         .background(color)
         .clipShape(RoundedRectangle(cornerRadius: 21))
         .shadow(color: .black.opacity(0.25), radius: 4.07717, x: 0, y: 1.23551)
+    }
+}
+
+/// A single scheduled occurrence of a chore: the chore itself plus the
+/// assignment that places it on a given day.
+///
+/// One-off chores have no assignment; their date comes from `chore.dueDate`.
+struct ChoreOccurrence: Identifiable {
+    let chore: ChoreModel
+    let assignment: RecurrentAssignmentModel?
+    
+    var id: String {
+        if let assignmentId = assignment?.recordID {
+            return assignmentId.recordName
+        }
+        return chore.id.uuidString
+    }
+    
+    var day: Date? {
+        return assignment?.day ?? chore.dueDate
     }
 }
 

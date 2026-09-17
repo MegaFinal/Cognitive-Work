@@ -13,6 +13,10 @@ import SwiftUI
 ///   - `quantity:` View that represents the back of the card
 struct CarouselCardFrame: View {
     let chore: ChoreModel
+    /// The specific occurrence this card represents, when it comes from the list
+    /// layout. `nil` in the grid, where cards stand for the chore as a whole.
+    var recurrentAssignment: RecurrentAssignmentModel?
+    
     let carouselViewModel: CarouselViewModel
     let namespace: Namespace.ID
     
@@ -33,7 +37,12 @@ struct CarouselCardFrame: View {
                     y: isFocused ? (0.65 / 0.47) : 1.0
                 )
             
-            ChoreDetailsCard(chore: chore, carouselViewModel: carouselViewModel, isShowingBack: isShowingBack)
+            ChoreDetailsCard(
+                chore: chore,
+                recurrentAssignment: recurrentAssignment,
+                carouselViewModel: carouselViewModel,
+                isShowingBack: isShowingBack
+            )
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(isShowingBack ? 1 : 0)
                 .frame(width: 0, height: 0)
