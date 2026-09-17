@@ -34,21 +34,10 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Manager/CloudKitManager/DebugExtension.swift,
 			);
 			target = 910DAAE23026477D00F899C0 /* Cognitive-Work */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		3FAB5A1A3049FDA600917219 /* Exceptions for "Cognitive-Work" folder in "Copy Bundle Resources" phase from "Cognitive-Work" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = 910DAAE13026477D00F899C0 /* Resources */;
-			membershipExceptions = (
-				Manager/CloudKitManager/DebugExtension.swift,
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8412724E302E380E00982FA0 /* Cognitive-WorkTests */ = {
@@ -65,7 +54,6 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				91BEB2DB302BAE66004FE987 /* Exceptions for "Cognitive-Work" folder in "Cognitive-Work" target */,
-				3FAB5A1A3049FDA600917219 /* Exceptions for "Cognitive-Work" folder in "Copy Bundle Resources" phase from "Cognitive-Work" target */,
 			);
 			path = "Cognitive-Work";
 			sourceTree = "<group>";
