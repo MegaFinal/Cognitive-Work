@@ -4,19 +4,14 @@
 <dict>
 	<key>CKSharingSupported</key>
 	<true/>
-	<!-- Sync fix: CloudKit database subscriptions deliver *silent* pushes
-	     (shouldSendContentAvailable). iOS only hands those to
-	     application(_:didReceiveRemoteNotification:) when the target declares the
-	     remote-notification background mode. Without this key `.cloudKitDidChange`
-	     was never posted, so neither waiting screen ever heard about the other device. -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
