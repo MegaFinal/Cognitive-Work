@@ -9,10 +9,10 @@ import SwiftUI
 
 /// Enumerates strict constraints defining urgency characteristics applied within context filters.
 enum PriorityTag: String, CaseIterable, Hashable {
-    case low = "low"
-    case medium = "medium"
-    case high = "high"
-    case urgent = "urgent"
+    case low = "não urgente"
+    case medium = "pouco urgente"
+    case high = "urgente"
+    case urgent = "muito urgente"
     
     /// Structural value evaluating ranking priorities.
     var intValue: Int {

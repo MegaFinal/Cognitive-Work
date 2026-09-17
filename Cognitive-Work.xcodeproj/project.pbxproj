@@ -497,7 +497,6 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Cognitive-Work/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Pipa;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Este aplicativo precisa de acesso à sua galeria para que você possa escolher e adicionar uma foto de perfil";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -538,7 +537,6 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Cognitive-Work/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Pipa;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Este aplicativo precisa de acesso à sua galeria para que você possa escolher e adicionar uma foto de perfil";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
