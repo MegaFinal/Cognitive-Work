@@ -76,7 +76,11 @@ struct FortnightlyView: View {
                 
                 if let entry = selectedEntry,
                    let chore = viewModel.chores.first(where: { $0.recordID == entry.choreID }) {
-                    ChoreCard(chore: chore, user: selectedUser)
+                    ChoreCard(
+                        chore: chore,
+                        user: selectedUser,
+                        room: viewModel.getRoom(for: chore)
+                    )
                 }
             }
         }
