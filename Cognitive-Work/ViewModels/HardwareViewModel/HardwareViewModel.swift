@@ -166,5 +166,3 @@ class HardwareViewModel {
         self.deviceIP = ""
     }
 }
-
-
