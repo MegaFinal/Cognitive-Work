@@ -90,7 +90,7 @@ struct WelcomeOnboardingView: View {
             .alert("Continue com seu iCloud", isPresented: $showICloudAlert) {
                 Button("Continuar") {}
             } message: {
-                Text("O HouseHouse usa a conta do iCloud do seu iPhone para guardar os dados da sua casa com segurança e sincronizar tudo entre você e os demais moradores. Verifique se você está conectado a uma conta do iCloud nos Ajustes do seu iPhone para continuar.")
+                Text("O Pipa usa a conta do iCloud do seu iPhone para guardar os dados da sua casa com segurança e sincronizar tudo entre você e os demais moradores. Verifique se você está conectado a uma conta do iCloud nos Ajustes do seu iPhone para continuar.")
             }
         }
     }
@@ -101,7 +101,7 @@ struct WelcomeOnboardingView: View {
     private var appDescription: some View {
         VStack(spacing: 20) {
             VStack(alignment: .leading, spacing: 20) {
-                Text("O HouseHouse veio para facilitar \na vida de quem divide moradia!")
+                Text("O Pipa veio para facilitar \na vida de quem divide moradia!")
                 
                 Text("Nosso intuito é remover a carga mental da organização de \ntarefas de maneira justa e visual para todos os moradores.")
                 

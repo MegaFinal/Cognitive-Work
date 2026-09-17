@@ -143,8 +143,18 @@ struct FreeTimeSlider: View {
         let percentage = xPosition / rowWidth
         let rawRating = percentage * CGFloat(maxRating)
         let calculatedRating = Int(ceil(rawRating))
+        let clampedRating = max(0, min(maxRating, calculatedRating))
 
-        rating = max(0, min(maxRating, calculatedRating))
+        // if tap to unselect
+        let isTappingFirstSquare = clampedRating <= 1
+        let hasExistingSelection = rating > 0
+
+        if isTappingFirstSquare && hasExistingSelection {
+            rating = 0
+            return
+        }
+
+        rating = clampedRating
     }
 }
 
