@@ -21,6 +21,6 @@ struct ShareSheet: UIViewControllerRepresentable {
 }
 
 
-//#Preview {
-//    ShareSheet()
-//}
+#Preview {
+    ShareSheet(url: URL(string: "https://www.icloud.com/share/exemplo")!)
+}

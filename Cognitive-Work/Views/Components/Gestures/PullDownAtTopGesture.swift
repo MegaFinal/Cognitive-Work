@@ -42,18 +42,18 @@ struct PullDownAtTopGesture: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            // Small rubber-band feedback while dragging; purely visual.
+        // Small rubber-band feedback while dragging; purely visual.
             .offset(y: translation * 0.4)
-            // Passively tracks whether the enclosing ScrollView is at its top edge.
-            // No-op when there's no ScrollView ancestor (isAtTop just stays true).
+        // Passively tracks whether the enclosing ScrollView is at its top edge.
+        // No-op when there's no ScrollView ancestor (isAtTop just stays true).
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y + geometry.contentInsets.top <= 1
             } action: { _, newValue in
                 isAtTop = newValue
             }
-            // `.simultaneousGesture` (not `.gesture`) so this never wins gesture
-            // priority away from a child's own `DragGesture` (e.g. card swiping)
-            // or from the ScrollView's own native scrolling.
+        // `.simultaneousGesture` (not `.gesture`) so this never wins gesture
+        // priority away from a child's own `DragGesture` (e.g. card swiping)
+        // or from the ScrollView's own native scrolling.
             .simultaneousGesture(
                 DragGesture(minimumDistance: 10)
                     .onChanged { value in
@@ -79,13 +79,12 @@ struct PullDownAtTopGesture: ViewModifier {
                         
                         withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
                             translation = 0
+                            if didPassThreshold {
+                                action()
+                            }
                         }
                         hasCheckedStart = false
                         gestureStartedAtTop = false
-                        
-                        if didPassThreshold {
-                            action()
-                        }
                     }
             )
     }
