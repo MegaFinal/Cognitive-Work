@@ -145,6 +145,8 @@ struct CreateAndEditChoreView: View {
                 choreDTO.responsibleUsers = availableHouseUsers.filter { userIDs.contains($0.recordID ?? CKRecord.ID(recordName: "")) }
             }
         }
+        .toolbar(.hidden, for: .tabBar)
+
     }
     
     // MARK: - Subviews

@@ -108,6 +108,7 @@ struct GeneralProfileSettingsView: View {
         .frame(width: width * 0.9)
         .navigationTitle("Configurações Gerais")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         
         // MARK: - Alerts
         .alert("Excluir Perfil?", isPresented: $showDeleteConfirmation) {

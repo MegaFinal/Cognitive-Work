@@ -86,6 +86,7 @@ struct EditProfileView: View {
                 .disabled(!viewModel.canSave)
             }
         }
+        .toolbar(.hidden, for: .tabBar)
         // MARK: - Error Alert
         .alert(
             "Erro ao salvar",
