@@ -52,19 +52,19 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
         case .laundryRoom:
             RoomDTO(
                 name: rawValue,
-                symbol: "washer.fill",
+                symbol: "washer",
                 color: .blue )
             
         case .kitchen:
             RoomDTO(
                 name: rawValue,
-                symbol: "fork.knife",
+                symbol: "cooktop",
                 color: .green )
             
         case .bathroom:
             RoomDTO(
                 name: rawValue,
-                symbol: "shower.fill",
+                symbol: "toilet.fill",
                 color: .white )
             
         case .homeOffice:

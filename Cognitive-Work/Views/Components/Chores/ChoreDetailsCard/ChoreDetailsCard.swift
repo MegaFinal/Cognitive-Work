@@ -287,7 +287,7 @@ private struct ChecklistItemButton: View {
     @Previewable @State var isShowingBack = true
     
     let room: RoomModel = {
-        var room = RoomModel(name: "Cozinha", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()
