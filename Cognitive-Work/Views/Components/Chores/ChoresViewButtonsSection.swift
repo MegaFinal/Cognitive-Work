@@ -72,6 +72,8 @@ struct ChoresViewButtonsSection: View {
     }
 }
 
-//#Preview {
-//    ChoresViewButtonsSection()
-//}
+#Preview {
+    NavigationStack {
+        ChoresViewButtonsSection(carouselViewModel: CarouselViewModel())
+    }
+}
