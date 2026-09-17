@@ -32,7 +32,7 @@ struct ChoreCard: View {
             }
         }
         .foregroundColor(.white)
-        .task {
+        .task(id: chore.id) {
             room = await chore.room
         }
         .frame(width: width * 0.85, height: height * 0.35)
