@@ -13,15 +13,22 @@ import SwiftUI
 struct SwipeToCompleteButton: View {
     
     var isDone: Bool
-
+    
     /// Task-enacting closure triggered upon a successful gesture validation.
     var action: () -> Void
     var color: Color = .black
-        
+    
     @State private var dragOffset: CGFloat = 0
+    
+    /// Tracks which progress "steps" have already fired a haptic during this drag, so each one only fires once per gesture instead of repeatedly.
+    @State private var reachedSteps: Set<Int> = []
     
     private let height: CGFloat = 54
     private let circlePadding: CGFloat = 5
+    
+    /// Progress fractions at which a light "tick" haptic fires during the drag.
+    private let progressSteps: [CGFloat] = [0.15, 0.3, 0.45, 0.5, 0.75]
+    private let completionThreshold: CGFloat = 0.70
     
     var body: some View {
         GeometryReader { geometry in
@@ -59,6 +66,24 @@ struct SwipeToCompleteButton: View {
                                 let translation = value.translation.width
                                 if translation > 0 {
                                     dragOffset = min(translation, maxDrag)
+                                }
+                                guard maxDrag > 0 else { return }
+                                let progress = dragOffset / maxDrag
+                                
+                                // Haptics leves em marcos intermediários do arraste
+                                for (index, step) in progressSteps.enumerated() {
+                                    if progress >= step && !reachedSteps.contains(index) {
+                                        reachedSteps.insert(index)
+                                        let generator = UIImpactFeedbackGenerator(style: .light)
+                                        generator.impactOccurred(intensity: 0.6)
+                                    }
+                                }
+                                
+                                // Haptic distinto ao cruzar o threshold de conclusão
+                                if progress >= completionThreshold && !reachedSteps.contains(999) {
+                                    reachedSteps.insert(999)
+                                    let generator = UIImpactFeedbackGenerator(style: .heavy)
+                                    generator.impactOccurred()
                                 }
                             }
                             .onEnded { _ in

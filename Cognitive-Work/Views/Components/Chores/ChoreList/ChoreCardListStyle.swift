@@ -107,6 +107,9 @@ struct ChoreCardListStyle: View {
                             
                             // MARK: Completion button
                             Button {
+                                let generator = UINotificationFeedbackGenerator()
+                                generator.notificationOccurred(isOccurrenceDone ? .warning : .success)
+                                
                                 Task {
                                     await carouselViewModel.toggle(chore: chore, assignment: recurrentAssignment)
                                     carouselViewModel.refreshVisible()
