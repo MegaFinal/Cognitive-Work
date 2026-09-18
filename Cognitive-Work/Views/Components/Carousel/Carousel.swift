@@ -42,6 +42,7 @@ struct Carousel: View {
                     .filter { abs(viewModel.distance($0.offset)) < 2.5 }, id: \.element.id) { index, chore in
                     CarouselCardFrame(
                         chore: chore,
+                        recurrentAssignment: viewModel.getAssignmentsForActiveContext(for: chore).first,
                         carouselViewModel: viewModel,
                         namespace: namespace,
                         isFocused: viewModel.isFocused(index),

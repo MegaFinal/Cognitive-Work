@@ -251,11 +251,12 @@ class OnboardingViewModel {
         let parentReference = house.reference(action: .none)
         
         var roomModels = selectedDrafts.map { draft in
-            RoomModel(name: draft.name, house: houseReference, color: draft.color)
+            RoomModel(name: draft.name,symbol: draft.symbol, house: houseReference, color: draft.color)
         }
         
         let roomToRepresentChoresToAllHome = RoomModel(
             name: "Casa",
+            symbol: "house",
             house: houseReference,
             color: .orange
         )

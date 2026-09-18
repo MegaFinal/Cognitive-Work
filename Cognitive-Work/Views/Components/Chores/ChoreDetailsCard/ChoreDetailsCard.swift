@@ -49,10 +49,15 @@ struct ChoreDetailsCard: View {
         }
     }
     
+    var isOccurrenceDone: Bool {
+        carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
+    }
+    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
     var body: some View {
+        let _ = print("details:", chore.name, recurrentAssignment?.recordID?.recordName ?? "NIL")
         ZStack {
             VStack(spacing: 0) {
                 header
@@ -62,9 +67,9 @@ struct ChoreDetailsCard: View {
                 VStack {
                     postponeButtons
                     
-                    SwipeToCompleteButton(action:  {
+                    SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
                         Task {
-                            await chore.toggle()
+                            await carouselViewModel.toggle(chore: chore, assignment: recurrentAssignment)
                         }
                     }, color: room?.color.uiColor ?? .gray)
                     .padding(.horizontal, 30)
@@ -287,7 +292,7 @@ private struct ChecklistItemButton: View {
     @Previewable @State var isShowingBack = true
     
     let room: RoomModel = {
-        var room = RoomModel(name: "Cozinha", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()
