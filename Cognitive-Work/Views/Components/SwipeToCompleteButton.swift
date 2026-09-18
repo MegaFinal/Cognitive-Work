@@ -39,16 +39,16 @@ struct SwipeToCompleteButton: View {
             
             ZStack(alignment: .leading) {
                 Capsule()
-                    .foregroundColor(color.opacity(0.2))
+                    .foregroundColor(isDone ? .gray.opacity(0.2) : color.opacity(0.2))
                 
-                Text(isDone ? "Concluído" : "Deslize para concluir")
+                Text(isDone ? "Tarefa concluida!" : "Deslize para concluir")
                     .foregroundColor(.black)
                     .font(.system(size: 15))
                     .frame(maxWidth: .infinity)
                     .opacity(isDone ? 1.0 : Double(1.0 - (dragOffset / (maxDrag * 0.8))))
                 
                 Circle()
-                    .fill(color)
+                    .fill(isDone ? .titleGray : color)
                     .frame(width: circleWidth, height: circleWidth)
                     .overlay(
                         Image(systemName: "checkmark")
@@ -58,6 +58,8 @@ struct SwipeToCompleteButton: View {
                     )
                     .offset(x: circleOffset)
                     .padding(circlePadding)
+                
+                // MARK: - Gesture
                     .gesture(
                         DragGesture()
                             .onChanged { value in
@@ -70,7 +72,7 @@ struct SwipeToCompleteButton: View {
                                 guard maxDrag > 0 else { return }
                                 let progress = dragOffset / maxDrag
                                 
-                                // Haptics leves em marcos intermediários do arraste
+                                // MARK: - Hpatics
                                 for (index, step) in progressSteps.enumerated() {
                                     if progress >= step && !reachedSteps.contains(index) {
                                         reachedSteps.insert(index)
@@ -78,8 +80,6 @@ struct SwipeToCompleteButton: View {
                                         generator.impactOccurred(intensity: 0.6)
                                     }
                                 }
-                                
-                                // Haptic distinto ao cruzar o threshold de conclusão
                                 if progress >= completionThreshold && !reachedSteps.contains(999) {
                                     reachedSteps.insert(999)
                                     let generator = UIImpactFeedbackGenerator(style: .heavy)
