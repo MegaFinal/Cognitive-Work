@@ -63,13 +63,13 @@ struct Onboarding: View {
             // (kept in UserDefaults) survived — exactly the "data disappears when I close the
             // app" behaviour. To reset CloudKit while testing, add `RESET_CLOUDKIT_ON_LAUNCH` to
             // Build Settings → Active Compilation Conditions (Debug) instead of editing this.
-            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
+//            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
             await CloudKitManager.shared.deleteAllRecords()
             // Session-restore fix: after a reset the saved step points at data that no longer
             // exists, so start the flow from the beginning too.
             viewModel.stateMachine.resetProgress()
-            #endif
-            await viewModel.checkExistingAccount()
+//            #endif
+//            await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {
                 await viewModel.restoreProgressIfNeeded()
