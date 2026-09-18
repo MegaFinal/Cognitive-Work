@@ -20,8 +20,7 @@ struct ChoresView: View {
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .gray
 
-    /// Today's chore statistics
-    @State private var dashboard: DashboardModel?
+    @State private var dashboardUser: UserModel?
 
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
@@ -133,17 +132,30 @@ struct ChoresView: View {
             )
         }
         .task {
-            await carouselVM.fetchAllData()
+            async let allDataTask: () = carouselVM.fetchAllData()
+            async let userTask = CloudKitManager.shared.fetchMyHouseUser()
+
+            await allDataTask
+            dashboardUser = await userTask
             updateActiveRoomColor()
-        }
-        .task {
-            await loadDashboard()
         }
         .task(id: carouselVM.activeIndex) {
             updateActiveRoomColor()
         }
         .task(id: carouselVM.cardModels.count) {
             updateActiveRoomColor()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            Task {
+                await carouselVM.fetchAllData()
+                updateActiveRoomColor()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            Task {
+                await carouselVM.fetchAllData()
+                updateActiveRoomColor()
+            }
         }
     }
     
@@ -274,13 +286,12 @@ struct ChoresView: View {
         }
     }
 
-    /// Loads the signed-in user's profile and uses it to build and populate``dashboard``.
-    private func loadDashboard() async {
-        guard let user = await CloudKitManager.shared.fetchMyHouseUser() else { return }
-
-        let model = DashboardModel(user: user)
-        await model.setup()
-        self.dashboard = model
+    /// Today's chore statistics, derived live from ``carouselVM``'s already-fetched chores
+    private var dashboard: DashboardModel? {
+        guard let dashboardUser else { return nil }
+        let model = DashboardModel(user: dashboardUser)
+        model.setup(chores: carouselVM.cardModels, assignments: carouselVM.dailyAssignments)
+        return model
     }
 }
 
