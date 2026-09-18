@@ -150,10 +150,10 @@ class CarouselViewModel {
         
         let base = layoutMode == .grid ? cardModels.filter { chore in
             guard !chore.isDone, let date = nextDate(for: chore) else {return false}
-            #if DEBUG
+//            #if DEBUG
             return Calendar.current.isDateInTomorrow(date)
-            #endif
-            return Calendar.current.isDateInToday(date)
+//            #endif
+//            return Calendar.current.isDateInToday(date)
         } : (isFilterOn ? applyFilters(to: cardModels) : cardModels.filter { !$0.isDone })
         
         visibleChores = base.sorted { a, b in
