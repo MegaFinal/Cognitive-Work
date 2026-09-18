@@ -278,6 +278,20 @@ class CarouselViewModel {
         rebuildVisibleChores()
     }
     
+    // MARK: - isDone Chore Logic
+    
+    func isDone(for chore: ChoreModel, assignment: RecurrentAssignmentModel?) -> Bool {
+        assignment?.isCompleted ?? chore.isDone
+    }
+    
+    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async {
+        if let assignment {
+            await assignment.toggle()
+        } else {
+            await chore.toggle()
+        }
+    }
+    
     // MARK: - Filtering Logic
     
     /// Applies the active filters to a list of chores.

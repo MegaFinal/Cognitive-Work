@@ -12,12 +12,13 @@ import SwiftUI
 /// Integrates progressive visual state changes alongside multiple tier haptic feedbacks verifying the intent.
 struct SwipeToCompleteButton: View {
     
+    var isDone: Bool
+
     /// Task-enacting closure triggered upon a successful gesture validation.
     var action: () -> Void
     var color: Color = .black
-    
+        
     @State private var dragOffset: CGFloat = 0
-    @State private var isCompleted: Bool = false
     
     private let height: CGFloat = 54
     private let circlePadding: CGFloat = 5
@@ -27,16 +28,17 @@ struct SwipeToCompleteButton: View {
             let width = geometry.size.width
             let circleWidth = height - (circlePadding * 2)
             let maxDrag = width - circleWidth - (circlePadding * 2)
+            let circleOffset = isDone ? maxDrag : dragOffset
             
             ZStack(alignment: .leading) {
                 Capsule()
                     .foregroundColor(color.opacity(0.2))
                 
-                Text(isCompleted ? "Concluído" : "Deslize para concluir")
+                Text(isDone ? "Concluído" : "Deslize para concluir")
                     .foregroundColor(.black)
                     .font(.system(size: 15))
                     .frame(maxWidth: .infinity)
-                    .opacity(isCompleted ? 1.0 : Double(1.0 - (dragOffset / (maxDrag * 0.8))))
+                    .opacity(isDone ? 1.0 : Double(1.0 - (dragOffset / (maxDrag * 0.8))))
                 
                 Circle()
                     .fill(color)
@@ -47,12 +49,12 @@ struct SwipeToCompleteButton: View {
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                     )
-                    .offset(x: dragOffset)
+                    .offset(x: circleOffset)
                     .padding(circlePadding)
                     .gesture(
                         DragGesture()
                             .onChanged { value in
-                                guard !isCompleted else { return }
+                                guard !isDone else { return }
                                 
                                 let translation = value.translation.width
                                 if translation > 0 {
@@ -60,12 +62,11 @@ struct SwipeToCompleteButton: View {
                                 }
                             }
                             .onEnded { _ in
-                                guard !isCompleted else { return }
+                                guard !isDone else { return }
                                 
                                 if dragOffset > maxDrag * 0.70 {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                         dragOffset = maxDrag
-                                        isCompleted = true
                                     }
                                     
                                     let generator = UINotificationFeedbackGenerator()
@@ -85,14 +86,22 @@ struct SwipeToCompleteButton: View {
                             }
                     )
             }
-            .animation(.easeInOut, value: isCompleted)
+            .animation(.easeInOut, value: isDone)
+            .onChange(of: isDone) { _, newValue in
+                if !newValue {
+                    // if it was selected from the outside button, returns the swipe to zero
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        dragOffset = 0
+                    }
+                }
+            }
         }
         .frame(height: height)
     }
 }
 
 #Preview {
-    SwipeToCompleteButton {
+    SwipeToCompleteButton(isDone: false) {
         print("Tarefa concluída!")
     }
 }

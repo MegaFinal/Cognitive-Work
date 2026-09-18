@@ -49,6 +49,10 @@ struct ChoreDetailsCard: View {
         }
     }
     
+    var isOccurrenceDone: Bool {
+        carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
+    }
+    
     var width = UIScreen.main.bounds.width
     var height = UIScreen.main.bounds.height
     
@@ -62,14 +66,9 @@ struct ChoreDetailsCard: View {
                 VStack {
                     postponeButtons
                     
-                    SwipeToCompleteButton(action: {
+                    SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
                         Task {
-                            if let recurrentAssignment {
-                                await recurrentAssignment.toggle()
-                            } else {
-                                await chore.toggle()
-                            }
-                            carouselViewModel.refreshVisible()
+                            await carouselViewModel.toggle(chore: chore, assignment: recurrentAssignment)
                         }
                     }, color: room?.color.uiColor ?? .gray)
                     .padding(.horizontal, 30)
