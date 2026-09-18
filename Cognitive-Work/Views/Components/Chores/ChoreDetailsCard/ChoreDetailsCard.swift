@@ -62,9 +62,14 @@ struct ChoreDetailsCard: View {
                 VStack {
                     postponeButtons
                     
-                    SwipeToCompleteButton(action:  {
+                    SwipeToCompleteButton(action: {
                         Task {
-                            await chore.toggle()
+                            if let recurrentAssignment {
+                                await recurrentAssignment.toggle()
+                            } else {
+                                await chore.toggle()
+                            }
+                            carouselViewModel.refreshVisible()
                         }
                     }, color: room?.color.uiColor ?? .gray)
                     .padding(.horizontal, 30)
