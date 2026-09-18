@@ -36,7 +36,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didReceiveRemoteNotification userInfo: [AnyHashable : Any]
     ) async -> UIBackgroundFetchResult {
-        
         let notification = CKNotification(fromRemoteNotificationDictionary: userInfo)
         
         if notification?.subscriptionID == "shared-changes" || notification?.subscriptionID == "private-changes" {

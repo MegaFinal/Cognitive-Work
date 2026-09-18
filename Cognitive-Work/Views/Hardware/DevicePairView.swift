@@ -88,9 +88,7 @@ struct DevicePairView: View {
                 Button {
                     Task {
                         do {
-                            try await hardwareViewModel.sendChartToESP32(
-                                users: users, chores: chores, usageEntries: usageEntries, startDate: startDate
-                            )
+                            try await hardwareViewModel.sendChartToESP32()
                         } catch {
                             pairingErrorMessage = error.localizedDescription
                         }
@@ -113,7 +111,7 @@ struct DevicePairView: View {
              
             users = fortnightlyViewModel.users
             chores = fortnightlyViewModel.chores
-            usageEntries = await fortnightlyViewModel.usageEntries
+            usageEntries = fortnightlyViewModel.usageEntries
             startDate = fortnightlyViewModel.startDate
             isChartLoading = false
         }

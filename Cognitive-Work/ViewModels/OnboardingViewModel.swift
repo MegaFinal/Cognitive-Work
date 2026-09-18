@@ -147,11 +147,22 @@ class OnboardingViewModel {
         let houseRecordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
         let houseCascadeRef = CKRecord.Reference(recordID: houseRecordID, action: .none)
         
+        // Pre-compute the shopping list's recordID too, so the house record can point at it
+        // from the start.
+        let shopListRecordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
+        let shopListReference = CKRecord.Reference(recordID: shopListRecordID, action: .none)
+        
         // Construct the HouseModel and its underlying CKRecord.
         let userReference = CKRecord.Reference(recordID: userRecordID, action: .none)
-        let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference])
+        let newHouse = HouseModel(name: houseName, description: houseDescription, users: [userReference], shopList: shopListReference)
         let houseRecord = CKRecord(recordType: HouseModel.recordType, recordID: houseRecordID)
         newHouse.populate(record: houseRecord)
+        
+        // Construct the house's shopping list and its underlying CKRecord.
+        let shopList = ShopListModel(name: "Lista de compras", house: houseCascadeRef, recordID: shopListRecordID)
+        let shopListRecord = CKRecord(recordType: ShopListModel.recordType, recordID: shopListRecordID)
+        shopList.populate(record: shopListRecord)
+        shopListRecord.parent = houseCascadeRef
          
         // Prepare the user copy record and map all properties.
         let assetCopy = user.profilePicture.flatMap { try? duplicateCKAsset($0) }
@@ -180,9 +191,8 @@ class OnboardingViewModel {
         userCopy.populate(record: userCopyRecord)
         userCopyRecord.parent = houseCascadeRef
          
-        // Use batchSave to upload both the house and the user copy in a single network request.
         let success = await CloudKitManager.shared.batchSave(
-            records: [houseRecord, userCopyRecord],
+            records: [houseRecord, userCopyRecord, shopListRecord],
             zoneID: zoneID
         )
          

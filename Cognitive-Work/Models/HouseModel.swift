@@ -31,8 +31,9 @@ class HouseModel: CloudKitSyncable {
     /// References to the ``UserModel`` records that are members of this house.
     private var usersReference: [CKRecord.Reference]?
 
-    /// References to the shopping list entries of this house.
-    private var shopListItemReference: [CKRecord.Reference]?
+    /// Reference to this house's ``ShopListModel``. The house has exactly one
+    /// shopping list, which is edited in place — this points at it, not at a collection.
+    private var shopListReference: CKRecord.Reference?
 
     /// References to the ``RoomModel`` records belonging to this house.
     private var roomsReference: [CKRecord.Reference]?
@@ -55,7 +56,15 @@ class HouseModel: CloudKitSyncable {
         }
     }
     
-    // TODO: ShopListItem
+    /// The house's shopping list, or `nil` before one has been created.
+    var shopList: ShopListModel? {
+        get async {
+            if let shopListReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ShopListModel.self, recordReferences: [shopListReference])?.first
+            }
+            return nil
+        }
+    }
     
     var room: [RoomModel] {
         get async {
@@ -83,7 +92,7 @@ class HouseModel: CloudKitSyncable {
         self.description = description
         self.choresReference = record["chores"] as? [CKRecord.Reference]
         self.usersReference = record["users"] as? [CKRecord.Reference]
-        self.shopListItemReference = record["shopListItem"] as? [CKRecord.Reference]
+        self.shopListReference = record["shopList"] as? CKRecord.Reference
         self.roomsReference = record["rooms"] as? [CKRecord.Reference]
     }
 
@@ -96,14 +105,14 @@ class HouseModel: CloudKitSyncable {
     ///   - description: Free-form details about the house.
     ///   - chores: Chores already known to belong to this house.
     ///   - users: Members of this house.
-    ///   - shopListItem: Shopping list entries of this house.
+    ///   - shopList: The house's shopping list, if already known.
     ///   - rooms: Rooms already known to belong to this house.
     init(
         name: String,
         description: String,
         chores: [CKRecord.Reference]? = nil,
         users: [CKRecord.Reference]? = nil,
-        shopListItem: [CKRecord.Reference]? = nil,
+        shopList: CKRecord.Reference? = nil,
         rooms: [CKRecord.Reference]? = nil
     ) {
         self.recordID = nil
@@ -111,7 +120,7 @@ class HouseModel: CloudKitSyncable {
         self.description = description
         self.choresReference = chores
         self.usersReference = users
-        self.shopListItemReference = shopListItem
+        self.shopListReference = shopList
         self.roomsReference = rooms
     }
 
@@ -127,7 +136,7 @@ class HouseModel: CloudKitSyncable {
         record["description"] = description
         record["chores"] = choresReference
         record["users"] = usersReference
-        record["shopListItem"] = shopListItemReference
+        record["shopList"] = shopListReference
         record["rooms"] = roomsReference
     }
     
@@ -151,6 +160,14 @@ class HouseModel: CloudKitSyncable {
             return CKRecord.Reference(recordID: recordID, action: .none)
         }
         usersReference = (usersReference ?? []) + newReferences
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    /// Points this house at its shopping list and saves it.
+    @discardableResult
+    func setShopList(_ list: ShopListModel) async -> Bool {
+        guard let recordID = list.recordID else { return false }
+        shopListReference = CKRecord.Reference(recordID: recordID, action: .none)
         return await CloudKitManager.shared.update(self)
     }
     
@@ -221,6 +238,4 @@ class HouseModel: CloudKitSyncable {
         
         return await CloudKitManager.shared.deleteChildren(of: recordID)
     }
-    
-    
 }

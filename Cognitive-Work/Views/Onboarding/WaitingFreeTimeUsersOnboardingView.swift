@@ -32,8 +32,9 @@ struct WaitUsersFreeTimeOnboardingView: View {
     /// Sync fix: identifies the most recent `updateUsers()` run; older runs discard their result.
     @State private var refreshGeneration: Int = 0
     
-    /// Sync fix: interval of the polling fallback used when no push arrives.
-    private let pollingInterval: Duration = .seconds(15)
+    /// Sync fix: interval of the polling fallback used when no push arrives. Kept short since
+    /// this screen blocks onboarding until every member has filled their free time.
+    private let pollingInterval: Duration = .seconds(5)
     
     var width: CGFloat = UIScreen.main.bounds.width
     var height: CGFloat = UIScreen.main.bounds.height

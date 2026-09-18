@@ -8,42 +8,52 @@
 import Foundation
 import CloudKit
 
-struct ShopListItem: CloudKitSyncable {
+/// A single entry belonging to a ``ShopListModel``
+@Observable
+class ShopListItem: CloudKitSyncable, Identifiable {
+    private let localID = UUID().uuidString
+
+    var id: String {
+        recordID?.recordName ?? localID
+    }
+
     static var recordType: String = "ShopListItem"
-    
+
     var recordID: CKRecord.ID?
-    
+
     var name: String
-    var description: String
+
     var value: Double?
+
     var quantity: Int
-    var unitMeasuremente: UnitMeasurement
-    var priorityTag: PriorityTag
+
+    /// The unit ``quantity`` is expressed in (grams, liters, individual pieces, …).
+    var unitMeasurement: UnitMeasurement
+
+    /// Whether the item has already been purchased.
     var isBought: Bool
-    
-    private var perceptiveUserReference: CKRecord.Reference?
-    private var percharserUserReference: CKRecord.Reference?
+
+    /// The user who actually bought the item
+    private var buyerUserReference: CKRecord.Reference?
+
+    /// Other users who will use/share this item, e.g. to split its cost.
     private var relatedUsersReference: [CKRecord.Reference]?
+
+    /// The user who added this item to the list
+    private var addedByUserReference: CKRecord.Reference?
+
     private var tagsReference: [CKRecord.Reference]?
-    
-    var perceptiveUser: UserModel? {
+
+    var buyerUser: UserModel? {
         get async {
-            if let perceptiveUserReference {
-                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [perceptiveUserReference])?.first
+            if let buyerUserReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [buyerUserReference])?.first
             }
             return nil
         }
     }
-    
-    var percharserUser: UserModel? {
-        get async {
-            if let percharserUserReference {
-                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [percharserUserReference])?.first
-            }
-            return nil
-        }
-    }
-    
+
+    /// Users who will use/share this item
     var relatedUsers: [UserModel] {
         get async {
             if let relatedUsersReference {
@@ -52,7 +62,35 @@ struct ShopListItem: CloudKitSyncable {
             return []
         }
     }
-    
+
+    /// Resolves ``relatedUsers`` against an already-fetched pool of users (e.g.
+    /// ``ShopListViewModel/houseUsers``) instead of making a network request.
+    ///
+    /// Every related user is a house member, so filtering a pool that already contains every
+    /// house member is equivalent to the network fetch above — this is what list rows use to
+    /// avoid firing one CloudKit request per row.
+    ///
+    /// - Parameter pool: Users to search, typically every house member.
+    /// - Returns: The subset of `pool` referenced by this item.
+    func relatedUsers(in pool: [UserModel]) -> [UserModel] {
+        guard let relatedUsersReference else { return [] }
+        let ids = Set(relatedUsersReference.map { $0.recordID })
+        return pool.filter { user in
+            guard let recordID = user.recordID else { return false }
+            return ids.contains(recordID)
+        }
+    }
+
+    /// Who added this item to the list. See ``addedByUserReference``.
+    var addedByUser: UserModel? {
+        get async {
+            if let addedByUserReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [addedByUserReference])?.first
+            }
+            return nil
+        }
+    }
+
     var tags: [TagModel] {
         get async {
             if let tagsReference {
@@ -61,74 +99,136 @@ struct ShopListItem: CloudKitSyncable {
             return []
         }
     }
-    
-    init?(record: CKRecord) {
+
+    /// Creates a model from a CloudKit record.
+    ///
+    /// - Parameter record: The record to decode.
+    /// - Returns: `nil` when a required field is missing or has the wrong type, or when the
+    ///   stored unit/priority isn't a known case.
+    required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
-            let description = record["description"] as? String,
-            let value = record["value"] as? Double,
             let quantity = record["quantity"] as? Int,
-            let unitMeasuremente = record["unitMeasuremente"] as? String,
-            let priorityTag = record["priorityTag"] as? String,
+            let unitMeasurement = record["unitMeasurement"] as? String,
             let isBought = record["isBought"] as? Bool
         else {
             return nil
         }
-        
+
         self.recordID = record.recordID
-        
+
         self.name = name
-        self.description = description
-        self.value = value
+        self.value = record["value"] as? Double
         self.quantity = quantity
-        self.unitMeasuremente = UnitMeasurement(rawValue: unitMeasuremente) ?? .gram
-        self.priorityTag = PriorityTag(rawValue: priorityTag) ?? .low
+        self.unitMeasurement = UnitMeasurement(rawValue: unitMeasurement) ?? .gram
         self.isBought = isBought
-        self.perceptiveUserReference = record["perceptiveUser"] as? CKRecord.Reference
-        self.percharserUserReference = record["percharserUser"] as? CKRecord.Reference
+        self.buyerUserReference = record["buyerUser"] as? CKRecord.Reference
         self.relatedUsersReference = record["relatedUsers"] as? [CKRecord.Reference]
+        self.addedByUserReference = record["addedByUser"] as? CKRecord.Reference
         self.tagsReference = record["tags"] as? [CKRecord.Reference]
     }
-    
+
+    /// Creates a new, unsaved shopping list item.
+    ///
+    /// - Parameters:
+    ///   - name: Label shown to the user.
+    ///   - value: Estimated or actual price, when known.
+    ///   - quantity: How many units to buy.
+    ///   - unitMeasurement: The unit `quantity` is expressed in.
+    ///   - isBought: Whether the item starts already purchased. Defaults to `false`.
+    ///   - relatedUsers: Other users who will use/share this item.
+    ///   - addedByUser: The user adding this item, for gamification credit.
     init(
         name: String,
-        description: String,
-        value: Double?,
+        value: Double? = nil,
         quantity: Int,
-        unitMeasuremente: UnitMeasurement,
-        priorityTag: PriorityTag,
+        unitMeasurement: UnitMeasurement,
         isBought: Bool = false,
+        relatedUsers: [CKRecord.Reference]? = nil,
+        addedByUser: CKRecord.Reference? = nil,
         recordID: CKRecord.ID? = nil
     ) {
+        self.recordID = recordID
         self.name = name
-        self.description = description
         self.value = value
         self.quantity = quantity
-        self.unitMeasuremente = unitMeasuremente
-        self.priorityTag = priorityTag
+        self.unitMeasurement = unitMeasurement
         self.isBought = isBought
-        self.recordID = recordID
+        self.relatedUsersReference = relatedUsers
+        self.addedByUserReference = addedByUser
     }
-    
+
+    /// Writes this model's values into a CloudKit record.
+    ///
+    /// - Parameter record: The record to populate.
+    ///
+    /// > Note: `nil` relationships are skipped rather than written, preserving whatever is
+    /// > already on the server (same convention as ``ChoreModel/populate(record:)``).
     func populate(record: CKRecord) {
-        record["name"] = self.name
-        record["description"] = self.description
-        record["value"] = self.value
-        record["quantity"] = self.quantity
-        record["unitMeasuremente"] = self.unitMeasuremente.rawValue
-        record["priorityTag"] = self.priorityTag.rawValue
-        record["isBought"] = self.isBought
-        if perceptiveUserReference != nil {
-            record["perceptiveUser"] = self.perceptiveUserReference
+        record["name"] = name
+        record["value"] = value
+        record["quantity"] = quantity
+        record["unitMeasurement"] = unitMeasurement.rawValue
+        record["isBought"] = isBought
+        
+        if let buyerUserReference {
+            record["buyerUser"] = buyerUserReference
         }
-        if percharserUserReference != nil {
-            record["percharserUser"] = self.percharserUserReference
+        if let relatedUsersReference {
+            record["relatedUsers"] = relatedUsersReference
         }
-        if relatedUsersReference != nil {
-            record["relatedUsers"] = self.relatedUsersReference
+        if let addedByUserReference {
+            record["addedByUser"] = addedByUserReference
         }
-        if tagsReference != nil {
-            record["tags"] = self.tagsReference
+        if let tagsReference {
+            record["tags"] = tagsReference
         }
+    }
+
+    /// Flips ``isBought`` and persists the change
+    func toggle() async {
+        isBought.toggle()
+        await CloudKitManager.shared.update(self)
+    }
+
+    /// Marks the item bought by `user`, recording both ``isBought`` and ``buyerUserReference``
+    /// in a single update instead of two separate writes.
+    ///
+    /// - Parameter user: The user who bought the item.
+    func markBought(by user: UserModel) async {
+        guard let buyerID = user.recordID else { return }
+        isBought = true
+        buyerUserReference = CKRecord.Reference(recordID: buyerID, action: .none)
+        await CloudKitManager.shared.update(self)
+    }
+
+    /// Applies edited field values and persists them in one update. Mirrors
+    /// ``ChoreModel/save(from:targetAssignments:)``: the editable fields live on this method
+    /// rather than being set directly by callers, since ``relatedUsersReference`` is private.
+    ///
+    /// - Parameters:
+    ///   - name: Label shown to the user.
+    ///   - value: Estimated or actual price, when known.
+    ///   - quantity: How many units to buy.
+    ///   - unitMeasurement: The unit `quantity` is expressed in.
+    ///   - relatedUsers: Other users who will use/share this item.
+    /// - Returns: `true` when the update reached CloudKit.
+    @discardableResult
+    func update(
+        name: String,
+        value: Double?,
+        quantity: Int,
+        unitMeasurement: UnitMeasurement,
+        relatedUsers: [UserModel]
+    ) async -> Bool {
+        self.name = name
+        self.value = value
+        self.quantity = quantity
+        self.unitMeasurement = unitMeasurement
+        self.relatedUsersReference = relatedUsers.compactMap { user -> CKRecord.Reference? in
+            guard let recordID = user.recordID else { return nil }
+            return CKRecord.Reference(recordID: recordID, action: .none)
+        }
+        return await CloudKitManager.shared.update(self)
     }
 }
