@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// `Frame` ensures all images fit the card's ratio
 /// /// - `Parameters:`
@@ -30,6 +31,7 @@ struct CarouselCardFrame: View {
     
     var body: some View {
         ZStack {
+            let _ = print("frame recebeu:", recurrentAssignment?.recordID?.recordName ?? "NIL")
             ChoreCarouselCard(chore: chore, namespace: namespace, carouselViewModel: carouselViewModel)
                 .opacity(isShowingBack ? 0 : 1)
                 .scaleEffect(
