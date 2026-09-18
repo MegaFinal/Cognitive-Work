@@ -83,6 +83,8 @@ struct ChoresView: View {
                     }
                     .zIndex(2)
                 } else if let occurrence = carouselVM.focusedOccurrence {
+                    let _ = print("occurrence:", occurrence.assignment?.recordID?.recordName ?? "NIL",
+                                      "chore:", occurrence.chore.name)
                     VStack {
                         Spacer()
                         CarouselCardFrame(

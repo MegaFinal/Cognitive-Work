@@ -53,6 +53,7 @@ struct ChoreDetailsCard: View {
     var height = UIScreen.main.bounds.height
     
     var body: some View {
+        let _ = print("details:", chore.name, recurrentAssignment?.recordID?.recordName ?? "NIL")
         ZStack {
             VStack(spacing: 0) {
                 header
@@ -62,9 +63,14 @@ struct ChoreDetailsCard: View {
                 VStack {
                     postponeButtons
                     
-                    SwipeToCompleteButton(action:  {
+                    SwipeToCompleteButton(action: {
                         Task {
-                            await chore.toggle()
+                            if let recurrentAssignment {
+                                await recurrentAssignment.toggle()
+                            } else {
+                                await chore.toggle()
+                            }
+                            carouselViewModel.refreshVisible()
                         }
                     }, color: room?.color.uiColor ?? .gray)
                     .padding(.horizontal, 30)
