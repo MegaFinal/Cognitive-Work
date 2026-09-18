@@ -69,7 +69,7 @@ struct Onboarding: View {
             // exists, so start the flow from the beginning too.
             viewModel.stateMachine.resetProgress()
 //            #endif
-            await viewModel.checkExistingAccount()
+//            await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {
                 await viewModel.restoreProgressIfNeeded()

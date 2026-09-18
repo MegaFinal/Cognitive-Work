@@ -271,7 +271,10 @@ struct CreateAndEditChoreView: View {
             Spacer()
             
             Button {
-                Task { await confirmAndSave() }
+                Task {
+                    await confirmAndSave()
+                    carouselViewModel.refreshVisible()
+                }
             } label: {
                 Group {
                     if isSaving {

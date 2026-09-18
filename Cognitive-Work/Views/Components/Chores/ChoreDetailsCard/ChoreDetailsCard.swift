@@ -57,6 +57,7 @@ struct ChoreDetailsCard: View {
     var height = UIScreen.main.bounds.height
     
     var body: some View {
+        let _ = print("details:", chore.name, recurrentAssignment?.recordID?.recordName ?? "NIL")
         ZStack {
             VStack(spacing: 0) {
                 header
