@@ -86,6 +86,7 @@ struct ExistingIPView: View {
                 }
             }
         }
+        .toolbar(.hidden, for: .tabBar)
         .alert("Ops", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
