@@ -195,34 +195,6 @@ extension CloudKitManager {
     
     /// Deduplicates users who might have more than one `UserModel` record sharing the same
     /// `ownerRecordName`.
-    ///
-    /// ## Bug fixed here
-    ///
-    /// The previous tie-break only preferred a record with a non-nil `houseReference`, which
-    /// decides nothing when *both* candidates have one — and both always do here, since
-    /// ``fetchHouseUsers(of:)`` filters on exactly that field. The winner was therefore whichever
-    /// record the server happened to return first, which is not a stable order.
-    ///
-    /// That is enough to make a housemate appear on a screen with none of their chores: the
-    /// scheduler resolves the roster through this method and writes assignments against the
-    /// record it picked, then a dashboard resolves the roster again, gets the *other* record for
-    /// that person, and matches nothing. The column renders with the right name and no cards.
-    ///
-    /// A person ends up with several in-house records whenever their private profile is
-    /// recreated and `joinHouse()` derives a new in-house name from it (see
-    /// ``houseUserRecordID(for:inHouseZone:)``) — a wiped local account, a re-run of onboarding,
-    /// or the `deleteAllRecords()` debug reset. The stale copy keeps its `house` reference, so it
-    /// keeps matching the query forever.
-    ///
-    /// The ordering below is now total, so every caller in the app resolves the same person to
-    /// the same record. Determinism is what actually matters: even if the heuristic picks the
-    /// stale copy, the scheduler and the dashboard pick it *together* and stay consistent.
-    ///
-    /// Preference order:
-    /// 1. has a `house` reference — the in-house copy, visible to housemates;
-    /// 2. more `chores` references — ``commitScheduleResults(_:users:houseZoneID:)`` writes those
-    ///    onto the record it scheduled, so this is the copy the schedule actually belongs to;
-    /// 3. lowest `recordName` — an arbitrary but stable final tie-break.
     private func deduplicatedByOwner(_ users: [UserModel]) -> [UserModel] {
         var bestByOwner: [String: UserModel] = [:]
         
@@ -259,12 +231,6 @@ extension CloudKitManager {
     }
     
     /// Reads every record of `type` stored in one zone, without using `CKQuery`.
-    ///
-    /// Session-restore fix: `CKQuery` only works for fields marked *Queryable* in the CloudKit
-    /// schema. When an index is missing the query throws, the error is swallowed, and callers
-    /// receive `[]` — indistinguishable from "nothing exists". This walks the zone with
-    /// `recordZoneChanges` (the same technique as ``fetchDescendantLevels(of:)``), so it keeps
-    /// working regardless of the schema configuration. Intended as a fallback, not a hot path.
     ///
     /// - Parameters:
     ///   - type: The model type to decode.

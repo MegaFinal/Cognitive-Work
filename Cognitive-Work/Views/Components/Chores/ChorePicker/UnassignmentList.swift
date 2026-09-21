@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct UnassignmentList: View {
-    
     let items: [CarouselViewModel.UnassignedItem]
     let onPick: (CarouselViewModel.UnassignedItem) -> Void
     
@@ -91,7 +90,6 @@ struct UnassignmentList: View {
                 .foregroundStyle(roomColor.opacity(0.5))
         )
     }
-    
     
     private struct ScaleButtonStyle: ButtonStyle {
         func makeBody(configuration: Configuration) -> some View {

@@ -25,11 +25,6 @@ struct Onboarding: View {
 
     var body: some View {
         ZStack {
-            // Session-restore fix: after a relaunch the persisted step is rendered immediately,
-            // while `currentUser`/`currentHouse` are still being reloaded. Steps could then run
-            // their own `.task`s or accept taps with empty state ("Seu perfil ainda não foi
-            // salvo", "Não foi possível salvar seus horários"). Hold them back until the
-            // session is restored. Fresh starts (step 0) are not affected.
             Group {
                 if viewModel.isRestoringSession && viewModel.stateMachine.index > 0 {
                     ProgressView()
@@ -45,9 +40,6 @@ struct Onboarding: View {
                     Task {
                         if viewModel.currentUser != nil {
                             viewModel.stateMachine.flow = .invitedWithProfile
-                            // Sync fix: only advance once the guest's in-house record really
-                            // exists. Advancing unconditionally let the guest fill in free time
-                            // with no public record to write it to, so the admin never saw it.
                             if await viewModel.joinHouse() {
                                 viewModel.goToNextView()
                             }
@@ -58,15 +50,8 @@ struct Onboarding: View {
                 }
         }
         .task {
-            // Session-restore fix: this guard had been commented out again, which made the app
-            // erase every profile, house and share on each launch while the onboarding progress
-            // (kept in UserDefaults) survived — exactly the "data disappears when I close the
-            // app" behaviour. To reset CloudKit while testing, add `RESET_CLOUDKIT_ON_LAUNCH` to
-            // Build Settings → Active Compilation Conditions (Debug) instead of editing this.
             #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
             await CloudKitManager.shared.deleteAllRecords()
-            // Session-restore fix: after a reset the saved step points at data that no longer
-            // exists, so start the flow from the beginning too.
             viewModel.stateMachine.resetProgress()
             #endif
             await viewModel.checkExistingAccount()
@@ -75,7 +60,6 @@ struct Onboarding: View {
                 await viewModel.restoreProgressIfNeeded()
             }
             
-            // Session-restore fix: release the steps now that the session is loaded.
             viewModel.isRestoringSession = false
         }
     }

@@ -20,7 +20,6 @@ struct ShareHouseButton: View {
 
     @State private var isLoading = false
     
-    
     var body: some View {
         
         Button {
@@ -52,26 +51,6 @@ struct ShareHouseButton: View {
             .background(Capsule().foregroundColor(share == nil || isLoading ? .gray : .blue))
         }
         .disabled(share == nil || isLoading)
-        
-        //        if let url = shareURL {
-        //            ShareLink(item: url) {
-        //                ZStack {
-        //                    Text("Compartilhar convite")
-        //                        .font(.system(size: 17, weight: .medium))
-        //                }
-        //                .frame(width: width, height: height)
-        //                .foregroundColor(.white)
-        //                .background(Capsule().glassEffect().foregroundColor(.blue))
-        //            }
-        //        } else {
-        //            ZStack {
-        //                Text("Compartilhar convite")
-        //                    .font(.system(size: 17, weight: .medium))
-        //            }
-        //            .frame(width: width, height: height)
-        //            .foregroundColor(.white)
-        //            .background(Capsule().glassEffect())
-        //        }
     }
 }
 
