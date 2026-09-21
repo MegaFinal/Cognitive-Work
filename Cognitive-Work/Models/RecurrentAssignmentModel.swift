@@ -19,6 +19,9 @@ class RecurrentAssignmentModel: CloudKitSyncable {
     var userReference: CKRecord.Reference?
     var choreReference: CKRecord.Reference?
     
+    /// EventKit calendar item persistent identifier
+    var calendarEventIdentifier: String?
+    
     var user: UserModel? {
         get async {
             if let userReference {
@@ -37,11 +40,12 @@ class RecurrentAssignmentModel: CloudKitSyncable {
         }
     }
 
-    init(day: Date, isCompleted: Bool = false, user: CKRecord.Reference? = nil, chore: CKRecord.Reference? = nil) {
+    init(day: Date, isCompleted: Bool = false, user: CKRecord.Reference? = nil, chore: CKRecord.Reference? = nil, calendarEventIdentifier: String? = nil) {
         self.day = Calendar.current.startOfDay(for: day)
         self.isCompleted = isCompleted
         self.userReference = user
         self.choreReference = chore
+        self.calendarEventIdentifier = calendarEventIdentifier
     }
     
     required init?(record: CKRecord) {
@@ -57,6 +61,7 @@ class RecurrentAssignmentModel: CloudKitSyncable {
         self.day = day
         self.userReference = record["user"] as? CKRecord.Reference
         self.choreReference = record["chore"] as? CKRecord.Reference
+        self.calendarEventIdentifier = record["calendarEventIdentifier"] as? String
     }
     
     func populate(record: CKRecord) {
@@ -64,6 +69,7 @@ class RecurrentAssignmentModel: CloudKitSyncable {
         record["day"] = day
         record["user"] = userReference
         record["chore"] = choreReference
+        record["calendarEventIdentifier"] = calendarEventIdentifier
     }
     
     @discardableResult

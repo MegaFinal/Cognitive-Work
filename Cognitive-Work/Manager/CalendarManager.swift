@@ -11,24 +11,29 @@ import CloudKit
 
 @Observable
 class CalendarManager {
+    /// Global shared singleton instance
     static let shared = CalendarManager()
     
+    /// Underlying system calendar event store
     private let store = EKEventStore()
-    private let calendarTitle = "Pipa" // Dedicated calendar name
+    /// Dedicated calendar name used by the application
+    private let calendarTitle = "Pipa"
     
     private init() {}
     
-    /// Requests calendar access permission from the user.
+    /// Requests full access to the user's event calendar.
+    ///
+    /// - Returns: A Boolean value indicating whether access was granted.
     func requestAccess() async -> Bool {
         do {
-            return try await store.requestFullAccessToEvents()
+            let granted = try await store.requestFullAccessToEvents()
+            return granted
         } catch {
-            print("Failed to request calendar access: \(error.localizedDescription)")
             return false
         }
     }
     
-    /// Finds the dedicated app calendar or creates a new one if it does not exist.
+    /// Finds the dedicated "Pipa" calendar, or creates one automatically if it does not exist.
     private func dedicatedCalendar() throws -> EKCalendar {
         let calendars = store.calendars(for: .event)
         if let existing = calendars.first(where: { $0.title == calendarTitle }) {
@@ -38,7 +43,6 @@ class CalendarManager {
         let newCal = EKCalendar(for: .event, eventStore: store)
         newCal.title = calendarTitle
         
-        // Match a suitable account source for the new calendar
         if let iCloudSource = store.sources.first(where: { $0.sourceType == .calDAV && $0.title.contains("iCloud") }) {
             newCal.source = iCloudSource
         } else if let localSource = store.sources.first(where: { $0.sourceType == .local }) {
@@ -53,116 +57,338 @@ class CalendarManager {
         return newCal
     }
     
-    /// Commits all pending calendar write operations.
+    /// Commits all buffered batch calendar changes.
     func commitBatch() throws {
         try store.commit()
     }
+     
+    // MARK: - Helper Lookup & Robust Finding
     
-    // MARK: - Event Construction & Staging
-    
-    /// Configures and stages a single one-off chore event.
-    private func oneOffEvent(for chore: ChoreModel) throws {
-        guard let dueDate = chore.dueDate else { return }
+    /// Finds an existing calendar item by its unique identifier.
+    private func findExistingEvent(identifier: String?) -> EKEvent? {
+        guard let identifier, !identifier.isEmpty else { return nil }
+        let item = store.calendarItem(withIdentifier: identifier)
+        return item as? EKEvent
+    }
+
+    /// Finds or creates a calendar event for a recurrent assignment.
+    private func findOrCreateRecurrentEvent(for assignment: RecurrentAssignmentModel, choreName: String, calendar: EKCalendar) throws -> EKEvent {
+        // Try to find the event using the saved identifier first
+        if let identifier = assignment.calendarEventIdentifier,
+           let event = findExistingEvent(identifier: identifier) {
+            return event
+        }
+          
+        // Fallback strategy: Match by day and title if the ID has become invalid
+        let startOfDay = Calendar.current.startOfDay(for: assignment.day)
+        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+          
+        let predicate = store.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: [calendar])
+        let events = store.events(matching: predicate)
+          
+        // Reuse matching event and self-heal its identifier
+        if let matchedEvent = events.first(where: { $0.title == choreName }),
+           let matchedID = matchedEvent.eventIdentifier {
+            assignment.calendarEventIdentifier = matchedID
+            return matchedEvent
+        }
+          
+        return EKEvent(eventStore: store)
+    }
+
+    /// Finds or creates a calendar event for a one-off chore.
+    private func findOrCreateOneOffEvent(for chore: ChoreModel, calendar: EKCalendar) throws -> EKEvent {
+        // Try to find using the existing ID
+        if let event = findExistingEvent(identifier: chore.calendarEventIdentifier) {
+            return event
+        }
+          
+        // Fallback strategy using due date and title
+        if let dueDate = chore.dueDate {
+            let startOfDay = Calendar.current.startOfDay(for: dueDate)
+            let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+              
+            let predicate = store.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: [calendar])
+            let events = store.events(matching: predicate)
+              
+            if let matchedEvent = events.first(where: { $0.title == chore.name }) {
+                if let matchedID = matchedEvent.eventIdentifier {
+                    chore.calendarEventIdentifier = matchedID
+                }
+                return matchedEvent
+            }
+        }
+          
+        return EKEvent(eventStore: store)
+    }
+      
+    // MARK: - Event Construction & Staging (For Batch Sync)
+     
+    @discardableResult
+    func upsertOneOffEventWithoutPersisting(for chore: ChoreModel, currentUserID: CKRecord.ID) throws -> Bool {
+        // Check conditions: one-off chore, current user is responsible, has due date, and not completed
+        guard chore.frequency == .none,
+              let responsibleRef = chore.currentResponsibleReference,
+              responsibleRef.recordID == currentUserID,
+              let dueDate = chore.dueDate,
+              !chore.isDone else {
+            // Remove event if conditions are no longer met
+            if let identifier = chore.calendarEventIdentifier {
+                removeEvent(identifier: identifier, title: chore.name, date: chore.dueDate)
+                chore.calendarEventIdentifier = nil
+                return true
+            }
+            return false
+        }
+          
         let calendar = try dedicatedCalendar()
-        
-        let event = EKEvent(eventStore: store)
+        let event = try findOrCreateOneOffEvent(for: chore, calendar: calendar)
+          
+        // Populate event details
         event.title = "\(chore.name)"
-        event.notes = chore.description.isEmpty ? "Room Chore - Estimated duration: \(Int(chore.duration)) min" : "\(chore.description)\n\nEstimated duration: \(Int(chore.duration)) min"
-        
+        event.notes = chore.description.isEmpty
+            ? "Room Chore - Estimated duration: \(Int(chore.duration)) min"
+            : "\(chore.description)\n\nEstimated duration: \(Int(chore.duration)) min"
+          
         event.isAllDay = true
         event.startDate = dueDate
         event.endDate = dueDate
         event.calendar = calendar
-        
+          
+        // Stage changes without committing immediately
         try store.save(event, span: .thisEvent, commit: false)
+          
+        let newIdentifier = event.eventIdentifier
+        if chore.calendarEventIdentifier != newIdentifier, let newIdentifier {
+            chore.calendarEventIdentifier = newIdentifier
+            return true
+        }
+        return false
     }
-    
-    /// Configures and stages a single recurrent chore event instance.
-    private func recurrentEvent(for assignment: RecurrentAssignmentModel, chore: ChoreModel) throws {
+      
+    @discardableResult
+    func upsertRecurrentEventWithoutPersisting(for assignment: RecurrentAssignmentModel, chore: ChoreModel, currentUserID: CKRecord.ID) throws -> Bool {
+        let isAssignedToMe = assignment.userReference?.recordID == currentUserID
+        let isNotCompleted = !assignment.isCompleted
+          
+        // Must belong to the current user and remain uncompleted
+        guard isAssignedToMe, isNotCompleted else {
+            if let identifier = assignment.calendarEventIdentifier {
+                removeEvent(identifier: identifier, title: chore.name, date: assignment.day)
+                assignment.calendarEventIdentifier = nil
+                return true
+            }
+            return false
+        }
+          
         let calendar = try dedicatedCalendar()
-        
-        let event = EKEvent(eventStore: store)
+        let event = try findOrCreateRecurrentEvent(for: assignment, choreName: chore.name, calendar: calendar)
+          
+        // Populate event details
         event.title = "\(chore.name)"
-        event.notes = chore.description.isEmpty ? "Room Chore - Estimated duration: \(Int(chore.duration)) min" : "\(chore.description)\n\nEstimated duration: \(Int(chore.duration)) min"
-        
+        event.notes = chore.description.isEmpty
+            ? "Room Chore\nEstimated duration: \(Int(chore.duration)) min"
+            : "\(chore.description)\nEstimated duration: \(Int(chore.duration)) min"
+          
         event.isAllDay = true
         event.startDate = assignment.day
         event.endDate = assignment.day
         event.calendar = calendar
-        
+          
         try store.save(event, span: .thisEvent, commit: false)
+          
+        let newIdentifier = event.eventIdentifier
+        if assignment.calendarEventIdentifier != newIdentifier, let newIdentifier {
+            assignment.calendarEventIdentifier = newIdentifier
+            return true
+        }
+        return false
     }
-    
-    
+      
     // MARK: - Public APIs: Batch Synchronization & Deletion
-    
-    /// Synchronizes all chores (both recurrent and one-off) for the current user in batch.
+      
+    /// Batch synchronizes all chores and assignments to the calendar.
     func batchSyncAllChores(
         _ assignments: [RecurrentAssignmentModel],
         allChores: [ChoreModel],
         choresMap: [CKRecord.ID: ChoreModel],
         currentUserID: CKRecord.ID
     ) async {
-        guard await requestAccess() else {
-            print("User denied calendar access.")
-            return
-        }
-        
+        guard await requestAccess() else { return }
+          
+        var assignmentsToPersist: [RecurrentAssignmentModel] = []
+        var choresToPersist: [ChoreModel] = []
+          
         do {
-            var syncedCount = 0
-            
-            // Recurrent chores
+            // Process recurring tasks
             for assignment in assignments {
-                guard assignment.userReference?.recordID == currentUserID else { continue }
                 guard let choreRef = assignment.choreReference?.recordID,
                       let chore = choresMap[choreRef] else { continue }
-                
-                try recurrentEvent(for: assignment, chore: chore)
-                syncedCount += 1
+                 
+                let changed = try upsertRecurrentEventWithoutPersisting(for: assignment, chore: chore, currentUserID: currentUserID)
+                if changed {
+                    assignmentsToPersist.append(assignment)
+                }
             }
-            
-            // One-off chores
+              
+            // Process one-off tasks
             for chore in allChores {
-                guard chore.frequency == .none,
-                      let responsibleRef = chore.currentResponsibleReference,
-                      responsibleRef.recordID == currentUserID,
-                      chore.dueDate != nil else { continue }
-                
-                try oneOffEvent(for: chore)
-                syncedCount += 1
+                let originalID = chore.calendarEventIdentifier
+                let changed = try upsertOneOffEventWithoutPersisting(for: chore, currentUserID: currentUserID)
+                if originalID != chore.calendarEventIdentifier || changed {
+                    choresToPersist.append(chore)
+                }
             }
-            
-            // Commit all changes at once
+              
+            // Commit database transaction
             try commitBatch()
-            print("Successfully synced a total of \(syncedCount) chores to Apple Calendar!")
-            
+              
+            // Write back identifiers to CloudKit asynchronously
+            if !assignmentsToPersist.isEmpty {
+                await CloudKitManager.shared.batchUpdate(assignmentsToPersist)
+            }
+            if !choresToPersist.isEmpty {
+                await CloudKitManager.shared.batchUpdate(choresToPersist)
+            }
         } catch {
-            print("Failed to batch sync all chores to calendar: \(error.localizedDescription)")
+            // Handle error silently
         }
     }
-    
-    /// Clears all chore events from the dedicated "Pipa" calendar.
+      
+    /// Clears all events inside the dedicated calendar.
     func clearAllMyCalendarEvents() async {
         guard await requestAccess() else { return }
-        
         do {
             let calendarObj = try dedicatedCalendar()
-            
-            // Search time range: from 1 year ago to 2 years in the future
             let startDate = Calendar.current.date(byAdding: .year, value: -1, to: Date())!
             let endDate = Calendar.current.date(byAdding: .year, value: 2, to: Date())!
-            
+              
             let predicate = store.predicateForEvents(withStart: startDate, end: endDate, calendars: [calendarObj])
             let events = store.events(matching: predicate)
-            
+              
             for event in events {
                 try store.remove(event, span: .thisEvent, commit: false)
             }
-            
             try store.commit()
-            print("Successfully cleared all events from Pipa calendar instantly!")
         } catch {
-            print("Failed to clear calendar events: \(error.localizedDescription)")
+            // Handle error silently
+        }
+    }
+      
+    // MARK: - Single Item Operations
+      
+    /// Creates or updates a single one-off chore calendar event.
+    ///
+    /// - Parameters:
+    ///   - chore: The `ChoreModel` instance to update.
+    ///   - currentUserID: The `CKRecord.ID` of the current user.
+    func upsertOneOffEvent(for chore: ChoreModel, currentUserID: CKRecord.ID) async throws {
+        guard await requestAccess() else { return }
+
+        guard chore.frequency == .none,
+              let responsibleRef = chore.currentResponsibleReference,
+              responsibleRef.recordID == currentUserID,
+              let dueDate = chore.dueDate,
+              !chore.isDone else {
+            removeEvent(identifier: chore.calendarEventIdentifier, title: chore.name, date: chore.dueDate)
+            chore.calendarEventIdentifier = nil
+            await CloudKitManager.shared.update(chore)
+            return
+        }
+          
+        let calendar = try dedicatedCalendar()
+        let event = try findOrCreateOneOffEvent(for: chore, calendar: calendar)
+          
+        event.title = "\(chore.name)"
+        event.notes = chore.description.isEmpty
+            ? "Room Chore - Estimated duration: \(Int(chore.duration)) min"
+            : "\(chore.description)\n\nEstimated duration: \(Int(chore.duration)) min"
+          
+        event.isAllDay = true
+        event.startDate = dueDate
+        event.endDate = dueDate
+        event.calendar = calendar
+          
+        try store.save(event, span: .thisEvent, commit: true)
+          
+        let newIdentifier = event.eventIdentifier
+        if chore.calendarEventIdentifier != newIdentifier, let newIdentifier {
+            chore.calendarEventIdentifier = newIdentifier
+            await CloudKitManager.shared.update(chore)
+        }
+    }
+      
+    /// Creates or updates a single recurrent assignment calendar event.
+    ///
+    /// - Parameters:
+    ///   - assignment: The `RecurrentAssignmentModel` instance to update.
+    ///   - chore: The parent `ChoreModel`.
+    ///   - currentUserID: The `CKRecord.ID` of the current user.
+    func upsertRecurrentEvent(for assignment: RecurrentAssignmentModel, chore: ChoreModel, currentUserID: CKRecord.ID) async throws {
+        guard await requestAccess() else { return }
+
+        let isAssignedToMe = assignment.userReference?.recordID == currentUserID
+        let isNotCompleted = !assignment.isCompleted
+          
+        guard isAssignedToMe, isNotCompleted else {
+            removeEvent(identifier: assignment.calendarEventIdentifier, title: chore.name, date: assignment.day)
+            assignment.calendarEventIdentifier = nil
+            await CloudKitManager.shared.update(assignment)
+            return
+        }
+          
+        let calendar = try dedicatedCalendar()
+        let event = try findOrCreateRecurrentEvent(for: assignment, choreName: chore.name, calendar: calendar)
+          
+        event.title = "\(chore.name)"
+        event.notes = chore.description.isEmpty
+            ? "Room Chore\nEstimated duration: \(Int(chore.duration)) min"
+            : "\(chore.description)\nEstimated duration: \(Int(chore.duration)) min"
+          
+        event.isAllDay = true
+        event.startDate = assignment.day
+        event.endDate = assignment.day
+        event.calendar = calendar
+          
+        try store.save(event, span: .thisEvent, commit: true)
+          
+        let newIdentifier = event.eventIdentifier
+        if let newIdentifier, assignment.calendarEventIdentifier != newIdentifier {
+            assignment.calendarEventIdentifier = newIdentifier
+            await CloudKitManager.shared.update(assignment)
+        }
+    }
+      
+    /// Removes a calendar event using identifier-first lookup with title and date fallback matching.
+    ///
+    /// - Parameters:
+    ///   - identifier: The unique string identifier of the event.
+    ///   - title: The title of the event used for fallback matching.
+    ///   - date: The date of the event used for fallback matching.
+    func removeEvent(identifier: String?, title: String, date: Date?) {
+        // Try direct removal via identifier
+        if let identifier, let event = store.calendarItem(withIdentifier: identifier) as? EKEvent {
+            do {
+                try store.remove(event, span: .thisEvent, commit: true)
+                return
+            } catch {
+                // Ignore failure and fallback
+            }
+        }
+        
+        // Search and delete orphan events matching title and date range
+        guard let date else { return }
+        let calendar = Calendar.current
+        let startDate = calendar.startOfDay(for: date)
+        guard let endDate = calendar.date(byAdding: .day, value: 1, to: startDate) else { return }
+        
+        let predicate = store.predicateForEvents(withStart: startDate, end: endDate, calendars: nil)
+        let events = store.events(matching: predicate)
+        
+        for event in events {
+            if event.title == title {
+                try? store.remove(event, span: .thisEvent, commit: true)
+            }
         }
     }
 }
