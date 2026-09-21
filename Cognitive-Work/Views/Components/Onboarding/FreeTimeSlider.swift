@@ -77,10 +77,11 @@ struct FreeTimeSlider: View {
                         Rectangle()
                             .size(
                                 width: getSelectedWidth(in: geometry.size.width),
-                                height: geometry.size.height
+                                height: squareSize /*geometry.size.height + 2*/
                             )
                     )
             }
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
             .gesture(buildSelectionGesture(in: geometry.size.width))
         }
         .frame(maxWidth: totalWidth, maxHeight: squareSize)
