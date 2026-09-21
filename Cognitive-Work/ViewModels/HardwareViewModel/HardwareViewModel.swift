@@ -59,22 +59,18 @@ class HardwareViewModel {
     
     // MARK: - Image & Chart Transmission (ESP32 Display)
     
-    /// Renders a fortnightly chore chart and streams it as an e-paper compatible image to the ESP32.
-    /// - Parameters:
-    ///   - users: The list of users to display.
-    ///   - chores: The list of chores tracked.
-    ///   - usageEntries: Daily usage metrics.
-    ///   - startDate: The starting date for the chart window.
+    /// Renders the daily chores dashboard (``HardwareDailyChoresView``) and streams it as an
+    /// e-paper compatible image to the ESP32.
+    ///
     /// - Throws: An error if rendering fails or if the network transmission is interrupted.
     @MainActor
-    func sendChartToESP32(users: [UserModel], chores: [ChoreModel], usageEntries: [DailyUsageEntry], startDate: Date) async throws {
-        let chartView = FortnightlyChartRenderView(
-            users: users,
-            chores: chores,
-            usageEntries: usageEntries,
-            startDate: startDate
-        )
-        
+    func sendChartToESP32() async throws {
+        let choresViewModel = HardwareDailyChoresViewModel()
+        await choresViewModel.setup()
+
+        let chartView = HardwareDailyChoresView(viewModel: choresViewModel)
+            .frame(width: 800, height: 480)
+
         let renderer = ImageRenderer(content: chartView)
         renderer.scale = 1.0
         

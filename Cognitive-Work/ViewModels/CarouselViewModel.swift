@@ -150,10 +150,16 @@ class CarouselViewModel {
         
         let base = layoutMode == .grid ? cardModels.filter { chore in
             guard !chore.isDone, let date = nextDate(for: chore) else {return false}
+            
+            // The grid shows the day's occurrence, so hide it once that one is done
+            if let assignment = getAssignmentsForActiveContext(for: chore).first {
+                return !assignment.isCompleted
+            }
+            
             #if DEBUG
             return Calendar.current.isDateInTomorrow(date)
             #endif
-//            return Calendar.current.isDateInToday(date)
+            return Calendar.current.isDateInToday(date)
         } : (isFilterOn ? applyFilters(to: cardModels) : cardModels)
         
         visibleChores = base.sorted { a, b in
@@ -276,6 +282,20 @@ class CarouselViewModel {
     func toggleLayout() {
         layoutMode = layoutMode == .grid ? .list : .grid
         rebuildVisibleChores()
+    }
+    
+    // MARK: - isDone Chore Logic
+    
+    func isDone(for chore: ChoreModel, assignment: RecurrentAssignmentModel?) -> Bool {
+        assignment?.isCompleted ?? chore.isDone
+    }
+    
+    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async {
+        if let assignment {
+            await assignment.toggle()
+        } else {
+            await chore.toggle()
+        }
     }
     
     // MARK: - Filtering Logic

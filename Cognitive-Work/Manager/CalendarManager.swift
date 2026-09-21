@@ -43,6 +43,7 @@ class CalendarManager {
         let newCal = EKCalendar(for: .event, eventStore: store)
         newCal.title = calendarTitle
         
+        // Match a suitable account source for the new calendar
         if let iCloudSource = store.sources.first(where: { $0.sourceType == .calDAV && $0.title.contains("iCloud") }) {
             newCal.source = iCloudSource
         } else if let localSource = store.sources.first(where: { $0.sourceType == .local }) {

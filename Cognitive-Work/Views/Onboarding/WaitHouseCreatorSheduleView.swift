@@ -23,8 +23,9 @@ struct WaitHouseCreatorSheduleView: View {
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
-    /// Sync fix: interval of the polling fallback used when no push arrives.
-    private let pollingInterval: Duration = .seconds(15)
+    /// Sync fix: interval of the polling fallback used when no push arrives. Kept short since
+    /// this screen blocks onboarding until the schedule is ready.
+    private let pollingInterval: Duration = .seconds(5)
     
     let description1: String = "Estamos apenas esperando que o criador da casa gere a divisão das tarefas."
     let description2: String = "Isso acontecerá de forma automática assim que todos os membros entrarem na casa e definirem seus horários de tempo livre."

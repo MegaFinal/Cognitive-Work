@@ -9,10 +9,8 @@ import Foundation
 import SwiftUI
 import CloudKit
 
-/// `DashboardModel` fetches every `ChoreModel` and keeps only the ones
-/// that are due today and assigned to `user`. From that subset it derives
-/// three summary statistics: how many chores there are, how much total
-/// time they represent, and what percentage of them is already completed.
+/// `DashboardModel` keeps only the chores that are due today and assigned to `user`, out of
+/// chores/assignments the caller already fetched
 @Observable
 class DashboardModel: Identifiable {
 
@@ -40,18 +38,18 @@ class DashboardModel: Identifiable {
         self.user = user
     }
 
-    /// Fetches today's chores assigned to ``user`` from CloudKit and
-    /// recomputes every statistic.
-    func setup() async {
-        async let fetchC = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        async let fetchA = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
-        let (fetchedChores, assignments) = await (fetchC, fetchA)
-
+    /// Recomputes every statistic for today's chores assigned to ``user``, out of `chores`
+    /// and `assignments` the caller already has in memory (no CloudKit request here).
+    ///
+    /// - Parameters:
+    ///   - chores: Every chore, e.g. ``CarouselViewModel/cardModels``.
+    ///   - assignments: Every recurrent assignment, e.g. ``CarouselViewModel/dailyAssignments``.
+    func setup(chores: [ChoreModel], assignments: [RecurrentAssignmentModel]) {
         guard let targetUserID = user.recordID else { return }
 
         let today = Calendar.current.startOfDay(for: Date())
 
-        let filtered = fetchedChores.filter { chore in
+        let filtered = chores.filter { chore in
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
                 let ids = Set(refs.map { $0.recordID })
                 
