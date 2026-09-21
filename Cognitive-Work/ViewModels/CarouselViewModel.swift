@@ -159,7 +159,7 @@ class CarouselViewModel {
             #if DEBUG
             return Calendar.current.isDateInTomorrow(date)
             #endif
-            //            return Calendar.current.isDateInToday(date)
+            return Calendar.current.isDateInToday(date)
         } : (isFilterOn ? applyFilters(to: cardModels) : cardModels)
         
         visibleChores = base.sorted { a, b in
