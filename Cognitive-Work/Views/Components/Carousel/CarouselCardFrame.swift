@@ -36,13 +36,14 @@ struct CarouselCardFrame: View {
                     x: isFocused ? (0.88 / 0.72) : 1.0,
                     y: isFocused ? (0.65 / 0.47) : 1.0
                 )
-            
-            ChoreDetailsCard(
-                chore: chore,
-                recurrentAssignment: recurrentAssignment,
-                carouselViewModel: carouselViewModel,
-                isShowingBack: isShowingBack
-            )
+
+            if isShowingBack || rotation != 0 {
+                ChoreDetailsCard(
+                    chore: chore,
+                    recurrentAssignment: recurrentAssignment,
+                    carouselViewModel: carouselViewModel,
+                    isShowingBack: isShowingBack
+                )
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(isShowingBack ? 1 : 0)
                 .frame(width: 0, height: 0)
@@ -50,6 +51,8 @@ struct CarouselCardFrame: View {
                     x: isFocused ? 1.0 : (0.72 / 0.88),
                     y: isFocused ? 1.0 : (0.47 / 0.65)
                 )
+                .transition(.identity)
+            }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.75), value: isFocused)
         .animation(.easeInOut(duration: fadeDuration), value: isShowingBack)

@@ -47,25 +47,25 @@ class DashboardModel: Identifiable {
     func setup(chores: [ChoreModel], assignments: [RecurrentAssignmentModel]) {
         guard let targetUserID = user.recordID else { return }
 
-        let today = Calendar.current.startOfDay(for: Date())
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        var myAssignmentsToday: Set<CKRecord.ID> = []
+        for assignment in assignments {
+            guard let assignmentID = assignment.recordID,
+                  assignment.userReference?.recordID == targetUserID,
+                  calendar.isDate(assignment.day, inSameDayAs: today)
+            else { continue }
+            myAssignmentsToday.insert(assignmentID)
+        }
 
         let filtered = chores.filter { chore in
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                let ids = Set(refs.map { $0.recordID })
-                
-                return assignments.contains { assignment in
-                    guard let assignmentID = assignment.recordID,
-                          ids.contains(assignmentID),
-                          let responsibleID = assignment.userReference?.recordID
-                    else { return false }
-                    
-                    return responsibleID == targetUserID
-                        && Calendar.current.isDate(assignment.day, inSameDayAs: today)
-                }
+                return refs.contains { myAssignmentsToday.contains($0.recordID) }
             } else {
                 guard let responsibleID = chore.currentResponsibleReference?.recordID,
                       let dueDate = chore.dueDate,
-                      Calendar.current.isDateInToday(dueDate)
+                      calendar.isDateInToday(dueDate)
                 else { return false }
                 return responsibleID == targetUserID
             }

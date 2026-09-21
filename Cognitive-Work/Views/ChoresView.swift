@@ -20,8 +20,6 @@ struct ChoresView: View {
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .gray
 
-    @State private var dashboardUser: UserModel?
-
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
@@ -132,30 +130,20 @@ struct ChoresView: View {
             )
         }
         .task {
-            async let allDataTask: () = carouselVM.fetchAllData()
-            async let userTask = CloudKitManager.shared.fetchMyHouseUser()
-
-            await allDataTask
-            dashboardUser = await userTask
+            await carouselVM.fetchAllData()
             updateActiveRoomColor()
         }
         .task(id: carouselVM.activeIndex) {
             updateActiveRoomColor()
         }
-        .task(id: carouselVM.cardModels.count) {
+        .task(id: carouselVM.dataVersion) {
             updateActiveRoomColor()
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            Task {
-                await carouselVM.fetchAllData()
-                updateActiveRoomColor()
-            }
+            carouselVM.requestRefresh()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            Task {
-                await carouselVM.fetchAllData()
-                updateActiveRoomColor()
-            }
+            carouselVM.requestRefresh()
         }
     }
     
@@ -286,12 +274,9 @@ struct ChoresView: View {
         }
     }
 
-    /// Today's chore statistics, derived live from ``carouselVM``'s already-fetched chores
+    /// Today's chore statistics.
     private var dashboard: DashboardModel? {
-        guard let dashboardUser else { return nil }
-        let model = DashboardModel(user: dashboardUser)
-        model.setup(chores: carouselVM.cardModels, assignments: carouselVM.dailyAssignments)
-        return model
+        carouselVM.dashboard
     }
 }
 

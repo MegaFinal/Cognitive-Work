@@ -44,16 +44,14 @@ struct ShopListView: View {
         }
         .background(Color(.white).ignoresSafeArea())
         .task {
-            guard viewModel.items.isEmpty else { return }
+            guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            Task { await viewModel.refresh() }
+            viewModel.requestRefresh()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            Task {
-                await viewModel.refresh()
-            }
+            viewModel.requestRefresh()
         }
         .sheet(isPresented: $isPresentingAddItem) {
             ShopListItemFormView(
@@ -390,8 +388,6 @@ private struct ShopListItemFormView: View {
         name = item.name
         quantity = item.quantity
         unitMeasurement = item.unitMeasurement
-        // Resolved locally against `availableUsers` (already fetched by the parent) instead of
-        // a network request, same optimization as `ShopListItemRow`.
         relatedUsers = item.relatedUsers(in: availableUsers)
         if let value = item.value {
             valueText = value.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(value)) : String(value)

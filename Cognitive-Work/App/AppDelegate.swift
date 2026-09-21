@@ -55,6 +55,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // failure there was swallowed by `try?`. Re-ensuring them on every launch (the call is
         // idempotent) repairs a device that would otherwise never receive `.cloudKitDidChange`.
         Task {
+            // Warm the memoised zone check once, at launch, so the first record the user
+            // creates doesn't pay for it. `createZoneIfNeeded()` is a no-op afterwards — it
+            // used to issue a full `CKRecordZone` save before *every single* `create()`.
+            await CloudKitManager.shared.createZoneIfNeeded()
             try? await CloudKitManager.shared.createSharedSubscription()
         }
         

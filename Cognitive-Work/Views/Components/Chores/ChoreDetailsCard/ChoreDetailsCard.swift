@@ -62,10 +62,8 @@ struct ChoreDetailsCard: View {
                 VStack {
                     postponeButtons
                     
-                    SwipeToCompleteButton(action:  {
-                        Task {
-                            await chore.toggle()
-                        }
+                    SwipeToCompleteButton(action: {
+                        Task { await completeOccurrence() }
                     }, color: room?.color.uiColor ?? .gray)
                     .padding(.horizontal, 30)
                 }
@@ -85,6 +83,19 @@ struct ChoreDetailsCard: View {
         .shadow(color: .black.opacity(0.14), radius: 20.39595, x: 0, y: 5.80668)
     }
     
+    // MARK: - Actions
+
+    /// Completes (or un-completes) exactly what this card represents without completing other recurrent chores.
+    @MainActor
+    private func completeOccurrence() async {
+        if let recurrentAssignment {
+            await recurrentAssignment.toggle()
+        } else {
+            await chore.toggle()
+        }
+        carouselViewModel.refreshVisible()
+    }
+
     // MARK: - Subviews
     
     /// The upper header section: the chore's primary icon, name, and status tags.

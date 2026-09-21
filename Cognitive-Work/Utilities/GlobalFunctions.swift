@@ -466,13 +466,21 @@ func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
                     recordReferences: refs
                 )
                 
-                if resolved?.isEmpty ?? true {
-                    // If properties on the main thread need to be modified, switch back to MainActor to execute
-                    await MainActor.run {
-                        chore.dailyAssignmentsReference = nil
-                    }
-                    await CloudKitManager.shared.update(chore)
+                // Bug fixed here: this used to be `resolved?.isEmpty ?? true`, which treats a
+                // failed request exactly like a confirmed-orphaned one.
+                // `fetchRecordsByRecordReference` returns `nil` on error and `[]` only when the
+                // records genuinely could not be resolved, so a momentary network hiccup was
+                // enough to wipe a chore's whole schedule — and since the wipe is persisted
+                // immediately, the user's assignments for the next 14 days were gone for good,
+                // leaving them with an empty column until the scheduler happened to run again.
+                // A nil result is now left alone: the next run re-checks it for free.
+                guard let resolved, resolved.isEmpty else { return }
+                
+                // If properties on the main thread need to be modified, switch back to MainActor to execute
+                await MainActor.run {
+                    chore.dailyAssignmentsReference = nil
                 }
+                await CloudKitManager.shared.update(chore)
             }
         }
     }

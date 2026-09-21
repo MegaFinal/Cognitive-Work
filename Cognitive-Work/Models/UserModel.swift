@@ -17,6 +17,21 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// CloudKit record type backing this model.
     static var recordType: String = "UserModel"
     
+    /// Every field except ``profilePicture``.
+    ///
+    /// The avatar is a `CKAsset`, so including it made CloudKit download the full image for
+    /// every member of the house on every user query — and there are several of those per
+    /// refresh, across both the chores and the shopping list screens. ``UserProfileCache`` fetches
+    /// the asset on demand instead, once per user per session, off the main thread.
+    ///
+    /// A user fetched by record ID (``CloudKitManager/fetchMyHouseUser()``,
+    /// ``CloudKitManager/fetchRecordsByRecordReference(for:recordReferences:)``) is unaffected
+    /// and still carries the asset. See ``CloudKitSyncable/listDesiredKeys``.
+    static let listDesiredKeys: [CKRecord.FieldKey]? = [
+        "name", "ownerRecordName", "tier", "coins", "points", "couponLimit",
+        "badges", "chores", "availableTime", "coupons", "house"
+    ]
+    
     /// Identifier of the stored record, or `nil` before the user is saved.
     var recordID: CKRecord.ID?
     
@@ -161,7 +176,9 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// > already on the server.
     func populate(record: CKRecord) {
         record["name"] = name
-        record["profilePicture"] = profilePicture
+        if let profilePicture {
+            record["profilePicture"] = profilePicture
+        }
         record["tier"] = tier.rawValue
         record["coins"] = coins
         record["points"] = points

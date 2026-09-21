@@ -53,6 +53,7 @@ extension CloudKitManager {
             _ = try await database.save(record)
             var saved = item
             saved.recordID = recordID
+            invalidateSessionCacheIfNeeded(for: T.self)
             return saved
         } catch {
             errorMessage = "Failed to create \(T.recordType): \(error.localizedDescription)"
@@ -176,8 +177,12 @@ extension CloudKitManager {
     /// - Returns: The users whose `house` reference points at that house. Empty when no house
     ///   is resolved or none match.
     func fetchHouseUsers(of house: HouseModel? = nil) async -> [UserModel] {
-        let defaultHouse = try? await fetchFirst(HouseModel.self)
-        let resolvedHouse = house ?? defaultHouse
+        let resolvedHouse: HouseModel?
+        if let house {
+            resolvedHouse = house
+        } else {
+            resolvedHouse = await currentHouse()
+        }
         
         guard let houseID = resolvedHouse?.recordID else { return [] }
         
@@ -188,26 +193,69 @@ extension CloudKitManager {
         return deduplicatedByOwner(users)
     }
     
-    /// Deduplicates users who might have both a "private profile" and an "in-house copy"
-    /// sharing the same `ownerRecordName`.
+    /// Deduplicates users who might have more than one `UserModel` record sharing the same
+    /// `ownerRecordName`.
     ///
-    /// Prefers the record that has a non-nil `houseReference` (the actual in-house copy).
+    /// ## Bug fixed here
+    ///
+    /// The previous tie-break only preferred a record with a non-nil `houseReference`, which
+    /// decides nothing when *both* candidates have one — and both always do here, since
+    /// ``fetchHouseUsers(of:)`` filters on exactly that field. The winner was therefore whichever
+    /// record the server happened to return first, which is not a stable order.
+    ///
+    /// That is enough to make a housemate appear on a screen with none of their chores: the
+    /// scheduler resolves the roster through this method and writes assignments against the
+    /// record it picked, then a dashboard resolves the roster again, gets the *other* record for
+    /// that person, and matches nothing. The column renders with the right name and no cards.
+    ///
+    /// A person ends up with several in-house records whenever their private profile is
+    /// recreated and `joinHouse()` derives a new in-house name from it (see
+    /// ``houseUserRecordID(for:inHouseZone:)``) — a wiped local account, a re-run of onboarding,
+    /// or the `deleteAllRecords()` debug reset. The stale copy keeps its `house` reference, so it
+    /// keeps matching the query forever.
+    ///
+    /// The ordering below is now total, so every caller in the app resolves the same person to
+    /// the same record. Determinism is what actually matters: even if the heuristic picks the
+    /// stale copy, the scheduler and the dashboard pick it *together* and stay consistent.
+    ///
+    /// Preference order:
+    /// 1. has a `house` reference — the in-house copy, visible to housemates;
+    /// 2. more `chores` references — ``commitScheduleResults(_:users:houseZoneID:)`` writes those
+    ///    onto the record it scheduled, so this is the copy the schedule actually belongs to;
+    /// 3. lowest `recordName` — an arbitrary but stable final tie-break.
     private func deduplicatedByOwner(_ users: [UserModel]) -> [UserModel] {
         var bestByOwner: [String: UserModel] = [:]
         
         for user in users {
             let key = user.ownerRecordName
-            if let existing = bestByOwner[key] {
-                // Prefer the one with a house reference (the in-house copy)
-                if existing.houseReference == nil && user.houseReference != nil {
-                    bestByOwner[key] = user
-                }
-            } else {
+            guard let existing = bestByOwner[key] else {
+                bestByOwner[key] = user
+                continue
+            }
+            if preferredUser(user, over: existing) {
                 bestByOwner[key] = user
             }
         }
         
-        return Array(bestByOwner.values)
+        // Stable output order too: `Dictionary.values` has no defined order, and callers such as
+        // the scheduler iterate it.
+        return bestByOwner.values.sorted {
+            ($0.recordID?.recordName ?? "") < ($1.recordID?.recordName ?? "")
+        }
+    }
+    
+    /// Whether `candidate` should replace `current` as the record representing their shared
+    /// owner. See ``deduplicatedByOwner(_:)`` for the ordering and why it has to be total.
+    private func preferredUser(_ candidate: UserModel, over current: UserModel) -> Bool {
+        let candidateHasHouse = candidate.houseReference != nil
+        let currentHasHouse = current.houseReference != nil
+        if candidateHasHouse != currentHasHouse { return candidateHasHouse }
+        
+        let candidateChores = candidate.choresReference?.count ?? 0
+        let currentChores = current.choresReference?.count ?? 0
+        if candidateChores != currentChores { return candidateChores > currentChores }
+        
+        return (candidate.recordID?.recordName ?? "") < (current.recordID?.recordName ?? "")
     }
     
     /// Reads every record of `type` stored in one zone, without using `CKQuery`.
@@ -255,12 +303,17 @@ extension CloudKitManager {
     /// Queries the current user's own house zone.
     func fetchPrivate<T: CloudKitSyncable>(
         _ type: T.Type,
-        predicate: NSPredicate
+        predicate: NSPredicate,
+        desiredKeys: DesiredKeys = .list
     ) async -> [T] {
         let query = CKQuery(recordType: T.recordType, predicate: predicate)
         
         do {
-            let (results, _) = try await privateDB.records(matching: query, inZoneWith: houseZoneID)
+            let (results, _) = try await privateDB.records(
+                matching: query,
+                inZoneWith: houseZoneID,
+                desiredKeys: desiredKeys.resolve(for: T.self)
+            )
             return results.compactMap { try? $0.1.get() }.compactMap(T.init(record:))
         } catch {
             errorMessage = "Failed to fetch \(T.recordType): \(error.localizedDescription)"
@@ -269,14 +322,24 @@ extension CloudKitManager {
     }
     
     /// Queries every zone shared with the current user and merges the results.
-    func fetchShared<T: CloudKitSyncable>(_ type: T.Type, predicate: NSPredicate) async -> [T] {
+    func fetchShared<T: CloudKitSyncable>(
+        _ type: T.Type,
+        predicate: NSPredicate,
+        desiredKeys: DesiredKeys = .list
+    ) async -> [T] {
+        let zones = await sharedZones()
+        guard !zones.isEmpty else { return [] }
+        
         do {
-            let zones = try await sharedDB.allRecordZones()
             return try await withThrowingTaskGroup(of: [T].self) { group in
                 for zone in zones {
                     group.addTask {
                         let query = CKQuery(recordType: T.recordType, predicate: predicate)
-                        let (results, _) = try await self.sharedDB.records(matching: query, inZoneWith: zone.zoneID)
+                        let (results, _) = try await self.sharedDB.records(
+                            matching: query,
+                            inZoneWith: zone.zoneID,
+                            desiredKeys: desiredKeys.resolve(for: T.self)
+                        )
                         return results.compactMap { try? $0.1.get() }.compactMap(T.init(record:))
                     }
                 }
@@ -288,6 +351,14 @@ extension CloudKitManager {
             errorMessage = "Failed to fetch shared \(T.recordType): \(error.localizedDescription)"
             return []
         }
+    }
+    
+    /// Clears the session cache when the record type that was just written is one the cache
+    /// holds.
+    func invalidateSessionCacheIfNeeded<T: CloudKitSyncable>(for type: T.Type) {
+        guard T.recordType == HouseModel.recordType || T.recordType == UserModel.recordType
+        else { return }
+        invalidateSessionCache()
     }
     
     // MARK: - Update & Delete
@@ -349,6 +420,7 @@ extension CloudKitManager {
         
         do {
             _ = try await database.deleteRecord(withID: recordID)
+            invalidateSessionCacheIfNeeded(for: T.self)
             return true
         } catch {
             errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
@@ -562,5 +634,20 @@ extension CloudKitManager {
     
     func isOwner<T: CloudKitSyncable>(_ type: T.Type, recordID: CKRecord.ID) -> Bool {
         return recordID.zoneID.ownerName == CKCurrentUserDefaultName ? true : false
+    }
+}
+
+/// Which fields a query should transfer.
+enum DesiredKeys {
+    /// The model's ``CloudKitSyncable/listDesiredKeys``.
+    case list
+    /// Every field on the record.
+    case all
+    
+    func resolve<T: CloudKitSyncable>(for type: T.Type) -> [CKRecord.FieldKey]? {
+        switch self {
+        case .list: return T.listDesiredKeys
+        case .all: return nil
+        }
     }
 }
