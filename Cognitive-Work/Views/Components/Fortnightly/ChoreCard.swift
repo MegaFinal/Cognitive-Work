@@ -14,27 +14,23 @@ struct ChoreCard: View {
     
     let chore: ChoreModel
     let user: UserModel?
-    @State var room: RoomModel? = nil
+    let room: RoomModel?
     
     var body: some View {
         VStack(spacing: 30) {
             title
             
             HStack {
-                Image(systemName: "toilet")
+                Image(systemName: room?.symbol ?? "toilet")
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.2)
                     .padding(.horizontal)
                 
-                
                 ChorePriority(chore: chore, user: user)
             }
         }
         .foregroundColor(.white)
-        .task(id: chore.id) {
-            room = await chore.room
-        }
         .frame(width: width * 0.85, height: height * 0.35)
         .background(room?.color.uiColor ?? .teal)
         .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -98,5 +94,5 @@ private struct ChorePriority: View {
         priorityTag: .urgent
     )
     
-    ChoreCard(chore: mockChore, user: nil)
+    ChoreCard(chore: mockChore, user: nil, room: nil)
 }

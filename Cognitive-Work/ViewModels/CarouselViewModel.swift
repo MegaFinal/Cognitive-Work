@@ -221,20 +221,53 @@ class CarouselViewModel {
         dashboard = model
     }
     
+    // MARK: - Grid Visibility
+    ///
+    /// > Note: `1` (tomorrow) is intentional while the schedule is being tested, because
+    /// > ``TaskSchedulerEngine/schedule(chores:users:)`` seeds its window starting *tomorrow*,
+    /// > so "today" is empty right after a division is generated. Set this to `0` for
+    /// > production — and flip ``HardwareDailyChoresViewModel/dayOffsetFromToday`` together with
+    /// > it, since the e-paper dashboard has to show the same day the app does.
+    static let gridDayOffsetFromToday = 1
+    
+    /// The single day the grid layout renders, normalised to the start of that day.
+    /// - Parameter reference: The day to count from. Defaults to now; injectable for tests.
+    static func gridTargetDay(from reference: Date = Date()) -> Date {
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: reference)
+        return calendar.date(byAdding: .day, value: gridDayOffsetFromToday, to: startOfToday)
+            ?? startOfToday
+    }
+    
+    /// Whether `chore` belongs in the grid layout, which shows exactly one day at a time.
+    ///
+    /// 1. *the grid shows a single day* — the original date check; and
+    /// 2. *hide a chore once that day's occurrence is done* — added later as an early return:
+    ///
+    /// - Parameter chore: The chore to test.
+    /// - Returns: `true` when the chore has open work on ``gridTargetDay(from:)``.
+    private func isVisibleInGrid(_ chore: ChoreModel) -> Bool {
+        guard !chore.isDone else { return false }
+        
+        let targetDay = Self.gridTargetDay()
+
+        if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+            return getAssignments(for: chore, on: targetDay).contains { !$0.isCompleted }
+        }
+        
+        guard let dueDate = chore.dueDate else { return false }
+        return Calendar.current.isDate(dueDate, inSameDayAs: targetDay)
+    }
+    
     /// Rebuilds and caches the list of visible chores based on active filters and sorting rules.
     ///
     /// This method filters `cardModels` (either applying custom `ChoreFilters` or filtering out completed chores)
     /// and sorts the resulting array by their next scheduled date and priority tag. The outcome is stored in `visibleChores`
-    /// to prevent expensive O(n log n) computations during high-frequency animations or gesture frames.
     private func rebuildVisibleChores() {
         
-        let base = layoutMode == .grid ? cardModels.filter { chore in
-            guard !chore.isDone, let date = nextDate(for: chore) else {return false}
-            #if DEBUG
-            return Calendar.current.isDateInTomorrow(date)
-            #endif
-            return Calendar.current.isDateInToday(date)
-        } : (isFilterOn ? applyFilters(to: cardModels) : cardModels.filter { !$0.isDone })
+        let base = layoutMode == .grid
+            ? cardModels.filter { isVisibleInGrid($0) }
+            : (isFilterOn ? applyFilters(to: cardModels) : cardModels)
         
         visibleChores = base.sorted { a, b in
             let dateA = nextDate(for: a)
@@ -371,6 +404,20 @@ class CarouselViewModel {
     func toggleLayout() {
         layoutMode = layoutMode == .grid ? .list : .grid
         rebuildDerivedState()
+    }
+    
+    // MARK: - isDone Chore Logic
+    
+    func isDone(for chore: ChoreModel, assignment: RecurrentAssignmentModel?) -> Bool {
+        assignment?.isCompleted ?? chore.isDone
+    }
+    
+    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async {
+        if let assignment {
+            await assignment.toggle()
+        } else {
+            await chore.toggle()
+        }
     }
     
     // MARK: - Filtering Logic

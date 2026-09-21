@@ -39,7 +39,7 @@ struct ChoreCardListStyle: View {
     }
     
     var isOccurrenceDone: Bool {
-        recurrentAssignment?.isCompleted ?? chore.isDone
+        carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
     
     var width = UIScreen.main.bounds.width
@@ -105,14 +105,13 @@ struct ChoreCardListStyle: View {
                             
                             Spacer()
                             
-                            // Completion button
+                            // MARK: Completion button
                             Button {
+                                let generator = UINotificationFeedbackGenerator()
+                                generator.notificationOccurred(isOccurrenceDone ? .warning : .success)
+                                
                                 Task {
-                                    if let recurrentAssignment {
-                                        await recurrentAssignment.toggle()
-                                    } else {
-                                        await chore.toggle()
-                                    }
+                                    await carouselViewModel.toggle(chore: chore, assignment: recurrentAssignment)
                                     carouselViewModel.refreshVisible()
                                 }
                             } label: {
@@ -144,11 +143,11 @@ struct ChoreCardListStyle: View {
     @Previewable @Namespace var namespace
 
     let room: RoomModel = {
-        var room = RoomModel(name: "Cozinha", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()
-
+    
     let chore: ChoreModel = {
         let chore = ChoreModel(
             name: "Lavar a louça",
@@ -165,13 +164,13 @@ struct ChoreCardListStyle: View {
         chore.symbolName = "dishwasher"
         return chore
     }()
-
+    
     let vm: CarouselViewModel = {
         let vm = CarouselViewModel()
         vm.roomModels = [room]
         return vm
     }()
-
+    
     ChoreCardListStyle(chore: chore, namespace: namespace, carouselViewModel: vm) {
         print("Tapped")
     }

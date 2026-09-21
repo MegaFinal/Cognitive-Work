@@ -92,6 +92,24 @@ struct GeneralProfileSettingsView: View {
                     .foregroundColor(.secondary)
             }
             
+            // Calendar Toggle
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Sincronizar com Calendário")
+                     
+                    Spacer()
+                     
+                    Toggle("", isOn: $viewModel.isCalendarSyncEnabled)
+                        .toggleStyle(.switch)
+                        .padding(.trailing, 7)
+                        .frame(width: width * 0.37)
+                }
+                 
+                Text("Adicionar automaticamente as suas tarefas ao calendário da Apple (Pipa).")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+            }
+            
             Spacer()
             
             // MARK: - Delete account button
@@ -108,6 +126,7 @@ struct GeneralProfileSettingsView: View {
         .frame(width: width * 0.9)
         .navigationTitle("Configurações Gerais")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         
         // MARK: - Alerts
         .alert("Excluir Perfil?", isPresented: $showDeleteConfirmation) {

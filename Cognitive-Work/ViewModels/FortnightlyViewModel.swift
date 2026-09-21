@@ -38,6 +38,10 @@ class FortnightlyViewModel {
     /// A collection of raw recurrent assignment records fetched from CloudKit.
     var recurrentAssignments: [RecurrentAssignmentModel] = []
     
+    /// All rooms of the house, pre-loaded so views can resolve a chore's room
+    /// synchronously instead of awaiting `chore.room` per card.
+    var roomModels: [RoomModel] = []
+    
     /// The starting date of the current fortnightly cycle (typically adjusted to start on a specific weekday).
     var startDate: Date = Date()
     
@@ -68,7 +72,6 @@ class FortnightlyViewModel {
     /// Fetches all users, chores, and daily assignments directly from CloudKit,
     /// and initializes the fortnightly time frame.
     func setupWithFetch() async {
-        // 1. 并行获取用户和任务
         async let fetchU = CloudKitManager.shared.fetchHouseUsers()
         async let fetchC = CloudKitManager.shared.fetchAll(ChoreModel.self)
         
@@ -80,17 +83,20 @@ class FortnightlyViewModel {
         await finishSetup()
     }
     
-    /// Handles common post-fetch initialization tasks like loading assignments and calculating the date window.
+    /// Handles common post-fetch initialization: loads assignments and rooms in parallel (they don't depend on each other), then builds the chart entries.
     private func finishSetup() async {
-        recurrentAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
+        
+        let (assignments, rooms) = await (fetchAssignments, fetchRooms)
+        recurrentAssignments = assignments
+        roomModels = rooms
         
         let calendar = Calendar.current
         let today = Date()
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: today)) {
             self.startDate = tomorrow
         }
-        
-        recurrentAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
         
         await loadUsageEntries()
         
@@ -161,5 +167,11 @@ class FortnightlyViewModel {
         await MainActor.run {
             self.usageEntries = entries
         }
+    }
+    
+    // MARK: - Synchronous RAM lookups (consumed by "dumb" views)
+    func getRoom(for chore: ChoreModel) -> RoomModel? {
+        guard let refID = chore.roomReference?.recordID else { return nil }
+        return roomModels.first { $0.recordID == refID }
     }
 }

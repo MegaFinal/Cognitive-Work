@@ -27,6 +27,36 @@ final class UserProfileViewModel {
         didSet { loadSelectedPhoto() }
     }
     
+    /// Apple Calendar synchronization switch managed by the ViewModel.
+    ///
+    /// Toggling this property automatically requests calendar access and performs
+    /// full synchronization when enabled, or clears all synchronized events when disabled.
+    /// The state is persisted in `UserDefaults`.
+    var isCalendarSyncEnabled: Bool = UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled") {
+        didSet {
+            UserDefaults.standard.set(isCalendarSyncEnabled, forKey: "isCalendarSyncEnabled")
+            
+            // Handle permission and sync/cleanup logic asynchronously
+            Task {
+                if isCalendarSyncEnabled {
+                    let granted = await CalendarManager.shared.requestAccess()
+                    if granted {
+                        // Permission granted: perform full synchronization
+                        await syncMyAllChoresToCalendar()
+                    } else {
+                        // Permission denied: revert the switch to false
+                        await MainActor.run {
+                            self.isCalendarSyncEnabled = false
+                        }
+                    }
+                } else {
+                    // Switch turned off: remove all synchronized events from the calendar
+                    await removeAllMyAssignmentsFromCalendar()
+                }
+            }
+        }
+    }
+    
     init(user: UserModel? = nil, onAccountDeleted: @escaping () -> Void = {}) {
         self.user = user
         self.onAccountDeleted = onAccountDeleted
@@ -203,5 +233,46 @@ final class UserProfileViewModel {
             }
         }
         isSaving = false
+    }
+    
+    // MARK: - Calendar
+    
+    /// Synchronizes all chores (recurrent and one-off) assigned to the current user to Apple Calendar.
+    private func syncMyAllChoresToCalendar() async {
+        // Fetch the current house user
+        guard let myHouseUser = await CloudKitManager.shared.fetchMyHouseUser(),
+              let myUserID = myHouseUser.recordID else {
+            print("Sync failed: Could not fetch the current house user record.")
+            return
+        }
+        
+        // Fetch all chore data
+        let allChores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
+        var choresMap: [CKRecord.ID: ChoreModel] = [:]
+        for chore in allChores {
+            if let choreID = chore.recordID {
+                choresMap[choreID] = chore
+            }
+        }
+        
+        // Fetch all recurrent assignment instances
+        let allAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        
+        // Call CalendarManager's unified batch sync entry
+        await CalendarManager.shared.batchSyncAllChores(
+            allAssignments,
+            allChores: allChores,
+            choresMap: choresMap,
+            currentUserID: myUserID
+        )
+        
+        print("All chores synchronized to Apple Calendar successfully!")
+    }
+    
+    /// Clears all chore events belonging to the user from Apple Calendar.
+    private func removeAllMyAssignmentsFromCalendar() async {
+        // Clear all events under the calendar instantly
+        await CalendarManager.shared.clearAllMyCalendarEvents()
+        print("Successfully removed all user chore schedules from Apple Calendar.")
     }
 }

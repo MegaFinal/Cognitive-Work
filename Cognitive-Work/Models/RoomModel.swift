@@ -24,6 +24,9 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// Name shown to the user.
     var name: String
     
+    /// icon shown to the user
+    var symbol: String
+    
     /// References to the ``ChoreModel`` records that belong to this room.
     private var relatedChoresReference: [CKRecord.Reference]?
     
@@ -66,6 +69,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         
         self.recordID = record.recordID
         self.name = name
+        self.symbol = record["symbol"] as? String ?? "house"
         self.relatedChoresReference = record["relatedChores"] as? [CKRecord.Reference]
         self.houseReference = record["house"] as? CKRecord.Reference
         self.color = color
@@ -80,12 +84,14 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     ///   - color: Color used to identify the room.
     init(
         name: String,
+        symbol: String,
         relatedChores: [CKRecord.Reference]? = nil,
         house: CKRecord.Reference? = nil,
         color: RoomColor
     ) {
         self.recordID = nil
         self.name = name
+        self.symbol = symbol
         self.relatedChoresReference = relatedChores
         self.houseReference = house
         self.color = color
@@ -99,6 +105,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// > already on the server.
     func populate(record: CKRecord) {
         record["name"] = name
+        record["symbol"] = symbol
         if let relatedChoresReference {
             record["relatedChores"] = relatedChoresReference
         }

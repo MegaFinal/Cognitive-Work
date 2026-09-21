@@ -8,14 +8,16 @@
 import Foundation
 import CloudKit
 
-/// A single house member's chores for today, together with their share of the day's total workload.
+/// A single house member's chores for the dashboard's target day, together with their share of
+/// that day's total workload.
 struct UserDailyChoresGroup: Identifiable {
     var user: UserModel
 
-    /// This user's chores due today, in display order.
+    /// This user's chores due on the target day, in display order.
     var chores: [ChoreModel]
 
-    /// This user's share of every chore due today across the whole house, from `0.0` to `1.0`.
+    /// This user's share of every chore due on the target day across the whole house,
+    /// from `0.0` to `1.0`.
     var shareOfDay: Double
 
     var id: String { user.id }
@@ -26,10 +28,30 @@ struct UserDailyChoresGroup: Identifiable {
     }
 }
 
-/// Loads today's chores for every member of the house and groups them by responsible user, for
-/// the daily chores dashboard (``HardwareDailyChoresView``).
+/// Loads a single day's chores for every member of the house and groups them by responsible
+/// user, for the daily chores dashboard (``HardwareDailyChoresView``).
 @Observable
 class HardwareDailyChoresViewModel {
+
+    // MARK: - Target Day
+
+    /// How many days ahead of today the dashboard renders.
+    /// > Note: `1` (tomorrow) is intentional and matches what the device shows today, because
+    /// > the scheduler seeds its 14-day window starting tomorrow
+    /// > (see ``TaskSchedulerEngine/schedule(chores:users:)``), so "today" is empty on a freshly
+    /// > generated division. Set this to `0` to ship the real "Tarefas do Dia".
+    static let dayOffsetFromToday = 1
+
+    /// The day the dashboard renders: ``dayOffsetFromToday`` days after `reference`, normalised
+    /// to the start of that day.
+    ///
+    /// - Parameter reference: The day to count from. Defaults to now; injectable for tests.
+    static func targetDay(from reference: Date = Date()) -> Date {
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: reference)
+        return calendar.date(byAdding: .day, value: dayOffsetFromToday, to: startOfToday)
+            ?? startOfToday
+    }
 
     // MARK: - Core Data
 
@@ -39,10 +61,10 @@ class HardwareDailyChoresViewModel {
 
     // MARK: - Display Data
 
-    /// Every house member's chores due today
+    /// Every house member's chores due on the target day.
     private(set) var userGroups: [UserDailyChoresGroup] = []
 
-    /// Every room referenced by today's chores, for the color legend.
+    /// Every room referenced by the target day's chores, for the color legend.
     private(set) var roomsInUse: [RoomModel] = []
 
     private let dateFormatter: DateFormatter = {
@@ -52,8 +74,9 @@ class HardwareDailyChoresViewModel {
         return formatter
     }()
 
-    var todayDateFormatted: String {
-        return dateFormatter.string(from: Date())
+    /// The rendered day, formatted for the header.
+    var targetDateFormatted: String {
+        dateFormatter.string(from: Self.targetDay())
     }
 
     // MARK: - Initialization
@@ -93,53 +116,83 @@ class HardwareDailyChoresViewModel {
     /// Rebuilds ``userGroups`` and ``roomsInUse`` from ``allChores``/``dailyAssignments`` for the
     /// given house members.
     private func rebuildUserGroups(for users: [UserModel]) {
-        let today = Calendar.current.startOfDay(for: Date())
+        let targetDay = Self.targetDay()
 
-        let todaysChores: [(chore: ChoreModel, responsibleID: CKRecord.ID)] = allChores.compactMap { chore in
-            guard let responsibleID = responsibleUserID(for: chore, today: today) else { return nil }
-            return (chore, responsibleID)
+        let assignmentsByID = Dictionary(
+            dailyAssignments.compactMap { assignment in
+                assignment.recordID.map { ($0, assignment) }
+            },
+            uniquingKeysWith: { _, latest in latest }
+        )
+
+        let dayRows: [(chore: ChoreModel, responsibleID: CKRecord.ID)] = allChores.flatMap { chore in
+            responsibleUserIDs(for: chore, on: targetDay, assignmentsByID: assignmentsByID)
+                .map { (chore: chore, responsibleID: $0) }
         }
 
-        let totalChoresToday = todaysChores.count
+        let totalChoresOnDay = dayRows.count
 
         self.userGroups = users.map { user in
-            let choresForUser = todaysChores
+            let choresForUser = dayRows
                 .filter { $0.responsibleID == user.recordID }
                 .map { $0.chore }
 
-            let share = totalChoresToday > 0
-                ? Double(choresForUser.count) / Double(totalChoresToday)
+            let share = totalChoresOnDay > 0
+                ? Double(choresForUser.count) / Double(totalChoresOnDay)
                 : 0.0
 
             return UserDailyChoresGroup(user: user, chores: choresForUser, shareOfDay: share)
         }
         .sorted { $0.user.name < $1.user.name }
 
-        let roomIDsInUse = Set(todaysChores.compactMap { $0.chore.roomReference?.recordID })
+        let roomIDsInUse = Set(dayRows.compactMap { $0.chore.roomReference?.recordID })
         self.roomsInUse = roomModels.filter { room in
             guard let roomID = room.recordID else { return false }
             return roomIDsInUse.contains(roomID)
         }
     }
 
-    /// The recordID of whoever is responsible for `chore` today, or `nil` when it isn't due
-    /// today or has nobody assigned.
-    private func responsibleUserID(for chore: ChoreModel, today: Date) -> CKRecord.ID? {
+    /// Everyone responsible for `chore` on `day`, or an empty array when the chore isn't due
+    /// then or has nobody assigned.
+    ///
+    /// - Parameters:
+    ///   - chore: The chore to evaluate.
+    ///   - day: The day the dashboard is rendering. Named `day`, not `today`: the previous name
+    ///     is what made the hardcoded `isDateInToday` above read as correct.
+    ///   - assignmentsByID: Every known assignment, keyed by its own record ID.
+    /// - Returns: The responsible users' record IDs, in reference order, without duplicates.
+    private func responsibleUserIDs(
+        for chore: ChoreModel,
+        on day: Date,
+        assignmentsByID: [CKRecord.ID: RecurrentAssignmentModel]
+    ) -> [CKRecord.ID] {
+        let calendar = Calendar.current
+
         if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-            let ids = Set(refs.map { $0.recordID })
-            let todaysAssignment = dailyAssignments.first { assignment in
-                guard let assignmentID = assignment.recordID, ids.contains(assignmentID) else {
-                    return false
-                }
-                return Calendar.current.isDate(assignment.day, inSameDayAs: today)
+            var seen: Set<CKRecord.ID> = []
+            var responsibleIDs: [CKRecord.ID] = []
+
+            for ref in refs {
+                guard let assignment = assignmentsByID[ref.recordID],
+                      calendar.isDate(assignment.day, inSameDayAs: day),
+                      let userID = assignment.userReference?.recordID,
+                      seen.insert(userID).inserted
+                else { continue }
+
+                responsibleIDs.append(userID)
             }
-            return todaysAssignment?.userReference?.recordID
+
+            return responsibleIDs
         }
 
-        guard let dueDate = chore.dueDate, Calendar.current.isDateInToday(dueDate) else {
-            return nil
+        guard let dueDate = chore.dueDate,
+              calendar.isDate(dueDate, inSameDayAs: day),
+              let responsibleID = chore.currentResponsibleReference?.recordID
+        else {
+            return []
         }
-        return chore.currentResponsibleReference?.recordID
+
+        return [responsibleID]
     }
 
     // MARK: - Helpers

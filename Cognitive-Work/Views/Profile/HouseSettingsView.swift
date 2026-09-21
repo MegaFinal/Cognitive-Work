@@ -64,6 +64,8 @@ struct HouseSettingsView: View {
         .padding(.bottom, 30)
         .navigationTitle("Ajustes da Casa")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
+        
         .alert("Excluir Casa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {

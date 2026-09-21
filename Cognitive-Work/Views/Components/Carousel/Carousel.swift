@@ -37,11 +37,11 @@ struct Carousel: View {
                     .contentShape(Rectangle())
             }
             else {
-                // Only render cards near the current viewport to avoid heavy layout costs for off-screen items.
                 ForEach(Array(viewModel.visibleChores.enumerated())
                     .filter { abs(viewModel.distance($0.offset)) < 2.5 }, id: \.element.id) { index, chore in
                     CarouselCardFrame(
                         chore: chore,
+                        recurrentAssignment: viewModel.getAssignmentsForActiveContext(for: chore).first,
                         carouselViewModel: viewModel,
                         namespace: namespace,
                         isFocused: viewModel.isFocused(index),

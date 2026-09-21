@@ -80,6 +80,8 @@ struct ChoresView: View {
                     }
                     .zIndex(2)
                 } else if let occurrence = carouselVM.focusedOccurrence {
+                    let _ = print("occurrence:", occurrence.assignment?.recordID?.recordName ?? "NIL",
+                                      "chore:", occurrence.chore.name)
                     VStack {
                         Spacer()
                         CarouselCardFrame(
@@ -342,10 +344,10 @@ struct ChoreOccurrence: Identifiable {
 
 #Preview("Lista de tarefas") {
     let vm: CarouselViewModel = {
-        var cozinha = RoomModel(name: "Cozinha", color: .orange)
+        var cozinha = RoomModel(name: "Cozinha", symbol: "cooktop", color: .orange)
         cozinha.recordID = CKRecord.ID(recordName: "preview-cozinha")
-        
-        var banheiro = RoomModel(name: "Banheiro", color: .blue)
+
+        var banheiro = RoomModel(name: "Banheiro", symbol: "toilet", color: .blue)
         banheiro.recordID = CKRecord.ID(recordName: "preview-banheiro")
         
         func makeChore(_ name: String, symbol: String, room: RoomModel, frequency: Recurrence, duration: Double, priority: PriorityTag) -> ChoreModel {
