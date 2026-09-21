@@ -71,6 +71,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     
     var dailyAssignmentsReference: [CKRecord.Reference]?
     
+    /// EventKit calendar item persistent identifier
+    var calendarEventIdentifier: String?
+    
     var checkList: [CheckItemModel] {
         get async {
             if let checkListReference {
@@ -157,6 +160,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.allResponsibleUsersReference = record["allResponsibleUsers"] as? [CKRecord.Reference]
         self.roomReference = record["room"] as? CKRecord.Reference
         self.dailyAssignmentsReference = record["dailyAssignment"] as? [CKRecord.Reference]
+        self.calendarEventIdentifier = record["calendarEventIdentifier"] as? String
     }
     
     /// Creates a new, unsaved chore.
@@ -178,7 +182,8 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         currentResponsible: CKRecord.Reference? = nil,
         allResponsibleUsers: [CKRecord.Reference]? = nil,
         roomReference: CKRecord.Reference? = nil,
-        dailyAssignment: [CKRecord.Reference]? = nil
+        dailyAssignment: [CKRecord.Reference]? = nil,
+        calendarEventIdentifier: String? = nil
     ) {
         self.recordID = nil
         self.name = name
@@ -198,6 +203,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.allResponsibleUsersReference = allResponsibleUsers
         self.roomReference = roomReference
         self.dailyAssignmentsReference = dailyAssignment
+        self.calendarEventIdentifier = calendarEventIdentifier
     }
     
     func updateCheckItem(_ item: CheckItemModel) async {
@@ -229,6 +235,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["allResponsibleUsers"] = allResponsibleUsersReference ?? []
         record["room"] = roomReference
         record["dailyAssignment"] = dailyAssignmentsReference ?? []
+        record["calendarEventIdentifier"] = calendarEventIdentifier
     }
     
     func postpone(byDays days: Int) async {

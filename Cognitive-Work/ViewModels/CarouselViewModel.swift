@@ -661,12 +661,19 @@ class CarouselViewModel {
             item.chore.allResponsibleUsersReference = refs
             await CloudKitManager.shared.update(item.chore)
             
+            await syncSingleChoreToCalendar(item.chore)
+            
+            await refreshAfterChoreUpdate()
+                        
         case .recurring(let assignment):
             assignment.userReference = userRef
             await CloudKitManager.shared.update(assignment)
+            
+            await syncSingleAssignmentToCalendar(for: assignment, chore: item.chore)
+            
+            await refreshAfterChoreUpdate()
+            
         }
-        
-        await refreshAfterChoreUpdate()
     }
     
     /// Whether the "unassigned chores" popup is currently visible.
@@ -684,4 +691,51 @@ class CarouselViewModel {
         }
     }
     
+    
+    // MARK: - Calendar Synchronization
+
+    /// Synchronizes a single, non-recurrent chore to the system calendar.
+    ///
+    /// This method checks if calendar synchronization is enabled in user defaults, verifies access permissions,
+    /// retrieves the current user's CloudKit record ID, and upserts or removes the corresponding calendar event.
+    ///
+    /// - Parameter chore: The `ChoreModel` instance to be synchronized.
+    /// - Returns: An asynchronous task that executes on the main actor.
+    @MainActor
+    func syncSingleChoreToCalendar(_ chore: ChoreModel) async {
+        let isSyncEnabled = UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled")
+        guard isSyncEnabled else { return }
+        guard await CalendarManager.shared.requestAccess() else { return }
+        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
+              let myUserID = myUser.recordID else { return }
+         
+        do {
+            try await CalendarManager.shared.upsertOneOffEvent(for: chore, currentUserID: myUserID)
+        } catch {
+            print("Failed to sync single chore: \(error.localizedDescription)")
+        }
+    }
+
+    /// Accurately synchronizes a single day's recurrent assignment.
+    ///
+    /// Use this method when a specific day's assignment status or assignee changes without altering the global recurrence rule.
+    ///
+    /// - Parameters:
+    ///   - assignment: The `RecurrentAssignmentModel` representing the specific daily instance.
+    ///   - chore: The parent `ChoreModel` associated with the assignment.
+    /// - Returns: An asynchronous task that executes on the main actor.
+    @MainActor
+    func syncSingleAssignmentToCalendar(for assignment: RecurrentAssignmentModel, chore: ChoreModel) async {
+        let isSyncEnabled = UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled")
+        guard isSyncEnabled else { return }
+        guard await CalendarManager.shared.requestAccess() else { return }
+        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
+              let myUserID = myUser.recordID else { return }
+         
+        do {
+            try await CalendarManager.shared.upsertRecurrentEvent(for: assignment, chore: chore, currentUserID: myUserID)
+        } catch {
+            print("Failed to sync single assignment: \(error.localizedDescription)")
+        }
+    }
 }

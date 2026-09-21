@@ -39,7 +39,8 @@ struct UserModelTests {
                              availableTime: [defaultRefetence],
                              house: defaultRefetence,
                              coupons: [defaultRefetence],
-                             couponLimit: 10
+                             couponLimit: 10,
+                             ownerRecordName: ""
         )
         
         let itemSaved = await CloudKitManager.shared.create(user)
@@ -55,7 +56,7 @@ struct UserModelTests {
     @Test func fetchAllUsersSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = UserModel(name: "AllUser", tier: .tier1)
+        let user = UserModel(name: "AllUser", tier: .tier1, ownerRecordName: "")
         let itemSaved = await CloudKitManager.shared.create(user)
         #expect(itemSaved != nil)
         try await Task.sleep(for: .seconds(2))
@@ -71,7 +72,7 @@ struct UserModelTests {
     @Test func fetchSpecificUserSuccessfully() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = UserModel(name: "SpecificUser", tier: .tier1)
+        let user = UserModel(name: "SpecificUser", tier: .tier1, ownerRecordName: "")
         let itemSaved = await CloudKitManager.shared.create(user)
         
         #expect(itemSaved != nil)
@@ -92,7 +93,7 @@ struct UserModelTests {
     @Test func updateUserSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = UserModel(name: "SpecificUser", tier: .tier1)
+        let user = UserModel(name: "SpecificUser", tier: .tier1, ownerRecordName: "")
         var itemSaved = await CloudKitManager.shared.create(user)
         
         #expect(itemSaved != nil)
@@ -112,7 +113,7 @@ struct UserModelTests {
     @Test func deleteUserSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let user = UserModel(name: "SpecificUser", tier: .tier1)
+        let user = UserModel(name: "SpecificUser", tier: .tier1, ownerRecordName: " ")
         let itemSaved = await CloudKitManager.shared.create(user)
         
         #expect(itemSaved != nil)

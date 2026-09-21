@@ -15,7 +15,7 @@ struct RoomModelTests {
     @Test func createRoomSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let room = RoomModel(name: "roomTestName", color: RoomColor.blue)
+        let room = RoomModel(name: "roomTestName", symbol: "", color: RoomColor.blue)
         
         let itemSaved = await CloudKitManager.shared.create(room)
         CloudKitManager.shared.errorMessage == nil ? print("success") : print("ERRO:", CloudKitManager.shared.errorMessage as Any)
@@ -29,7 +29,7 @@ struct RoomModelTests {
     @Test func fetchAllRoomsSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let room = RoomModel(name: "roomFetchAllTestName", color: RoomColor.blue)
+        let room = RoomModel(name: "roomFetchAllTestName", symbol: "", color: RoomColor.blue)
         let itemSaved = await CloudKitManager.shared.create(room)
         #expect(itemSaved != nil)
         try await Task.sleep(for: .seconds(2))
@@ -45,7 +45,7 @@ struct RoomModelTests {
     @Test func fetchSpecificRoomSuccessfully() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let room = RoomModel(name: "roomFetchSpecificTestName", color: RoomColor.blue)
+        let room = RoomModel(name: "roomFetchSpecificTestName", symbol: "", color: RoomColor.blue)
         let itemSaved = await CloudKitManager.shared.create(room)
         
         #expect(itemSaved != nil)
@@ -66,7 +66,7 @@ struct RoomModelTests {
     @Test func updateRoomsSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let room = RoomModel(name: "roomUpdateTestName", color: RoomColor.blue)
+        let room = RoomModel(name: "roomUpdateTestName", symbol: "", color: RoomColor.blue)
         var itemSaved = await CloudKitManager.shared.create(room)
         
         #expect(itemSaved != nil)
@@ -86,7 +86,7 @@ struct RoomModelTests {
     @Test func deleteRoomSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let room = UserModel(name: "SpecificUser", tier: .tier1)
+        let room = UserModel(name: "SpecificUser", tier: .tier1, ownerRecordName: "")
         let itemSaved = await CloudKitManager.shared.create(room)
         
         #expect(itemSaved != nil)
