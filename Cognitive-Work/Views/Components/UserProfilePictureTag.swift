@@ -8,58 +8,47 @@
 import SwiftUI
 import CloudKit
 
-/// Singular isolated component to portray an explicit image string into an aligned circle badge.
+/// A circular avatar badge for a single house member.
 struct UserProfilePictureTag: View {
-    
-    /// Encoded PNG string data mapping back into a UIImage context.
+
+    /// The member whose avatar should be shown, or `nil` to render the placeholder.
     let user: UserModel?
 
     var width = UIScreen.main.bounds.width
-    
+
     /// Scaling parameter controlling absolute size derivations.
     var widthMultiplier: Double
-    
-    var displayedImageData: Data? {
-        guard let asset = user?.profilePicture else {
-            print("[\(user?.name ?? "?")] asset nulo")
-            return nil
-        }
-        guard let fileURL = asset.fileURL else {
-            print("[\(user?.name ?? "?")] asset sem fileURL")
-            return nil
-        }
-        do {
-            return try Data(contentsOf: fileURL)
-        } catch {
-            print("[\(user?.name ?? "?")] falha ao ler \(fileURL.lastPathComponent): \(error)")
-            return nil
-        }
-    }
-    
+
+    /// The decoded avatar, populated asynchronously by ``UserProfileCache``.
+    @State private var image: UIImage?
+
+    private var side: CGFloat { width * widthMultiplier }
+
     var body: some View {
         Group {
-            Group {
-                if let data = displayedImageData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width:width * widthMultiplier, height: width * widthMultiplier)
-                        .clipShape(Circle())
-                } else {
-                    Image(systemName: "person.crop.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .foregroundStyle(.gray)
-                        .frame(width: width * widthMultiplier, height: width * widthMultiplier)
-                        .background(.white)
-                        .clipShape(Circle())
-                }
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: side, height: side)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.gray)
+                    .frame(width: side, height: side)
+                    .background(.white)
+                    .clipShape(Circle())
             }
+        }
+        .task(id: user?.recordID) {
+            image = await UserProfileCache.shared.image(for: user)
         }
     }
 }
 
-#Preview("Com foto") {
+#Preview {
     let user: UserModel = {
         let user = UserModel(name: "Dayô", tier: .tier1, ownerRecordName: "preview-owner")
 

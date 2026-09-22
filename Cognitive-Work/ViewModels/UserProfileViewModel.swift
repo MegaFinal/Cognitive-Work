@@ -20,6 +20,9 @@ final class UserProfileViewModel {
     var isEditing = false
     var isSaving = false
     var errorMessage: String?
+    /// Set to `true` right after ``saveChanges()`` persists successfully, so the view can show
+    /// a brief success confirmation. The view resets it once that confirmation is dismissed.
+    var didSaveSuccessfully = false
     
     var editedName: String = ""
     var editedProfilePicture: Data?
@@ -146,6 +149,7 @@ final class UserProfileViewModel {
             }
         }
         selectedPhotoItem = nil
+        didSaveSuccessfully = false
         isEditing = true
     }
     
@@ -185,6 +189,7 @@ final class UserProfileViewModel {
             
             if privateSuccess && houseSuccess {
                 isEditing = false
+                didSaveSuccessfully = true
             } else {
                 errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
             }
@@ -192,6 +197,7 @@ final class UserProfileViewModel {
             let success = await CloudKitManager.shared.update(privateUser)
             if success {
                 isEditing = false
+                didSaveSuccessfully = true
             } else {
                 errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
             }

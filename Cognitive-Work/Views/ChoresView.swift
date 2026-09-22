@@ -20,8 +20,6 @@ struct ChoresView: View {
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .gray
 
-    @State private var dashboardUser: UserModel?
-
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
@@ -134,30 +132,28 @@ struct ChoresView: View {
             )
         }
         .task {
-            async let allDataTask: () = carouselVM.fetchAllData()
-            async let userTask = CloudKitManager.shared.fetchMyHouseUser()
-
-            await allDataTask
-            dashboardUser = await userTask
+            await carouselVM.fetchAllData()
             updateActiveRoomColor()
         }
         .task(id: carouselVM.activeIndex) {
             updateActiveRoomColor()
         }
-        .task(id: carouselVM.cardModels.count) {
+        .task(id: carouselVM.dataVersion) {
             updateActiveRoomColor()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            Task {
+        .task {
+            // Keep chores in sync across devices without requiring a relaunch.
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { break }
                 await carouselVM.fetchAllData()
-                updateActiveRoomColor()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            carouselVM.requestRefresh()
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            Task {
-                await carouselVM.fetchAllData()
-                updateActiveRoomColor()
-            }
+            carouselVM.requestRefresh()
         }
     }
     
@@ -187,18 +183,13 @@ struct ChoresView: View {
                 }
                 
                 if carouselVM.layoutMode == .list {
-                    Button {
-                        carouselVM.isSelectingFilter = true
+                    Menu {
+                        FilterOptionsMenu(viewModel: carouselVM)
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease")
                             .font(.system(size: 22))
                             .foregroundColor(.black)
                             .padding(8)
-                    }
-                    .popover(isPresented: $carouselVM.isSelectingFilter) {
-                        FilterOptionsMenu(viewModel: carouselVM)
-                            .frame(width: 250)
-                            .presentationCompactAdaptation(.popover)
                     }
                 }
             }
@@ -256,8 +247,29 @@ struct ChoresView: View {
             .padding(.top, 8)
             .padding(.bottom, 120)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onPullDownAtTop(action: carouselVM.toggleLayout)
         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
+        .overlay {
+            // Empty state for the list layout specifically
+            if !carouselVM.isLoading && carouselVM.visibleOccurrences.isEmpty {
+                emptyChoreListState
+            }
+        }
+    }
+
+    /// Shown in place of ``choreList`` when the list layout has no chores to display —
+    /// either because the house has none, or the active filter matches none.
+    private var emptyChoreListState: some View {
+        ContentUnavailableView(
+            carouselVM.isFilterOn ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa ainda",
+            systemImage: "checklist",
+            description: Text(
+                carouselVM.isFilterOn
+                    ? "Nenhuma tarefa corresponde ao filtro selecionado."
+                    : "Toque em \"+\" para criar a primeira tarefa da casa."
+            )
+        )
     }
     
     // MARK: - Actions
@@ -288,12 +300,9 @@ struct ChoresView: View {
         }
     }
 
-    /// Today's chore statistics, derived live from ``carouselVM``'s already-fetched chores
+    /// Today's chore statistics.
     private var dashboard: DashboardModel? {
-        guard let dashboardUser else { return nil }
-        let model = DashboardModel(user: dashboardUser)
-        model.setup(chores: carouselVM.cardModels, assignments: carouselVM.dailyAssignments)
-        return model
+        carouselVM.dashboard
     }
 }
 

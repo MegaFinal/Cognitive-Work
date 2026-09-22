@@ -42,6 +42,17 @@ struct ChoreDetailsCard: View {
     }
     
     var occurrenceResponsibleUsers: [UserModel] {
+        guard chore.dailyAssignmentsReference?.isEmpty == false else {
+            guard let refs = chore.allResponsibleUsersReference else { return [] }
+            
+            let ids = Set(refs.compactMap { $0.recordID })
+            
+            return carouselViewModel.userModels.filter { user in
+                guard let id = user.recordID else { return false }
+                return ids.contains(id)
+            }
+        }
+
         let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
         return carouselViewModel.userModels.filter { user in
             guard let id = user.recordID else { return false }

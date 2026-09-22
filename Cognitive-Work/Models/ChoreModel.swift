@@ -17,6 +17,13 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// CloudKit record type backing this model.
     static let recordType = "ChoreModel"
     
+    /// Every field except ``image``.
+    static let listDesiredKeys: [CKRecord.FieldKey]? = [
+        "name", "description", "isDone", "dueDate", "frequency", "shouldBeIncluded",
+        "duration", "isPublic", "isLate", "weight", "priorityTag",
+        "checkList", "currentResponsible", "allResponsibleUsers", "room", "dailyAssignment"
+    ]
+    
     /// Identifier of the stored record, or `nil` before the chore is saved.
     var recordID: CKRecord.ID?
     
@@ -228,7 +235,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["isLate"] = isLate
         record["weight"] = weight
         record["priorityTag"] = priorityTag.rawValue
-        record["image"] = image
+        if let image {
+            record["image"] = image
+        }
         
         record["checkList"] = checkListReference ?? []
         record["currentResponsible"] = currentResponsibleReference
@@ -248,9 +257,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
-    func toggle() async {
+    @discardableResult
+    func toggle() async -> Bool {
         self.isDone.toggle()
-        await CloudKitManager.shared.update(self)
+        return await CloudKitManager.shared.update(self)
     }
     
     /// Applies the edits made in `DTO` to this chore and persists everything to CloudKit.

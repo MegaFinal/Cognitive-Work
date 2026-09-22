@@ -10,9 +10,16 @@ import SwiftUI
 import WeatherKit
 import CloudKit
 
-/// Wall-dashboard view showing every house member's chores for
-/// today, one column per user, colored by the room each chore
-/// belongs to.
+/// Wall-dashboard view showing every house member's chores for the target day, one column per
+/// user, colored by the room each chore belongs to.
+///
+/// Which day that is comes from ``HardwareDailyChoresViewModel/dayOffsetFromToday`` — currently
+/// tomorrow, on purpose, while the e-paper flow is being tested.
+///
+/// > Note: this view is render-only. ``HardwareViewModel/sendChartToESP32()`` awaits
+/// > `viewModel.setup()` and then hands the populated view model to `ImageRenderer`, which does
+/// > not run `.task`. The modifier below is a fallback for presenting the dashboard on screen;
+/// > it is not what fills the image sent to the device.
 struct HardwareDailyChoresView: View {
     var viewModel = HardwareDailyChoresViewModel()
     var weatherViewModel = WeatherViewModel()
@@ -39,7 +46,9 @@ struct HardwareDailyChoresView: View {
                 Text("Tarefas do Dia,")
                     .font(.title)
                     .bold()
-                Text(viewModel.todayDateFormatted)
+                // Was `todayDateFormatted`, which printed `Date()` while the table below listed
+                // the target day — so the header contradicted its own content.
+                Text(viewModel.targetDateFormatted)
                     .font(.title2)
             }
             

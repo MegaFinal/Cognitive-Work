@@ -32,28 +32,33 @@ struct ShopListView: View {
                 ProgressView()
                     .frame(maxWidth: .infinity)
                 Spacer()
+            } else if viewModel.hasLoaded && viewModel.items.isEmpty {
+                emptyState
             } else {
                 itemList
             }
-        }
-        .toolbar {
-            
         }
         .overlay(alignment: .bottomTrailing) {
             addButton
         }
         .background(Color(.white).ignoresSafeArea())
         .task {
-            guard viewModel.items.isEmpty else { return }
+            guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            Task { await viewModel.refresh() }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            Task {
+        .task {
+            // updates feel real-time regardless of push timing.
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { break }
                 await viewModel.refresh()
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            viewModel.requestRefresh()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            viewModel.requestRefresh()
         }
         .sheet(isPresented: $isPresentingAddItem) {
             ShopListItemFormView(
@@ -137,6 +142,16 @@ struct ShopListView: View {
             .padding(.top, 12)
             .padding(.bottom, 120)
         }
+    }
+
+    /// Shown instead of ``itemList`` once the list has loaded and has no items yet.
+    private var emptyState: some View {
+        ContentUnavailableView(
+            "Lista de compras vazia",
+            systemImage: "cart",
+            description: Text("Toque em \"+\" para adicionar o primeiro item.")
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// Floating action button that opens the form to add a new item.
@@ -357,6 +372,7 @@ private struct ShopListItemFormView: View {
         .task {
             populateFromMode()
         }
+        .dismissKeyboardOnTap()
     }
 
     private func confirmButton(width: CGFloat) -> some View {
@@ -390,8 +406,6 @@ private struct ShopListItemFormView: View {
         name = item.name
         quantity = item.quantity
         unitMeasurement = item.unitMeasurement
-        // Resolved locally against `availableUsers` (already fetched by the parent) instead of
-        // a network request, same optimization as `ShopListItemRow`.
         relatedUsers = item.relatedUsers(in: availableUsers)
         if let value = item.value {
             valueText = value.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(value)) : String(value)

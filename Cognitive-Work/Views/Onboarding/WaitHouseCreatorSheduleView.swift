@@ -8,12 +8,6 @@
 import SwiftUI
 
 /// Guest screen shown while the admin generates the chore division.
-///
-/// ## Sync fix
-/// The screen used to re-check the server only twice: once in `.task` and whenever
-/// `.cloudKitDidChange` arrived. That notification depends on silent pushes, which iOS
-/// throttles, coalesces and drops (and never delivered before the `remote-notification`
-/// background mode was declared), and `.task` never runs again while the view stays on screen.
 /// If the admin finished while the guest's app was in the background, nothing ever triggered a
 /// new check, so the guest waited forever. Two completion paths were added, both calling the
 /// same, now re-entrancy-safe, `checkAndAdvanceIfScheduleReady()`:
@@ -22,9 +16,7 @@ import SwiftUI
 struct WaitHouseCreatorSheduleView: View {
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
-    
-    /// Sync fix: interval of the polling fallback used when no push arrives. Kept short since
-    /// this screen blocks onboarding until the schedule is ready.
+
     private let pollingInterval: Duration = .seconds(5)
     
     let description1: String = "Estamos apenas esperando que o criador da casa gere a divisão das tarefas."
@@ -67,8 +59,6 @@ struct WaitHouseCreatorSheduleView: View {
         .task {
             await viewModel.checkAndAdvanceIfScheduleReady()
             
-            // Sync fix: polling fallback. `.task` is cancelled automatically when the view
-            // disappears, which ends the loop.
             while !Task.isCancelled {
                 try? await Task.sleep(for: pollingInterval)
                 guard !Task.isCancelled else { break }
@@ -80,8 +70,6 @@ struct WaitHouseCreatorSheduleView: View {
                 await viewModel.checkAndAdvanceIfScheduleReady()
             }
         }
-        // Sync fix: pushes that arrived (or were dropped) while the app was in the background
-        // never reach this view, so re-check as soon as the app is active again.
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             Task(priority: .userInitiated) {
                 await viewModel.checkAndAdvanceIfScheduleReady()

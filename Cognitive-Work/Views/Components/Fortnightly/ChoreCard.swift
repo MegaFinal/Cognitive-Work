@@ -30,7 +30,9 @@ struct ChoreCard: View {
                 ChorePriority(chore: chore, user: user)
             }
         }
-        .foregroundColor(.white)
+        // A white-colored room needs black content on top of it (see
+        // `RoomColor.contentColor`), otherwise the icon and title render white-on-white.
+        .foregroundColor(room?.color.contentColor ?? .white)
         .frame(width: width * 0.85, height: height * 0.35)
         .background(room?.color.uiColor ?? .teal)
         .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -39,7 +41,7 @@ struct ChoreCard: View {
     
     private var title: some View {
         VStack {
-            Text(room?.name ?? "Comodo")
+            Text(room?.name ?? "Cômodo")
                 .fontWeight(.regular)
                 .font(.system(size: 17, weight: .semibold))
             Text(chore.name)

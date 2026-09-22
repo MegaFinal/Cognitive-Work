@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-// View principal da escala, quando estiver carregando, aparecer WaitingAlgorithmView e quando rodar, aparever a FortinightlyView
+// Main schedule view: display `WaitingAlgorithmView` while loading, and `FortnightlyView` when running.
 struct FortnightlyScheduleView: View {
     @State private var scheduleViewModel = ScheduleViewModel()
     

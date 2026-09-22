@@ -31,6 +31,20 @@ struct ChoreCardListStyle: View {
     }
     
     var occurrenceResponsibleUsers: [UserModel] {
+        // One-off chores have no `RecurrentAssignmentModel` at all, so `targetAssignments` is
+        // always empty for them — responsibility lives on the chore itself
+        // (`allResponsibleUsersReference`), not on any assignment. Without this fallback, a
+        // one-off chore picked up via the "sem responsável" list never showed the picker's
+        // photo here, since this only ever read assignments.
+        guard chore.dailyAssignmentsReference?.isEmpty == false else {
+            guard let refs = chore.allResponsibleUsersReference else { return [] }
+            let ids = Set(refs.compactMap { $0.recordID })
+            return carouselViewModel.userModels.filter { user in
+                guard let id = user.recordID else { return false }
+                return ids.contains(id)
+            }
+        }
+
         let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
         return carouselViewModel.userModels.filter { user in
             guard let id = user.recordID else { return false }
@@ -60,7 +74,9 @@ struct ChoreCardListStyle: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.1, height: height * 0.08)
-                    .foregroundColor(.white)
+                    // A white-colored room needs a black icon here (see
+                    // `RoomColor.contentColor`), otherwise it renders white-on-white.
+                    .foregroundColor(room?.color.contentColor ?? .white)
                     .fontWeight(.thin)
                 
                 VStack(alignment: .leading, spacing: 20) {
@@ -101,7 +117,8 @@ struct ChoreCardListStyle: View {
                                     .font(.system(size: 22))
                                     .bold()
                             }
-                            .foregroundColor(.white)
+                            // Same reasoning as the icon above: white-on-white on a white room.
+                            .foregroundColor(room?.color.contentColor ?? .white)
                             
                             Spacer()
                             
@@ -119,7 +136,7 @@ struct ChoreCardListStyle: View {
                                     Circle()
                                         .foregroundColor(.white)
                                         .frame(width: width * 0.05)
-                                    
+
                                     Image(systemName: isOccurrenceDone ? "checkmark.circle.fill" : "circle.fill")
                                         .foregroundColor(isOccurrenceDone ? .black : .white)
                                         .font(.system(size: 28))
@@ -141,7 +158,7 @@ struct ChoreCardListStyle: View {
 
 #Preview("Card em lista") {
     @Previewable @Namespace var namespace
-    
+
     let room: RoomModel = {
         var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
