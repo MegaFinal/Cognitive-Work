@@ -81,6 +81,7 @@ struct CreateProfileOnboardingView: View {
                 }
             }
         }
+        .dismissKeyboardOnTap()
     }
     
     // MARK: - Subviews

@@ -128,6 +128,7 @@ struct CreateAndEditChoreView: View {
         }
         .task {
             availableRooms = await CloudKitManager.shared.fetchAll(RoomModel.self)
+                .filter { $0.name != "Casa" }
             choreDTO.room = await originalModel.room
              
             let checklistModels = await originalModel.checkList
@@ -146,6 +147,7 @@ struct CreateAndEditChoreView: View {
             }
         }
         .toolbar(.hidden, for: .tabBar)
+        .dismissKeyboardOnTap()
     }
     
     // MARK: - Subviews

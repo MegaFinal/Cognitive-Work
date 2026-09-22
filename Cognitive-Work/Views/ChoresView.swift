@@ -141,6 +141,14 @@ struct ChoresView: View {
         .task(id: carouselVM.dataVersion) {
             updateActiveRoomColor()
         }
+        .task {
+            // Keep chores in sync across devices without requiring a relaunch.
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { break }
+                await carouselVM.fetchAllData()
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             carouselVM.requestRefresh()
         }
@@ -175,18 +183,13 @@ struct ChoresView: View {
                 }
                 
                 if carouselVM.layoutMode == .list {
-                    Button {
-                        carouselVM.isSelectingFilter = true
+                    Menu {
+                        FilterOptionsMenu(viewModel: carouselVM)
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease")
                             .font(.system(size: 22))
                             .foregroundColor(.black)
                             .padding(8)
-                    }
-                    .popover(isPresented: $carouselVM.isSelectingFilter) {
-                        FilterOptionsMenu(viewModel: carouselVM)
-                            .frame(width: 250)
-                            .presentationCompactAdaptation(.popover)
                     }
                 }
             }
@@ -244,8 +247,29 @@ struct ChoresView: View {
             .padding(.top, 8)
             .padding(.bottom, 120)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onPullDownAtTop(action: carouselVM.toggleLayout)
         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
+        .overlay {
+            // Empty state for the list layout specifically
+            if !carouselVM.isLoading && carouselVM.visibleOccurrences.isEmpty {
+                emptyChoreListState
+            }
+        }
+    }
+
+    /// Shown in place of ``choreList`` when the list layout has no chores to display —
+    /// either because the house has none, or the active filter matches none.
+    private var emptyChoreListState: some View {
+        ContentUnavailableView(
+            carouselVM.isFilterOn ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa ainda",
+            systemImage: "checklist",
+            description: Text(
+                carouselVM.isFilterOn
+                    ? "Nenhuma tarefa corresponde ao filtro selecionado."
+                    : "Toque em \"+\" para criar a primeira tarefa da casa."
+            )
+        )
     }
     
     // MARK: - Actions

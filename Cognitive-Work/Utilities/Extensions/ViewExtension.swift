@@ -24,4 +24,22 @@ extension View {
     func characterLimit(_ limit: Int, text: Binding<String>) -> some View {
         modifier(CharacterLimit(text: text, limit: limit))
     }
+
+    /// Dismisses the keyboard when the user taps anywhere else on the screen.
+    ///
+    /// Uses `simultaneousGesture` (not `.onTapGesture`, which would consume the tap) so it
+    /// never blocks buttons, steppers, pickers or other controls underneath — it just also
+    /// resigns first responder alongside whatever else that tap does.
+    func dismissKeyboardOnTap() -> some View {
+        simultaneousGesture(
+            TapGesture().onEnded {
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil
+                )
+            }
+        )
+    }
 }

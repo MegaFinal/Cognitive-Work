@@ -42,6 +42,17 @@ struct ChoreDetailsCard: View {
     }
     
     var occurrenceResponsibleUsers: [UserModel] {
+        guard chore.dailyAssignmentsReference?.isEmpty == false else {
+            guard let refs = chore.allResponsibleUsersReference else { return [] }
+            
+            let ids = Set(refs.compactMap { $0.recordID })
+            
+            return carouselViewModel.userModels.filter { user in
+                guard let id = user.recordID else { return false }
+                return ids.contains(id)
+            }
+        }
+
         let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
         return carouselViewModel.userModels.filter { user in
             guard let id = user.recordID else { return false }
@@ -90,19 +101,6 @@ struct ChoreDetailsCard: View {
         .shadow(color: .black.opacity(0.14), radius: 20.39595, x: 0, y: 5.80668)
     }
     
-    // MARK: - Actions
-
-    /// Completes (or un-completes) exactly what this card represents without completing other recurrent chores.
-    @MainActor
-    private func completeOccurrence() async {
-        if let recurrentAssignment {
-            await recurrentAssignment.toggle()
-        } else {
-            await chore.toggle()
-        }
-        carouselViewModel.refreshVisible()
-    }
-
     // MARK: - Subviews
     
     /// The upper header section: the chore's primary icon, name, and status tags.

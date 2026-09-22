@@ -250,9 +250,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
-    func toggle() async {
+    @discardableResult
+    func toggle() async -> Bool {
         self.isDone.toggle()
-        await CloudKitManager.shared.update(self)
+        return await CloudKitManager.shared.update(self)
     }
     
     /// Applies the edits made in `DTO` to this chore and persists everything to CloudKit.

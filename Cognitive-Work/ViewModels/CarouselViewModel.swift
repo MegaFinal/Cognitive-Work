@@ -12,6 +12,7 @@ struct ChoreFilters {
     var users: [UserModel] = []
     var tags: [PriorityTag] = []
     var frequencies: [Recurrence] = []
+    var rooms: [RoomModel] = []
     var state: Bool? = nil
 }
 
@@ -90,7 +91,6 @@ class CarouselViewModel {
     // MARK: - Filtering State
     
     var isFilterOn: Bool = false
-    var isSelectingFilter = false
     var filterChoices = ChoreFilters()
     
     /// The list of chores rendered by the UI, respecting active filters.
@@ -373,10 +373,17 @@ class CarouselViewModel {
             .filter { calendar.isDate($0.day, inSameDayAs: target) }
     }
     
-    /// Retrieves all assignment records for a visible chore on its next scheduled date.
+    /// Retrieves the assignment(s) for a chore on the day the *grid* layout currently shows
+    /// (``gridTargetDay(from:)``).
+    ///
+    /// This used to resolve against ``nextDate(for:)`` — the chore's *earliest* future
+    /// assignment — which is not always ``gridTargetDay()``: a daily chore, for instance, has
+    /// an assignment for today *and* tomorrow, so `nextDate` points at today while
+    /// ``isVisibleInGrid(_:)`` (what actually decides whether the card is still shown) checks
+    /// tomorrow. Completing the card toggled the wrong day's assignment, so the one gating
+    /// visibility never changed and the card stayed in the carousel after being marked done.
     func getAssignmentsForActiveContext(for chore: ChoreModel) -> [RecurrentAssignmentModel] {
-        guard let targetDate = nextDate(for: chore) else { return [] }
-        return getAssignments(for: chore, on: targetDate)
+        getAssignments(for: chore, on: Self.gridTargetDay())
     }
     
     // MARK: - Synchronous Data Helpers
@@ -412,12 +419,25 @@ class CarouselViewModel {
         assignment?.isCompleted ?? chore.isDone
     }
     
-    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async {
+    /// Toggles the chore's (or, for a recurring chore, this specific day's) completion state
+    /// and persists it, then recomputes ``visibleChores``, ``visibleOccurrences`` and
+    /// ``dashboard`` so the change shows up immediately — without this, the card would stay in
+    /// the carousel/list and the progress numbers would stay stale until the next full
+    /// CloudKit refetch.
+    @discardableResult
+    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async -> Bool {
+        let success: Bool
         if let assignment {
-            await assignment.toggle()
+            success = await assignment.toggle()
         } else {
-            await chore.toggle()
+            success = await chore.toggle()
         }
+
+        if success {
+            await refreshVisible()
+        }
+
+        return success
     }
     
     // MARK: - Filtering Logic
@@ -434,11 +454,19 @@ class CarouselViewModel {
             result = result.filter { filterChoices.frequencies.contains($0.frequency) }
         }
         
+        if !filterChoices.rooms.isEmpty {
+            let roomIDs = Set(filterChoices.rooms.compactMap { $0.recordID })
+            result = result.filter { chore in
+                guard let roomID = chore.roomReference?.recordID else { return false }
+                return roomIDs.contains(roomID)
+            }
+        }
+        
         return result
     }
     
     /// Changes the filter option
-    func addOrRemoveFilter(user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, state: Bool? = nil) {
+    func addOrRemoveFilter(user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, room: RoomModel? = nil, state: Bool? = nil) {
         if let user {
             if filterChoices.users.contains(user) {
                 filterChoices.users.removeAll { $0 == user }
@@ -463,6 +491,14 @@ class CarouselViewModel {
             }
         }
         
+        if let room {
+            if !filterChoices.rooms.contains(room) {
+                filterChoices.rooms.append(room)
+            } else {
+                filterChoices.rooms.removeAll { $0 == room }
+            }
+        }
+        
         if let state = state {
             if filterChoices.state != state {
                 filterChoices.state = state
@@ -471,7 +507,11 @@ class CarouselViewModel {
             }
         }
         
-        isFilterOn = true
+        isFilterOn = !filterChoices.users.isEmpty
+            || !filterChoices.tags.isEmpty
+            || !filterChoices.frequencies.isEmpty
+            || !filterChoices.rooms.isEmpty
+            || filterChoices.state != nil
         
         // Rebuild visible chores after changing filters.
         rebuildDerivedState()
@@ -479,7 +519,6 @@ class CarouselViewModel {
     
     func resetFilter() {
         isFilterOn = false
-        isSelectingFilter = false
         filterChoices = ChoreFilters()
         
         //Rebuild visible chores after resetting filters.

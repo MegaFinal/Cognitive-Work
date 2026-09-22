@@ -50,18 +50,20 @@ class DashboardModel: Identifiable {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        var myAssignmentsToday: Set<CKRecord.ID> = []
+        // Keyed by assignment recordID (not just a Set) so `isDoneToday(_:)` below can read
+        // back each assignment's own `isCompleted`, not just whether it exists.
+        var myAssignmentsToday: [CKRecord.ID: RecurrentAssignmentModel] = [:]
         for assignment in assignments {
             guard let assignmentID = assignment.recordID,
                   assignment.userReference?.recordID == targetUserID,
                   calendar.isDate(assignment.day, inSameDayAs: today)
             else { continue }
-            myAssignmentsToday.insert(assignmentID)
+            myAssignmentsToday[assignmentID] = assignment
         }
 
         let filtered = chores.filter { chore in
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                return refs.contains { myAssignmentsToday.contains($0.recordID) }
+                return refs.contains { myAssignmentsToday[$0.recordID] != nil }
             } else {
                 guard let responsibleID = chore.currentResponsibleReference?.recordID,
                       let dueDate = chore.dueDate,
@@ -72,18 +74,27 @@ class DashboardModel: Identifiable {
         }
         self.todayChores = filtered
 
-        let pendingChores = todayChores.filter { chore in
-            !chore.isDone
+        func isDoneToday(_ chore: ChoreModel) -> Bool {
+            guard let refs = chore.dailyAssignmentsReference, !refs.isEmpty else {
+                return chore.isDone
+            }
+            let todaysAssignments = refs.compactMap { myAssignmentsToday[$0.recordID] }
+            guard !todaysAssignments.isEmpty else { return chore.isDone }
+            return todaysAssignments.allSatisfy { $0.isCompleted }
         }
-        self.toDoList = pendingChores
 
-        calculateStatistics()
+        self.toDoList = todayChores.filter { !isDoneToday($0) }
+
+        calculateStatistics(isDoneToday: isDoneToday)
     }
 
     /// Recomputes ``toDo``, ``totalTimeFormatted``,
     /// ``completionPercentage`` and ``completionPercentageString`` from
     /// ``todayChores`` and ``toDoList``.
-    private func calculateStatistics() {
+    ///
+    /// - Parameter isDoneToday: Same predicate ``setup(chores:assignments:)`` used to build
+    ///   ``toDoList``, so the completion count and ``toDoList`` never disagree about a chore.
+    private func calculateStatistics(isDoneToday: (ChoreModel) -> Bool) {
         self.toDo = toDoList.count
 
         guard !todayChores.isEmpty else {
@@ -100,7 +111,7 @@ class DashboardModel: Identifiable {
         let minutes = Int(totalMinutes.truncatingRemainder(dividingBy: 60.0))
         self.totalTimeFormatted = "\(hours)h\(String(format: "%02d", minutes))"
 
-        let completedChoresCount = todayChores.filter { $0.isDone }.count
+        let completedChoresCount = todayChores.filter { isDoneToday($0) }.count
 
         self.completionPercentage = Double(completedChoresCount) / Double(todayChores.count)
         self.completionPercentageString = "\(Int(completionPercentage * 100))%"

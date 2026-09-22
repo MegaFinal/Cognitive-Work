@@ -32,12 +32,11 @@ struct ShopListView: View {
                 ProgressView()
                     .frame(maxWidth: .infinity)
                 Spacer()
+            } else if viewModel.hasLoaded && viewModel.items.isEmpty {
+                emptyState
             } else {
                 itemList
             }
-        }
-        .toolbar {
-            
         }
         .overlay(alignment: .bottomTrailing) {
             addButton
@@ -46,6 +45,14 @@ struct ShopListView: View {
         .task {
             guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
+        }
+        .task {
+            // updates feel real-time regardless of push timing.
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { break }
+                await viewModel.refresh()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             viewModel.requestRefresh()
@@ -135,6 +142,16 @@ struct ShopListView: View {
             .padding(.top, 12)
             .padding(.bottom, 120)
         }
+    }
+
+    /// Shown instead of ``itemList`` once the list has loaded and has no items yet.
+    private var emptyState: some View {
+        ContentUnavailableView(
+            "Lista de compras vazia",
+            systemImage: "cart",
+            description: Text("Toque em \"+\" para adicionar o primeiro item.")
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// Floating action button that opens the form to add a new item.
@@ -355,6 +372,7 @@ private struct ShopListItemFormView: View {
         .task {
             populateFromMode()
         }
+        .dismissKeyboardOnTap()
     }
 
     private func confirmButton(width: CGFloat) -> some View {
