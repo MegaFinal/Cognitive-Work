@@ -15,16 +15,22 @@ import SwiftUI
 ///
 /// Used throughout the onboarding flow as the primary "continue" action
 struct OnboardingProgressButton: View {
-    var width: CGFloat = UIScreen.main.bounds.width * 0.6
-    var height: CGFloat = UIScreen.main.bounds.height * 0.06
-   
+    var width: CGFloat?
+    var height: CGFloat?
+
     var text: String
     var isSystemImage: Bool = false
 
     var isLoading: Bool = false
     var isDisabled: Bool = false
     var action: () async -> Void
-    
+
+    // `width`/`height` shadow the View extension's properties of the same
+    // name, so casting to `any View` is needed to reach the extension's
+    // default (screen-based) value when no override was passed in.
+    private var resolvedWidth: CGFloat { width ?? (self as any View).width * 0.6 }
+    private var resolvedHeight: CGFloat { height ?? (self as any View).height * 0.06 }
+
     var body: some View {
         Button {
             Task {
@@ -37,13 +43,13 @@ struct OnboardingProgressButton: View {
                 } else {
                     if isSystemImage {
                         Image(systemName: text)
-                            .font(.system(size: height * 0.4))
+                            .font(.system(size: resolvedHeight * 0.4))
                     } else {
                         Text(text)
                     }
                 }
             }
-            .frame(width: width, height: height)
+            .frame(width: resolvedWidth, height: resolvedHeight)
             .foregroundColor(.white)
             .fontWeight(.medium)
             .background(

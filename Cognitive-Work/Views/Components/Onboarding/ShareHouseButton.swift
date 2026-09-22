@@ -11,15 +11,21 @@ import CloudKit
 struct ShareHouseButton: View {
     let viewModel: OnboardingViewModel
 
-    var width: CGFloat = UIScreen.main.bounds.width * 0.5
-    var height: CGFloat = UIScreen.main.bounds.height * 0.06
-    
+    var width: CGFloat?
+    var height: CGFloat?
+
     @Binding var share: CKShare?
     @Binding var shareURL: URL?
     @Binding var showSheet: Bool
 
     @State private var isLoading = false
-    
+
+    // `width`/`height` shadow the View extension's properties of the same
+    // name, so casting to `any View` is needed to reach the extension's
+    // default (screen-based) value when no override was passed in.
+    private var resolvedWidth: CGFloat { width ?? (self as any View).width * 0.5 }
+    private var resolvedHeight: CGFloat { height ?? (self as any View).height * 0.06 }
+
     var body: some View {
         
         Button {
@@ -46,7 +52,7 @@ struct ShareHouseButton: View {
                         .font(.system(size: 17))
                 }
             }
-            .frame(width: width, height: height)
+            .frame(width: resolvedWidth, height: resolvedHeight)
             .foregroundColor(.white)
             .background(Capsule().foregroundColor(share == nil || isLoading ? .gray : .blue))
         }
@@ -82,4 +88,3 @@ struct ShareHouseButton: View {
         showSheet: $showSheet
     )
 }
-

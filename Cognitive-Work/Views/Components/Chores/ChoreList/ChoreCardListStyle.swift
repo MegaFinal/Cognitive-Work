@@ -56,8 +56,6 @@ struct ChoreCardListStyle: View {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     var body: some View {
         ZStack {

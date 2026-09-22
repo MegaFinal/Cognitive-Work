@@ -28,8 +28,6 @@ struct WelcomeOnboardingView: View {
     /// The shared view model for navigation and state across the onboarding flow
     @Binding var viewModel: OnboardingViewModel
     
-    let width = UIScreen.main.bounds.width
-    let height = UIScreen.main.bounds.height
     
     var body: some View {
         NavigationStack {
