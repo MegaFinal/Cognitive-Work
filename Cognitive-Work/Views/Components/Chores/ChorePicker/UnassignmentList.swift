@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct UnassignmentList: View {
-    
     let items: [CarouselViewModel.UnassignedItem]
     let onPick: (CarouselViewModel.UnassignedItem) -> Void
     
@@ -53,45 +52,45 @@ struct UnassignmentList: View {
         
         let roomColor = carouselViewModel.getRoom(for: item.chore)?.color.uiColor ?? .gray
         
-        return HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.chore.name)
-                    .font(.system(size: 16))
-                
-                if let date = item.displayDate {
-                    Text(date.formatted(date: .numeric, time: .omitted))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.gray)
+        return Button {
+            onPick(item)
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.chore.name)
+                        .font(.system(size: 16))
+                        .foregroundStyle(.black)
+                    
+                    if let date = item.displayDate {
+                        Text(date.formatted(date: .numeric, time: .omitted))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.gray)
+                    }
                 }
-            }
-            .padding(5)
-            
-            Spacer()
-            
-            Button {
-                onPick(item)
-            } label: {
+                .padding(5)
+                
+                Spacer()
+                
                 Image(systemName: "hand.rays")
                     .font(.system(size: 15))
                     .padding(7)
                     .foregroundColor(.black)
-                    .contentShape(Circle())
                     .background(
                         Circle()
                             .foregroundStyle(.white)
                     )
                     .shadow(color: roomColor, radius: 8)
             }
-            .buttonStyle(ScaleButtonStyle())
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .foregroundStyle(roomColor.opacity(0.5))
+            )
         }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .foregroundStyle(roomColor.opacity(0.5))
-        )
+        .buttonStyle(ScaleButtonStyle())
     }
-    
     
     private struct ScaleButtonStyle: ButtonStyle {
         func makeBody(configuration: Configuration) -> some View {

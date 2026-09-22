@@ -10,10 +10,14 @@ import SwiftUI
 /// Defines the overlay layout region containing core chore action buttons
 struct ChoresViewButtonsSection: View {
     
-    @State private var houseUsers: [UserModel] = []
     @State private var showCreateView = false
     
     @Bindable var carouselViewModel: CarouselViewModel
+
+    /// The house members offered in the new-chore form.
+    private var houseUsers: [UserModel] {
+        carouselViewModel.userModels
+    }
     
     var body: some View {
         HStack {
@@ -65,9 +69,6 @@ struct ChoresViewButtonsSection: View {
                 ),
                 availableHouseUsers: houseUsers, carouselViewModel: carouselViewModel
             )
-        }
-        .task {
-            houseUsers = await CloudKitManager.shared.fetchAll(UserModel.self)
         }
     }
 }

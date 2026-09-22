@@ -15,4 +15,3 @@ enum NavigationFlowsOnboarding: String {
     case invitedWithoutProfile
     case notDefined
 }
-

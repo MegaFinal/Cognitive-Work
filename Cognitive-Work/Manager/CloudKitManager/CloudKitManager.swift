@@ -48,6 +48,38 @@ class CloudKitManager {
         ownerName: CKCurrentUserDefaultName
     )
     
+    // MARK: - Session cache
+    
+    /// Whether ``createZoneIfNeeded()`` already confirmed the custom zone exists in this
+    /// process. See that method for why this matters.
+    @ObservationIgnored
+    private var didEnsureZone = false
+    
+    /// The house resolved for this session, cached by ``currentHouse(forceRefresh:)``.
+    @ObservationIgnored
+    private var cachedHouse: HouseModel?
+    
+    /// This device's in-house profile, cached by ``currentHouseUser(forceRefresh:)``.
+    @ObservationIgnored
+    private var cachedHouseUser: UserModel?
+    
+    /// The zones of every house shared with this account, cached by ``sharedZones()``.
+    @ObservationIgnored
+    private var cachedSharedZones: [CKRecordZone]?
+    
+    /// In-flight house lookup, so concurrent callers share one request instead of racing.
+    @ObservationIgnored
+    private var houseLookup: Task<HouseModel?, Never>?
+    
+    /// In-flight in-house profile lookup, deduplicated the same way.
+    @ObservationIgnored
+    private var houseUserLookup: Task<UserModel?, Never>?
+    
+    /// In-flight shared-zone listing, deduplicated the same way. `nil` result means the
+    /// listing failed and must not be cached.
+    @ObservationIgnored
+    private var sharedZonesLookup: Task<[CKRecordZone]?, Never>?
+    
     private init() {
         container = CKContainer(
             identifier: "iCloud.JonasMelo.Cognitive-Work"
@@ -60,20 +92,117 @@ class CloudKitManager {
     
     /// Creates the custom house zone if it does not already exist.
     ///
-    /// - Returns: `true` when the zone is successfully saved, otherwise `false`.
+    /// - Parameter force: Pass `true` to re-issue the save even when the zone was already
+    ///   confirmed in this process. Only ``deleteAllPrivateRecords()`` needs this, since it
+    ///   drops the zone and has to recreate it for real.
+    /// - Returns: `true` when the zone exists on the server, otherwise `false`.
     ///
     /// If the operation fails, ``errorMessage`` is updated with the corresponding CloudKit error.
     @discardableResult
-    func createZoneIfNeeded() async -> Bool {
+    func createZoneIfNeeded(force: Bool = false) async -> Bool {
+        if didEnsureZone && !force { return true }
+        
         let zone = CKRecordZone(zoneID: houseZoneID)
         
         do {
             _ = try await privateDB.save(zone)
+            didEnsureZone = true
             return true
         } catch {
             errorMessage = "Failed to create zone: \(error.localizedDescription)"
             return false
         }
+    }
+    
+    // MARK: - Session-cached lookups
+    
+    /// The house this device belongs to, resolved once per session.
+    /// - Parameter forceRefresh: Pass `true` to bypass the cache and re-resolve.
+    func currentHouse(forceRefresh: Bool = false) async -> HouseModel? {
+        if forceRefresh {
+            cachedHouse = nil
+            houseLookup?.cancel()
+            houseLookup = nil
+        }
+        
+        if let cachedHouse { return cachedHouse }
+        if let houseLookup { return await houseLookup.value }
+        
+        let lookup = Task<HouseModel?, Never> { [weak self] in
+            guard let self else { return nil }
+            return try? await self.fetchFirst(HouseModel.self)
+        }
+        houseLookup = lookup
+        
+        let house = await lookup.value
+        houseLookup = nil
+        cachedHouse = house
+        return house
+    }
+    
+    /// This device's in-house profile, resolved once per session.
+    /// - Parameter forceRefresh: Pass `true` to bypass the cache and re-resolve.
+    func currentHouseUser(forceRefresh: Bool = false) async -> UserModel? {
+        if forceRefresh {
+            cachedHouseUser = nil
+            houseUserLookup?.cancel()
+            houseUserLookup = nil
+        }
+        
+        if let cachedHouseUser { return cachedHouseUser }
+        if let houseUserLookup { return await houseUserLookup.value }
+        
+        let lookup = Task<UserModel?, Never> { [weak self] in
+            guard let self else { return nil }
+            return await self.fetchMyHouseUser()
+        }
+        houseUserLookup = lookup
+        
+        let user = await lookup.value
+        houseUserLookup = nil
+        cachedHouseUser = user
+        return user
+    }
+    
+    /// Every record zone shared with this account, resolved once per session.
+    func sharedZones() async -> [CKRecordZone] {
+        if let cachedSharedZones { return cachedSharedZones }
+        if let sharedZonesLookup { return await sharedZonesLookup.value ?? [] }
+        
+        let lookup = Task<[CKRecordZone]?, Never> { [weak self] in
+            guard let self else { return nil }
+            do {
+                return try await self.sharedDB.allRecordZones()
+            } catch {
+                self.errorMessage = "Failed to list shared zones: \(error.localizedDescription)"
+                return nil
+            }
+        }
+        sharedZonesLookup = lookup
+        
+        let zones = await lookup.value
+        sharedZonesLookup = nil
+        if let zones { cachedSharedZones = zones }
+        return zones ?? []
+    }
+    
+    /// Drops every session-cached lookup.
+    ///
+    /// Called automatically whenever something that could change the answers happens: a
+    /// `HouseModel` or `UserModel` is created or deleted, a share is accepted, the current
+    /// house is left or switched, or the local records are wiped. Onboarding creates its house
+    /// and profile through ``create(_:id:zoneID:parent:)``, so it is covered without any change
+    /// at its call sites.
+    func invalidateSessionCache() {
+        cachedHouse = nil
+        cachedHouseUser = nil
+        cachedSharedZones = nil
+        houseLookup?.cancel()
+        houseLookup = nil
+        houseUserLookup?.cancel()
+        houseUserLookup = nil
+        sharedZonesLookup?.cancel()
+        sharedZonesLookup = nil
     }
     
     // MARK: - Current User
@@ -124,9 +253,8 @@ class CloudKitManager {
         // `ownerRecordName`. Taking `.first` returned either one depending on server ordering,
         // so the "private profile" was sometimes the house copy. Prefer the real profile and
         // only fall back to whatever matched.
-        let matches = await fetchPrivate(UserModel.self, predicate: predicate)
+        let matches = await fetchPrivate(UserModel.self, predicate: predicate, desiredKeys: .all)
         if let user = matches.first(where: { !isHouseUser($0) }) ?? matches.first {
-            // Session-restore fix: remember it so the next launch takes step 1.
             setCurrentUser(user)
             return user
         }
@@ -218,9 +346,7 @@ class CloudKitManager {
     ///   deleted, or the copy predates this naming convention.
     func fetchMyHouseUser() async -> UserModel? {
         guard let privateRecordID = await fetchMyUser()?.recordID,
-              let houseZoneID = (
-                try? await fetchFirst(HouseModel.self)
-              )?.recordID?.zoneID
+              let houseZoneID = await currentHouse()?.recordID?.zoneID
         else {
             return nil
         }
@@ -252,6 +378,7 @@ class CloudKitManager {
     /// Clears the persisted current-user record, e.g. after the account is deleted.
     func clearCurrentUser() {
         UserDefaults.standard.removeObject(forKey: currentUserRecordNameKey)
+        invalidateSessionCache()
     }
     
     // MARK: - Sharing
@@ -348,6 +475,7 @@ class CloudKitManager {
             operation.acceptSharesResultBlock = { result in
                 switch result {
                 case .success:
+                    self.invalidateSessionCache()
                     continuation.resume(returning: true)
                     
                 case .failure(let error):
@@ -378,6 +506,8 @@ class CloudKitManager {
         
         do {
             _ = try await sharedDB.deleteRecord(withID: share.recordID)
+            invalidateSessionCache()
+            await UserProfileCache.shared.removeAll()
             return true
         } catch {
             errorMessage = "Failed to leave house: \(error.localizedDescription)"
@@ -586,13 +716,16 @@ extension CloudKitManager {
     func deleteAllPrivateRecords() async -> Bool {
         do {
             _ = try await privateDB.deleteRecordZone(withID: houseZoneID)
+            didEnsureZone = false
             clearCurrentUser()
+            await UserProfileCache.shared.removeAll()
         } catch {
             errorMessage = "Failed to delete zone: \(error.localizedDescription)"
             return false
         }
         
-        return await createZoneIfNeeded()
+        // `force` because the zone really is gone and has to be saved again for real.
+        return await createZoneIfNeeded(force: true)
     }
     
     /// Leaves every house shared with the current user, across every shared zone.

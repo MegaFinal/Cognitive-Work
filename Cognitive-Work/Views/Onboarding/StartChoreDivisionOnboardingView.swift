@@ -45,11 +45,6 @@ struct StartChoreDivisionOnboardingView: View {
             ) {
                 viewModel.goToNextView()
             }
-            
-//            OnboardingSkipButton() {
-//                viewModel.finishOnboarding()
-//            }
-
         }
         .frame(width: width * 0.8)
         .foregroundColor(.gray)

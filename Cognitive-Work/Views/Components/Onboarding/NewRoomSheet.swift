@@ -88,6 +88,7 @@ struct NewRoomSheet: View {
                     .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
+            .dismissKeyboardOnTap()
         }
     }
 }

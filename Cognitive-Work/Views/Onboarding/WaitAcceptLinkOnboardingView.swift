@@ -54,9 +54,6 @@ struct WaitAcceptLinkOnboardingView: View {
             guard houseFetched, viewModel.currentUser != nil else { return }
             
             viewModel.stateMachine.flow = .invitedWithProfile
-            // Sync fix: advance only when the join really happened. `joinHouse()` returns
-            // `false` both on failure and when `Onboarding`'s share handler is already
-            // joining (and will advance the flow itself), so the step is never skipped twice.
             guard await viewModel.joinHouse() else { return }
             viewModel.goToNextView()
         }

@@ -12,6 +12,7 @@ struct ChoreFilters {
     var users: [UserModel] = []
     var tags: [PriorityTag] = []
     var frequencies: [Recurrence] = []
+    var rooms: [RoomModel] = []
     var state: Bool? = nil
 }
 
@@ -25,7 +26,35 @@ class CarouselViewModel {
     var roomModels: [RoomModel] = []
     var userModels: [UserModel] = []
     var dailyAssignments: [RecurrentAssignmentModel] = []
-    private var assignmentsByChore: [CKRecord.ID: [RecurrentAssignmentModel]] = [:]
+    
+    // MARK: - Derived State
+    
+    /// Today's statistics for ``dashboardUser``, recomputed only when the data changes.
+    private(set) var dashboard: DashboardModel?
+    
+    /// The in-house profile the dashboard is computed for.
+    private(set) var dashboardUser: UserModel?
+    
+    /// Chores and occurrences nobody is responsible for, recomputed only when the data changes.
+    private(set) var unassignedItems: [UnassignedItem] = []
+    
+    /// Bumped on every rebuild, so views can react to "the data changed" with a single
+    /// `.task(id:)`
+    private(set) var dataVersion: Int = 0
+    
+    // MARK: - Lookup Indexes
+    
+    /// Assignments keyed by their own record ID.
+    @ObservationIgnored
+    private var assignmentsByID: [CKRecord.ID: RecurrentAssignmentModel] = [:]
+    
+    /// Future assignments per chore, sorted by day, precomputed once per rebuild.
+    @ObservationIgnored
+    private var futureAssignmentsByChore: [CKRecord.ID: [RecurrentAssignmentModel]] = [:]
+    
+    /// Next scheduled date per chore, precomputed once per rebuild.
+    @ObservationIgnored
+    private var nextDateByChore: [CKRecord.ID: Date] = [:]
     
     // MARK: - UI & Layout State
     
@@ -62,7 +91,6 @@ class CarouselViewModel {
     // MARK: - Filtering State
     
     var isFilterOn: Bool = false
-    var isSelectingFilter = false
     var filterChoices = ChoreFilters()
     
     /// The list of chores rendered by the UI, respecting active filters.
@@ -138,29 +166,108 @@ class CarouselViewModel {
     /// Recomputes the visible lists after a local change, without hitting CloudKit.
     @MainActor
     func refreshVisible() {
+        rebuildDerivedState()
+    }
+    
+    /// Rebuilds every index and every derived collection, in dependency order.
+    private func rebuildDerivedState() {
+        rebuildIndexes()
         rebuildVisibleChores()
+        rebuildUnassignedItems()
+        rebuildDashboard()
+        dataVersion &+= 1
+    }
+    
+    /// Rebuilds ``assignmentsByID``, ``futureAssignmentsByChore`` and ``nextDateByChore``.
+    private func rebuildIndexes() {
+        assignmentsByID = Dictionary(
+            dailyAssignments.compactMap { assignment in
+                assignment.recordID.map { ($0, assignment) }
+            },
+            uniquingKeysWith: { _, latest in latest }
+        )
+        
+        let today = Calendar.current.startOfDay(for: Date())
+        
+        futureAssignmentsByChore.removeAll(keepingCapacity: true)
+        nextDateByChore.removeAll(keepingCapacity: true)
+        
+        for chore in cardModels {
+            guard let choreID = chore.recordID else { continue }
+            
+            let future = (chore.dailyAssignmentsReference ?? [])
+                .compactMap { assignmentsByID[$0.recordID] }
+                .filter { $0.day >= today }
+                .sorted { $0.day < $1.day }
+            
+            futureAssignmentsByChore[choreID] = future
+            
+            if let next = future.first?.day ?? chore.dueDate {
+                nextDateByChore[choreID] = next
+            }
+        }
+    }
+    
+    /// Recomputes ``dashboard`` from the chores and assignments already in memory.
+    private func rebuildDashboard() {
+        guard let dashboardUser else {
+            dashboard = nil
+            return
+        }
+        
+        let model = dashboard ?? DashboardModel(user: dashboardUser)
+        model.user = dashboardUser
+        model.setup(chores: cardModels, assignments: dailyAssignments)
+        dashboard = model
+    }
+    
+    // MARK: - Grid Visibility
+    ///
+    /// > Note: `1` (tomorrow) is intentional while the schedule is being tested, because
+    /// > ``TaskSchedulerEngine/schedule(chores:users:)`` seeds its window starting *tomorrow*,
+    /// > so "today" is empty right after a division is generated. Set this to `0` for
+    /// > production — and flip ``HardwareDailyChoresViewModel/dayOffsetFromToday`` together with
+    /// > it, since the e-paper dashboard has to show the same day the app does.
+    static let gridDayOffsetFromToday = 1
+    
+    /// The single day the grid layout renders, normalised to the start of that day.
+    /// - Parameter reference: The day to count from. Defaults to now; injectable for tests.
+    static func gridTargetDay(from reference: Date = Date()) -> Date {
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: reference)
+        return calendar.date(byAdding: .day, value: gridDayOffsetFromToday, to: startOfToday)
+        ?? startOfToday
+    }
+    
+    /// Whether `chore` belongs in the grid layout, which shows exactly one day at a time.
+    ///
+    /// 1. *the grid shows a single day* — the original date check; and
+    /// 2. *hide a chore once that day's occurrence is done* — added later as an early return:
+    ///
+    /// - Parameter chore: The chore to test.
+    /// - Returns: `true` when the chore has open work on ``gridTargetDay(from:)``.
+    private func isVisibleInGrid(_ chore: ChoreModel) -> Bool {
+        guard !chore.isDone else { return false }
+        
+        let targetDay = Self.gridTargetDay()
+        
+        if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+            return getAssignments(for: chore, on: targetDay).contains { !$0.isCompleted }
+        }
+        
+        guard let dueDate = chore.dueDate else { return false }
+        return Calendar.current.isDate(dueDate, inSameDayAs: targetDay)
     }
     
     /// Rebuilds and caches the list of visible chores based on active filters and sorting rules.
     ///
     /// This method filters `cardModels` (either applying custom `ChoreFilters` or filtering out completed chores)
     /// and sorts the resulting array by their next scheduled date and priority tag. The outcome is stored in `visibleChores`
-    /// to prevent expensive O(n log n) computations during high-frequency animations or gesture frames.
     private func rebuildVisibleChores() {
         
-        let base = layoutMode == .grid ? cardModels.filter { chore in
-            guard !chore.isDone, let date = nextDate(for: chore) else {return false}
-            
-            // The grid shows the day's occurrence, so hide it once that one is done
-            if let assignment = getAssignmentsForActiveContext(for: chore).first {
-                return !assignment.isCompleted
-            }
-            
-            #if DEBUG
-            return Calendar.current.isDateInTomorrow(date)
-            #endif
-            return Calendar.current.isDateInToday(date)
-        } : (isFilterOn ? applyFilters(to: cardModels) : cardModels)
+        let base = layoutMode == .grid
+        ? cardModels.filter { isVisibleInGrid($0) }
+        : (isFilterOn ? applyFilters(to: cardModels) : cardModels)
         
         visibleChores = base.sorted { a, b in
             let dateA = nextDate(for: a)
@@ -190,27 +297,45 @@ class CarouselViewModel {
     
     // MARK: - Initialization & Data Fetching
     
-    /// Fetches all chores, users, and rooms in parallel.
+    /// The refresh currently in flight, if any. See ``requestRefresh(debounce:)``.
+    @ObservationIgnored
+    private var refreshTask: Task<Void, Never>?
+    
+    /// Coalesces refresh requests and cancels the previous one.
+    /// - Parameter debounce: How long to wait for further requests before fetching.
+    func requestRefresh(debounce: Duration = .milliseconds(250)) {
+        refreshTask?.cancel()
+        refreshTask = Task { [weak self] in
+            try? await Task.sleep(for: debounce)
+            guard !Task.isCancelled, let self else { return }
+            await self.fetchAllData()
+        }
+    }
+    
+    /// Fetches all chores, users, rooms and assignments in parallel.
     func fetchAllData() async {
         if !hasFetchedInitially {
             await MainActor.run { isLoading = true }
         }
         
-        async let fetchC = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        async let fetchU = CloudKitManager.shared.fetchHouseUsers()
-        async let fetchR = CloudKitManager.shared.fetchAll(RoomModel.self)
-        async let fetchA = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
+        async let fetchUsers = CloudKitManager.shared.fetchHouseUsers()
+        async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
+        async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        async let fetchCurrentHouseUser = CloudKitManager.shared.currentHouseUser()
         
-        let (chores, users, rooms, assignments) = await (fetchC, fetchU, fetchR, fetchA)
+        let (chores, users, rooms, assignments, currentHouseUser) = await (fetchChores, fetchUsers, fetchRooms, fetchAssignments, fetchCurrentHouseUser)
+        
+        guard !Task.isCancelled else { return }
         
         await MainActor.run {
             self.cardModels = chores
             self.userModels = users
             self.roomModels = rooms
             self.dailyAssignments = assignments
+            self.dashboardUser = currentHouseUser
             
-            // Rebuild visible chores after fetching initial data.
-            self.rebuildVisibleChores()
+            self.rebuildDerivedState()
             
             self.hasFetchedInitially = true
             self.isLoading = false
@@ -224,10 +349,12 @@ class CarouselViewModel {
         
         let (chores, assignments) = await (fetchC, fetchA)
         
+        guard !Task.isCancelled else { return }
+        
         await MainActor.run {
             self.cardModels = chores
             self.dailyAssignments = assignments
-            self.rebuildVisibleChores()
+            self.rebuildDerivedState()
         }
     }
     
@@ -238,19 +365,25 @@ class CarouselViewModel {
               !refs.isEmpty
         else { return [] }
         
-        let ids = Set(refs.map { $0.recordID })
-        let target = Calendar.current.startOfDay(for: date)
+        let calendar = Calendar.current
+        let target = calendar.startOfDay(for: date)
         
-        return dailyAssignments.filter { assignment in
-            guard let id = assignment.recordID, ids.contains(id) else { return false }
-            return Calendar.current.isDate(assignment.day, inSameDayAs: target)
-        }
+        return refs
+            .compactMap { assignmentsByID[$0.recordID] }
+            .filter { calendar.isDate($0.day, inSameDayAs: target) }
     }
     
-    /// Retrieves all assignment records for a visible chore on its next scheduled date.
+    /// Retrieves the assignment(s) for a chore on the day the *grid* layout currently shows
+    /// (``gridTargetDay(from:)``).
+    ///
+    /// This used to resolve against ``nextDate(for:)`` — the chore's *earliest* future
+    /// assignment — which is not always ``gridTargetDay()``: a daily chore, for instance, has
+    /// an assignment for today *and* tomorrow, so `nextDate` points at today while
+    /// ``isVisibleInGrid(_:)`` (what actually decides whether the card is still shown) checks
+    /// tomorrow. Completing the card toggled the wrong day's assignment, so the one gating
+    /// visibility never changed and the card stayed in the carousel after being marked done.
     func getAssignmentsForActiveContext(for chore: ChoreModel) -> [RecurrentAssignmentModel] {
-        guard let targetDate = nextDate(for: chore) else { return [] }
-        return getAssignments(for: chore, on: targetDate)
+        getAssignments(for: chore, on: Self.gridTargetDay())
     }
     
     // MARK: - Synchronous Data Helpers
@@ -263,11 +396,7 @@ class CarouselViewModel {
     func getUsers(for chore: ChoreModel) -> [UserModel] {
         // Recurring: users come from the daily assignments
         if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-            let ids = Set(refs.map { $0.recordID })
-            let userIDs = Set(dailyAssignments.compactMap { assignment -> CKRecord.ID? in
-                guard let id = assignment.recordID, ids.contains(id) else { return nil }
-                return assignment.userReference?.recordID
-            })
+            let userIDs = Set(refs.compactMap { assignmentsByID[$0.recordID]?.userReference?.recordID })
             return userModels.filter { $0.recordID.map { userIDs.contains($0) } ?? false }
         }
         
@@ -281,7 +410,7 @@ class CarouselViewModel {
     
     func toggleLayout() {
         layoutMode = layoutMode == .grid ? .list : .grid
-        rebuildVisibleChores()
+        rebuildDerivedState()
     }
     
     // MARK: - isDone Chore Logic
@@ -290,12 +419,25 @@ class CarouselViewModel {
         assignment?.isCompleted ?? chore.isDone
     }
     
-    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async {
+    /// Toggles the chore's (or, for a recurring chore, this specific day's) completion state
+    /// and persists it, then recomputes ``visibleChores``, ``visibleOccurrences`` and
+    /// ``dashboard`` so the change shows up immediately — without this, the card would stay in
+    /// the carousel/list and the progress numbers would stay stale until the next full
+    /// CloudKit refetch.
+    @discardableResult
+    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async -> Bool {
+        let success: Bool
         if let assignment {
-            await assignment.toggle()
+            success = await assignment.toggle()
         } else {
-            await chore.toggle()
+            success = await chore.toggle()
         }
+        
+        if success {
+            await refreshVisible()
+        }
+        
+        return success
     }
     
     // MARK: - Filtering Logic
@@ -312,11 +454,19 @@ class CarouselViewModel {
             result = result.filter { filterChoices.frequencies.contains($0.frequency) }
         }
         
+        if !filterChoices.rooms.isEmpty {
+            let roomIDs = Set(filterChoices.rooms.compactMap { $0.recordID })
+            result = result.filter { chore in
+                guard let roomID = chore.roomReference?.recordID else { return false }
+                return roomIDs.contains(roomID)
+            }
+        }
+        
         return result
     }
     
     /// Changes the filter option
-    func addOrRemoveFilter(user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, state: Bool? = nil) {
+    func addOrRemoveFilter(user: UserModel? = nil, tag: PriorityTag? = nil, frequency: Recurrence? = nil, room: RoomModel? = nil, state: Bool? = nil) {
         if let user {
             if filterChoices.users.contains(user) {
                 filterChoices.users.removeAll { $0 == user }
@@ -341,6 +491,14 @@ class CarouselViewModel {
             }
         }
         
+        if let room {
+            if !filterChoices.rooms.contains(room) {
+                filterChoices.rooms.append(room)
+            } else {
+                filterChoices.rooms.removeAll { $0 == room }
+            }
+        }
+        
         if let state = state {
             if filterChoices.state != state {
                 filterChoices.state = state
@@ -349,41 +507,36 @@ class CarouselViewModel {
             }
         }
         
-        isFilterOn = true
+        isFilterOn = !filterChoices.users.isEmpty
+        || !filterChoices.tags.isEmpty
+        || !filterChoices.frequencies.isEmpty
+        || !filterChoices.rooms.isEmpty
+        || filterChoices.state != nil
         
         // Rebuild visible chores after changing filters.
-        rebuildVisibleChores()
+        rebuildDerivedState()
     }
     
     func resetFilter() {
         isFilterOn = false
-        isSelectingFilter = false
         filterChoices = ChoreFilters()
         
         //Rebuild visible chores after resetting filters.
-        rebuildVisibleChores()
+        rebuildDerivedState()
     }
     
     /// Every future assignment of a chore, sorted by day.
     /// Returns an empty array for one-off chores, which have no assignments.
     func futureAssignments(for chore: ChoreModel) -> [RecurrentAssignmentModel] {
-        guard let refs = chore.dailyAssignmentsReference, !refs.isEmpty else { return [] }
-        
-        let ids = Set(refs.map { $0.recordID })
-        let hoje = Calendar.current.startOfDay(for: Date())
-        
-        return dailyAssignments
-            .filter { assignment in
-                guard let id = assignment.recordID, ids.contains(id) else { return false }
-                return assignment.day >= hoje
-            }
-            .sorted { $0.day < $1.day }
+        guard let choreID = chore.recordID else { return [] }
+        return futureAssignmentsByChore[choreID] ?? []
     }
     
     /// The next scheduled date for a chore, whether it comes from a daily
     /// assignment (recurring) or from its own due date (one-off).
     func nextDate(for chore: ChoreModel) -> Date? {
-        futureAssignments(for: chore).first?.day ?? chore.dueDate
+        guard let choreID = chore.recordID else { return chore.dueDate }
+        return nextDateByChore[choreID] ?? chore.dueDate
     }
     
     // MARK: - Focus & Flip Interactions
@@ -592,11 +745,8 @@ class CarouselViewModel {
         let displayDate: Date?
     }
     
-    /// Every chore — or single occurrence of a recurring chore — that has nobody responsible for it yet.
-    ///
-    /// Computed purely from data already in memory (`cardModels`, `dailyAssignments`), so this is safe
-    /// to read from the view every time it renders.
-    var unassignedItems: [UnassignedItem] {
+    /// Recomputes ``unassignedItems``.
+    private func rebuildUnassignedItems() {
         let today = Calendar.current.startOfDay(for: Date())
         var items: [UnassignedItem] = []
         
@@ -604,10 +754,8 @@ class CarouselViewModel {
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
                 // Recurring chore: look for occurrences that are today or in the future
                 // and still have no one assigned.
-                let ids = Set(refs.map { $0.recordID })
-                let openSlots = dailyAssignments.filter { assignment in
-                    guard let id = assignment.recordID, ids.contains(id) else { return false }
-                    return assignment.userReference == nil && assignment.day >= today
+                let openSlots = refs.compactMap { assignmentsByID[$0.recordID] }.filter { assignment in
+                    assignment.userReference == nil && assignment.day >= today
                 }
                 
                 for assignment in openSlots {
@@ -639,15 +787,21 @@ class CarouselViewModel {
         }
         
         // Sort items in ascending order by displayDate, placing items with nil dates at the end
-        return items.sorted { ($0.displayDate ?? .distantFuture) < ($1.displayDate ?? .distantFuture) }
+        unassignedItems = items.sorted {
+            ($0.displayDate ?? .distantFuture) < ($1.displayDate ?? .distantFuture)
+        }
     }
     
     /// Assigns the current user to an unassigned chore or occurrence, then refreshes local caches.
     @MainActor
     func pickForMyself(_ item: UnassignedItem) async {
-        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
-              let myUserID = myUser.recordID
-        else { return }
+        var myUser = dashboardUser
+        if myUser == nil {
+            myUser = await CloudKitManager.shared.currentHouseUser()
+            dashboardUser = myUser
+        }
+        
+        guard let myUserID = myUser?.recordID else { return }
         
         let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
         
@@ -664,7 +818,7 @@ class CarouselViewModel {
             await syncSingleChoreToCalendar(item.chore)
             
             await refreshAfterChoreUpdate()
-                        
+            
         case .recurring(let assignment):
             assignment.userReference = userRef
             await CloudKitManager.shared.update(assignment)
@@ -691,9 +845,8 @@ class CarouselViewModel {
         }
     }
     
-    
     // MARK: - Calendar Synchronization
-
+    
     /// Synchronizes a single, non-recurrent chore to the system calendar.
     ///
     /// This method checks if calendar synchronization is enabled in user defaults, verifies access permissions,
@@ -708,14 +861,14 @@ class CarouselViewModel {
         guard await CalendarManager.shared.requestAccess() else { return }
         guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
               let myUserID = myUser.recordID else { return }
-         
+        
         do {
             try await CalendarManager.shared.upsertOneOffEvent(for: chore, currentUserID: myUserID)
         } catch {
             print("Failed to sync single chore: \(error.localizedDescription)")
         }
     }
-
+    
     /// Accurately synchronizes a single day's recurrent assignment.
     ///
     /// Use this method when a specific day's assignment status or assignee changes without altering the global recurrence rule.
@@ -731,7 +884,7 @@ class CarouselViewModel {
         guard await CalendarManager.shared.requestAccess() else { return }
         guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
               let myUserID = myUser.recordID else { return }
-         
+        
         do {
             try await CalendarManager.shared.upsertRecurrentEvent(for: assignment, chore: chore, currentUserID: myUserID)
         } catch {

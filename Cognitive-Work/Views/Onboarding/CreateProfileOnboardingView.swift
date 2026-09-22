@@ -46,15 +46,7 @@ struct CreateProfileOnboardingView: View {
                     viewModel.isLoading = true
                     await viewModel.createUser()
                     if viewModel.currentUser != nil {
-                        // A share invite may have been accepted before this profile
-                        // existed (see `Onboarding`'s `.didAcceptShare` handler), in
-                        // which case `joinHouse()` couldn't run yet because it needs
-                        // `currentUser`. Run it now that the profile is finally saved,
-                        // so the user actually ends up linked to the house instead of
-                        // just holding an accepted CloudKit share with no house record.
                         if viewModel.stateMachine.flow == .invitedWithoutProfile {
-                            // Sync fix: don't advance a guest who wasn't published to the
-                            // house; the alert below shows `joinHouse()`'s error instead.
                             guard await viewModel.joinHouse() else {
                                 viewModel.isLoading = false
                                 return
@@ -89,6 +81,7 @@ struct CreateProfileOnboardingView: View {
                 }
             }
         }
+        .dismissKeyboardOnTap()
     }
     
     // MARK: - Subviews

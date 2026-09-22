@@ -82,9 +82,6 @@ struct SelectFreeTimeOnboardingView: View {
                     isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })
                 ) {
                     viewModel.isLoading = true
-                    // Sync fix: advance only after the free time is confirmed on the server.
-                    // Moving on regardless left the user "waiting" while the other device
-                    // could never see any availability for them.
                     if await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) {
                         if isFromSettings {
                             dismiss()
@@ -102,7 +99,6 @@ struct SelectFreeTimeOnboardingView: View {
             .toolbar(.hidden, for: .tabBar)
 
         }
-        // Sync fix: report a failed save instead of silently staying (or moving) on.
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }

@@ -17,6 +17,21 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// CloudKit record type backing this model.
     static var recordType: String = "UserModel"
     
+    /// Every field except ``profilePicture``.
+    ///
+    /// The avatar is a `CKAsset`, so including it made CloudKit download the full image for
+    /// every member of the house on every user query — and there are several of those per
+    /// refresh, across both the chores and the shopping list screens. ``UserProfileCache`` fetches
+    /// the asset on demand instead, once per user per session, off the main thread.
+    ///
+    /// A user fetched by record ID (``CloudKitManager/fetchMyHouseUser()``,
+    /// ``CloudKitManager/fetchRecordsByRecordReference(for:recordReferences:)``) is unaffected
+    /// and still carries the asset. See ``CloudKitSyncable/listDesiredKeys``.
+    static let listDesiredKeys: [CKRecord.FieldKey]? = [
+        "name", "ownerRecordName", "tier", "coins", "points", "couponLimit",
+        "badges", "chores", "availableTime", "coupons", "house"
+    ]
+    
     /// Identifier of the stored record, or `nil` before the user is saved.
     var recordID: CKRecord.ID?
     
@@ -161,7 +176,9 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// > already on the server.
     func populate(record: CKRecord) {
         record["name"] = name
-        record["profilePicture"] = profilePicture
+        if let profilePicture {
+            record["profilePicture"] = profilePicture
+        }
         record["tier"] = tier.rawValue
         record["coins"] = coins
         record["points"] = points
@@ -200,7 +217,6 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         
         var recordsToSave: [CKRecord] = []
         
-        // Sync fix: CloudKit parent references must use `.none`; normalise the house reference.
         let parentReference = houseReference.map {
             CKRecord.Reference(recordID: $0.recordID, action: .none)
         }
@@ -225,12 +241,6 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
                     day: futureDay,
                     user: userRef
                 )
-                
-                // Sync fix: pass the house as `parent`. The `record.parent` assignment above is
-                // made on a record that is never saved, so the slots were created with no parent.
-                // A guest can only create records inside a hierarchically shared house when
-                // their parent belongs to that share, so every one of these saves was rejected
-                // for invited members and the admin never saw their free time.
                 if let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID, parent: parentReference),
                    let savedID = saved.recordID {
                     newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
@@ -238,8 +248,6 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
             }
         }
         
-        // Sync fix: if slots were requested but none could be saved, report failure instead of
-        // overwriting the user's availability with an empty list and returning success.
         let requestedSlots = times.contains { $0.capacityMinutes > 0 }
         guard !requestedSlots || !newRefs.isEmpty else { return false }
         

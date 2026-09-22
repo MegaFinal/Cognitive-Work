@@ -466,13 +466,13 @@ func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
                     recordReferences: refs
                 )
                 
-                if resolved?.isEmpty ?? true {
-                    // If properties on the main thread need to be modified, switch back to MainActor to execute
-                    await MainActor.run {
-                        chore.dailyAssignmentsReference = nil
-                    }
-                    await CloudKitManager.shared.update(chore)
+                guard let resolved, resolved.isEmpty else { return }
+                
+                // If properties on the main thread need to be modified, switch back to MainActor to execute
+                await MainActor.run {
+                    chore.dailyAssignmentsReference = nil
                 }
+                await CloudKitManager.shared.update(chore)
             }
         }
     }

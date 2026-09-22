@@ -7,8 +7,6 @@ import Foundation
 import CloudKit
 
 /// Owns the house's shopping list, its items, and the house members available to assign items
-/// to — everything ``ShopListView`` and its item form need, so neither one touches
-/// ``CloudKitManager`` or performs a save directly.
 @Observable
 final class ShopListViewModel {
 
@@ -42,28 +40,37 @@ final class ShopListViewModel {
 
     init() {}
 
-    /// Preview/test convenience: seeds ``items``/``houseUsers``/``currentUser`` directly instead
-    /// of fetching from CloudKit. ``list`` stays `nil` — previews never need to resolve a real
-    /// ``ShopListModel`` record — so ``saveItem(_:name:valueText:quantity:unitMeasurement:relatedUsers:addedBy:)``
-    /// isn't usable against seeded preview data, only ``toggleBought(_:)``.
     init(previewItems: [ShopListItem], houseUsers: [UserModel] = [], currentUser: UserModel? = nil) {
         self.items = previewItems
         self.houseUsers = houseUsers
         self.currentUser = currentUser
+        self.hasLoaded = true
     }
 
     // MARK: - Setup
 
-    /// Loads the house's shopping list, its items, and every house member
+    /// Whether ``setup()`` has completed at least once.
+    private(set) var hasLoaded = false
+
+    /// The refresh currently in flight, if any.
+    @ObservationIgnored
+    private var refreshTask: Task<Void, Never>?
+
+    /// Loads the house's shopping list, its items, and every house member.
     func setup() async {
         isLoading = true
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            hasLoaded = true
+        }
 
-        async let houseTask = try? CloudKitManager.shared.fetchFirst(HouseModel.self)
+        async let houseTask = CloudKitManager.shared.currentHouse()
         async let usersTask = CloudKitManager.shared.fetchHouseUsers()
-        async let currentUserTask = CloudKitManager.shared.fetchMyHouseUser()
+        async let currentUserTask = CloudKitManager.shared.currentHouseUser()
 
         let (house, users, current) = await (houseTask, usersTask, currentUserTask)
+
+        guard !Task.isCancelled else { return }
 
         houseUsers = users
         currentUser = current
@@ -88,15 +95,32 @@ final class ShopListViewModel {
             items = []
             return
         }
-        items = await list.items
+
+        let fetched = await list.items
+        guard !Task.isCancelled else { return }
+        items = fetched
     }
 
-    /// Re-syncs with CloudKit for a real-time update (push notification / app returning to
-    /// the foreground): a lightweight items-only refresh once ``list`` is known, or the full
-    /// ``setup()`` otherwise — so a routine item change doesn't also re-fetch the house, its
-    /// members and the current user all over again.
+    /// Re-syncs with CloudKit for a real-time update (push notification / app returning to the
+    /// foreground).
     func refresh() async {
-        await setup()
+        guard list != nil else {
+            await setup()
+            return
+        }
+        await reloadItems()
+    }
+
+    /// Coalesces refresh requests and cancels the previous one.
+    ///
+    /// - Parameter debounce: How long to wait for further requests before fetching.
+    func requestRefresh(debounce: Duration = .milliseconds(250)) {
+        refreshTask?.cancel()
+        refreshTask = Task { [weak self] in
+            try? await Task.sleep(for: debounce)
+            guard !Task.isCancelled, let self else { return }
+            await self.refresh()
+        }
     }
 
     // MARK: - Items

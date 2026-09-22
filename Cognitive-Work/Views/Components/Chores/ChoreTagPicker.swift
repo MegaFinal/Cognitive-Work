@@ -49,13 +49,6 @@ struct ChoreTagPicker: View {
                             .tag(tier)
                     }
                 }
-//            case .room:
-//                Picker("Cômodo", selection: $currentRoom) {
-//                    ForEach(availableRooms, id: \.self) { room in
-//                        ColorIconTagLabel(title: room.name.capitalized, color: room.color.uiColor)
-//                            .tag(RoomModel?(room))
-//                    }
-//                }
             }
         } label: {
             HStack {
@@ -71,13 +64,6 @@ struct ChoreTagPicker: View {
                     .imageScale(.small)
             }
         }
-//        .task {
-//            if type == .room, let roomReference = chore.roomReference {
-//                currentRoom = await CloudKitManager.shared
-//                    .fetchRecordsByRecordReference(for: RoomModel.self, recordReferences: [roomReference])?
-//                    .first
-//            }
-//        }
         .onChange(of: currentRoom) { _, newRoom in
             if let recordID = newRoom?.recordID {
                 chore.roomReference = CKRecord.Reference(recordID: recordID, action: .none)
@@ -129,7 +115,6 @@ private struct ColorIconTagLabel: View {
 }
 
 extension UIImage {
-    
     /// Dynamically constructs an image rendering a colored circle for icon substitution.
     static func coloredCircle(color: Color) -> UIImage {
         let uiColor = UIColor(color)

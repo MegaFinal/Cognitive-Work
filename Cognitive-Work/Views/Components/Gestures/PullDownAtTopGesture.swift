@@ -91,7 +91,6 @@ struct PullDownAtTopGesture: ViewModifier {
 }
 
 extension View {
-    
     /// Adds a pull-down-at-top trigger to a view. On a `ScrollView`, only fires
     /// when the drag starts at the top edge; on a non-scrollable view, fires
     /// unconditionally on a sufficiently long, mostly-vertical downward drag.

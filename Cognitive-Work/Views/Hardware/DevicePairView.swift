@@ -124,6 +124,7 @@ struct DevicePairView: View {
         } message: {
             Text(pairingErrorMessage ?? "Ocorreu um erro.")
         }
+        .dismissKeyboardOnTap()
     }
     
     /// A helper subview that displays a color-coded legend for the active users.

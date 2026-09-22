@@ -100,18 +100,11 @@ struct InviteUsersOnboardingView: View {
                 }
             }
             .padding(.top)
-            
-//            if !isFromSettings {
-//                OnboardingSkipButton() {
-//                    viewModel.finishOnboarding()
-//                }
-//            }
         }
         .frame(width: width * 0.84)
         .navigationBarBackButtonHidden(!isFromSettings)
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
-                //                if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
                 houseUsers = await viewModel.fetchHouseUsers()
             }
         }
