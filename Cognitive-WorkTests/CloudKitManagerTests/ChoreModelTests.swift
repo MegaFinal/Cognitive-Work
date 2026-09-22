@@ -22,7 +22,9 @@ struct ChoreModelTests {
             frequency: .daily,
             duration: 30.0,
             isPublic: true,
-            priorityTag: .urgent)
+            priorityTag: .urgent,
+            calendarEventIdentifier: " "
+        )
         
         let savedItem = await CloudKitManager.shared.create(chore)
         
