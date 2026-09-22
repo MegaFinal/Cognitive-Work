@@ -16,8 +16,6 @@ struct FortnightlyView: View {
     @State private var selectedEntry: DailyUsageEntry?
     @State private var selectedUser: UserModel?
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     let description: String = """
         Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível.

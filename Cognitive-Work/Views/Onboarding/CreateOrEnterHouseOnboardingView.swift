@@ -17,8 +17,6 @@ struct CreateOrEnterHouseOnboardingView: View {
     /// The shared onboarding view model, read from the environment
     @Binding var viewModel: OnboardingViewModel
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
 
     // MARK: - Body
     //

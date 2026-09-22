@@ -9,8 +9,6 @@ import SwiftUI
 import CloudKit
 
 struct ChoreCard: View {
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     let chore: ChoreModel
     let user: UserModel?
