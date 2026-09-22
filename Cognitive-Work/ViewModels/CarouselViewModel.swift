@@ -815,12 +815,19 @@ class CarouselViewModel {
             item.chore.allResponsibleUsersReference = refs
             await CloudKitManager.shared.update(item.chore)
             
+            await syncSingleChoreToCalendar(item.chore)
+            
+            await refreshAfterChoreUpdate()
+                        
         case .recurring(let assignment):
             assignment.userReference = userRef
             await CloudKitManager.shared.update(assignment)
+            
+            await syncSingleAssignmentToCalendar(for: assignment, chore: item.chore)
+            
+            await refreshAfterChoreUpdate()
+            
         }
-        
-        await refreshAfterChoreUpdate()
     }
     
     /// Whether the "unassigned chores" popup is currently visible.
