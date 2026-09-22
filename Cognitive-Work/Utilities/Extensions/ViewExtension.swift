@@ -25,3 +25,18 @@ extension View {
         modifier(CharacterLimit(text: text, limit: limit))
     }
 }
+
+extension View {
+    var width: CGFloat {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return .zero
+            }
+        return windowScene.screen.bounds.size.width
+    }
+    var height: CGFloat {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return .zero
+            }
+        return windowScene.screen.bounds.size.height
+    }
+}
