@@ -68,7 +68,7 @@ struct Onboarding: View {
             // Session-restore fix: after a reset the saved step points at data that no longer
             // exists, so start the flow from the beginning too.
             viewModel.stateMachine.resetProgress()
-//            #endif
+            #endif
 //            await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {

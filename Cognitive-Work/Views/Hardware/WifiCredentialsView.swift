@@ -10,25 +10,24 @@ import SwiftUI
 /// A view that allows users to input their network credentials (IP, Wi-Fi name, and password)
 /// to configure and connect an ESP32 hardware device.
 struct WifiCredentialsView: View {
-    
-    @State private var viewModel = HardwareViewModel()
+    @Bindable private var viewModel = HardwareViewModel()
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                Text("Conecte o quadro à sua rede!")
+                Text("Conecte o Harvi à Internet!")
                     .font(.system(size: 20))
                     .bold()
                     .padding(.bottom, 20)
                  
-                TextField("IP do device", text: $viewModel.deviceIP)
-                TextField("Nome do Wifi", text: $viewModel.userWifiName)
+                TextField("Insira o código da tela do Harvi", text: $viewModel.deviceIP)
+                TextField("Insira o nome do WiFi da sua casa", text: $viewModel.userWifiName)
                 HStack {
                     if viewModel.isPasswordVisible {
-                        TextField("Senha do Wifi", text: $viewModel.userWifiPassord)
+                        TextField("Insira a senha do WiFi da sua casa", text: $viewModel.userWifiPassord)
                             .textInputAutocapitalization(.never)
                     } else {
-                        SecureField("Senha do Wifi", text: $viewModel.userWifiPassord)
+                        SecureField("Insira a senha do WiFi da sua casa", text: $viewModel.userWifiPassord)
                             .textInputAutocapitalization(.never)
                     }
                     Button {
@@ -68,7 +67,7 @@ struct WifiCredentialsView: View {
                         viewModel.navigateToParingView = true
                         print(viewModel.navigateToParingView)
                     } catch APIErrors.invalidURL {
-                        viewModel.errorMessage = "IP inválido. Verifique e tente de novo."
+                        viewModel.errorMessage = "Código inválido. Verifique e tente de novo."
                     } catch let apiError as APIErrors {
                         viewModel.errorMessage = apiError.errorDescription
                     } catch {
