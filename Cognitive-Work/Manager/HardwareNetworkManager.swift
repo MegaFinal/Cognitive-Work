@@ -32,6 +32,24 @@ class HardwareNetworkManager {
     private var hash: String = ""
 
     private(set) var isConnected: Bool = false
+    
+    // MARK: - Hash Persistence
+    
+    private var localPersistence = UserDefaults.standard
+    
+    private enum StorageKey {
+        static let hash = "hardware.hash"
+        static let ip = "hardware.ip"
+    }
+    
+    init() {
+        if let savedHash = localPersistence.string(forKey: StorageKey.hash),
+           let savedIP = localPersistence.string(forKey: StorageKey.ip) {
+            self.hash = savedHash
+            self.ip = savedIP
+            self.isConnected = true
+        }
+    }
 
     // MARK: - Provisioning
 
@@ -105,6 +123,10 @@ class HardwareNetworkManager {
         let answer = try validate(data: data, response: response)
         self.hash = answer.message
         isConnected = true
+        
+        // Persistence
+        localPersistence.set(self.hash, forKey: StorageKey.hash)
+        localPersistence.set(self.ip, forKey: StorageKey.ip)
     }
 
     // MARK: - Sending content
@@ -196,6 +218,7 @@ class HardwareNetworkManager {
         if httpResponse.statusCode == 401 {
             isConnected = false
             hash = ""
+            localPersistence.removeObject(forKey: StorageKey.hash)
             throw APIErrors.invalidResponse
         }
 
