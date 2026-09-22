@@ -62,6 +62,10 @@ class CarouselViewModel {
     var isLoading: Bool = false
     private var hasFetchedInitially = false
     
+    /// Set when ``delete(chore:targetOccurrences:)`` fails, so a view can surface it in an
+    /// alert. Left for the view to clear back to `nil` once shown.
+    var errorMessage: String?
+    
     // MARK: - Carousel Geometry State
     
     /// The exact index where the carousel is currently resting.
@@ -438,6 +442,101 @@ class CarouselViewModel {
         }
         
         return success
+    }
+    
+    // MARK: - Delete
+    
+    /// What ``removeOccurrenceLocally(chore:targetOccurrences:)`` took out of the in-memory
+    /// state, kept around so a failed CloudKit delete can restore it exactly.
+    struct RemovedOccurrenceSnapshot {
+        let cardModels: [ChoreModel]
+        let assignments: [RecurrentAssignmentModel]
+    }
+    
+    /// Removes the given occurrence(s) from ``cardModels``/``dailyAssignments`` right away,
+    /// with no `await` and no network round trip, and refreshes every derived list to match.
+    ///
+    /// This has to run synchronously, *before* the actual CloudKit delete, because `List`'s
+    /// native swipe-to-delete expects its backing data to have already changed by the time
+    /// the swipe animation finishes: if the data only changes later (after an `await` on the
+    /// network), the row disappears, flashes back once SwiftUI notices nothing really
+    /// changed yet, then disappears again once the delete eventually completes.
+    ///
+    /// See ``ChoreModel/delete(targetOccurrences:)`` for the exact rule this follows: no
+    /// occurrences (or a non-recurring chore) removes the whole chore; one or more removes
+    /// just those days.
+    @MainActor
+    @discardableResult
+    func removeOccurrenceLocally(chore: ChoreModel, targetOccurrences: [RecurrentAssignmentModel]) -> RemovedOccurrenceSnapshot {
+        let deletesWholeChore = chore.frequency == .none || targetOccurrences.isEmpty
+        
+        var removedCardModels: [ChoreModel] = []
+        var removedAssignments: [RecurrentAssignmentModel] = []
+        
+        if deletesWholeChore {
+            removedCardModels = cardModels.filter { $0.recordID == chore.recordID }
+            removedAssignments = dailyAssignments.filter { $0.choreReference?.recordID == chore.recordID }
+            cardModels.removeAll { $0.recordID == chore.recordID }
+            dailyAssignments.removeAll { $0.choreReference?.recordID == chore.recordID }
+        } else {
+            let deletedIDs = Set(targetOccurrences.compactMap { $0.recordID })
+            removedAssignments = dailyAssignments.filter { assignment in
+                guard let id = assignment.recordID else { return false }
+                return deletedIDs.contains(id)
+            }
+            dailyAssignments.removeAll { assignment in
+                guard let id = assignment.recordID else { return false }
+                return deletedIDs.contains(id)
+            }
+        }
+        
+        if focusedOccurrence?.chore.recordID == chore.recordID {
+            clearFocusedDetails()
+        }
+        
+        refreshVisible()
+        
+        return RemovedOccurrenceSnapshot(cardModels: removedCardModels, assignments: removedAssignments)
+    }
+    
+    /// Persists a deletion already applied locally by
+    /// ``removeOccurrenceLocally(chore:targetOccurrences:)``. On failure, restores exactly
+    /// what that call removed and sets ``errorMessage``.
+    @MainActor
+    @discardableResult
+    func persistDelete(
+        chore: ChoreModel,
+        targetOccurrences: [RecurrentAssignmentModel],
+        restoring snapshot: RemovedOccurrenceSnapshot
+    ) async -> Bool {
+        guard await chore.delete(targetOccurrences: targetOccurrences) else {
+            cardModels.append(contentsOf: snapshot.cardModels)
+            dailyAssignments.append(contentsOf: snapshot.assignments)
+            refreshVisible()
+            
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Não foi possível excluir a tarefa."
+            return false
+        }
+        
+        return true
+    }
+    
+    /// Deletes a chore, or — for a recurring chore — just the given occurrence(s), and
+    /// refreshes every derived list immediately.
+    ///
+    /// Combines ``removeOccurrenceLocally(chore:targetOccurrences:)`` and
+    /// ``persistDelete(chore:targetOccurrences:restoring:)`` for callers — like the edit
+    /// screen's delete button — that don't need to control the timing between them. The
+    /// chores list's swipe-to-delete calls the two halves directly instead, so the local
+    /// removal happens synchronously, in step with `List`'s own delete animation, before the
+    /// network call runs in the background.
+    ///
+    /// - Returns: `true` on success. On failure, `errorMessage` is set and `false` is
+    ///   returned.
+    @discardableResult
+    func delete(chore: ChoreModel, targetOccurrences: [RecurrentAssignmentModel] = []) async -> Bool {
+        let snapshot = await removeOccurrenceLocally(chore: chore, targetOccurrences: targetOccurrences)
+        return await persistDelete(chore: chore, targetOccurrences: targetOccurrences, restoring: snapshot)
     }
     
     // MARK: - Filtering Logic

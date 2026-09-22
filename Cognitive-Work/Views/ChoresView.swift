@@ -153,6 +153,17 @@ struct ChoresView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             carouselVM.requestRefresh()
         }
+        .alert(
+            "Não foi possível excluir",
+            isPresented: Binding(
+                get: { carouselVM.errorMessage != nil },
+                set: { if !$0 { carouselVM.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(carouselVM.errorMessage ?? "")
+        }
     }
     
     // MARK: - Subviews
@@ -227,29 +238,32 @@ struct ChoresView: View {
         .animation(.easeInOut, value: activeRoomColor)
     }
     
-    /// Vertical scroll view rendering the chores in a list format.
+    /// Vertical list rendering the chores
     private var choreList: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
-                ForEach(Array(carouselVM.visibleOccurrences.enumerated()), id: \.element.id) { index, occurrence in
-                    ChoreCardListStyle(
-                        chore: occurrence.chore,
-                        recurrentAssignment: occurrence.assignment,
-                        namespace: cardAnimation,
-                        carouselViewModel: carouselVM
-                    ) {
-                        carouselVM.focusDetailsImmediately(index)
-                    }
+        List {
+            ForEach(Array(carouselVM.visibleOccurrences.enumerated()), id: \.element.id) { index, occurrence in
+                ChoreCardListStyle(
+                    chore: occurrence.chore,
+                    recurrentAssignment: occurrence.assignment,
+                    namespace: cardAnimation,
+                    carouselViewModel: carouselVM
+                ) {
+                    carouselVM.focusDetailsImmediately(index)
                 }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
-            .padding(.top, 8)
-            .padding(.bottom, 120)
+            .onDelete(perform: deleteOccurrences)
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 100)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onPullDownAtTop(action: carouselVM.toggleLayout)
         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
         .overlay {
-            // Empty state for the list layout specifically
             if !carouselVM.isLoading && carouselVM.visibleOccurrences.isEmpty {
                 emptyChoreListState
             }
@@ -271,6 +285,23 @@ struct ChoresView: View {
     }
     
     // MARK: - Actions
+    
+    /// Deletes the swiped occurrence(s)
+    @MainActor
+    private func deleteOccurrences(at offsets: IndexSet) {
+        let occurrencesToDelete = offsets.compactMap { index in
+            carouselVM.visibleOccurrences.indices.contains(index) ? carouselVM.visibleOccurrences[index] : nil
+        }
+        
+        for occurrence in occurrencesToDelete {
+            let targetOccurrences = occurrence.assignment.map { [$0] } ?? []
+            let snapshot = carouselVM.removeOccurrenceLocally(chore: occurrence.chore, targetOccurrences: targetOccurrences)
+            
+            Task {
+                await carouselVM.persistDelete(chore: occurrence.chore, targetOccurrences: targetOccurrences, restoring: snapshot)
+            }
+        }
+    }
     
     /// Dismisses the currently focused card based on the active layout mode.
     private func dismissFocusedCard() {
