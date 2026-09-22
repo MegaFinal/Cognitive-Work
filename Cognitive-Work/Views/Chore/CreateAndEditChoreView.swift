@@ -59,8 +59,6 @@ struct CreateAndEditChoreView: View {
     
     @Environment(\.dismiss) private var dismiss
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     // MARK: - Main Body
     var body: some View {

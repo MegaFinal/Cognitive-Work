@@ -27,8 +27,6 @@ struct UserProfileView: View {
     @State private var viewModelHardware = HardwareViewModel()
     @State private var viewModelOnboarding = OnboardingViewModel()
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     init(viewModelUser: UserProfileViewModel = UserProfileViewModel()) {
         self._viewModelUser = State(initialValue: viewModelUser)

@@ -14,8 +14,7 @@ struct UserProfilePictureTag: View {
     /// The member whose avatar should be shown, or `nil` to render the placeholder.
     let user: UserModel?
 
-    var width = UIScreen.main.bounds.width
-
+    
     /// Scaling parameter controlling absolute size derivations.
     var widthMultiplier: Double
 

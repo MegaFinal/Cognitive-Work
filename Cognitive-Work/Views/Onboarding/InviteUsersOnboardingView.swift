@@ -26,8 +26,6 @@ struct InviteUsersOnboardingView: View {
     @State private var isLoading = true
     @State private var houseUsers: [UserModel] = []
     
-    var width: CGFloat = UIScreen.main.bounds.width
-    var height: CGFloat = UIScreen.main.bounds.height
     var isFromSettings: Bool
     
     // MARK: - Body

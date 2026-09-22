@@ -23,8 +23,6 @@ struct ChoresView: View {
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
     init(carouselVM: CarouselViewModel = CarouselViewModel()) {
@@ -320,8 +318,6 @@ private struct ProgressIndicatorCard: View {
     /// Visual thematic backdrop color applying depth over UI layouts.
     var color: Color = .gray
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     var body: some View {
         VStack {

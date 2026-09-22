@@ -21,8 +21,6 @@ struct CarouselCardFrame: View {
     let carouselViewModel: CarouselViewModel
     let namespace: Namespace.ID
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     var isFocused: Bool = false
     var rotation: Double = 0

@@ -27,8 +27,6 @@ struct WaitUsersFreeTimeOnboardingView: View {
     
     private let pollingInterval: Duration = .seconds(5)
     
-    var width: CGFloat = UIScreen.main.bounds.width
-    var height: CGFloat = UIScreen.main.bounds.height
     
     var isFromSettings: Bool
     
@@ -165,7 +163,6 @@ struct WaitUsersFreeTimeOnboardingView: View {
         pendingUsers = pending
     }
 }
-
 
 #Preview {
     

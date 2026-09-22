@@ -19,8 +19,6 @@ struct ChoreCarouselCard: View {
     
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     var body: some View {
         ZStack {

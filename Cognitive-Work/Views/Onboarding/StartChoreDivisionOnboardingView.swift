@@ -10,8 +10,6 @@ import SwiftUI
 struct StartChoreDivisionOnboardingView: View {
     @Binding var viewModel: OnboardingViewModel
 
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     var body: some View {
         VStack(spacing: 16) {
