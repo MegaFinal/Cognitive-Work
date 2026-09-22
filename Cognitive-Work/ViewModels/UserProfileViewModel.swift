@@ -216,29 +216,45 @@ final class UserProfileViewModel {
         }
         
         isSaving = true
+        defer { isSaving = false }
         
         if let user {
+            // Resolve the house and ownership before the in-house user record is gone,
+            // since both are derived from it.
+            let house = await user.house
+            let isHouseOwner = await house?.isAdmin() == true
+            
             async let deletePrivate = CloudKitManager.shared.delete(privateUser)
-            async let deleteHouse = CloudKitManager.shared.delete(user)
+            async let deleteHouseUser = CloudKitManager.shared.delete(user)
             
-            let (privateSuccess, houseSuccess) = await (deletePrivate, deleteHouse)
+            let (privateSuccess, houseUserSuccess) = await (deletePrivate, deleteHouseUser)
             
-            if privateSuccess && houseSuccess {
-                CloudKitManager.shared.clearCurrentUser()
-                onAccountDeleted()
-            } else {
+            guard privateSuccess && houseUserSuccess else {
                 errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+                return
             }
+            
+            if let house {
+                if isHouseOwner {
+                    await house.deleteAllChildren()
+                    await CloudKitManager.shared.delete(house)
+                } else {
+                    await house.removeUser(user)
+                }
+            }
+            
+            CloudKitManager.shared.clearCurrentUser()
+            onAccountDeleted()
         } else {
             let success = await CloudKitManager.shared.delete(privateUser)
-            if success {
-                CloudKitManager.shared.clearCurrentUser()
-                onAccountDeleted()
-            } else {
+            guard success else {
                 errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+                return
             }
+            
+            CloudKitManager.shared.clearCurrentUser()
+            onAccountDeleted()
         }
-        isSaving = false
     }
     
     // MARK: - Calendar
