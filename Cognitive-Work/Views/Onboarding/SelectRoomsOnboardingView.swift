@@ -94,8 +94,6 @@ struct SelectRoomsOnboardingView: View {
 ///
 /// Selection handling is applied by the parent view via a tap gesture.
 private struct OnboardingRoomCard: View {
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     var text: String
     var symbol: String

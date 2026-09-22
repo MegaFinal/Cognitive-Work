@@ -19,8 +19,6 @@ struct NewRoomSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(OnboardingViewModel.self) var viewModel
     
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     @State private var text = ""
     @State private var selectedColor: RoomColor = .yellow

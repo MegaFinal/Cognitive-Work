@@ -8,12 +8,18 @@
 import SwiftUI
 
 struct OnboardingSkipButton: View {
-    var width: CGFloat = UIScreen.main.bounds.width * 0.6
-    var height: CGFloat = UIScreen.main.bounds.height * 0.06
-        
+    var width: CGFloat?
+    var height: CGFloat?
+
     var isLoading: Bool = false
     var action: () -> Void
-    
+
+    // `width`/`height` shadow the View extension's properties of the same
+    // name, so casting to `any View` is needed to reach the extension's
+    // default (screen-based) value when no override was passed in.
+    private var resolvedWidth: CGFloat { width ?? (self as any View).width * 0.6 }
+    private var resolvedHeight: CGFloat { height ?? (self as any View).height * 0.06 }
+
     var body: some View {
         Button {
             action()
@@ -27,7 +33,7 @@ struct OnboardingSkipButton: View {
                         .underline()
                 }
             }
-            .frame(width: width, height: height)
+            .frame(width: resolvedWidth, height: resolvedHeight)
             .foregroundColor(.gray)
             .fontWeight(.medium)
         }

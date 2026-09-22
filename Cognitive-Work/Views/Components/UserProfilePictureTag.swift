@@ -14,7 +14,6 @@ struct UserProfilePictureTag: View {
     /// Encoded PNG string data mapping back into a UIImage context.
     let user: UserModel?
 
-    var width = UIScreen.main.bounds.width
     
     /// Scaling parameter controlling absolute size derivations.
     var widthMultiplier: Double

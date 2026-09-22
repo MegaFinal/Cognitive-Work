@@ -11,8 +11,6 @@ import PhotosUI
 struct EditProfileView: View {
     @Bindable var viewModel: UserProfileViewModel
         
-    var width = UIScreen.main.bounds.width
-    var height = UIScreen.main.bounds.height
     
     var body: some View {
         VStack(spacing: 40) {
