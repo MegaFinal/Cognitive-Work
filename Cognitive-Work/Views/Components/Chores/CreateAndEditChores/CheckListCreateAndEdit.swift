@@ -46,7 +46,6 @@ struct CheckListCreateAndEdit: View {
                     }
                 }
             }
-            
             Button {
                 localChecklist.append(CheckItemDTO(name: "", isDone: false))
             } label: {

@@ -7,155 +7,167 @@
 
 import SwiftUI
 
+/// Content of the chores list's filter menu.
 struct FilterOptionsMenu: View {
     @Bindable var viewModel: CarouselViewModel
-    @State private var isOptionExpanded = [false, false, false, false]
-    @State private var optionsName = ["Prioridade", "Usuários", "Frequência", "Status"]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            
-            FilterHeaderButton(isExpanded: $isOptionExpanded[0], headerText: optionsName[0])
-            if isOptionExpanded[0] {
-                FilterOptionRow(
-                    items: PriorityTag.allCases,
-                    isSelected: { viewModel.filterChoices.tags.contains($0) },
-                    label: { $0.rawValue.capitalized },
-                    onSelect: { tag in
-                        await viewModel.addOrRemoveFilter(tag: tag)
-                    }
-                )
-            }
-            Divider()
-                .padding(.leading, 16)
-            
-            FilterHeaderButton(isExpanded: $isOptionExpanded[1], headerText: optionsName[1])
-            if isOptionExpanded[1] {
-                FilterOptionRow(
-                    items: viewModel.userModels,
-                    isSelected: { viewModel.filterChoices.users.contains($0) },
-                    label: {$0.name.capitalized},
-                    onSelect: { user in
-                    await viewModel.addOrRemoveFilter(user: user)
-                })
-            }
-            Divider()
-                .padding(.leading, 16)
-            
-            FilterHeaderButton(isExpanded: $isOptionExpanded[2], headerText: optionsName[2])
-            if isOptionExpanded[2] {
-                FilterOptionRow(
-                    items: Recurrence.allCases,
-                    isSelected: { viewModel.filterChoices.frequencies.contains($0) },
-                    label: {$0.rawValue.capitalized},
-                    onSelect: { freq in
-                    await viewModel.addOrRemoveFilter(frequency: freq)
-                    })
-            }
-            Divider()
-                .padding(.leading, 16)
-            
-            FilterHeaderButton(isExpanded: $isOptionExpanded[3], headerText: optionsName[3])
-            if isOptionExpanded[3] {
-                FilterOptionRow(
-                    items: [true, false],
-                    isSelected: { viewModel.filterChoices.state == $0 },
-                    label: {$0 ? "Concluido" : "Pendente"},
-                    onSelect: { state in
-                        await viewModel.addOrRemoveFilter(state: state)
-                    })
-            }
-            Divider()
-                .padding(.leading, 16)
-            
-            Button {
-                viewModel.resetFilter()
-            } label: {
-                HStack {
-                    Text("Limpar filtro")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Image(systemName: "eraser")
-                        .foregroundStyle(.secondary)
-                }
-                .foregroundStyle(.black)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .contentShape(Rectangle())
-            }
 
-        }
-        .frame(width: 250)
-        .padding()
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+    private var filterableRooms: [RoomModel] {
+        viewModel.roomModels.filter { $0.name != "Casa" }
     }
-}
 
-private struct FilterHeaderButton: View {
-    @Binding var isExpanded: Bool
-    var headerText: String
-    
     var body: some View {
-        Button {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                isExpanded.toggle()
+        Menu {
+            ForEach(PriorityTag.allCases, id: \.self) { tag in
+                Toggle(isOn: tagBinding(tag)) {
+                    Text(tag.rawValue.capitalized)
+                }
             }
         } label: {
-            HStack {
-                Text(headerText)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.primary)
-                Spacer()
-                Image(systemName: "chevron.forward")
-                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .contentShape(Rectangle())
+            FilterMenuRow(
+                systemImage: "flag",
+                title: "Prioridade",
+                subtitle: summary(viewModel.filterChoices.tags.map { $0.rawValue.capitalized })
+            )
         }
-        .buttonStyle(.plain)
+
+        Menu {
+            ForEach(viewModel.userModels, id: \.self) { user in
+                Toggle(isOn: userBinding(user)) {
+                    Text(user.name.capitalized)
+                }
+            }
+        } label: {
+            FilterMenuRow(
+                systemImage: "person.2",
+                title: "Usuários",
+                subtitle: summary(viewModel.filterChoices.users.map { $0.name.capitalized })
+            )
+        }
+
+        Menu {
+            ForEach(Recurrence.allCases, id: \.self) { frequency in
+                Toggle(isOn: frequencyBinding(frequency)) {
+                    Text(frequency.rawValue.capitalized)
+                }
+            }
+        } label: {
+            FilterMenuRow(
+                systemImage: "repeat",
+                title: "Frequência",
+                subtitle: summary(viewModel.filterChoices.frequencies.map { $0.rawValue.capitalized })
+            )
+        }
+
+        Menu {
+            ForEach(filterableRooms, id: \.self) { room in
+                Toggle(isOn: roomBinding(room)) {
+                    Text(room.name.capitalized)
+                }
+            }
+        } label: {
+            FilterMenuRow(
+                systemImage: "house",
+                title: "Cômodo",
+                subtitle: summary(viewModel.filterChoices.rooms.map { $0.name.capitalized })
+            )
+        }
+
+        Menu {
+            Toggle(isOn: stateBinding(true)) {
+                Text("Concluído")
+            }
+            Toggle(isOn: stateBinding(false)) {
+                Text("Pendente")
+            }
+        } label: {
+            FilterMenuRow(
+                systemImage: "checkmark.circle",
+                title: "Status",
+                subtitle: viewModel.filterChoices.state.map { $0 ? "Concluído" : "Pendente" } ?? "Nenhum"
+            )
+        }
+
+        Divider()
+
+        Button {
+            viewModel.resetFilter()
+        } label: {
+            Label("Limpar filtro", systemImage: "eraser")
+        }
+    }
+
+    // MARK: - Toggle bindings
+
+    private func tagBinding(_ tag: PriorityTag) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.filterChoices.tags.contains(tag) },
+            set: { _ in viewModel.addOrRemoveFilter(tag: tag) }
+        )
+    }
+
+    private func userBinding(_ user: UserModel) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.filterChoices.users.contains(user) },
+            set: { _ in viewModel.addOrRemoveFilter(user: user) }
+        )
+    }
+
+    private func frequencyBinding(_ frequency: Recurrence) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.filterChoices.frequencies.contains(frequency) },
+            set: { _ in viewModel.addOrRemoveFilter(frequency: frequency) }
+        )
+    }
+
+    private func roomBinding(_ room: RoomModel) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.filterChoices.rooms.contains(room) },
+            set: { _ in viewModel.addOrRemoveFilter(room: room) }
+        )
+    }
+
+    private func stateBinding(_ state: Bool) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.filterChoices.state == state },
+            set: { _ in viewModel.addOrRemoveFilter(state: state) }
+        )
+    }
+
+    /// "Nenhum" when empty, the single value's name, or a count once more than one is picked
+    private func summary(_ selected: [String]) -> String {
+        switch selected.count {
+        case 0: return "Nenhum"
+        case 1: return selected[0]
+        default: return "\(selected.count) selecionados"
+        }
     }
 }
 
-private struct FilterOptionRow<Item: Hashable>: View {
-    let items: [Item]
-    let isSelected: (Item) -> Bool
-    let label: (Item) -> String
-    let onSelect: (Item) async -> Void
-    
+/// A single row inside the filter menu: icon, title, and the current selection as a subtitle 
+private struct FilterMenuRow: View {
+    let systemImage: String
+    let title: String
+    let subtitle: String
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(items, id: \.self) { item in
-                Button {
-                    Task {
-                        await onSelect(item)
-                    }
-                } label: {
-                    HStack {
-                        Image(systemName: isSelected(item) ? "checkmark.circle.fill" : "circle")
-                        Text(label(item))
-                            .foregroundStyle(.primary)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                
-                if item != items.last {
-                    Divider()
-                        .padding(.leading, 16)
-                }
+        Label {
+            VStack(alignment: .leading) {
+                Text(title)
+                Text(subtitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
+        } icon: {
+            Image(systemName: systemImage)
         }
-        .transition(.move(edge: .top).combined(with: .opacity))
     }
 }
 
 #Preview {
-    FilterOptionsMenu(viewModel: CarouselViewModel())
-        .padding()
-        .background(.blue)
+    Menu {
+        FilterOptionsMenu(viewModel: CarouselViewModel())
+    } label: {
+        Label("Filtrar", systemImage: "line.3.horizontal.decrease")
+    }
+    .padding()
 }

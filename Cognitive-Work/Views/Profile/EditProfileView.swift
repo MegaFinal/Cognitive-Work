@@ -10,6 +10,7 @@ import PhotosUI
 
 struct EditProfileView: View {
     @Bindable var viewModel: UserProfileViewModel
+    @Environment(\.dismiss) private var dismiss
         
     
     var body: some View {
@@ -63,6 +64,24 @@ struct EditProfileView: View {
         .onAppear {
             viewModel.startEditing()
         }
+        .dismissKeyboardOnTap()
+        // MARK: - Success Feedback
+        .overlay(alignment: .top) {
+            if viewModel.didSaveSuccessfully {
+                SuccessToast(text: "Perfil atualizado")
+                    .padding(.top, 12)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.35), value: viewModel.didSaveSuccessfully)
+        .onChange(of: viewModel.didSaveSuccessfully) { _, didSave in
+            guard didSave else { return }
+            Task {
+                try? await Task.sleep(nanoseconds: 1_100_000_000)
+                viewModel.didSaveSuccessfully = false
+                dismiss()
+            }
+        }
         .toolbar {
             // MARK: - Save Button
             ToolbarItem(placement: .confirmationAction) {
@@ -97,6 +116,25 @@ struct EditProfileView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+    }
+}
+
+// MARK: - Success Toast
+
+/// A small confirmation pill shown briefly over ``EditProfileView`` after a successful save.
+private struct SuccessToast: View {
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: "checkmark.circle.fill")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundColor(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .glassEffect(
+                .regular.interactive().tint(.green),
+                in: .capsule
+            )
     }
 }
 

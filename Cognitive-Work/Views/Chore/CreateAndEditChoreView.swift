@@ -36,7 +36,7 @@ struct CreateAndEditChoreView: View {
         
         self._availableHouseUsers = State(initialValue: Array(bestByOwner.values))
         self._choreDTO = State(initialValue: ChoreDTO(from: originalModel, users: [], checklist: [], room: nil))
-                 
+        
         self._availableRooms = State(initialValue: [])
         self._isSaving = State(initialValue: false)
     }
@@ -126,12 +126,13 @@ struct CreateAndEditChoreView: View {
         }
         .task {
             availableRooms = await CloudKitManager.shared.fetchAll(RoomModel.self)
+                .filter { $0.name != "Casa" }
             choreDTO.room = await originalModel.room
-             
+            
             let checklistModels = await originalModel.checkList
             choreDTO.checklist = checklistModels.map(CheckItemDTO.init(from:))
             choreDTO.hasChecklist = !choreDTO.checklist.isEmpty
-             
+            
             if !targetAssignments.isEmpty {
                 let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
                 choreDTO.responsibleUsers = availableHouseUsers.filter { user in
@@ -144,7 +145,7 @@ struct CreateAndEditChoreView: View {
             }
         }
         .toolbar(.hidden, for: .tabBar)
-
+        .dismissKeyboardOnTap()
     }
     
     // MARK: - Subviews
@@ -304,6 +305,22 @@ struct CreateAndEditChoreView: View {
         await originalModel.save(from: choreDTO, targetAssignments: targetAssignments)
         await carouselViewModel.refreshAfterChoreUpdate()
         
+        let updatedChore = originalModel
+        
+        if updatedChore.frequency == .none {
+            await carouselViewModel.syncSingleChoreToCalendar(updatedChore)
+        } else {
+            let freshAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+            carouselViewModel.dailyAssignments = freshAssignments
+            
+            let targetIDs = Set(targetAssignments.compactMap { $0.recordID })
+            let updatedTargets = freshAssignments.filter { targetIDs.contains($0.recordID ?? CKRecord.ID(recordName: "")) }
+            
+            for assignment in updatedTargets {
+                await carouselViewModel.syncSingleAssignmentToCalendar(for: assignment, chore: updatedChore)
+            }
+        }
+        
         isSaving = false
         dismiss()
     }
@@ -326,3 +343,4 @@ struct CreateAndEditChoreView: View {
         }
     }
 }
+

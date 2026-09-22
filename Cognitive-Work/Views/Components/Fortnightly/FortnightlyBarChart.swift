@@ -42,12 +42,6 @@ struct FortnightlyBarChart: View {
             content
         }
     }
-    
-    //    private func alignToMonday(_ date: Date, calendar: Calendar) -> Date {
-    //        let weekday = calendar.component(.weekday, from: date)
-    //        let daysToSubtract = (weekday == 1) ? 6 : (weekday - 2)
-    //        return calendar.date(byAdding: .day, value: -daysToSubtract, to: date) ?? date
-    //    }
 }
 
 private struct FortnightlyDayUserBar: View {

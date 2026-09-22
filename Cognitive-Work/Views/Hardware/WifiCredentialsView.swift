@@ -52,6 +52,7 @@ struct WifiCredentialsView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "Deu algum erro.")
             }
+            .dismissKeyboardOnTap()
         }
     }
      
