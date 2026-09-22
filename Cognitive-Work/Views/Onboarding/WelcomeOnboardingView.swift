@@ -97,16 +97,17 @@ struct WelcomeOnboardingView: View {
     
     /// The expanded pitch shown after the user swipes up.
     private var appDescription: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 20){
             VStack(alignment: .leading, spacing: 20) {
-                Text("O Pipa veio para facilitar \na vida de quem divide moradia!")
+                Text("O Pipa veio para facilitar a vida de quem divide moradia!")
                 
-                Text("Nosso intuito é remover a carga mental da organização de \ntarefas de maneira justa e visual para todos os moradores.")
+                Text("Nosso intuito é remover a carga mental da organização de tarefas de maneira justa e visual para todos os moradores.")
                 
-                Text("Através da nossa escala de atividades e recorrência de \ntarefas automatizada, basta \nolhar o calendário e saber o que você precisa fazer!")
+                Text("Através da nossa escala de atividades e recorrência de tarefas automatizada, basta olhar o calendário e saber o que você precisa fazer!")
                 
-                Text("Mas antes, precisamos saber um pouco mais sobre a rotina na \ncasa...")
+                Text("Mas antes, precisamos saber um pouco mais sobre a rotina na casa...")
             }
+            .padding(.horizontal)
             
             OnboardingProgressButton(text: "Começar", isLoading: viewModel.isLoading) {
                 await viewModel.checkExistingAccount()
@@ -117,7 +118,7 @@ struct WelcomeOnboardingView: View {
         .frame(width: width * 0.8)
         .foregroundColor(.gray)
         .multilineTextAlignment(.leading)
-        .padding(.horizontal, 30)
+        .padding(.horizontal, 46)
         .transition(.opacity)
     }
     
