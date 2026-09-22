@@ -9,11 +9,6 @@ import SwiftUI
 import UIKit
 import CloudKit
 
-//TODO: ip size verification and masking it to the user by not needing to include the dots
-//TODO: loading screen to wait sending wifi. If true goes to code and if false comes back to wificredentials
-//TODO: Save Wi-Fi, password, and IP so the user doesn't need to log in every time.
-
-
 /// A view model that manages hardware connectivity and data transmission for an ESP32 device.
 @Observable
 class HardwareViewModel {
@@ -115,7 +110,7 @@ class HardwareViewModel {
         house = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
          
         guard let houseRecordID = house?.recordID else { 
-            errorMessage = "House not found."
+            errorMessage = "Casa não encontrada."
             return false
         }
          

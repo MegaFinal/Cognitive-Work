@@ -30,7 +30,7 @@ struct DevicePairView: View {
                 .font(.system(size: 20))
                 .bold()
                 .padding(.bottom, 20)
-            TextField("IP do device", text: $hardwareViewModel.deviceIP)
+            TextField("Insira o código da tela do Harvi", text: $hardwareViewModel.deviceIP)
                 .frame(width: 300, height: 44)
                 .textFieldStyle(.roundedBorder)
                 .padding()
@@ -105,6 +105,10 @@ struct DevicePairView: View {
                 }
             }
         }
+        .onAppear {
+            hardwareViewModel.deviceIP = ""
+        }
+        
         .padding()
         .task {
             await fortnightlyViewModel.setupWithFetch()
