@@ -50,7 +50,9 @@ struct DevicePairView: View {
                 if isPairing {
                     ProgressView()
                 } else {
-                    Button(role: .confirm) { pair() }
+                    Button(role: .confirm) {
+                        pair()
+                    }
                         .disabled(hardwareViewModel.deviceIP.isEmpty)
                 }
             }
@@ -93,7 +95,9 @@ struct DevicePairView: View {
                 pairingResult = .success
             } catch {
                 pairingResult = .failure
+                return
             }
+            try await hardwareViewModel.sendChartToESP32()
         }
     }
 }
