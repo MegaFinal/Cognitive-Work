@@ -126,8 +126,9 @@ struct ChoreCardListStyle: View {
                                 generator.notificationOccurred(isOccurrenceDone ? .warning : .success)
                                 
                                 Task {
-                                    await carouselViewModel.toggle(chore: chore, assignment: recurrentAssignment)
-                                    carouselViewModel.refreshVisible()
+                                    recurrentAssignment == nil
+                                    ? await carouselViewModel.toggle(chore: chore)
+                                    : await carouselViewModel.toggle(assignment: recurrentAssignment!)
                                 }
                             } label: {
                                 ZStack {

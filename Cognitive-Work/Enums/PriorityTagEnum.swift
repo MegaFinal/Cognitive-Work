@@ -34,6 +34,19 @@ enum PriorityTag: String, CaseIterable, Hashable {
         }
     }
     
+    var scoreValue: Int {
+        switch self {
+        case .low:
+            5
+        case .medium:
+            8
+        case .high:
+            13
+        case .urgent:
+            21
+        }
+    }
+    
     /// Verifies superiority evaluation directly between conflicting constraint instances.
     static func isLarger (lhs: PriorityTag, rhs: PriorityTag) -> Bool {
         lhs.intValue < rhs.intValue
