@@ -8,6 +8,7 @@
 import UIKit
 import CloudKit
 
+@MainActor
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,

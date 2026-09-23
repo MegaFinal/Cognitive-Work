@@ -78,7 +78,9 @@ struct ChoreDetailsCard: View {
                     
                     SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
                         Task {
-                            await carouselViewModel.toggle(chore: chore, assignment: recurrentAssignment)
+                            recurrentAssignment == nil
+                            ? await carouselViewModel.toggle(chore: chore)
+                            : await carouselViewModel.toggle(assignment: recurrentAssignment!)
                         }
                     }, color: room?.color.uiColor ?? .gray)
                     .padding(.horizontal, 30)
