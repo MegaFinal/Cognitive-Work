@@ -222,6 +222,93 @@ func scheduleRecurringChores(
     return results
 }
 
+// MARK: - Recurring Chores Created Mid-Cycle
+
+/// The days a recurring chore created mid-cycle occurs on: its creation day, then once per
+/// recurrence period, up to and including `cycleEnd`.
+///
+/// Deliberately separate from ``occurrenceOffsets(for:windowDays:phase:)``, which lays out a
+/// whole division window starting *tomorrow*, with a per-chore phase to spread chores apart.
+/// A chore the user creates today is expected to start today.
+///
+/// - Parameters:
+///   - frequency: The chore's recurrence. `.none` yields no days.
+///   - start: The creation date; its day is the first occurrence.
+///   - cycleEnd: The last day of the division cycle in progress.
+/// - Returns: Each occurrence's day, at its start, in chronological order.
+func occurrenceDays(
+    for frequency: Recurrence,
+    from start: Date,
+    through cycleEnd: Date,
+    calendar: Calendar = .current
+) -> [Date] {
+    let step: DateComponents
+    switch frequency {
+    case .daily: step = DateComponents(day: 1)
+    case .weekly: step = DateComponents(day: 7)
+    case .fortnightly: step = DateComponents(day: 14)
+    case .monthly: step = DateComponents(month: 1)
+    case .none: return []
+    }
+    
+    let lastDay = calendar.startOfDay(for: cycleEnd)
+    var day = calendar.startOfDay(for: start)
+    var days: [Date] = []
+    
+    while day <= lastDay {
+        days.append(day)
+        guard let next = calendar.date(byAdding: step, to: day) else { break }
+        day = next
+    }
+    
+    return days
+}
+
+/// Creates the occurrences of a recurring chore the user just created, for what's left of the
+/// division cycle already in progress.
+///
+/// Without this, a recurring chore created between divisions has no occurrences until the next
+/// division runs, so it shows up as a single card instead of one per recurrence.
+///
+/// - Parameters:
+///   - chore: The newly created chore. Must already be saved (have a `recordID`) and have no
+///     occurrences yet; otherwise nothing happens.
+///   - responsibleUsers: The users picked in the creation form, in order.
+///   - cycleEnd: The last day of the division cycle in progress, or `nil` when none is.
+func scheduleNewRecurringChore(
+    _ chore: ChoreModel,
+    responsibleUsers: [UserModel],
+    cycleEnd: Date?
+) async {
+    guard let cycleEnd,
+          chore.frequency != .none,
+          !chore.isDone,
+          let choreID = chore.recordID,
+          (chore.dailyAssignmentsReference ?? []).isEmpty
+    else { return }
+    
+    let days = occurrenceDays(for: chore.frequency, from: Date(), through: cycleEnd)
+    guard !days.isEmpty else { return }
+    
+    let rotation = responsibleUsers.compactMap { $0.recordID }
+    // Same reference action the division uses for an occurrence's chore.
+    let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
+    
+    let assignments = days.enumerated().map { index, day -> RecurrentAssignmentModel in
+        let userRef = rotation.isEmpty
+            ? nil
+            : CKRecord.Reference(recordID: rotation[index % rotation.count], action: .none)
+        return RecurrentAssignmentModel(day: day, isCompleted: false, user: userRef, chore: choreRef)
+    }
+    
+    // The chore was created in the house's zone, so its zone is the one the division uses.
+    await commitScheduleResults(
+        [ScheduleResult(chore: chore, newAssignments: assignments)],
+        users: responsibleUsers,
+        houseZoneID: choreID.zoneID
+    )
+}
+
 // MARK: - Assigned Chores
 
 /// Schedules chores that already have a specific responsible user assigned.

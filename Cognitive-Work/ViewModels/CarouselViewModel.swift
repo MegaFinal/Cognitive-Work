@@ -66,6 +66,12 @@ class CarouselViewModel {
     /// alert. Left for the view to clear back to `nil` once shown.
     var errorMessage: String?
     
+    /// The last day of the division cycle in progress.
+    var currentCycleEnd: Date? {
+        let today = Calendar.current.startOfDay(for: Date())
+        return dailyAssignments.map(\.day).filter { $0 >= today }.max()
+    }
+    
     // MARK: - Carousel Geometry State
     
     /// The exact index where the carousel is currently resting.
@@ -282,7 +288,8 @@ class CarouselViewModel {
     /// > ``TaskSchedulerEngine/schedule(chores:users:)`` seeds its window starting *tomorrow*,
     /// > so "today" is empty right after a division is generated. Set this to `0` for
     /// > production — and flip ``HardwareDailyChoresViewModel/dayOffsetFromToday`` together with
-    /// > it, since the e-paper dashboard has to show the same day the app does.
+    /// > it, since the e-paper dashboard has to show the same day the app does. The progress
+    /// > cards (``DashboardModel``) read this too, so they follow automatically.
     static let gridDayOffsetFromToday = 1
     
     /// The single day the grid layout renders, normalised to the start of that day.

@@ -361,7 +361,23 @@ struct CreateAndEditChoreView: View {
     private func confirmAndSave() async {
         isSaving = true
         
+        let isNewChore = !isEditingExistingChore
+        let cycleEnd = carouselViewModel.currentCycleEnd
+        
         await originalModel.save(from: choreDTO, targetAssignments: targetAssignments)
+        
+        // A recurring chore created mid-cycle gets its occurrences for the rest of the cycle
+        if isNewChore {
+            await scheduleNewRecurringChore(
+                originalModel,
+                responsibleUsers: choreDTO.responsibleUsers,
+                cycleEnd: cycleEnd
+            )
+        }
+        let newOccurrenceIDs: Set<CKRecord.ID> = isNewChore
+            ? Set((originalModel.dailyAssignmentsReference ?? []).map { $0.recordID })
+            : []
+        
         await carouselViewModel.refreshAfterChoreUpdate()
         
         let updatedChore = originalModel
@@ -372,7 +388,8 @@ struct CreateAndEditChoreView: View {
             let freshAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
             carouselViewModel.dailyAssignments = freshAssignments
             
-            let targetIDs = Set(targetAssignments.compactMap { $0.recordID })
+            // The occurrences just created for a new chore are synced too.
+            let targetIDs = Set(targetAssignments.compactMap { $0.recordID }).union(newOccurrenceIDs)
             let updatedTargets = freshAssignments.filter { targetIDs.contains($0.recordID ?? CKRecord.ID(recordName: "")) }
             
             for assignment in updatedTargets {
@@ -417,4 +434,3 @@ struct CreateAndEditChoreView: View {
         }
     }
 }
-
