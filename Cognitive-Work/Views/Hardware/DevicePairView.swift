@@ -6,141 +6,129 @@
 //
 
 import SwiftUI
-import CloudKit
 
-/// A view that handles hardware device pairing via IP address and transmits rendered chart data to an ESP32 device.
+import SwiftUI
+
+/// Pairs the phone with the device using the IP shown on its screen.
 struct DevicePairView: View {
-    
-    /// The view model managing hardware connectivity and state.
     @Bindable var hardwareViewModel: HardwareViewModel
-    
-    /// The view model responsible for fetching and calculating fortnightly chore data.
-    @State var fortnightlyViewModel = FortnightlyViewModel()
-    
-    @State private var users: [UserModel] = []
-    @State private var chores: [ChoreModel] = []
-    @State private var usageEntries: [DailyUsageEntry] = []
-    @State private var startDate: Date = Date()
-    @State private var isChartLoading = true
-    @State private var pairingErrorMessage: String?
-    
+
+    /// Closes the whole sheet, not just this step.
+    var onClose: () -> Void
+
+    @State private var isPairing = false
+    @State private var pairingResult: PairingResult?
+
     var body: some View {
-        VStack(spacing: 0) {
-            Text("Pareie seu celular!")
-                .font(.system(size: 20))
-                .bold()
-                .padding(.bottom, 20)
-            TextField("IP do device", text: $hardwareViewModel.deviceIP)
-                .frame(width: 300, height: 44)
-                .textFieldStyle(.roundedBorder)
-                .padding()
-            Button {
-                if hardwareViewModel.deviceIP != "" {
-                    Task {
-                        do {
-                            let connected = try await hardwareViewModel.askForParingCode()
-                            
-                            if connected {
-                                let saved = await hardwareViewModel.createIp()
-                                if !saved {
-                                    pairingErrorMessage = hardwareViewModel.errorMessage ?? "Erro ao salvar o IP."
-                                }
-                            } else {
-                                pairingErrorMessage = "Não foi possível parear com o dispositivo."
-                            }
-                        } catch {
-                            pairingErrorMessage = error.localizedDescription
-                        }
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 32) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Parear dispositivo")
+                        .font(.largeTitle)
+                        .bold()
+
+                    Text("Para que seja possível conectar o seu celular com o hardware, digite o código dele aqui e clique para confirmar.")
+                        .foregroundStyle(.secondary)
                 }
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20)
-                        .frame(width: 100, height: 44)
-                        .foregroundStyle(.indigo)
-                    Text("Parear")
-                        .frame(width: 150, height: 44)
-                        .foregroundStyle(.white)
-                        .font(.system(size: 22))
+
+                LabeledInput(title: "Código do dispositivo") {
+                    TextField("", text: $hardwareViewModel.deviceIP)
+                        .keyboardType(.numbersAndPunctuation)
                 }
-            }.padding(.bottom, 20)
-             
-            VStack {
-                Divider()
-                if isChartLoading {
-                    ProgressView("Carregando gráfico...")
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+        }
+        .navigationTitle("Parear dispositivo")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden()
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(role: .close) { onClose() }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                if isPairing {
+                    ProgressView()
                 } else {
-                    VStack(spacing: 16) {
-                        FortnightlyBarChart(
-                            users: users,
-                            entries: usageEntries,
-                            startDate: startDate,
-                            onSelect: { _ in },
-                            scrollEnabled: false,
-                            daysToShow: 7
-                        )
-                         
-                        legend
-                            .padding(.bottom)
+                    Button(role: .confirm) {
+                        pair()
                     }
-                }
-                 
-                Button {
-                    Task {
-                        do {
-                            try await hardwareViewModel.sendChartToESP32()
-                        } catch {
-                            pairingErrorMessage = error.localizedDescription
-                        }
-                    }
-                } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20)
-                            .frame(width: 150, height: 44)
-                            .foregroundStyle(.orange)
-                        Text("Enviar gráfico")
-                            .foregroundStyle(.white)
-                            .padding()
-                    }
+                        .disabled(hardwareViewModel.deviceIP.isEmpty)
                 }
             }
         }
-        .padding()
-        .task {
-            await fortnightlyViewModel.setupWithFetch()
-             
-            users = fortnightlyViewModel.users
-            chores = fortnightlyViewModel.chores
-            usageEntries = fortnightlyViewModel.usageEntries
-            startDate = fortnightlyViewModel.startDate
-            isChartLoading = false
+        .onAppear {
+            // The device gets a new IP after joining the home WiFi
+            hardwareViewModel.deviceIP = ""
         }
-        .alert("Ops", isPresented: .constant(pairingErrorMessage != nil)) {
-            Button("OK") { pairingErrorMessage = nil }
-        } message: {
-            Text(pairingErrorMessage ?? "Ocorreu um erro.")
+        .alert(
+            pairingResult?.title ?? "",
+            isPresented: Binding(
+                get: { pairingResult != nil },
+                set: { if !$0 { pairingResult = nil } }
+            ),
+            presenting: pairingResult
+        ) { result in
+            Button("Voltar", role: .cancel) {
+                if result == .success { onClose() }
+            }
+        } message: { result in
+            Text(result.message)
         }
         .dismissKeyboardOnTap()
     }
-    
-    /// A helper subview that displays a color-coded legend for the active users.
-    private var legend: some View {
-        HStack {
-            ForEach(Array(users.enumerated()), id: \.offset) { index, user in
-                HStack {
-                    Circle()
-                        .frame(width: 14)
-                        .foregroundStyle(UserColorPalette.color(for: index))
 
-                    Text(user.name)
-                        .font(.system(size: 15))
-                        .fontWeight(.light)
+    // MARK: - Actions
+
+    /// Asks the device for its hash, saves the IP and shows the result alert.
+    private func pair() {
+        isPairing = true
+
+        Task {
+            defer { isPairing = false }
+            do {
+                let connected = try await hardwareViewModel.askForParingCode()
+                guard connected, await hardwareViewModel.createIp() else {
+                    pairingResult = .failure
+                    return
                 }
+                pairingResult = .success
+            } catch {
+                pairingResult = .failure
+                return
             }
+            try await hardwareViewModel.sendChartToESP32()
+        }
+    }
+}
+
+/// Outcome of a pairing attempt, used to drive the result alert.
+enum PairingResult {
+    case success
+    case failure
+
+    var title: String {
+        switch self {
+        case .success: "Conexão completa!"
+        case .failure: "Falha na conexão"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .success: "Sua conexão foi concluída com sucesso, nos próximos minutos o seu hardware estará pronto!"
+        case .failure: "Certifique-se que o código que você está escrevendo está correto e tente novamente."
         }
     }
 }
 
 #Preview {
-    DevicePairView(hardwareViewModel: HardwareViewModel())
+    Text("Perfil")
+        .sheet(isPresented: .constant(true)) {
+            NavigationStack {
+                DevicePairView(hardwareViewModel: HardwareViewModel(), onClose: {})
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
 }

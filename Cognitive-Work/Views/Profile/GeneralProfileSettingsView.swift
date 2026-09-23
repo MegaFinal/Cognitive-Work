@@ -16,6 +16,9 @@ struct GeneralProfileSettingsView: View {
     @State private var selectedLanguage = "Português"
     
     @State private var showDeleteConfirmation = false
+
+    @State private var isDeletingAccount = false
+    @AppStorage("didOnboard") private var didOnboard: Bool = true
     
     // MARK: - Debug State
     
@@ -125,18 +128,49 @@ struct GeneralProfileSettingsView: View {
         .navigationTitle("Configurações Gerais")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .disabled(isDeletingAccount)
+        .navigationBarBackButtonHidden(isDeletingAccount)
         
         // MARK: - Alerts
         .alert("Excluir Perfil?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {
+                isDeletingAccount = true
                 Task {
                     await viewModel.deleteAccount()
+                    if viewModel.errorMessage == nil {
+                        didOnboard = false
+                    } else {
+                        isDeletingAccount = false
+                    }
                 }
             }
         } message: {
             Text("Esta ação é permanente. Todos os seus dados serão apagados do iCloud.")
         }
+        // MARK: - Blocking loading screen
+        
+        .fullScreenCover(isPresented: $isDeletingAccount) {
+            DeletingAccountLoadingView()
+        }
+    }
+}
+
+/// Full-screen blocking state shown while ``UserProfileViewModel/deleteAccount()`` is running
+private struct DeletingAccountLoadingView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .scaleEffect(1.5)
+                .padding(.bottom, 8)
+            Text("Excluindo seu perfil...")
+                .foregroundStyle(.gray)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
+        .interactiveDismissDisabled()
     }
 }
 

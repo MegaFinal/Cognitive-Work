@@ -32,6 +32,24 @@ class HardwareNetworkManager {
     private var hash: String = ""
 
     private(set) var isConnected: Bool = false
+    
+    // MARK: - Hash Persistence
+    
+    private var localPersistence = UserDefaults.standard
+    
+    private enum StorageKey {
+        static let hash = "hardware.hash"
+        static let ip = "hardware.ip"
+    }
+    
+    init() {
+        if let savedHash = localPersistence.string(forKey: StorageKey.hash),
+           let savedIP = localPersistence.string(forKey: StorageKey.ip) {
+            self.hash = savedHash
+            self.ip = savedIP
+            self.isConnected = true
+        }
+    }
 
     // MARK: - Provisioning
 
@@ -58,6 +76,7 @@ class HardwareNetworkManager {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         // Encodes the credentials into the request body
@@ -105,6 +124,10 @@ class HardwareNetworkManager {
         let answer = try validate(data: data, response: response)
         self.hash = answer.message
         isConnected = true
+        
+        // Persistence
+        localPersistence.set(self.hash, forKey: StorageKey.hash)
+        localPersistence.set(self.ip, forKey: StorageKey.ip)
     }
 
     // MARK: - Sending content
@@ -173,6 +196,37 @@ class HardwareNetworkManager {
         let (data, response) = try await session.upload(for: request, from: imageData)
         try validate(data: data, response: response)
     }
+    
+    // MARK: - Reset
+
+    /// Asks the device to wipe its WiFi credentials and hash, then forgets the local pairing.
+    ///
+    /// The ESP32 answers before restarting and comes back in access point mode,
+    /// so provisioning and pairing must be done again.
+    func resetDevice() async throws {
+        let endpoint = base + ip + "/reset"
+        guard let url = URL(string: endpoint) else { throw APIErrors.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(hash, forHTTPHeaderField: "X-Auth-Hash")
+        request.httpBody = Data()
+
+        let (data, response) = try await session.data(for: request)
+        try validate(data: data, response: response)
+
+        forgetDevice()
+    }
+
+    /// Clears the pairing on this iPhone only. Also useful when the device was reset
+    /// by its button and can no longer be reached.
+    func forgetDevice() {
+        hash = ""
+        ip = ""
+        isConnected = false
+        localPersistence.removeObject(forKey: StorageKey.hash)
+        localPersistence.removeObject(forKey: StorageKey.ip)
+    }
 
     // MARK: - Response handling
 
@@ -196,6 +250,7 @@ class HardwareNetworkManager {
         if httpResponse.statusCode == 401 {
             isConnected = false
             hash = ""
+            localPersistence.removeObject(forKey: StorageKey.hash)
             throw APIErrors.invalidResponse
         }
 

@@ -163,6 +163,22 @@ class HouseModel: CloudKitSyncable {
         return await CloudKitManager.shared.update(self)
     }
     
+    /// Removes the given user's record reference from this house's `users` list and saves it.
+    ///
+    /// Used when a member deletes their own profile
+    ///
+    /// - Returns: `true` when the reference was removed (or was already absent), `false` if
+    ///   CloudKit rejects the update (see ``CloudKitManager/errorMessage``).
+    @discardableResult
+    func removeUser(_ user: UserModel) async -> Bool {
+        guard let recordID = user.recordID else { return true }
+        guard let usersReference, usersReference.contains(where: { $0.recordID == recordID }) else {
+            return true
+        }
+        self.usersReference = usersReference.filter { $0.recordID != recordID }
+        return await CloudKitManager.shared.update(self)
+    }
+    
     /// Points this house at its shopping list and saves it.
     @discardableResult
     func setShopList(_ list: ShopListModel) async -> Bool {

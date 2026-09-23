@@ -31,11 +31,6 @@ struct ChoreCardListStyle: View {
     }
     
     var occurrenceResponsibleUsers: [UserModel] {
-        // One-off chores have no `RecurrentAssignmentModel` at all, so `targetAssignments` is
-        // always empty for them — responsibility lives on the chore itself
-        // (`allResponsibleUsersReference`), not on any assignment. Without this fallback, a
-        // one-off chore picked up via the "sem responsável" list never showed the picker's
-        // photo here, since this only ever read assignments.
         guard chore.dailyAssignmentsReference?.isEmpty == false else {
             guard let refs = chore.allResponsibleUsersReference else { return [] }
             let ids = Set(refs.compactMap { $0.recordID })
@@ -55,7 +50,6 @@ struct ChoreCardListStyle: View {
     var isOccurrenceDone: Bool {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
-    
     
     var body: some View {
         ZStack {
@@ -88,20 +82,24 @@ struct ChoreCardListStyle: View {
                         .padding(.leading, 4)
                         .padding(.bottom, 8)
                         
-                        // MARK: - Tags
-                        CapsuleTag(
-                            tagName: chore.priorityTag.rawValue,
-                            tagColor: chore.priorityTag.color,
-                            horizontalPadding: 7.0,
-                            verticalPadding: 1.0
-                        )
-                        
-                        CapsuleTag(
-                            tagName: chore.frequency.rawValue,
-                            tagColor: chore.frequency.color,
-                            horizontalPadding: 7.0,
-                            verticalPadding: 1.0
-                        )
+                        HStack(spacing: 6) {
+                            // MARK: - Tags
+                            CapsuleTag(
+                                tagName: chore.priorityTag.rawValue,
+                                tagColor: chore.priorityTag.color,
+                                horizontalPadding: 7.0,
+                                verticalPadding: 1.0
+                            )
+                            
+                            CapsuleTag(
+                                tagName: ChoreDurationTier.from(minutes: chore.duration / 60).displayText,
+                                tagColor: ChoreDurationTier.from(minutes: chore.duration / 60).color,
+                                horizontalPadding: 7.0,
+                                verticalPadding: 1.0
+                            )
+                        }
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     }
                     
                     // MARK: - Room name, chore name and completion button
@@ -115,7 +113,6 @@ struct ChoreCardListStyle: View {
                                     .font(.system(size: 22))
                                     .bold()
                             }
-                            // Same reasoning as the icon above: white-on-white on a white room.
                             .foregroundColor(room?.color.contentColor ?? .white)
                             
                             Spacer()

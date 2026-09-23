@@ -426,4 +426,65 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         
         return score >> min(daysUntilDue, Int.bitWidth - 1)
     }
+  
+    // MARK: - Delete
+    
+    /// Deletes this chore, or — for a recurring chore — just the given occurrence(s).
+    ///
+    /// - Parameter targetOccurrences: The specific occurrence(s) to delete instead of the
+    ///   whole chore. Every entry must belong to this chore's ``dailyAssignmentsReference``.
+    /// - Returns: `true` on success, otherwise `false` with ``CloudKitManager/errorMessage``
+    ///   set.
+    @discardableResult
+    func delete(targetOccurrences: [RecurrentAssignmentModel] = []) async -> Bool {
+        guard frequency != .none, !targetOccurrences.isEmpty else {
+            return await deleteWhole()
+        }
+        return await deleteOccurrences(targetOccurrences)
+    }
+    
+    /// Removes just the given occurrences: deletes their records, then detaches them from
+    /// ``dailyAssignmentsReference`` so the chore stops pointing at records that no longer
+    /// exist. The chore itself and every other occurrence are untouched.
+    private func deleteOccurrences(_ occurrences: [RecurrentAssignmentModel]) async -> Bool {
+        let occurrenceIDs = Set(occurrences.compactMap { $0.recordID })
+        
+        guard !occurrenceIDs.isEmpty, let zoneID = recordID?.zoneID else {
+            CloudKitManager.shared.errorMessage = "Failed to delete occurrence: missing recordID"
+            return false
+        }
+        
+        guard await CloudKitManager.shared.delete(recordIDs: Array(occurrenceIDs), zoneID: zoneID) else {
+            return false
+        }
+        
+        for occurrence in occurrences {
+            CalendarManager.shared.removeEvent(identifier: occurrence.calendarEventIdentifier, title: name, date: occurrence.day)
+        }
+        
+        dailyAssignmentsReference = dailyAssignmentsReference?.filter { !occurrenceIDs.contains($0.recordID) }
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    /// Removes the whole chore: every checklist item, every occurrence (if it's recurring),
+    /// and the chore record itself
+    private func deleteWhole() async -> Bool {
+        guard let recordID else {
+            CloudKitManager.shared.errorMessage = "Failed to delete chore: missing recordID"
+            return false
+        }
+        
+        let occurrences = frequency == .none ? [] : await dailyAssignments
+        
+        guard await CloudKitManager.shared.deleteChildren(of: recordID, includingSelf: true) else {
+            return false
+        }
+        
+        for occurrence in occurrences {
+            CalendarManager.shared.removeEvent(identifier: occurrence.calendarEventIdentifier, title: name, date: occurrence.day)
+        }
+        CalendarManager.shared.removeEvent(identifier: calendarEventIdentifier, title: name, date: dueDate)
+        
+        return true
+    }
 }
