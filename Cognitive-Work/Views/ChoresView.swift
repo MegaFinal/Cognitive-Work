@@ -19,10 +19,17 @@ struct ChoresView: View {
     
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .gray
-
+    
+    /// Days whose section in the list layout the user has collapsed, keyed by
+    /// ``DayGroup/id``.
+    @State private var collapsedDays: Set<Date> = []
+    
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
+    // MARK: - List layout spacing
+    
+    private let listCardSpacing: CGFloat = 8
     
     /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
     init(carouselVM: CarouselViewModel = CarouselViewModel()) {
@@ -79,7 +86,7 @@ struct ChoresView: View {
                     .zIndex(2)
                 } else if let occurrence = carouselVM.focusedOccurrence {
                     let _ = print("occurrence:", occurrence.assignment?.recordID?.recordName ?? "NIL",
-                                      "chore:", occurrence.chore.name)
+                                  "chore:", occurrence.chore.name)
                     VStack {
                         Spacer()
                         CarouselCardFrame(
@@ -216,7 +223,7 @@ struct ChoresView: View {
     /// Each card is bound to a different statistic from ``dashboard``
     private var progressSection: some View {
         let cardColor = carouselVM.layoutMode == .grid ? activeRoomColor : .black
-
+        
         return HStack(spacing: 10) {
             ProgressIndicatorCard(
                 title: "Tempo médio",
@@ -241,19 +248,31 @@ struct ChoresView: View {
     /// Vertical list rendering the chores
     private var choreList: some View {
         List {
-            ForEach(Array(carouselVM.visibleOccurrences.enumerated()), id: \.element.id) { index, occurrence in
-                ChoreCardListStyle(
-                    chore: occurrence.chore,
-                    recurrentAssignment: occurrence.assignment,
-                    namespace: cardAnimation,
-                    carouselViewModel: carouselVM
-                ) {
-                    carouselVM.focusDetailsImmediately(index)
+            // One collapsible section per day, nearest day first — see `dayGroups`.
+            ForEach(dayGroups) { group in
+                VStack {
+                    dayHeader(for: group)
+                    
+                    if !collapsedDays.contains(group.id) {
+                        ForEach(group.occurrences) { item in
+                            ChoreCardListStyle(
+                                chore: item.occurrence.chore,
+                                recurrentAssignment: item.occurrence.assignment,
+                                namespace: cardAnimation,
+                                carouselViewModel: carouselVM
+                            ) {
+                                carouselVM.focusDetailsImmediately(item.index)
+                            }
+                            .padding(.bottom, 10)
+                        }
+                        .onDelete { offsets in
+                            deleteOccurrences(offsets.map { group.occurrences[$0].occurrence })
+                        }
+                    }
                 }
-                .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
-            .onDelete(perform: deleteOccurrences)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
@@ -269,7 +288,7 @@ struct ChoresView: View {
             }
         }
     }
-
+    
     /// Shown in place of ``choreList`` when the list layout has no chores to display —
     /// either because the house has none, or the active filter matches none.
     private var emptyChoreListState: some View {
@@ -278,21 +297,75 @@ struct ChoresView: View {
             systemImage: "checklist",
             description: Text(
                 carouselVM.isFilterOn
-                    ? "Nenhuma tarefa corresponde ao filtro selecionado."
-                    : "Toque em \"+\" para criar a primeira tarefa da casa."
+                ? "Nenhuma tarefa corresponde ao filtro selecionado."
+                : "Toque em \"+\" para criar a primeira tarefa da casa."
             )
         )
+    }
+    
+    // MARK: - Day grouping
+    
+    /// ``CarouselViewModel/visibleOccurrences`` split into one group per calendar day.
+    ///
+    /// The view model always sorts by day first, so each day's occurrences are already
+    /// contiguous — this only has to cut the list wherever the day changes.
+    private var dayGroups: [DayGroup] {
+        let calendar = Calendar.current
+        var groups: [DayGroup] = []
+        
+        for (index, occurrence) in carouselVM.visibleOccurrences.enumerated() {
+            let day = occurrence.day.map { calendar.startOfDay(for: $0) }
+            let item = IndexedOccurrence(index: index, occurrence: occurrence)
+            
+            if let last = groups.last, last.day == day {
+                groups[groups.count - 1].occurrences.append(item)
+            } else {
+                groups.append(DayGroup(day: day, occurrences: [item]))
+            }
+        }
+        
+        return groups
+    }
+    
+    /// A day's title row ("Hoje 23/09 ⌄"). Tapping it collapses or expands that day.
+    private func dayHeader(for group: DayGroup) -> some View {
+        let isCollapsed = collapsedDays.contains(group.id)
+        
+        return Button {
+            if isCollapsed {
+                collapsedDays.remove(group.id)
+            } else {
+                collapsedDays.insert(group.id)
+            }
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(group.title)
+                    .font(.system(size: 22, weight: .bold))
+                
+                if let dateText = group.dateText {
+                    Text(dateText)
+                        .font(.system(size: 17))
+                }
+                
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 15, weight: .semibold))
+                    .rotationEffect(.degrees(isCollapsed ? -90 : 0))
+                
+                Spacer()
+            }
+            .foregroundStyle(.black)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
     }
     
     // MARK: - Actions
     
     /// Deletes the swiped occurrence(s)
     @MainActor
-    private func deleteOccurrences(at offsets: IndexSet) {
-        let occurrencesToDelete = offsets.compactMap { index in
-            carouselVM.visibleOccurrences.indices.contains(index) ? carouselVM.visibleOccurrences[index] : nil
-        }
-        
+    private func deleteOccurrences(_ occurrencesToDelete: [ChoreOccurrence]) {
         for occurrence in occurrencesToDelete {
             let targetOccurrences = occurrence.assignment.map { [$0] } ?? []
             let snapshot = carouselVM.removeOccurrenceLocally(chore: occurrence.chore, targetOccurrences: targetOccurrences)
@@ -311,7 +384,7 @@ struct ChoresView: View {
             carouselVM.clearFocusedDetails()
         }
     }
-
+    
     /// Updates the background color of the progress section locally to match the focused chore's room color.
     private func updateActiveRoomColor() {
         guard !carouselVM.visibleChores.isEmpty,
@@ -319,16 +392,16 @@ struct ChoresView: View {
             activeRoomColor = .gray
             return
         }
-
+        
         let centeredChore = carouselVM.visibleChores[carouselVM.activeIndex]
-
+        
         if let room = carouselVM.getRoom(for: centeredChore) {
             activeRoomColor = room.color.uiColor
         } else {
             activeRoomColor = .gray
         }
     }
-
+    
     /// Today's chore statistics.
     private var dashboard: DashboardModel? {
         carouselVM.dashboard
@@ -377,6 +450,44 @@ private struct ProgressIndicatorCard: View {
 /// assignment that places it on a given day.
 ///
 /// One-off chores have no assignment; their date comes from `chore.dueDate`.
+/// One day's section in the list layout.
+private struct DayGroup: Identifiable {
+    private static let locale = Locale(identifier: "pt_BR")
+    
+    /// The day, at its start; `nil` for occurrences with no date.
+    let day: Date?
+    var occurrences: [IndexedOccurrence]
+    
+    var id: Date { day ?? .distantFuture }
+    
+    /// "Hoje", "Amanhã", or the weekday's name ("Sexta-feira"). Past days never get a
+    /// group — `CarouselViewModel` leaves them out of the list.
+    var title: String {
+        guard let day else { return "Sem data" }
+        
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) { return "Hoje" }
+        if calendar.isDateInTomorrow(day) { return "Amanhã" }
+        
+        let weekday = day.formatted(.dateTime.weekday(.wide).locale(Self.locale))
+        return weekday.prefix(1).uppercased() + weekday.dropFirst()
+    }
+    
+    /// "25/09", or `nil` for the undated group.
+    var dateText: String? {
+        day?.formatted(.dateTime.day(.twoDigits).month(.twoDigits).locale(Self.locale))
+    }
+}
+
+/// An occurrence plus its position in ``CarouselViewModel/visibleOccurrences``, which the
+/// details card's focus (`focusDetailsImmediately`) is indexed by.
+private struct IndexedOccurrence: Identifiable {
+    let index: Int
+    let occurrence: ChoreOccurrence
+    
+    var id: String { occurrence.id }
+}
+
 struct ChoreOccurrence: Identifiable {
     let chore: ChoreModel
     let assignment: RecurrentAssignmentModel?

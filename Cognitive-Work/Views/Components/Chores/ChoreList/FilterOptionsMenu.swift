@@ -7,7 +7,8 @@
 
 import SwiftUI
 
-/// Content of the chores list's filter menu.
+/// Content of the chores list's native filter `Menu`, split into two submenus:
+/// "Ordenação" and "Filtros".
 struct FilterOptionsMenu: View {
     @Bindable var viewModel: CarouselViewModel
 
@@ -15,84 +16,119 @@ struct FilterOptionsMenu: View {
         viewModel.roomModels.filter { $0.name != "Casa" }
     }
 
+    /// How many filter categories currently narrow the list, shown under "Filtros".
+    private var activeFilterCount: Int {
+        let choices = viewModel.filterChoices
+        return [
+            !choices.tags.isEmpty,
+            !choices.users.isEmpty,
+            !choices.frequencies.isEmpty,
+            !choices.rooms.isEmpty,
+            choices.state != nil
+        ].filter { $0 }.count
+    }
+
     var body: some View {
+        // MARK: - Ordering section
         Menu {
-            ForEach(PriorityTag.allCases, id: \.self) { tag in
-                Toggle(isOn: tagBinding(tag)) {
-                    Text(tag.rawValue.capitalized)
+            Toggle(isOn: $viewModel.isSortedByUrgency) {
+                Label("Urgência", systemImage: "exclamationmark.triangle")
+            }
+        } label: {
+            FilterMenuRow(
+                systemImage: "arrow.up.arrow.down",
+                title: "Ordenação",
+                subtitle: viewModel.isSortedByUrgency ? "Dia e urgência" : "Dia"
+            )
+        }
+
+        // MARK: - Filters section
+        Menu {
+            Menu {
+                ForEach(PriorityTag.allCases, id: \.self) { tag in
+                    Toggle(isOn: tagBinding(tag)) {
+                        Text(tag.rawValue.capitalized)
+                    }
                 }
+            } label: {
+                FilterMenuRow(
+                    systemImage: "flag",
+                    title: "Prioridade",
+                    subtitle: summary(viewModel.filterChoices.tags.map { $0.rawValue.capitalized })
+                )
             }
-        } label: {
-            FilterMenuRow(
-                systemImage: "flag",
-                title: "Prioridade",
-                subtitle: summary(viewModel.filterChoices.tags.map { $0.rawValue.capitalized })
-            )
-        }
 
-        Menu {
-            ForEach(viewModel.userModels, id: \.self) { user in
-                Toggle(isOn: userBinding(user)) {
-                    Text(user.name.capitalized)
+            Menu {
+                ForEach(viewModel.userModels, id: \.self) { user in
+                    Toggle(isOn: userBinding(user)) {
+                        Text(user.name.capitalized)
+                    }
                 }
+            } label: {
+                FilterMenuRow(
+                    systemImage: "person.2",
+                    title: "Usuários",
+                    subtitle: summary(viewModel.filterChoices.users.map { $0.name.capitalized })
+                )
             }
-        } label: {
-            FilterMenuRow(
-                systemImage: "person.2",
-                title: "Usuários",
-                subtitle: summary(viewModel.filterChoices.users.map { $0.name.capitalized })
-            )
-        }
 
-        Menu {
-            ForEach(Recurrence.allCases, id: \.self) { frequency in
-                Toggle(isOn: frequencyBinding(frequency)) {
-                    Text(frequency.rawValue.capitalized)
+            Menu {
+                ForEach(Recurrence.allCases, id: \.self) { frequency in
+                    Toggle(isOn: frequencyBinding(frequency)) {
+                        Text(frequency.rawValue.capitalized)
+                    }
                 }
+            } label: {
+                FilterMenuRow(
+                    systemImage: "repeat",
+                    title: "Frequência",
+                    subtitle: summary(viewModel.filterChoices.frequencies.map { $0.rawValue.capitalized })
+                )
             }
-        } label: {
-            FilterMenuRow(
-                systemImage: "repeat",
-                title: "Frequência",
-                subtitle: summary(viewModel.filterChoices.frequencies.map { $0.rawValue.capitalized })
-            )
-        }
 
-        Menu {
-            ForEach(filterableRooms, id: \.self) { room in
-                Toggle(isOn: roomBinding(room)) {
-                    Text(room.name.capitalized)
+            Menu {
+                ForEach(filterableRooms, id: \.self) { room in
+                    Toggle(isOn: roomBinding(room)) {
+                        Text(room.name.capitalized)
+                    }
                 }
+            } label: {
+                FilterMenuRow(
+                    systemImage: "house",
+                    title: "Cômodo",
+                    subtitle: summary(viewModel.filterChoices.rooms.map { $0.name.capitalized })
+                )
             }
+
+            Menu {
+                Toggle(isOn: stateBinding(true)) {
+                    Text("Concluído")
+                }
+                Toggle(isOn: stateBinding(false)) {
+                    Text("Pendente")
+                }
+            } label: {
+                FilterMenuRow(
+                    systemImage: "checkmark.circle",
+                    title: "Status",
+                    subtitle: viewModel.filterChoices.state.map { $0 ? "Concluído" : "Pendente" } ?? "Nenhum"
+                )
+            }
+
+            Divider()
+
+            Button {
+                viewModel.resetFilter()
+            } label: {
+                Label("Limpar filtro", systemImage: "eraser")
+            }
+            .disabled(activeFilterCount == 0)
         } label: {
             FilterMenuRow(
-                systemImage: "house",
-                title: "Cômodo",
-                subtitle: summary(viewModel.filterChoices.rooms.map { $0.name.capitalized })
+                systemImage: "line.3.horizontal.decrease",
+                title: "Filtros",
+                subtitle: activeFilterCount == 0 ? "Nenhum" : "\(activeFilterCount) ativo\(activeFilterCount == 1 ? "" : "s")"
             )
-        }
-
-        Menu {
-            Toggle(isOn: stateBinding(true)) {
-                Text("Concluído")
-            }
-            Toggle(isOn: stateBinding(false)) {
-                Text("Pendente")
-            }
-        } label: {
-            FilterMenuRow(
-                systemImage: "checkmark.circle",
-                title: "Status",
-                subtitle: viewModel.filterChoices.state.map { $0 ? "Concluído" : "Pendente" } ?? "Nenhum"
-            )
-        }
-
-        Divider()
-
-        Button {
-            viewModel.resetFilter()
-        } label: {
-            Label("Limpar filtro", systemImage: "eraser")
         }
     }
 
@@ -143,7 +179,7 @@ struct FilterOptionsMenu: View {
     }
 }
 
-/// A single row inside the filter menu: icon, title, and the current selection as a subtitle 
+/// A single row inside the filter menu: icon, title, and the current selection as a subtitle
 private struct FilterMenuRow: View {
     let systemImage: String
     let title: String

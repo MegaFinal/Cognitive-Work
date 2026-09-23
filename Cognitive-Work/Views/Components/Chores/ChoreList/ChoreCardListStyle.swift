@@ -56,7 +56,6 @@ struct ChoreCardListStyle: View {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
     
-    
     var body: some View {
         ZStack {
             FolderShape(
@@ -88,20 +87,22 @@ struct ChoreCardListStyle: View {
                         .padding(.leading, 4)
                         .padding(.bottom, 8)
                         
-                        // MARK: - Tags
-                        CapsuleTag(
-                            tagName: chore.priorityTag.rawValue,
-                            tagColor: chore.priorityTag.color,
-                            horizontalPadding: 7.0,
-                            verticalPadding: 1.0
-                        )
-                        
-                        CapsuleTag(
-                            tagName: chore.frequency.rawValue,
-                            tagColor: chore.frequency.color,
-                            horizontalPadding: 7.0,
-                            verticalPadding: 1.0
-                        )
+                        HStack(spacing: 6) {
+                            // MARK: - Tags
+                            CapsuleTag(
+                                tagName: chore.priorityTag.rawValue,
+                                tagColor: chore.priorityTag.color,
+                                horizontalPadding: 7.0,
+                                verticalPadding: 1.0
+                            )
+                            
+                            CapsuleTag(
+                                tagName: ChoreDurationTier.from(minutes: chore.duration / 60).displayText,
+                                tagColor: ChoreDurationTier.from(minutes: chore.duration / 60).color,
+                                horizontalPadding: 7.0,
+                                verticalPadding: 1.0
+                            )
+                        }
                     }
                     
                     // MARK: - Room name, chore name and completion button
