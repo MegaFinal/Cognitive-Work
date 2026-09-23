@@ -55,9 +55,20 @@ struct CreateAndEditChoreView: View {
     /// Indicates whether an asynchronous save operation is currently in progress.
     @State private var isSaving = false
     
+    /// Indicates whether the delete operation triggered by ``deleteButton`` is in progress.
+    @State private var isDeleting = false
+    @State private var showDeleteConfirmation = false
+    
     @Bindable var carouselViewModel: CarouselViewModel
     
     @Environment(\.dismiss) private var dismiss
+    
+    /// Whether this screen is editing a chore that already exists in CloudKit, as opposed to
+    /// the creation flow (`ChoresViewButtonsSection` passes in a fresh, unsaved `ChoreModel`).
+    /// ``deleteButton`` only ever appears on the edit side of this shared screen.
+    private var isEditingExistingChore: Bool {
+        originalModel.recordID != nil
+    }
     
     
     // MARK: - Main Body
@@ -120,6 +131,11 @@ struct CreateAndEditChoreView: View {
                 
                 // MARK: - Confirmation Button
                 confirmButton
+                
+                // MARK: - Delete Button
+                if isEditingExistingChore {
+                    deleteButton
+                }
             }
             .padding(.vertical)
             .frame(width: width * 0.9)
@@ -146,6 +162,27 @@ struct CreateAndEditChoreView: View {
         }
         .toolbar(.hidden, for: .tabBar)
         .dismissKeyboardOnTap()
+        .alert("Excluir Tarefa?", isPresented: $showDeleteConfirmation) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Excluir", role: .destructive) {
+                Task {
+                    await deleteChore()
+                }
+            }
+        } message: {
+            Text("Se esta tarefa for recorrente, apenas esta ocorrência será excluída — as demais continuam como estão. Essa ação é permanente.")
+        }
+        .alert(
+            "Não foi possível excluir",
+            isPresented: Binding(
+                get: { carouselViewModel.errorMessage != nil },
+                set: { if !$0 { carouselViewModel.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(carouselViewModel.errorMessage ?? "")
+        }
     }
     
     // MARK: - Subviews
@@ -289,10 +326,32 @@ struct CreateAndEditChoreView: View {
                 .background(Color.blue)
                 .clipShape(Capsule())
             }
-            .disabled(choreDTO.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+            .disabled(choreDTO.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving || isDeleting)
             
             Spacer()
         }
+    }
+    
+    /// Bottom-anchored destructive action that deletes the chore being edited
+    private var deleteButton: some View {
+        Button {
+            showDeleteConfirmation = true
+        } label: {
+            Group {
+                if isDeleting {
+                    ProgressView()
+                        .tint(.red)
+                } else {
+                    Text("Excluir Tarefa")
+                        .fontWeight(.semibold)
+                }
+            }
+            .frame(height: height * 0.03)
+        }
+        .foregroundColor(.red)
+        .disabled(isSaving || isDeleting)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
     }
     
     // MARK: - Methods
@@ -323,6 +382,21 @@ struct CreateAndEditChoreView: View {
         
         isSaving = false
         dismiss()
+    }
+    
+    /// Deletes the chore being edited — or, when it's recurring, just the occurrence(s) this
+    /// screen was opened for (``targetAssignments``) — then dismisses on success.
+    @MainActor
+    private func deleteChore() async {
+        isDeleting = true
+        
+        let success = await carouselViewModel.delete(chore: originalModel, targetOccurrences: targetAssignments)
+        
+        isDeleting = false
+        
+        if success {
+            dismiss()
+        }
     }
     
     private struct ColorIconTagLabel: View {
