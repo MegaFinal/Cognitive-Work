@@ -66,6 +66,12 @@ class CarouselViewModel {
     /// alert. Left for the view to clear back to `nil` once shown.
     var errorMessage: String?
     
+    /// The last day of the division cycle in progress.
+    var currentCycleEnd: Date? {
+        let today = Calendar.current.startOfDay(for: Date())
+        return dailyAssignments.map(\.day).filter { $0 >= today }.max()
+    }
+    
     // MARK: - Carousel Geometry State
     
     /// The exact index where the carousel is currently resting.
@@ -97,6 +103,17 @@ class CarouselViewModel {
     var isFilterOn: Bool = false
     var filterChoices = ChoreFilters()
     
+    /// When `true`, occurrences on the same day are ordered most urgent first.
+    ///
+    /// The list is always ordered by day (nearest first) regardless — that part isn't a user
+    /// choice, since the list layout groups occurrences under one header per day.
+    var isSortedByUrgency: Bool = false {
+        didSet {
+            guard oldValue != isSortedByUrgency else { return }
+            rebuildDerivedState()
+        }
+    }
+    
     /// The list of chores rendered by the UI, respecting active filters.
     private(set) var visibleChores: [ChoreModel] = []
     
@@ -112,12 +129,18 @@ class CarouselViewModel {
     /// `occurrencesPerChore`); one-off chores contribute a single row.
     private func rebuildVisibleOccurrences() {
         let selectedUserIDs = Set(filterChoices.users.compactMap { $0.recordID })
+        let today = Calendar.current.startOfDay(for: Date())
         var occurrences: [ChoreOccurrence] = []
         
         for chore in visibleChores {
             let assignments = futureAssignments(for: chore)
             
             if assignments.isEmpty {
+                // The list never shows past days: a one-off chore due before today is left
+                // out. (Recurring occurrences are already limited to today onward by
+                // `futureAssignments(for:)`.)
+                if let dueDate = chore.dueDate, dueDate < today { continue }
+                
                 // One-off chore: filtered by its own responsible and done state
                 if isFilterOn {
                     if !selectedUserIDs.isEmpty,
@@ -149,22 +172,56 @@ class CarouselViewModel {
             }
         }
         
-        // Chronological across all chores, so the user reads the list as a schedule
-        visibleOccurrences = occurrences.sorted { a, b in
-            // Completed occurrences sink to the bottom, whatever their date
-            let doneA = a.assignment?.isCompleted ?? a.chore.isDone
-            let doneB = b.assignment?.isCompleted ?? b.chore.isDone
-            if doneA != doneB { return !doneA }
-            
-            switch (a.day, b.day) {
-            case let (dA?, dB?) where dA != dB: return dA < dB
-            case (nil, _?): return false
-            case (_?, nil): return true
-            default: break
-            }
-            
-            return a.chore.priorityTag.intValue > b.chore.priorityTag.intValue
+        visibleOccurrences = occurrences.sorted(by: self.areInIncreasingOrder)
+    }
+    
+    // MARK: - Sorting
+    
+    /// Ordering for the list layout.
+    ///
+    /// Always by calendar day first — nearest first, undated last — since the list groups
+    /// occurrences under one header per day.
+    private func areInIncreasingOrder(_ a: ChoreOccurrence, _ b: ChoreOccurrence) -> Bool {
+        let dayOrder = compareDay(a, b)
+        if dayOrder != .orderedSame { return dayOrder == .orderedAscending }
+        
+        let doneA = a.assignment?.isCompleted ?? a.chore.isDone
+        let doneB = b.assignment?.isCompleted ?? b.chore.isDone
+        if doneA != doneB { return !doneA }
+        
+        if isSortedByUrgency {
+            let urgencyOrder = compareUrgency(a, b)
+            if urgencyOrder != .orderedSame { return urgencyOrder == .orderedAscending }
         }
+        
+        if let dateA = a.day, let dateB = b.day, dateA != dateB {
+            return dateA < dateB
+        }
+        return a.chore.name.localizedCaseInsensitiveCompare(b.chore.name) == .orderedAscending
+    }
+    
+    /// Nearest calendar day first (ignoring the time of day); undated occurrences go last.
+    private func compareDay(_ a: ChoreOccurrence, _ b: ChoreOccurrence) -> ComparisonResult {
+        let calendar = Calendar.current
+        let dayA = a.day.map { calendar.startOfDay(for: $0) }
+        let dayB = b.day.map { calendar.startOfDay(for: $0) }
+        
+        switch (dayA, dayB) {
+        case let (dayA?, dayB?):
+            if dayA == dayB { return .orderedSame }
+            return dayA < dayB ? .orderedAscending : .orderedDescending
+        case (nil, _?): return .orderedDescending
+        case (_?, nil): return .orderedAscending
+        case (nil, nil): return .orderedSame
+        }
+    }
+    
+    /// Most urgent first.
+    private func compareUrgency(_ a: ChoreOccurrence, _ b: ChoreOccurrence) -> ComparisonResult {
+        let priorityA = a.chore.priorityTag.intValue
+        let priorityB = b.chore.priorityTag.intValue
+        if priorityA == priorityB { return .orderedSame }
+        return priorityA > priorityB ? .orderedAscending : .orderedDescending
     }
     
     /// Recomputes the visible lists after a local change, without hitting CloudKit.
@@ -231,7 +288,8 @@ class CarouselViewModel {
     /// > ``TaskSchedulerEngine/schedule(chores:users:)`` seeds its window starting *tomorrow*,
     /// > so "today" is empty right after a division is generated. Set this to `0` for
     /// > production — and flip ``HardwareDailyChoresViewModel/dayOffsetFromToday`` together with
-    /// > it, since the e-paper dashboard has to show the same day the app does.
+    /// > it, since the e-paper dashboard has to show the same day the app does. The progress
+    /// > cards (``DashboardModel``) read this too, so they follow automatically.
     static let gridDayOffsetFromToday = 1
     
     /// The single day the grid layout renders, normalised to the start of that day.
