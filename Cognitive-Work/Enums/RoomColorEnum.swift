@@ -9,24 +9,24 @@ import SwiftUI
 
 /// Constrains standard logical mapping translating room properties explicitly to `SwiftUI.Color`.
 enum RoomColor: String, CaseIterable, Identifiable {
-    case white = "white"
+    case purple = "purple"
     case orange = "orange"
     case yellow = "yellow"
     case green = "green"
     case blue = "blue"
-    case purple = "purple"
+    case pink = "pink"
     
     var id: String { self.rawValue }
 
     /// Maps custom identifier constants safely to rendering layouts contexts.
     var uiColor: Color {
         switch self {
-        case .white: return .white
+        case .purple: return .purple
         case .orange: return .choreOrange
         case .yellow: return .choreYellow
         case .green: return .choreGreen
         case .blue: return .choreBlue
-        case .purple: return .chorePink
+        case .pink: return .chorePink
         }
     }
 
@@ -36,6 +36,6 @@ enum RoomColor: String, CaseIterable, Identifiable {
     /// Every case but ``white`` is saturated enough for white content on top; a white room
     /// needs black content instead, or its icon and labels render white-on-white and vanish.
     var contentColor: Color {
-        self == .white ? .black : .white
+        self == .purple ? .black : .white
     }
 }
