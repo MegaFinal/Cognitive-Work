@@ -144,7 +144,6 @@ class HardwareViewModel {
         
         deviceIP = hardwareIp?.ip ?? ""
         
-        print(deviceIP)
     }
     
     /// Deletes the current IP record and clears local state so the UI reflects the change immediately.

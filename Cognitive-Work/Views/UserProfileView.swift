@@ -140,6 +140,8 @@ private struct SettingsButtonsSection: View {
     @Binding var viewModelHardware: HardwareViewModel
     @Binding var viewModelOnboarding: OnboardingViewModel
     
+    @State private var showHardwareView = false
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
             NavigationLink {
@@ -180,21 +182,26 @@ private struct SettingsButtonsSection: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
-            NavigationLink {
-                Group {
-                    if viewModelHardware.hardwareIp != nil {
-                        ExistingIPView(
-                            viewModelHardware: $viewModelHardware,
-                            profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
-                        )
-                    } else {
-                        WifiCredentialsView()
-                    }
-                }
+            Button {
+                showHardwareView = true
             } label: {
                 Text("Conectar com meu Hardware")
             }
             .padding(.horizontal)
+        }
+        .sheet(isPresented: $showHardwareView) {
+            if viewModelHardware.hardwareIp != nil {
+                ExistingIPView(
+                    viewModelHardware: $viewModelHardware,
+                    profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            } else {
+                WifiCredentialsView()
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
 }
