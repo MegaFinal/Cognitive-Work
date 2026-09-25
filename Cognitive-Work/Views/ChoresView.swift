@@ -125,7 +125,7 @@ struct ChoresView: View {
                     UnassignmentList(
                         items: carouselVM.unassignedItems,
                         onPick: { item in
-                            Task { await carouselVM.pickForMyself(item) }
+                            Task { await carouselVM.requestPick(item) }
                         }, carouselViewModel: carouselVM
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
@@ -142,6 +142,9 @@ struct ChoresView: View {
                         dismissFocusedCard()
                     }
             )
+        }
+        .sheet(item: $carouselVM.itemAwaitingDate) { item in
+            PickUnassignedChoreSheet(item: item, carouselViewModel: carouselVM)
         }
         .task {
             await carouselVM.fetchAllData()

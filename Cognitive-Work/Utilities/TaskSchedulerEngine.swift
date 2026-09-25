@@ -62,7 +62,7 @@ struct TaskSchedulerEngine {
         // Filter out recurring chores that need to be scheduled
         // Condition: not done, recurring frequency, and do not yet have generated daily assignment records
         let recurringChores = chores.filter {
-            !$0.isDone && recurringFrequencies.contains($0.frequency) && ($0.dailyAssignmentsReference ?? []).isEmpty && $0.shouldBeIncluded != false
+            !$0.isDone && recurringFrequencies.contains($0.frequency) && $0.shouldBeIncluded != false
         }
         
         // Monthly chores that wont be done now, but need to be done next 14 days
