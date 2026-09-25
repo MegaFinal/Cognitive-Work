@@ -7,29 +7,29 @@
 
 import SwiftUI
 
-/// A view that allows users to input their network credentials (IP, Wi-Fi name, and password)
-/// to configure and connect an ESP32 hardware device.
+/// Collects the home WiFi credentials and sends them to the ESP32 while the phone is on its network.
 struct WifiCredentialsView: View {
-    @State private var viewModel = HardwareViewModel()
+    @Bindable var viewModel: HardwareViewModel
     @Environment(\.dismiss) private var dismiss
-    
+
     private var canSubmit: Bool {
-        !viewModel.deviceIP.isEmpty &&
         !viewModel.userWifiName.isEmpty &&
         !viewModel.userWifiPassord.isEmpty
     }
-    
-    @State private var isSending = false
-    @State private var showTimeoutAlert = false
-    
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    LabeledInput(title: "Código do dispositivo") {
-                        TextField("", text: $viewModel.deviceIP)
-                            .keyboardType(.numbersAndPunctuation)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Conectar Harvi")
+                            .font(.largeTitle)
+                            .bold()
+
+                        Text("Para que seja possível conectar o Harvi ao WiFi da sua casa, entre no WiFi ESP32, com senha 12345678, retorne ao app e envie o nome e senha do WiFi.")
+                            .foregroundStyle(.secondary)
                     }
+
                     LabeledInput(title: "Nome do Wi-Fi") {
                         TextField("", text: $viewModel.userWifiName)
                             .textInputAutocapitalization(.never)
@@ -44,48 +44,29 @@ struct WifiCredentialsView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             }
-            .navigationTitle("Conectar com Hardware")
+            .navigationTitle("Conectar com WiFi")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Continuar", systemImage: "chevron.right") { sendCredentials()
-                    }
+                    if viewModel.isSending {
+                        ProgressView()
+                    } else {
+                        Button("Continuar", systemImage: "chevron.right") {
+                            Task { await viewModel.sendWifiCredentials() }
+                        }
                         .buttonStyle(.glassProminent)
                         .disabled(!canSubmit)
+                    }
                 }
             }
             .navigationDestination(isPresented: $viewModel.navigateToParingView) {
                 DevicePairView(hardwareViewModel: viewModel, onClose: { dismiss() })
             }
-            .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") { viewModel.errorMessage = nil }
-            } message: {
-                Text(viewModel.errorMessage ?? "Deu algum erro.")
-            }
+            .resultAlert($viewModel.wifiResult)
             .dismissKeyboardOnTap()
-        }
-    }
-    
-    // MARK: - Functions
-    
-    /// Sends the typed credentials to the device and navigates to the pairing step on success,
-    /// while safely handling network errors and invalid IP inputs.
-    private func sendCredentials() {
-        Task {
-            do {
-                try await viewModel.sendWifiCredentials()
-                viewModel.navigateToParingView = true
-                print(viewModel.navigateToParingView)
-            } catch APIErrors.invalidURL {
-                viewModel.errorMessage = "Código inválido. Verifique e tente novamente."
-            } catch let apiError as APIErrors {
-                viewModel.errorMessage = apiError.errorDescription
-            } catch {
-                viewModel.errorMessage = "Erro inesperado. Tente novamente"
-            }
         }
     }
 }
@@ -110,5 +91,10 @@ struct LabeledInput<Content: View>: View {
 }
 
 #Preview {
-    WifiCredentialsView()
+    Text("Perfil")
+        .sheet(isPresented: .constant(true)) {
+            WifiCredentialsView(viewModel: HardwareViewModel())
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
 }
