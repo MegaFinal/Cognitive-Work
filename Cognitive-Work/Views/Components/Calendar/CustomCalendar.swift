@@ -30,16 +30,16 @@ struct CustomCalendar: View {
     
     // MARK: - Data
 
-    /// 网格里要显示的每一天：从窗口第一天所在那周的第一天，
-    /// 到窗口最后一天所在那周的最后一天。
+    /// Every day to display in the grid: from the start of the week containing the window's first day,
+    /// to the end of the week containing the window's last day.
     private var gridDays: [Date] {
         let lastDay = calendar.date(byAdding: .day, value: -1, to: window.upperBound) ?? window.lowerBound
 
-        // 第一天所在那周，往前补到一周的起点
+        // Pad backwards from the week of the first day to the start of the week
         let startOffset = (calendar.component(.weekday, from: window.lowerBound) - Date.firstDayOfWeek + 7) % 7
         guard let gridStart = calendar.date(byAdding: .day, value: -startOffset, to: window.lowerBound) else { return [] }
 
-        // 最后一天所在那周，往后补到一周的终点
+        // Pad forwards from the week of the last day to the end of the week
         let endOffset = 6 - (calendar.component(.weekday, from: lastDay) - Date.firstDayOfWeek + 7) % 7
         guard let gridEnd = calendar.date(byAdding: .day, value: endOffset, to: lastDay) else { return [] }
 
@@ -58,19 +58,19 @@ struct CustomCalendar: View {
     private var headerTitle: String {
         let first = window.lowerBound
         let last = calendar.date(byAdding: .day, value: -1, to: window.upperBound) ?? first
-        
+         
         let firstYear = calendar.component(.year, from: first)
         let lastYear = calendar.component(.year, from: last)
-        
+         
         if firstYear != lastYear {
-            // 跨年：Dezembro 2026 - Janeiro 2027
+            // Cross-year
             return "\(monthName(first)) \(firstYear) - \(monthName(last)) \(lastYear)"
         }
         if first.monthInt != last.monthInt {
-            // 跨月：Setembro - Outubro 2026
+            // Cross-month
             return "\(monthName(first)) - \(monthName(last)) \(firstYear)"
         }
-        // 同一个月：Setembro 2026
+        // Same month
         return "\(monthName(first)) \(firstYear)"
     }
     
@@ -107,7 +107,7 @@ struct CustomCalendar: View {
                 DayCell(
                     day: day,
                     opacity: selectable ? opacityForDay(day) : 0,
-                    isSelectable: selectable,          // 窗口外：灰字、无底色、不可点
+                    isSelectable: selectable,
                     isSelected: isSelected(day) || isHighlighted(day),
                     action: { select(day) }
                 )
@@ -142,7 +142,7 @@ struct CustomCalendar: View {
     }
     
     private func select(_ day: Date) {
-        // 再点一次已选中的日期 = 取消选择
+        // Tapping an already selected date again = deselects it
         selectedDate = isSelected(day) ? nil : day.startOfDay
     }
     
@@ -161,7 +161,7 @@ private struct ChoreDatePickerPreview: View {
         CustomCalendar(
             selectedDate: $selected,
             window: window,
-            // 假数据：模拟不同的任务量（0 = 没任务，无底色）
+            // Mock data: simulates varying workload volumes (0 = no chores, no background)
             opacityForDay: { day in
                 let d = Calendar.current.component(.day, from: day)
                 if d % 3 == 0 { return 0.9 }
@@ -172,15 +172,15 @@ private struct ChoreDatePickerPreview: View {
     }
 }
 
-/// 常规情况：今天起 15 天
-#Preview("今天起 15 天") {
+/// Standard case: 15 days starting today
+#Preview("15 Days Starting Today") {
     let today = Calendar.current.startOfDay(for: Date())
     let end = Calendar.current.date(byAdding: .day, value: 15, to: today)!
     return ChoreDatePickerPreview(window: today..<end)
 }
 
-/// 窗口跨月：从本月倒数第 5 天开始，可以翻到下个月
-#Preview("窗口跨月") {
+/// Cross-month window: starts 5 days before the end of the current month, spanning into the next
+#Preview("Cross-Month Window") {
     let calendar = Calendar.current
     let start = calendar.date(byAdding: .day, value: -4, to: Date.now.endOfMonth)!
     let startOfDay = calendar.startOfDay(for: start)
@@ -188,7 +188,7 @@ private struct ChoreDatePickerPreview: View {
     return ChoreDatePickerPreview(window: startOfDay..<end)
 }
 
-#Preview("跨年：从 12月20日起 15 天") {
+#Preview("Cross-Year: 15 Days Starting December 20th") {
     let calendar = Calendar.current
     let start = calendar.date(from: DateComponents(year: 2026, month: 12, day: 20))!
     let end = calendar.date(byAdding: .day, value: 15, to: start)!

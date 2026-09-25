@@ -846,20 +846,20 @@ class CarouselViewModel {
     
     var itemAwaitingDate: UnassignedItem?
     
-    /// 确认页里的一格：可能对应一个已存在的 assignment，也可能是全新要创建的。
+    /// A single slot in the confirmation page: may correspond to an existing assignment or a brand new one to be created.
     struct WeeklyPickSlot: Identifiable {
         let id: UUID = UUID()
-        /// nil = 用户还没选。
+        /// nil = The user has not selected yet.
         var date: Date?
-        /// 已存在的 assignment（比如点空位领取、或 weekly 另一周本来就有）。nil = 需要新建。
+        /// An existing assignment (e.g., claiming an empty slot, or another week in a weekly chore). nil = Needs to be created.
         var existingAssignment: RecurrentAssignmentModel?
-        /// 日期能不能改。已存在且是"本周"那种通常锁定。
+        /// Whether the date can be edited. Existing slots and "this week" slots are usually locked.
         var isDateEditable: Bool
-        /// 是否勾选要领取。
+        /// Whether this slot is checked/included for claiming.
         var included: Bool = true
     }
     
-    /// 同一个 weekly chore 里，另一周还开着（没人、没完成）的 assignment。
+    /// Another assignment within the same weekly chore that is still open (unassigned, incomplete).
     func openSiblingWeeklyAssignment(for chore: ChoreModel, excluding: RecurrentAssignmentModel?) -> RecurrentAssignmentModel? {
         guard chore.frequency == .weekly else { return nil }
         return futureAssignments(for: chore).first { candidate in
@@ -869,7 +869,7 @@ class CarouselViewModel {
         }
     }
     
-    /// 可选范围；还没有排期数据时退回"今天起 15 天"。
+    /// The selectable date range; falls back to "15 days starting today" if no scheduling data is available.
     var pickerWindow: Range<Date> {
         if let selectableWindow { return selectableWindow }
         let calendar = Calendar.current
@@ -878,13 +878,13 @@ class CarouselViewModel {
         return today..<end
     }
     
-    /// 确认页打开时，根据 item 和频率算出一开始应该显示哪些格子。
+    /// Calculates which slots should initially be displayed based on the item and its frequency when the confirmation page opens.
     func initialPickSlots(for item: UnassignedItem) -> [WeeklyPickSlot] {
         let chore = item.chore
         let calendar = Calendar.current
         let window = pickerWindow
         
-        // daily：窗口内每天一格，全部锁死、默认勾选
+        // Daily: One slot per day within the window, all locked, checked by default
         if chore.frequency == .daily {
             var days: [Date] = []
             var day = window.lowerBound
@@ -896,7 +896,7 @@ class CarouselViewModel {
             return days.map { WeeklyPickSlot(date: $0, existingAssignment: nil, isDateEditable: false) }
         }
         
-        // weekly + 点了已排好的空位：本周锁定，下周（如果还开着）可编辑、可取消
+        // Weekly + tapped an existing empty slot: This week is locked, next week (if still open) is editable and optional
         if chore.frequency == .weekly, case .recurring(let thisWeek) = item.choreType {
             var list = [WeeklyPickSlot(date: thisWeek.day, existingAssignment: thisWeek, isDateEditable: false)]
             if let sibling = openSiblingWeeklyAssignment(for: chore, excluding: thisWeek) {
@@ -905,11 +905,11 @@ class CarouselViewModel {
             return list
         }
         
-        // 其余情况（fortnightly / monthly / 一次性 / 全新的 weekly）：一格待选
+        // Other cases (fortnightly / monthly / one-off / brand new weekly): One selectable slot
         return [WeeklyPickSlot(date: nil, existingAssignment: nil, isDateEditable: true)]
     }
     
-    /// 列表里点击一个项目：需要选日期的（或 weekly 的空位）弹出确认页，其余直接领取。
+    /// Tapping an item in the list: items requiring a date selection (or weekly empty slots) present a confirmation page, while others are claimed immediately.
     @MainActor
     func requestPick(_ item: UnassignedItem) {
         var isWeeklyRecurring = false
@@ -925,7 +925,7 @@ class CarouselViewModel {
         }
     }
     
-    /// 确认页点"Confirmar"后调用。只有 `included && date != nil` 的格子会被保存。
+    /// Called after tapping "Confirm" on the confirmation page. Only slots where `included && date != nil` will be saved.
     @MainActor
     func confirmPick(_ item: UnassignedItem, slots: [WeeklyPickSlot]) async -> Bool {
         let included = slots.filter { $0.included && $0.date != nil }
@@ -940,7 +940,7 @@ class CarouselViewModel {
         let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
         let chore = item.chore
         
-        // 一次性任务：只写 dueDate
+        // One-off chore: Update due date only
         if chore.frequency == .none {
             let previousDue = chore.dueDate
             let previousCurrent = chore.currentResponsibleReference
@@ -963,7 +963,7 @@ class CarouselViewModel {
             return true
         }
         
-        // 循环任务：每个勾选的格子对应一条 assignment（已存在的更新，没有的新建）
+        // Recurring chore: Each checked slot corresponds to an assignment (update existing ones, create new ones)
         var toUpdate: [RecurrentAssignmentModel] = []
         var toCreate: [WeeklyPickSlot] = []
         
@@ -981,7 +981,7 @@ class CarouselViewModel {
         
         var createdModels: [RecurrentAssignmentModel] = []
         if !toCreate.isEmpty {
-            guard let room = await chore.room,
+            guard let room = chore.room,
                   let houseRef = room.houseReference,
                   let choreID = chore.recordID
             else { return false }
@@ -1026,6 +1026,7 @@ class CarouselViewModel {
         await refreshAfterChoreUpdate()
         return true
     }
+    
     /// Whether the "unassigned chores" popup is currently visible.
     var isShowingUnassignedList: Bool = false
     
@@ -1090,10 +1091,10 @@ class CarouselViewModel {
     
     // MARK: - Custom Calendar
     
-    /// 每天的未完成任务数（recurring 的 assignment + 有 dueDate 的 one-off chore）
+    /// Number of uncompleted tasks per day (recurring assignments + one-off chores with a dueDate)
     private(set) var loadByDay: [Date: Int] = [:]
     
-    ///从今天到alg结束的那一天
+    /// From today until the last day of the algorithm window
     var selectableWindow: Range<Date>? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -1114,7 +1115,7 @@ class CarouselViewModel {
             result[calendar.startOfDay(for: assignment.day), default: 0] += 1
         }
         
-        // one-off chore：没有 assignment、有 dueDate、未完成
+        // One-off chores: no assignment, has a dueDate, and uncompleted
         for chore in cardModels where !chore.isDone && (chore.dailyAssignmentsReference ?? []).isEmpty {
             if let due = chore.dueDate {
                 result[calendar.startOfDay(for: due), default: 0] += 1
@@ -1125,12 +1126,12 @@ class CarouselViewModel {
     }
     
     
-    /// 0（当天没有任务，无底色）… 1.0（窗口内最忙的一天）
+    /// 0 (no tasks on that day, no background) ... 1.0 (the busiest day within the window)
     func loadOpacity(on day: Date, in window: Range<Date>) -> Double {
         let count = loadByDay[Calendar.current.startOfDay(for: day)] ?? 0
         guard count > 0 else { return 0 }
         
         let peak = max(loadByDay.filter { window.contains($0.key) }.values.max() ?? 0, 1)
-        return 0.25 + 0.75 * Double(count) / Double(peak)   // 有任务的日子至少 0.25，看得出来
+        return 0.25 + 0.75 * Double(count) / Double(peak)   // Days with tasks have at least 0.25 opacity
     }
 }

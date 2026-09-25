@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 领取一个还没排好日期的项目、或 weekly 空位（可能带出另一周）时的确认页。
+/// Confirmation sheet when claiming an unassigned chore with no date, or a weekly empty slot (which may bring along another week).
 struct PickUnassignedChoreSheet: View {
     let item: CarouselViewModel.UnassignedItem
     @Bindable var carouselViewModel: CarouselViewModel
@@ -15,7 +15,7 @@ struct PickUnassignedChoreSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var slots: [CarouselViewModel.WeeklyPickSlot] = []
-    /// 日历当前在编辑第几格（只对 weekly 有意义，其它频率永远是 0）。
+    /// Which slot the calendar is currently editing (only meaningful for weekly chores; other frequencies always use 0).
     @State private var activeSlot = 0
     @State private var isSaving = false
     @State private var didFail = false
@@ -53,7 +53,7 @@ struct PickUnassignedChoreSheet: View {
         }
     }
 
-    /// 已勾选、已经有日期的格子——这些才会被保存，也是日历上会高亮的日子。
+    /// Checked slots that already have a date—these are the ones that will be saved and highlighted on the calendar.
     private var includedDates: [Date] {
         slots.compactMap { $0.included ? $0.date : nil }
     }
@@ -69,7 +69,7 @@ struct PickUnassignedChoreSheet: View {
                     Text("Frequência").font(.system(size: 15, weight: .semibold))
                     Spacer()
                     CapsuleTag(tagName: frequencyLabel, tagColor: roomColor,
-                               horizontalPadding: 10, verticalPadding: 1.5)
+                              horizontalPadding: 10, verticalPadding: 1.5)
                 }
 
                 if !chore.description.isEmpty {
@@ -108,8 +108,8 @@ struct PickUnassignedChoreSheet: View {
             activeSlot = slots.firstIndex { $0.isDateEditable } ?? 0
         }
         .onChange(of: slots.first?.date) { _, newValue in
-            // 只有"全新的 weekly 任务"才需要自动补出下周建议；
-            // 点已有空位来的那种，下周格在 initialPickSlots 里已经算好了。
+            // Only "brand new weekly chores" require an auto-suggested next week slot;
+            // For those coming from an existing empty slot, the next week slot is already calculated in initialPickSlots.
             guard isWeekly, item.isOneOffFresh, let newValue else { return }
             suggestNextWeekSlot(from: newValue)
         }
@@ -158,7 +158,7 @@ struct PickUnassignedChoreSheet: View {
 
     // MARK: - Calendar binding
 
-    /// 日历实际编辑的是 `slots[activeSlot]`。
+    /// The calendar actually edits `slots[activeSlot]`.
     private var activeDateBinding: Binding<Date?> {
         Binding(
             get: { slots.indices.contains(activeSlot) ? slots[activeSlot].date : nil },

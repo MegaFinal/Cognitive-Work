@@ -33,22 +33,22 @@ struct DayCell: View {
 
     private var foreground: Color {
         if isSelected { return .white }
-        return isSelectable ? .black : .gray   // 不可选：灰字
+        return isSelectable ? .black : .gray
     }
 
     private var background: Color {
         if isSelected { return .blue }
         guard isSelectable else { return .clear }
-        return Color.choreYellow.opacity(opacity)   // opacity 为 0 时就是透明
+        return Color.choreYellow.opacity(opacity)
     }
 }
 
 #Preview {
     HStack {
-        DayCell(day: Date(), isSelectable: false)  // 灰字，无底色
-        DayCell(day: Date())                       // 黑字，无底色
-        DayCell(day: Date(), opacity: 0.5)         // 有任务
-        DayCell(day: Date(), isSelected: true)     // 选中
+        DayCell(day: Date(), isSelectable: false)
+        DayCell(day: Date())
+        DayCell(day: Date(), opacity: 0.5)
+        DayCell(day: Date(), isSelected: true) 
     }
     .padding()
 }
