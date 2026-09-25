@@ -143,19 +143,10 @@ struct ChoresView: View {
         .task(id: carouselVM.dataVersion) {
             updateActiveRoomColor()
         }
-        .task {
-            // Keep chores in sync across devices without requiring a relaunch.
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
-                guard !Task.isCancelled else { break }
+        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            Task {
                 await carouselVM.fetchAllData()
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            carouselVM.requestRefresh()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            carouselVM.requestRefresh()
         }
         .alert(
             "Não foi possível excluir",

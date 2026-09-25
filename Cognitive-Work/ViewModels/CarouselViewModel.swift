@@ -363,17 +363,6 @@ class CarouselViewModel {
     @ObservationIgnored
     private var refreshTask: Task<Void, Never>?
     
-    /// Coalesces refresh requests and cancels the previous one.
-    /// - Parameter debounce: How long to wait for further requests before fetching.
-    func requestRefresh(debounce: Duration = .milliseconds(250)) {
-        refreshTask?.cancel()
-        refreshTask = Task { [weak self] in
-            try? await Task.sleep(for: debounce)
-            guard !Task.isCancelled, let self else { return }
-            await self.fetchAllData()
-        }
-    }
-    
     /// Fetches all chores, users, rooms and assignments in parallel.
     func fetchAllData() async {
         if !hasFetchedInitially {
@@ -486,20 +475,19 @@ class CarouselViewModel {
     /// ``dashboard`` so the change shows up immediately — without this, the card would stay in
     /// the carousel/list and the progress numbers would stay stale until the next full
     /// CloudKit refetch.
+    @MainActor
     @discardableResult
-    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async -> Bool {
-        let success: Bool
-        if let assignment {
-            success = await assignment.toggle()
-        } else {
-            success = await chore.toggle()
-        }
+    func toggle(chore: ChoreModel) async -> Bool {
+        async let success: Bool = chore.toggleAndAssignPointsToTheUser()
+        refreshVisible()
         
-        if success {
-            await refreshVisible()
-        }
+        return await success
+    }
+    func toggle(assignment: RecurrentAssignmentModel) async -> Bool {
+        async let success: Bool = assignment.toggleAndAssignPointsToTheUser()
+        refreshVisible()
         
-        return success
+        return await success
     }
     
     // MARK: - Delete
