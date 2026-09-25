@@ -48,7 +48,11 @@ class DashboardModel: Identifiable {
         guard let targetUserID = user.recordID else { return }
 
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        // The same day the grid shows — tomorrow while the schedule is being tested — so the
+        // progress cards count the chores the user actually sees. Follows
+        // ``CarouselViewModel/gridDayOffsetFromToday``; set that back to `0` and this goes
+        // back to today with it.
+        let today = CarouselViewModel.gridTargetDay()
 
         // Keyed by assignment recordID (not just a Set) so `isDoneToday(_:)` below can read
         // back each assignment's own `isCompleted`, not just whether it exists.
@@ -67,7 +71,7 @@ class DashboardModel: Identifiable {
             } else {
                 guard let responsibleID = chore.currentResponsibleReference?.recordID,
                       let dueDate = chore.dueDate,
-                      calendar.isDateInToday(dueDate)
+                      calendar.isDate(dueDate, inSameDayAs: today)
                 else { return false }
                 return responsibleID == targetUserID
             }

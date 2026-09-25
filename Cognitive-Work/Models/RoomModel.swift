@@ -33,6 +33,8 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// The house this room belongs to.
     var houseReference: CKRecord.Reference?
     
+    /// The room type this room was created from during onboarding (e.g. `"Quarto"`)
+    var kind: String?
     
     var relatedChores: [ChoreModel] {
         get async {
@@ -72,6 +74,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         self.symbol = record["symbol"] as? String ?? "house"
         self.relatedChoresReference = record["relatedChores"] as? [CKRecord.Reference]
         self.houseReference = record["house"] as? CKRecord.Reference
+        self.kind = record["kind"] as? String
         self.color = color
     }
     
@@ -87,7 +90,8 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         symbol: String,
         relatedChores: [CKRecord.Reference]? = nil,
         house: CKRecord.Reference? = nil,
-        color: RoomColor
+        color: RoomColor,
+        kind: String? = nil
     ) {
         self.recordID = nil
         self.name = name
@@ -95,6 +99,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         self.relatedChoresReference = relatedChores
         self.houseReference = house
         self.color = color
+        self.kind = kind
     }
     
     /// Writes this model's values into a CloudKit record.
@@ -113,6 +118,9 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
             record["house"] = houseReference
         }
         record["roomColor"] = color.rawValue
+        if let kind {
+            record["kind"] = kind
+        }
     }
     
     func fetchRelatedChores() async -> [ChoreModel] {

@@ -19,10 +19,19 @@ struct ChoresView: View {
     
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .gray
-
+    
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
+    /// Animation for switching between carousel and list.
+    private static let layoutToggleAnimation: Animation = .snappy(duration: 0.3)
+    
+    /// Switches between carousel and list with ``layoutToggleAnimation``.
+    private func toggleLayout() {
+        withAnimation(Self.layoutToggleAnimation) {
+            carouselVM.toggleLayout()
+        }
+    }
     
     /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
     init(carouselVM: CarouselViewModel = CarouselViewModel()) {
@@ -43,8 +52,12 @@ struct ChoresView: View {
                         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
                     
                     if carouselVM.layoutMode != .grid {
-                        choreList
-                            .zIndex(1000)
+                        ChoreListLayout(
+                            viewModel: carouselVM,
+                            onSwipeDown: toggleLayout,
+                            namespace: cardAnimation
+                        )
+                        .zIndex(1000)
                     }
                 }
                 
@@ -52,6 +65,7 @@ struct ChoresView: View {
                     Spacer()
                     ChoresViewButtonsSection(carouselViewModel: carouselVM)
                 }
+                .zIndex(carouselVM.hasFocusedCard ? 0 : 3)
                 
                 // MARK: - Darkening the view if there's a focused card
                 if carouselVM.hasFocusedCard {
@@ -71,7 +85,7 @@ struct ChoresView: View {
                         Carousel(
                             viewModel: carouselVM,
                             isBackgroundClear: true,
-                            onSwipeDown: carouselVM.toggleLayout, namespace: cardAnimation
+                            onSwipeDown: toggleLayout, namespace: cardAnimation
                         )
                         .padding(.top, 70)
                         Spacer()
@@ -79,7 +93,7 @@ struct ChoresView: View {
                     .zIndex(2)
                 } else if let occurrence = carouselVM.focusedOccurrence {
                     let _ = print("occurrence:", occurrence.assignment?.recordID?.recordName ?? "NIL",
-                                      "chore:", occurrence.chore.name)
+                                  "chore:", occurrence.chore.name)
                     VStack {
                         Spacer()
                         CarouselCardFrame(
@@ -142,19 +156,21 @@ struct ChoresView: View {
         .task(id: carouselVM.dataVersion) {
             updateActiveRoomColor()
         }
-        .task {
-            // Keep chores in sync across devices without requiring a relaunch.
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
-                guard !Task.isCancelled else { break }
+        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            Task {
                 await carouselVM.fetchAllData()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            carouselVM.requestRefresh()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            carouselVM.requestRefresh()
+        .alert(
+            "Não foi possível excluir",
+            isPresented: Binding(
+                get: { carouselVM.errorMessage != nil },
+                set: { if !$0 { carouselVM.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(carouselVM.errorMessage ?? "")
         }
     }
     
@@ -173,9 +189,7 @@ struct ChoresView: View {
             
             HStack (spacing: 4) {
                 Button {
-                    withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
-                        carouselVM.toggleLayout()
-                    }
+                    toggleLayout()
                 } label: {
                     Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
                         .font(.system(size: 22))
@@ -208,7 +222,7 @@ struct ChoresView: View {
     /// Each card is bound to a different statistic from ``dashboard``
     private var progressSection: some View {
         let cardColor = carouselVM.layoutMode == .grid ? activeRoomColor : .black
-
+        
         return HStack(spacing: 10) {
             ProgressIndicatorCard(
                 title: "Tempo médio",
@@ -230,49 +244,6 @@ struct ChoresView: View {
         .animation(.easeInOut, value: activeRoomColor)
     }
     
-    /// Vertical scroll view rendering the chores in a list format.
-    private var choreList: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
-                ForEach(Array(carouselVM.visibleOccurrences.enumerated()), id: \.element.id) { index, occurrence in
-                    ChoreCardListStyle(
-                        chore: occurrence.chore,
-                        recurrentAssignment: occurrence.assignment,
-                        namespace: cardAnimation,
-                        carouselViewModel: carouselVM
-                    ) {
-                        carouselVM.focusDetailsImmediately(index)
-                    }
-                }
-            }
-            .padding(.top, 8)
-            .padding(.bottom, 120)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onPullDownAtTop(action: carouselVM.toggleLayout)
-        .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
-        .overlay {
-            // Empty state for the list layout specifically
-            if !carouselVM.isLoading && carouselVM.visibleOccurrences.isEmpty {
-                emptyChoreListState
-            }
-        }
-    }
-
-    /// Shown in place of ``choreList`` when the list layout has no chores to display —
-    /// either because the house has none, or the active filter matches none.
-    private var emptyChoreListState: some View {
-        ContentUnavailableView(
-            carouselVM.isFilterOn ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa ainda",
-            systemImage: "checklist",
-            description: Text(
-                carouselVM.isFilterOn
-                    ? "Nenhuma tarefa corresponde ao filtro selecionado."
-                    : "Toque em \"+\" para criar a primeira tarefa da casa."
-            )
-        )
-    }
-    
     // MARK: - Actions
     
     /// Dismisses the currently focused card based on the active layout mode.
@@ -283,7 +254,7 @@ struct ChoresView: View {
             carouselVM.clearFocusedDetails()
         }
     }
-
+    
     /// Updates the background color of the progress section locally to match the focused chore's room color.
     private func updateActiveRoomColor() {
         guard !carouselVM.visibleChores.isEmpty,
@@ -291,16 +262,16 @@ struct ChoresView: View {
             activeRoomColor = .gray
             return
         }
-
+        
         let centeredChore = carouselVM.visibleChores[carouselVM.activeIndex]
-
+        
         if let room = carouselVM.getRoom(for: centeredChore) {
             activeRoomColor = room.color.uiColor
         } else {
             activeRoomColor = .gray
         }
     }
-
+    
     /// Today's chore statistics.
     private var dashboard: DashboardModel? {
         carouselVM.dashboard

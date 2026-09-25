@@ -62,6 +62,16 @@ class CarouselViewModel {
     var isLoading: Bool = false
     private var hasFetchedInitially = false
     
+    /// Set when ``delete(chore:targetOccurrences:)`` fails, so a view can surface it in an
+    /// alert. Left for the view to clear back to `nil` once shown.
+    var errorMessage: String?
+    
+    /// The last day of the division cycle in progress.
+    var currentCycleEnd: Date? {
+        let today = Calendar.current.startOfDay(for: Date())
+        return dailyAssignments.map(\.day).filter { $0 >= today }.max()
+    }
+    
     // MARK: - Carousel Geometry State
     
     /// The exact index where the carousel is currently resting.
@@ -93,6 +103,17 @@ class CarouselViewModel {
     var isFilterOn: Bool = false
     var filterChoices = ChoreFilters()
     
+    /// When `true`, occurrences on the same day are ordered most urgent first.
+    ///
+    /// The list is always ordered by day (nearest first) regardless — that part isn't a user
+    /// choice, since the list layout groups occurrences under one header per day.
+    var isSortedByUrgency: Bool = false {
+        didSet {
+            guard oldValue != isSortedByUrgency else { return }
+            rebuildDerivedState()
+        }
+    }
+    
     /// The list of chores rendered by the UI, respecting active filters.
     private(set) var visibleChores: [ChoreModel] = []
     
@@ -108,12 +129,18 @@ class CarouselViewModel {
     /// `occurrencesPerChore`); one-off chores contribute a single row.
     private func rebuildVisibleOccurrences() {
         let selectedUserIDs = Set(filterChoices.users.compactMap { $0.recordID })
+        let today = Calendar.current.startOfDay(for: Date())
         var occurrences: [ChoreOccurrence] = []
         
         for chore in visibleChores {
             let assignments = futureAssignments(for: chore)
             
             if assignments.isEmpty {
+                // The list never shows past days: a one-off chore due before today is left
+                // out. (Recurring occurrences are already limited to today onward by
+                // `futureAssignments(for:)`.)
+                if let dueDate = chore.dueDate, dueDate < today { continue }
+                
                 // One-off chore: filtered by its own responsible and done state
                 if isFilterOn {
                     if !selectedUserIDs.isEmpty,
@@ -145,22 +172,56 @@ class CarouselViewModel {
             }
         }
         
-        // Chronological across all chores, so the user reads the list as a schedule
-        visibleOccurrences = occurrences.sorted { a, b in
-            // Completed occurrences sink to the bottom, whatever their date
-            let doneA = a.assignment?.isCompleted ?? a.chore.isDone
-            let doneB = b.assignment?.isCompleted ?? b.chore.isDone
-            if doneA != doneB { return !doneA }
-            
-            switch (a.day, b.day) {
-            case let (dA?, dB?) where dA != dB: return dA < dB
-            case (nil, _?): return false
-            case (_?, nil): return true
-            default: break
-            }
-            
-            return a.chore.priorityTag.intValue > b.chore.priorityTag.intValue
+        visibleOccurrences = occurrences.sorted(by: self.areInIncreasingOrder)
+    }
+    
+    // MARK: - Sorting
+    
+    /// Ordering for the list layout.
+    ///
+    /// Always by calendar day first — nearest first, undated last — since the list groups
+    /// occurrences under one header per day.
+    private func areInIncreasingOrder(_ a: ChoreOccurrence, _ b: ChoreOccurrence) -> Bool {
+        let dayOrder = compareDay(a, b)
+        if dayOrder != .orderedSame { return dayOrder == .orderedAscending }
+        
+        let doneA = a.assignment?.isCompleted ?? a.chore.isDone
+        let doneB = b.assignment?.isCompleted ?? b.chore.isDone
+        if doneA != doneB { return !doneA }
+        
+        if isSortedByUrgency {
+            let urgencyOrder = compareUrgency(a, b)
+            if urgencyOrder != .orderedSame { return urgencyOrder == .orderedAscending }
         }
+        
+        if let dateA = a.day, let dateB = b.day, dateA != dateB {
+            return dateA < dateB
+        }
+        return a.chore.name.localizedCaseInsensitiveCompare(b.chore.name) == .orderedAscending
+    }
+    
+    /// Nearest calendar day first (ignoring the time of day); undated occurrences go last.
+    private func compareDay(_ a: ChoreOccurrence, _ b: ChoreOccurrence) -> ComparisonResult {
+        let calendar = Calendar.current
+        let dayA = a.day.map { calendar.startOfDay(for: $0) }
+        let dayB = b.day.map { calendar.startOfDay(for: $0) }
+        
+        switch (dayA, dayB) {
+        case let (dayA?, dayB?):
+            if dayA == dayB { return .orderedSame }
+            return dayA < dayB ? .orderedAscending : .orderedDescending
+        case (nil, _?): return .orderedDescending
+        case (_?, nil): return .orderedAscending
+        case (nil, nil): return .orderedSame
+        }
+    }
+    
+    /// Most urgent first.
+    private func compareUrgency(_ a: ChoreOccurrence, _ b: ChoreOccurrence) -> ComparisonResult {
+        let priorityA = a.chore.priorityTag.intValue
+        let priorityB = b.chore.priorityTag.intValue
+        if priorityA == priorityB { return .orderedSame }
+        return priorityA > priorityB ? .orderedAscending : .orderedDescending
     }
     
     /// Recomputes the visible lists after a local change, without hitting CloudKit.
@@ -228,7 +289,8 @@ class CarouselViewModel {
     /// > ``TaskSchedulerEngine/schedule(chores:users:)`` seeds its window starting *tomorrow*,
     /// > so "today" is empty right after a division is generated. Set this to `0` for
     /// > production — and flip ``HardwareDailyChoresViewModel/dayOffsetFromToday`` together with
-    /// > it, since the e-paper dashboard has to show the same day the app does.
+    /// > it, since the e-paper dashboard has to show the same day the app does. The progress
+    /// > cards (``DashboardModel``) read this too, so they follow automatically.
     static let gridDayOffsetFromToday = 1
     
     /// The single day the grid layout renders, normalised to the start of that day.
@@ -301,17 +363,6 @@ class CarouselViewModel {
     /// The refresh currently in flight, if any. See ``requestRefresh(debounce:)``.
     @ObservationIgnored
     private var refreshTask: Task<Void, Never>?
-    
-    /// Coalesces refresh requests and cancels the previous one.
-    /// - Parameter debounce: How long to wait for further requests before fetching.
-    func requestRefresh(debounce: Duration = .milliseconds(250)) {
-        refreshTask?.cancel()
-        refreshTask = Task { [weak self] in
-            try? await Task.sleep(for: debounce)
-            guard !Task.isCancelled, let self else { return }
-            await self.fetchAllData()
-        }
-    }
     
     /// Fetches all chores, users, rooms and assignments in parallel.
     func fetchAllData() async {
@@ -425,20 +476,114 @@ class CarouselViewModel {
     /// ``dashboard`` so the change shows up immediately — without this, the card would stay in
     /// the carousel/list and the progress numbers would stay stale until the next full
     /// CloudKit refetch.
+    @MainActor
     @discardableResult
-    func toggle(chore: ChoreModel, assignment: RecurrentAssignmentModel?) async -> Bool {
-        let success: Bool
-        if let assignment {
-            success = await assignment.toggle()
+    func toggle(chore: ChoreModel) async -> Bool {
+        async let success: Bool = chore.toggleAndAssignPointsToTheUser()
+        refreshVisible()
+        
+        return await success
+    }
+    func toggle(assignment: RecurrentAssignmentModel) async -> Bool {
+        async let success: Bool = assignment.toggleAndAssignPointsToTheUser()
+        refreshVisible()
+        
+        return await success
+    }
+    
+    // MARK: - Delete
+    
+    /// What ``removeOccurrenceLocally(chore:targetOccurrences:)`` took out of the in-memory
+    /// state, kept around so a failed CloudKit delete can restore it exactly.
+    struct RemovedOccurrenceSnapshot {
+        let cardModels: [ChoreModel]
+        let assignments: [RecurrentAssignmentModel]
+    }
+    
+    /// Removes the given occurrence(s) from ``cardModels``/``dailyAssignments`` right away,
+    /// with no `await` and no network round trip, and refreshes every derived list to match.
+    ///
+    /// This has to run synchronously, *before* the actual CloudKit delete, because `List`'s
+    /// native swipe-to-delete expects its backing data to have already changed by the time
+    /// the swipe animation finishes: if the data only changes later (after an `await` on the
+    /// network), the row disappears, flashes back once SwiftUI notices nothing really
+    /// changed yet, then disappears again once the delete eventually completes.
+    ///
+    /// See ``ChoreModel/delete(targetOccurrences:)`` for the exact rule this follows: no
+    /// occurrences (or a non-recurring chore) removes the whole chore; one or more removes
+    /// just those days.
+    @MainActor
+    @discardableResult
+    func removeOccurrenceLocally(chore: ChoreModel, targetOccurrences: [RecurrentAssignmentModel]) -> RemovedOccurrenceSnapshot {
+        let deletesWholeChore = chore.frequency == .none || targetOccurrences.isEmpty
+        
+        var removedCardModels: [ChoreModel] = []
+        var removedAssignments: [RecurrentAssignmentModel] = []
+        
+        if deletesWholeChore {
+            removedCardModels = cardModels.filter { $0.recordID == chore.recordID }
+            removedAssignments = dailyAssignments.filter { $0.choreReference?.recordID == chore.recordID }
+            cardModels.removeAll { $0.recordID == chore.recordID }
+            dailyAssignments.removeAll { $0.choreReference?.recordID == chore.recordID }
         } else {
-            success = await chore.toggle()
+            let deletedIDs = Set(targetOccurrences.compactMap { $0.recordID })
+            removedAssignments = dailyAssignments.filter { assignment in
+                guard let id = assignment.recordID else { return false }
+                return deletedIDs.contains(id)
+            }
+            dailyAssignments.removeAll { assignment in
+                guard let id = assignment.recordID else { return false }
+                return deletedIDs.contains(id)
+            }
         }
         
-        if success {
-            await refreshVisible()
+        if focusedOccurrence?.chore.recordID == chore.recordID {
+            clearFocusedDetails()
         }
         
-        return success
+        refreshVisible()
+        
+        return RemovedOccurrenceSnapshot(cardModels: removedCardModels, assignments: removedAssignments)
+    }
+    
+    /// Persists a deletion already applied locally by
+    /// ``removeOccurrenceLocally(chore:targetOccurrences:)``. On failure, restores exactly
+    /// what that call removed and sets ``errorMessage``.
+    @MainActor
+    @discardableResult
+    func persistDelete(
+        chore: ChoreModel,
+        targetOccurrences: [RecurrentAssignmentModel],
+        restoring snapshot: RemovedOccurrenceSnapshot
+    ) async -> Bool {
+        guard await chore.delete(targetOccurrences: targetOccurrences) else {
+            cardModels.append(contentsOf: snapshot.cardModels)
+            dailyAssignments.append(contentsOf: snapshot.assignments)
+            refreshVisible()
+            
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Não foi possível excluir a tarefa."
+            return false
+        }
+        
+        return true
+    }
+    
+    /// Deletes a chore, or — for a recurring chore — just the given occurrence(s), and
+    /// refreshes every derived list immediately.
+    ///
+    /// Combines ``removeOccurrenceLocally(chore:targetOccurrences:)`` and
+    /// ``persistDelete(chore:targetOccurrences:restoring:)`` for callers — like the edit
+    /// screen's delete button — that don't need to control the timing between them. The
+    /// chores list's swipe-to-delete calls the two halves directly instead, so the local
+    /// removal happens synchronously, in step with `List`'s own delete animation, before the
+    /// network call runs in the background.
+    ///
+    /// - Returns: `true` on success. On failure, `errorMessage` is set and `false` is
+    ///   returned.
+    @discardableResult
+    func delete(chore: ChoreModel, targetOccurrences: [RecurrentAssignmentModel] = []) async -> Bool {
+        let snapshot = await removeOccurrenceLocally(chore: chore, targetOccurrences: targetOccurrences)
+        return await persistDelete(chore: chore, targetOccurrences: targetOccurrences, restoring: snapshot)
     }
     
     // MARK: - Filtering Logic

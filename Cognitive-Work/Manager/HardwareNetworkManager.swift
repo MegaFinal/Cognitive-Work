@@ -76,6 +76,7 @@ class HardwareNetworkManager {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         // Encodes the credentials into the request body

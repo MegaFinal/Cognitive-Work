@@ -291,4 +291,16 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
             hasher.combine(ObjectIdentifier(self))
         }
     }
+    
+    @discardableResult
+    func addScore(value: Int) async -> Bool {
+        self.points += value
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    @discardableResult
+    func subtractScore(value: Int) async -> Bool {
+        self.points -= value
+        return await CloudKitManager.shared.update(self)
+    }
 }

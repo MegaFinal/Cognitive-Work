@@ -78,6 +78,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     
     var dailyAssignmentsReference: [CKRecord.Reference]?
     
+    /// The user that have mark done in the intance of chore
+    var userThatHaveDoneReference: CKRecord.Reference?
+    
     /// EventKit calendar item persistent identifier
     var calendarEventIdentifier: String?
     
@@ -126,6 +129,15 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    var userThatHaveDone: UserModel? {
+        get async {
+            if let currentResponsibleReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [currentResponsibleReference])?.first
+            }
+            return nil
+        }
+    }
+    
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
@@ -167,6 +179,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.allResponsibleUsersReference = record["allResponsibleUsers"] as? [CKRecord.Reference]
         self.roomReference = record["room"] as? CKRecord.Reference
         self.dailyAssignmentsReference = record["dailyAssignment"] as? [CKRecord.Reference]
+        self.userThatHaveDoneReference = record["userThatHaveDone"] as? CKRecord.Reference
         self.calendarEventIdentifier = record["calendarEventIdentifier"] as? String
     }
     
@@ -190,6 +203,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         allResponsibleUsers: [CKRecord.Reference]? = nil,
         roomReference: CKRecord.Reference? = nil,
         dailyAssignment: [CKRecord.Reference]? = nil,
+        userThatHaveDone: CKRecord.Reference? = nil,
         calendarEventIdentifier: String? = nil
     ) {
         self.recordID = nil
@@ -210,6 +224,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.allResponsibleUsersReference = allResponsibleUsers
         self.roomReference = roomReference
         self.dailyAssignmentsReference = dailyAssignment
+        self.userThatHaveDoneReference = userThatHaveDone
         self.calendarEventIdentifier = calendarEventIdentifier
     }
     
@@ -244,6 +259,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["allResponsibleUsers"] = allResponsibleUsersReference ?? []
         record["room"] = roomReference
         record["dailyAssignment"] = dailyAssignmentsReference ?? []
+        if let userThatHaveDoneReference {
+            record["userThatHaveDone"] = userThatHaveDoneReference
+        }
         record["calendarEventIdentifier"] = calendarEventIdentifier
     }
     
@@ -258,9 +276,37 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     }
     
     @discardableResult
-    func toggle() async -> Bool {
-        self.isDone.toggle()
-        return await CloudKitManager.shared.update(self)
+    func toggleAndAssignPointsToTheUser() async -> Bool {
+        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
+              let myUserRecordID = myUser.recordID
+        else { return false }
+        
+        let wasDone = isDone
+        let previousReference = userThatHaveDoneReference
+        let score = calculatePoints()
+        
+        // Atualiza o estado local
+        isDone.toggle()
+        userThatHaveDoneReference = isDone
+        ? CKRecord.Reference(recordID: myUserRecordID, action: .none)
+        : nil
+        
+        // Dispara as duas operações em paralelo
+        async let scoreUpdated = isDone
+        ? myUser.addScore(value: score)
+        : myUser.subtractScore(value: score)
+        async let taskUpdated = CloudKitManager.shared.update(self)
+        
+        let (scoreOK, taskOK) = await (scoreUpdated, taskUpdated)
+        
+        // Se a tarefa não salvou, desfaz a mudança local
+        if !taskOK {
+            isDone = wasDone
+            userThatHaveDoneReference = previousReference
+        }
+        //TODO: remove print
+        print(myUser.points)
+        return scoreOK && taskOK
     }
     
     /// Applies the edits made in `DTO` to this chore and persists everything to CloudKit.
@@ -363,4 +409,82 @@ class ChoreModel: CloudKitSyncable, Identifiable {
                 await CloudKitManager.shared.batchUpdate(modelsToUpdate)
             }
         }
+    
+    private func calculatePoints() -> Int {
+        let score = priorityTag.scoreValue + frequency.scoreValue + TimeScore.getPoints(time: duration)
+        
+        guard let dueDate else { return score }
+        
+        let calendar = Calendar.current
+        let daysUntilDue = calendar.dateComponents(
+            [.day],
+            from: calendar.startOfDay(for: .now),
+            to: calendar.startOfDay(for: dueDate)
+        ).day ?? 0
+        
+        guard daysUntilDue > 0 else { return score }
+        
+        return score >> min(daysUntilDue, Int.bitWidth - 1)
+    }
+  
+    // MARK: - Delete
+    
+    /// Deletes this chore, or — for a recurring chore — just the given occurrence(s).
+    ///
+    /// - Parameter targetOccurrences: The specific occurrence(s) to delete instead of the
+    ///   whole chore. Every entry must belong to this chore's ``dailyAssignmentsReference``.
+    /// - Returns: `true` on success, otherwise `false` with ``CloudKitManager/errorMessage``
+    ///   set.
+    @discardableResult
+    func delete(targetOccurrences: [RecurrentAssignmentModel] = []) async -> Bool {
+        guard frequency != .none, !targetOccurrences.isEmpty else {
+            return await deleteWhole()
+        }
+        return await deleteOccurrences(targetOccurrences)
+    }
+    
+    /// Removes just the given occurrences: deletes their records, then detaches them from
+    /// ``dailyAssignmentsReference`` so the chore stops pointing at records that no longer
+    /// exist. The chore itself and every other occurrence are untouched.
+    private func deleteOccurrences(_ occurrences: [RecurrentAssignmentModel]) async -> Bool {
+        let occurrenceIDs = Set(occurrences.compactMap { $0.recordID })
+        
+        guard !occurrenceIDs.isEmpty, let zoneID = recordID?.zoneID else {
+            CloudKitManager.shared.errorMessage = "Failed to delete occurrence: missing recordID"
+            return false
+        }
+        
+        guard await CloudKitManager.shared.delete(recordIDs: Array(occurrenceIDs), zoneID: zoneID) else {
+            return false
+        }
+        
+        for occurrence in occurrences {
+            CalendarManager.shared.removeEvent(identifier: occurrence.calendarEventIdentifier, title: name, date: occurrence.day)
+        }
+        
+        dailyAssignmentsReference = dailyAssignmentsReference?.filter { !occurrenceIDs.contains($0.recordID) }
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    /// Removes the whole chore: every checklist item, every occurrence (if it's recurring),
+    /// and the chore record itself
+    private func deleteWhole() async -> Bool {
+        guard let recordID else {
+            CloudKitManager.shared.errorMessage = "Failed to delete chore: missing recordID"
+            return false
+        }
+        
+        let occurrences = frequency == .none ? [] : await dailyAssignments
+        
+        guard await CloudKitManager.shared.deleteChildren(of: recordID, includingSelf: true) else {
+            return false
+        }
+        
+        for occurrence in occurrences {
+            CalendarManager.shared.removeEvent(identifier: occurrence.calendarEventIdentifier, title: name, date: occurrence.day)
+        }
+        CalendarManager.shared.removeEvent(identifier: calendarEventIdentifier, title: name, date: dueDate)
+        
+        return true
+    }
 }

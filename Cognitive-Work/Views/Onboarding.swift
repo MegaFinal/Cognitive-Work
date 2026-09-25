@@ -50,10 +50,10 @@ struct Onboarding: View {
                 }
         }
         .task {
-//            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
+            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
             await CloudKitManager.shared.deleteAllRecords()
             viewModel.stateMachine.resetProgress()
-//            #endif
+            #endif
             await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {

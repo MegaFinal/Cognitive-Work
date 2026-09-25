@@ -19,7 +19,6 @@ struct NewRoomSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(OnboardingViewModel.self) var viewModel
     
-    
     @State private var text = ""
     @State private var selectedColor: RoomColor = .yellow
     

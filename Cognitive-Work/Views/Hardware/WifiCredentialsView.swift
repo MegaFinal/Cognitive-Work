@@ -10,42 +10,56 @@ import SwiftUI
 /// A view that allows users to input their network credentials (IP, Wi-Fi name, and password)
 /// to configure and connect an ESP32 hardware device.
 struct WifiCredentialsView: View {
-    @Bindable private var viewModel = HardwareViewModel()
+    @State private var viewModel = HardwareViewModel()
+    @Environment(\.dismiss) private var dismiss
+    
+    private var canSubmit: Bool {
+        !viewModel.deviceIP.isEmpty &&
+        !viewModel.userWifiName.isEmpty &&
+        !viewModel.userWifiPassord.isEmpty
+    }
+    
+    @State private var isSending = false
+    @State private var showTimeoutAlert = false
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Text("Conecte o Harvi à Internet!")
-                    .font(.system(size: 20))
-                    .bold()
-                    .padding(.bottom, 20)
-                 
-                TextField("Insira o código da tela do Harvi", text: $viewModel.deviceIP)
-                TextField("Insira o nome do WiFi da sua casa", text: $viewModel.userWifiName)
-                HStack {
-                    if viewModel.isPasswordVisible {
-                        TextField("Insira a senha do WiFi da sua casa", text: $viewModel.userWifiPassord)
-                            .textInputAutocapitalization(.never)
-                    } else {
-                        SecureField("Insira a senha do WiFi da sua casa", text: $viewModel.userWifiPassord)
-                            .textInputAutocapitalization(.never)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    LabeledInput(title: "Código do dispositivo") {
+                        TextField("", text: $viewModel.deviceIP)
+                            .keyboardType(.numbersAndPunctuation)
                     }
-                    Button {
-                        viewModel.isPasswordVisible.toggle()
-                    } label: {
-                        Image(systemName: viewModel.isPasswordVisible ? "eye.slash" : "eye")
-                            .foregroundColor(.gray)
+                    LabeledInput(title: "Nome do Wi-Fi") {
+                        TextField("", text: $viewModel.userWifiName)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    LabeledInput(title: "Senha do Wi-Fi") {
+                        SecureField("", text: $viewModel.userWifiPassord)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
                     }
                 }
-                sendCredentialsButton
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
             }
-            .textFieldStyle(.roundedBorder)
-            .padding()
+            .navigationTitle("Conectar com Hardware")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .close) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Continuar", systemImage: "chevron.right") { sendCredentials()
+                    }
+                        .buttonStyle(.glassProminent)
+                        .disabled(!canSubmit)
+                }
+            }
             .navigationDestination(isPresented: $viewModel.navigateToParingView) {
-                DevicePairView(hardwareViewModel: viewModel)
+                DevicePairView(hardwareViewModel: viewModel, onClose: { dismiss() })
             }
-            .toolbar(.hidden, for: .tabBar)
-
             .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }
             } message: {
@@ -54,39 +68,43 @@ struct WifiCredentialsView: View {
             .dismissKeyboardOnTap()
         }
     }
-     
-    // MARK: - Subviews
-     
+    
+    // MARK: - Functions
+    
     /// Sends the typed credentials to the device and navigates to the pairing step on success,
     /// while safely handling network errors and invalid IP inputs.
-    private var sendCredentialsButton: some View {
-        Button {
-            if viewModel.userWifiName != "" && viewModel.userWifiPassord != "" && viewModel.deviceIP != "" {
-                Task {
-                    do {
-                        try await viewModel.sendWifiCredentials()
-                        viewModel.navigateToParingView = true
-                        print(viewModel.navigateToParingView)
-                    } catch APIErrors.invalidURL {
-                        viewModel.errorMessage = "Código inválido. Verifique e tente de novo."
-                    } catch let apiError as APIErrors {
-                        viewModel.errorMessage = apiError.errorDescription
-                    } catch {
-                        viewModel.errorMessage = "Erro inesperado: \(error.localizedDescription)"
-                    }
-                }
+    private func sendCredentials() {
+        Task {
+            do {
+                try await viewModel.sendWifiCredentials()
+                viewModel.navigateToParingView = true
+                print(viewModel.navigateToParingView)
+            } catch APIErrors.invalidURL {
+                viewModel.errorMessage = "Código inválido. Verifique e tente novamente."
+            } catch let apiError as APIErrors {
+                viewModel.errorMessage = apiError.errorDescription
+            } catch {
+                viewModel.errorMessage = "Erro inesperado. Tente novamente"
             }
-        } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .frame(width: 100, height: 44)
-                    .foregroundStyle(.indigo)
-                 
-                Text("Enviar")
-                    .frame(width: 100, height: 44)
-                    .foregroundStyle(.white)
-                    .font(.system(size: 22))
-            }
+        }
+    }
+}
+
+struct LabeledInput<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: () -> Content
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.body)
+                .padding(.leading, 12)
+            
+            content()
+                .padding(.horizontal, 16)
+                .frame(height: 48)
+                .background(Color(.secondarySystemGroupedBackground),
+                            in: .rect(cornerRadius: 16))
         }
     }
 }
