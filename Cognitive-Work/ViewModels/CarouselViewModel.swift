@@ -172,6 +172,7 @@ class CarouselViewModel {
     /// Rebuilds every index and every derived collection, in dependency order.
     private func rebuildDerivedState() {
         rebuildIndexes()
+        rebuildLoadByDay()
         rebuildVisibleChores()
         rebuildUnassignedItems()
         rebuildDashboard()
@@ -743,6 +744,17 @@ class CarouselViewModel {
         let choreType: ChoreType
         /// The date to show next to the chore, when there is one.
         let displayDate: Date?
+        
+        /// 领取前需要先让用户选日期：一次性项目且没有任何日期。
+        var needsDateSelection: Bool {
+            if case .oneOff = choreType, displayDate == nil { return true }
+            return false
+        }
+        
+        var isOneOffFresh: Bool {
+            if case .oneOff = choreType { return true }
+            return false
+        }
     }
     
     /// Recomputes ``unassignedItems``.
@@ -830,6 +842,190 @@ class CarouselViewModel {
         }
     }
     
+    // MARK: Picking an unassigned chore that has no date
+    
+    var itemAwaitingDate: UnassignedItem?
+    
+    /// 确认页里的一格：可能对应一个已存在的 assignment，也可能是全新要创建的。
+    struct WeeklyPickSlot: Identifiable {
+        let id: UUID = UUID()
+        /// nil = 用户还没选。
+        var date: Date?
+        /// 已存在的 assignment（比如点空位领取、或 weekly 另一周本来就有）。nil = 需要新建。
+        var existingAssignment: RecurrentAssignmentModel?
+        /// 日期能不能改。已存在且是"本周"那种通常锁定。
+        var isDateEditable: Bool
+        /// 是否勾选要领取。
+        var included: Bool = true
+    }
+    
+    /// 同一个 weekly chore 里，另一周还开着（没人、没完成）的 assignment。
+    func openSiblingWeeklyAssignment(for chore: ChoreModel, excluding: RecurrentAssignmentModel?) -> RecurrentAssignmentModel? {
+        guard chore.frequency == .weekly else { return nil }
+        return futureAssignments(for: chore).first { candidate in
+            candidate.recordID != excluding?.recordID
+            && candidate.userReference == nil
+            && !candidate.isCompleted
+        }
+    }
+    
+    /// 可选范围；还没有排期数据时退回"今天起 15 天"。
+    var pickerWindow: Range<Date> {
+        if let selectableWindow { return selectableWindow }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let end = calendar.date(byAdding: .day, value: 15, to: today) ?? today
+        return today..<end
+    }
+    
+    /// 确认页打开时，根据 item 和频率算出一开始应该显示哪些格子。
+    func initialPickSlots(for item: UnassignedItem) -> [WeeklyPickSlot] {
+        let chore = item.chore
+        let calendar = Calendar.current
+        let window = pickerWindow
+        
+        // daily：窗口内每天一格，全部锁死、默认勾选
+        if chore.frequency == .daily {
+            var days: [Date] = []
+            var day = window.lowerBound
+            while day < window.upperBound {
+                days.append(day)
+                guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+                day = next
+            }
+            return days.map { WeeklyPickSlot(date: $0, existingAssignment: nil, isDateEditable: false) }
+        }
+        
+        // weekly + 点了已排好的空位：本周锁定，下周（如果还开着）可编辑、可取消
+        if chore.frequency == .weekly, case .recurring(let thisWeek) = item.choreType {
+            var list = [WeeklyPickSlot(date: thisWeek.day, existingAssignment: thisWeek, isDateEditable: false)]
+            if let sibling = openSiblingWeeklyAssignment(for: chore, excluding: thisWeek) {
+                list.append(WeeklyPickSlot(date: sibling.day, existingAssignment: sibling, isDateEditable: true))
+            }
+            return list
+        }
+        
+        // 其余情况（fortnightly / monthly / 一次性 / 全新的 weekly）：一格待选
+        return [WeeklyPickSlot(date: nil, existingAssignment: nil, isDateEditable: true)]
+    }
+    
+    /// 列表里点击一个项目：需要选日期的（或 weekly 的空位）弹出确认页，其余直接领取。
+    @MainActor
+    func requestPick(_ item: UnassignedItem) {
+        var isWeeklyRecurring = false
+        if item.chore.frequency == .weekly, case .recurring = item.choreType {
+            isWeeklyRecurring = true
+        }
+        
+        if item.needsDateSelection || isWeeklyRecurring {
+            dismissUnassignedList()
+            itemAwaitingDate = item
+        } else {
+            Task { await pickForMyself(item) }
+        }
+    }
+    
+    /// 确认页点"Confirmar"后调用。只有 `included && date != nil` 的格子会被保存。
+    @MainActor
+    func confirmPick(_ item: UnassignedItem, slots: [WeeklyPickSlot]) async -> Bool {
+        let included = slots.filter { $0.included && $0.date != nil }
+        guard !included.isEmpty else { return false }
+        
+        var myUser = dashboardUser
+        if myUser == nil {
+            myUser = await CloudKitManager.shared.currentHouseUser()
+            dashboardUser = myUser
+        }
+        guard let myUserID = myUser?.recordID else { return false }
+        let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
+        let chore = item.chore
+        
+        // 一次性任务：只写 dueDate
+        if chore.frequency == .none {
+            let previousDue = chore.dueDate
+            let previousCurrent = chore.currentResponsibleReference
+            let previousAll = chore.allResponsibleUsersReference
+            
+            chore.dueDate = included[0].date
+            chore.currentResponsibleReference = userRef
+            var refs = previousAll ?? []
+            if !refs.contains(where: { $0.recordID == myUserID }) { refs.append(userRef) }
+            chore.allResponsibleUsersReference = refs
+            
+            guard await CloudKitManager.shared.update(chore) else {
+                chore.dueDate = previousDue
+                chore.currentResponsibleReference = previousCurrent
+                chore.allResponsibleUsersReference = previousAll
+                return false
+            }
+            await syncSingleChoreToCalendar(chore)
+            await refreshAfterChoreUpdate()
+            return true
+        }
+        
+        // 循环任务：每个勾选的格子对应一条 assignment（已存在的更新，没有的新建）
+        var toUpdate: [RecurrentAssignmentModel] = []
+        var toCreate: [WeeklyPickSlot] = []
+        
+        for slot in included {
+            if let existing = slot.existingAssignment {
+                existing.userReference = userRef
+                if slot.isDateEditable, let date = slot.date {
+                    existing.day = Calendar.current.startOfDay(for: date)
+                }
+                toUpdate.append(existing)
+            } else {
+                toCreate.append(slot)
+            }
+        }
+        
+        var createdModels: [RecurrentAssignmentModel] = []
+        if !toCreate.isEmpty {
+            guard let room = await chore.room,
+                  let houseRef = room.houseReference,
+                  let choreID = chore.recordID
+            else { return false }
+            
+            let parent = CKRecord.Reference(recordID: houseRef.recordID, action: .none)
+            let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
+            
+            for slot in toCreate {
+                guard let date = slot.date else { continue }
+                let model = RecurrentAssignmentModel(day: date, user: userRef, chore: choreRef)
+                guard let saved = await CloudKitManager.shared.create(model, zoneID: houseRef.recordID.zoneID, parent: parent) else {
+                    let ids = createdModels.compactMap { $0.recordID }
+                    if !ids.isEmpty { await CloudKitManager.shared.delete(recordIDs: ids, zoneID: houseRef.recordID.zoneID) }
+                    return false
+                }
+                createdModels.append(saved)
+            }
+        }
+        
+        if !toUpdate.isEmpty {
+            await CloudKitManager.shared.batchUpdate(toUpdate)
+        }
+        
+        chore.currentResponsibleReference = userRef
+        var refs = chore.allResponsibleUsersReference ?? []
+        if !refs.contains(where: { $0.recordID == myUserID }) { refs.append(userRef) }
+        chore.allResponsibleUsersReference = refs
+        
+        let newRefs = createdModels.compactMap { $0.recordID.map { CKRecord.Reference(recordID: $0, action: .none) } }
+        if !newRefs.isEmpty {
+            chore.dailyAssignmentsReference = (chore.dailyAssignmentsReference ?? []) + newRefs
+        }
+        if chore.frequency == .monthly {
+            chore.shouldBeIncluded = false
+        }
+        await CloudKitManager.shared.update(chore)
+        
+        for assignment in toUpdate + createdModels {
+            await syncSingleAssignmentToCalendar(for: assignment, chore: chore)
+        }
+        
+        await refreshAfterChoreUpdate()
+        return true
+    }
     /// Whether the "unassigned chores" popup is currently visible.
     var isShowingUnassignedList: Bool = false
     
@@ -890,5 +1086,51 @@ class CarouselViewModel {
         } catch {
             print("Failed to sync single assignment: \(error.localizedDescription)")
         }
+    }
+    
+    // MARK: - Custom Calendar
+    
+    /// 每天的未完成任务数（recurring 的 assignment + 有 dueDate 的 one-off chore）
+    private(set) var loadByDay: [Date: Int] = [:]
+    
+    ///从今天到alg结束的那一天
+    var selectableWindow: Range<Date>? {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        guard let lastDay = dailyAssignments.map({ calendar.startOfDay(for: $0.day) }).max(),
+              lastDay >= today,
+              let end = calendar.date(byAdding: .day, value: 1, to: lastDay)
+        else { return nil }
+        
+        return today..<end
+    }
+    
+    private func rebuildLoadByDay() {
+        let calendar = Calendar.current
+        var result: [Date: Int] = [:]
+        
+        for assignment in dailyAssignments where !assignment.isCompleted {
+            result[calendar.startOfDay(for: assignment.day), default: 0] += 1
+        }
+        
+        // one-off chore：没有 assignment、有 dueDate、未完成
+        for chore in cardModels where !chore.isDone && (chore.dailyAssignmentsReference ?? []).isEmpty {
+            if let due = chore.dueDate {
+                result[calendar.startOfDay(for: due), default: 0] += 1
+            }
+        }
+        
+        loadByDay = result
+    }
+    
+    
+    /// 0（当天没有任务，无底色）… 1.0（窗口内最忙的一天）
+    func loadOpacity(on day: Date, in window: Range<Date>) -> Double {
+        let count = loadByDay[Calendar.current.startOfDay(for: day)] ?? 0
+        guard count > 0 else { return 0 }
+        
+        let peak = max(loadByDay.filter { window.contains($0.key) }.values.max() ?? 0, 1)
+        return 0.25 + 0.75 * Double(count) / Double(peak)   // 有任务的日子至少 0.25，看得出来
     }
 }
