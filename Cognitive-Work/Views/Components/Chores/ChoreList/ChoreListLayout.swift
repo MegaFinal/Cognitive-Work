@@ -28,6 +28,15 @@ struct ChoreListLayout: View {
     /// another closes it, and tapping any card closes it instead of opening the details.
     @State private var revealedOccurrenceID: String?
     
+    /// Whether the list is currently pulled down past its top edge by more than
+    /// ``pullDownThreshold``. Only flips when crossing the threshold, so scrolling doesn't
+    /// re-render the list every frame.
+    @State private var isPulledPastThreshold = false
+    
+    /// How far past the top (in points) the list must be pulled, on release, to switch back
+    /// to the carousel.
+    private let pullDownThreshold: CGFloat = 70
+    
     // MARK: - Spacing
     
     /// Gap between two cards of the same day.
@@ -68,7 +77,16 @@ struct ChoreListLayout: View {
             .padding(.bottom, 120)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onPullDownAtTop(action: onSwipeDown)
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            -(geometry.contentOffset.y + geometry.contentInsets.top) > pullDownThreshold
+        } action: { _, isPastThreshold in
+            isPulledPastThreshold = isPastThreshold
+        }
+        .onScrollPhaseChange { oldPhase, newPhase in
+            if oldPhase == .interacting, newPhase != .interacting, isPulledPastThreshold {
+                onSwipeDown()
+            }
+        }
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
         .overlay {
             if !viewModel.isLoading && viewModel.visibleOccurrences.isEmpty {
@@ -236,10 +254,6 @@ private struct SwipeToDeleteRow<Content: View>: View {
     /// Live horizontal translation of the drag in progress (0 when idle).
     @State private var dragTranslation: CGFloat = 0
     
-    /// Decided on a drag's first movement: `true` if it's a horizontal swipe for this row,
-    /// `false` if it's vertical (the scroll view's), `nil` before that / when idle.
-    @State private var isHorizontalDrag: Bool?
-    
     /// Whether the current drag is past the full-swipe threshold, so the haptic only fires
     /// when crossing it.
     @State private var isPastFullSwipe = false
@@ -297,7 +311,7 @@ private struct SwipeToDeleteRow<Content: View>: View {
                         .onChange(of: proxy.size.width) { _, newWidth in rowWidth = newWidth }
                 }
             }
-            .simultaneousGesture(dragGesture)
+            .gesture(swipeGesture)
     }
     
     private var deleteButton: some View {
@@ -322,49 +336,43 @@ private struct SwipeToDeleteRow<Content: View>: View {
         .scaleEffect(0.8 + 0.2 * revealProgress)
         .allowsHitTesting(isRevealed && !isDeleting)
     }
-    
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 15)
-            .onChanged { value in
+
+    private var swipeGesture: HorizontalPanGesture {
+        HorizontalPanGesture(
+            onBegan: {
                 guard !isDeleting else { return }
-                
-                if isHorizontalDrag == nil {
-                    isHorizontalDrag = abs(value.translation.width) > abs(value.translation.height)
-                    
-                    if isHorizontalDrag == true, let revealedID, revealedID != id {
-                        withAnimation(style.animation) { self.revealedID = nil }
-                    }
+                if let revealedID, revealedID != id {
+                    withAnimation(style.animation) { self.revealedID = nil }
                 }
-                guard isHorizontalDrag == true else { return }
-                
-                dragTranslation = value.translation.width
+            },
+            onChanged: { translation in
+                guard !isDeleting else { return }
+                dragTranslation = translation
                 
                 let pastFullSwipe = -offset > fullSwipeDistance
                 if pastFullSwipe != isPastFullSwipe {
                     isPastFullSwipe = pastFullSwipe
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 }
-            }
-            .onEnded { value in
-                defer {
-                    isHorizontalDrag = nil
-                    isPastFullSwipe = false
-                }
-                guard isHorizontalDrag == true, !isDeleting else { return }
+            },
+            onEnded: { translation, velocity, wasCancelled in
+                defer { isPastFullSwipe = false }
+                guard !isDeleting else { return }
                 
-                if -offset > fullSwipeDistance {
+                if !wasCancelled, -offset > fullSwipeDistance {
                     dismissAndDelete()
                     return
                 }
                 
                 let resting: CGFloat = isRevealed ? -revealDistance : 0
-                let projected = resting + value.predictedEndTranslation.width
+                let projected = resting + translation + (wasCancelled ? 0 : velocity * 0.25)
                 
                 withAnimation(style.animation) {
                     dragTranslation = 0
                     revealedID = -projected > revealDistance / 2 ? id : (isRevealed ? nil : revealedID)
                 }
             }
+        )
     }
     
     /// Slides the card off screen, then deletes it.
@@ -377,6 +385,61 @@ private struct SwipeToDeleteRow<Content: View>: View {
             dragTranslation = 0
         } completion: {
             onDelete()
+        }
+    }
+}
+
+// MARK: - Horizontal pan
+
+/// A pan that only ever *begins* for a mostly-horizontal drag.
+///
+/// A vertical drag makes this recognizer fail right away (`gestureRecognizerShouldBegin`),
+/// so the enclosing `ScrollView` always gets vertical scrolling
+private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
+    
+    /// Called once, when a horizontal drag is recognized.
+    var onBegan: () -> Void
+    
+    /// Called with the horizontal translation (points) as the drag moves.
+    var onChanged: (CGFloat) -> Void
+    
+    /// Called when the drag finishes, with the final horizontal translation
+    var onEnded: (_ translation: CGFloat, _ velocity: CGFloat, _ wasCancelled: Bool) -> Void
+    
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator()
+    }
+    
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let pan = UIPanGestureRecognizer()
+        pan.delegate = context.coordinator
+        return pan
+    }
+    
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        let translation = recognizer.translation(in: recognizer.view).x
+        
+        switch recognizer.state {
+        case .began:
+            onBegan()
+            onChanged(translation)
+        case .changed:
+            onChanged(translation)
+        case .ended:
+            onEnded(translation, recognizer.velocity(in: recognizer.view).x, false)
+        case .cancelled, .failed:
+            onEnded(translation, 0, true)
+        default:
+            break
+        }
+    }
+    
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        /// Only start for drags that move more sideways than up/down.
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+            let velocity = pan.velocity(in: pan.view)
+            return abs(velocity.x) > abs(velocity.y)
         }
     }
 }

@@ -50,7 +50,13 @@ class OnboardingViewModel {
         RoomDTO(name: "Área de Serviço", symbol: "washer", color: .purple),
         RoomDTO(name: "Cozinha", symbol: "cooktop", color: .orange),
         RoomDTO(name: "Banheiro", symbol: "toilet", color: .blue),
-        RoomDTO(name: "Outro", symbol: "plus", isAddButton: true, color: .white)
+        RoomDTO(name: "Varanda", symbol: "window.casement", color: .blue),
+        RoomDTO(name: "Escritório", symbol: "macbook.and.iphone", color: .blue),
+        RoomDTO(name: "Despensa", symbol: "cabinet", color: .blue),
+        RoomDTO(name: "Lavabo", symbol: "sink", color: .blue),
+        RoomDTO(name: "Garagem", symbol: "door.garage.open", color: .blue),
+        RoomDTO(name: "Jardim", symbol: "sprinkler.and.droplets", color: .blue),
+        RoomDTO(name: "Outro", symbol: "plus", isAddButton: true, color: .purple)
     ]
     
     var hasSelectedRooms: Bool {
@@ -237,8 +243,18 @@ class OnboardingViewModel {
         let houseReference = house.reference(action: .deleteSelf)
         let parentReference = house.reference(action: .none)
         
-        var roomModels = selectedDrafts.map { draft in
-            RoomModel(name: draft.name,symbol: draft.symbol, house: houseReference, color: draft.color)
+        // One room per instance: a type set to 2 bedrooms saves "Quarto 1" and "Quarto 2" (or
+        // whatever the user named them), all of kind "Quarto" so they get its default chores.
+        var roomModels = selectedDrafts.flatMap { draft in
+            draft.instances.indices.map { index in
+                RoomModel(
+                    name: draft.instanceName(at: index),
+                    symbol: draft.symbol,
+                    house: houseReference,
+                    color: draft.color,
+                    kind: draft.name
+                )
+            }
         }
         
         let roomToRepresentChoresToAllHome = RoomModel(
@@ -326,8 +342,13 @@ class OnboardingViewModel {
         var recordsToCreate: [CKRecord] = []
         
         for choreDTO in selectedChores {
-            guard let choreRoom = rooms.first(where: { $0.name == choreDTO.roomDTO.name }),
-                  let roomRecordID = choreRoom.recordID else {
+            // The room the chore was picked under (set on selection). Matching by name alone
+            // no longer works once a type has several rooms ("Quarto 1", "Quarto 2") — the
+            // chore's `roomDTO` only knows the type, "Quarto". Name is the fallback.
+            let choreRoom = rooms.first(where: { $0.recordID == choreDTO.roomReference?.recordID })
+                ?? rooms.first(where: { $0.name == choreDTO.roomDTO.name })
+            
+            guard let choreRoom, let roomRecordID = choreRoom.recordID else {
                 continue
             }
             

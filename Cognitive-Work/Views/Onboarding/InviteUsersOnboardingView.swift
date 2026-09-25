@@ -38,11 +38,7 @@ struct InviteUsersOnboardingView: View {
                     .font(.system(size: 28))
                     .foregroundColor(.black)
                 
-                VStack(alignment: .leading) {
-                    Text("Envie o convite para os outros moradores da sua casa se juntarem com você no app!")
-                    
-                    Text("Aceite o pedido dos moradores que estão em vermelho!")
-                }
+                Text("Envie o convite para os outros moradores da sua casa se juntarem com você no app!")
             }
             .frame(width: width * 0.84)
             .foregroundColor(.secondary)
@@ -56,7 +52,7 @@ struct InviteUsersOnboardingView: View {
             
             Spacer()
             
-            Text("Assim que todos os moradores estiverem no app, clique em continuar. ")
+            Text("Assim que todos os moradores estiverem no app, clique em continuar.")
                 .frame(width: width * 0.8)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.gray)
@@ -108,7 +104,7 @@ struct InviteUsersOnboardingView: View {
         }
         .task(id: viewModel.currentHouse?.recordID) {
             guard let house = viewModel.currentHouse else { return }
-             
+            
             resolvendoShare = true
             
             async let resolvedShare = CloudKitManager.shared.resolveShare(for: house)

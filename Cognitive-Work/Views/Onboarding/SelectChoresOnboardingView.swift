@@ -109,7 +109,7 @@ struct SelectChoresOnboardingView: View {
             isLoadingRooms = true
             guard viewModel.currentHouse != nil else { return }
             rooms = await viewModel.fetchRooms().filter {
-                DefaultRoomsOnboarding(rawValue: $0.name) != nil
+                DefaultRoomsOnboarding(rawValue: $0.kind ?? $0.name) != nil
             }
             isLoadingRooms = false
         }
@@ -165,7 +165,9 @@ private struct SelectChoreListItem: View {
                                viewModel.selectedChores.append(chore)
                            }
                            else {
-                               viewModel.selectedChores.removeAll { $0.name == chore.name }
+                               // By identity, not name: two rooms of the same type ("Quarto 1",
+                               // "Quarto 2") list chores with the same names.
+                               viewModel.selectedChores.removeAll { $0.id == chore.id }
                            }
                        }
                    } label: {
@@ -185,7 +187,7 @@ private struct SelectChoreListItem: View {
          }
          .task {
               guard defaultChores.isEmpty else { return }
-             if let defaultRoom = DefaultRoomsOnboarding(rawValue: room.name) {
+             if let defaultRoom = DefaultRoomsOnboarding(rawValue: room.kind ?? room.name) {
                  defaultChores = defaultRoom.defaultChores
              }
          }
