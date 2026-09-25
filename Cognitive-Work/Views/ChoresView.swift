@@ -23,6 +23,16 @@ struct ChoresView: View {
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
+    /// Animation for switching between carousel and list.
+    private static let layoutToggleAnimation: Animation = .snappy(duration: 0.3)
+    
+    /// Switches between carousel and list with ``layoutToggleAnimation``.
+    private func toggleLayout() {
+        withAnimation(Self.layoutToggleAnimation) {
+            carouselVM.toggleLayout()
+        }
+    }
+    
     /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
     init(carouselVM: CarouselViewModel = CarouselViewModel()) {
         self._carouselVM = State(initialValue: carouselVM)
@@ -44,7 +54,7 @@ struct ChoresView: View {
                     if carouselVM.layoutMode != .grid {
                         ChoreListLayout(
                             viewModel: carouselVM,
-                            onSwipeDown: carouselVM.toggleLayout,
+                            onSwipeDown: toggleLayout,
                             namespace: cardAnimation
                         )
                         .zIndex(1000)
@@ -75,7 +85,7 @@ struct ChoresView: View {
                         Carousel(
                             viewModel: carouselVM,
                             isBackgroundClear: true,
-                            onSwipeDown: carouselVM.toggleLayout, namespace: cardAnimation
+                            onSwipeDown: toggleLayout, namespace: cardAnimation
                         )
                         .padding(.top, 70)
                         Spacer()
@@ -176,9 +186,7 @@ struct ChoresView: View {
             
             HStack (spacing: 4) {
                 Button {
-                    withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
-                        carouselVM.toggleLayout()
-                    }
+                    toggleLayout()
                 } label: {
                     Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
                         .font(.system(size: 22))
