@@ -61,10 +61,23 @@ struct UnassignmentList: View {
                         .font(.system(size: 16))
                         .foregroundStyle(.black)
                     
-                    if let date = item.displayDate {
-                        Text(date.formatted(date: .numeric, time: .omitted))
-                            .font(.system(size: 11))
-                            .foregroundStyle(.gray)
+                    HStack(spacing: 6) {
+                        CapsuleTag(
+                            tagName: item.chore.frequency.displayName,
+                            tagColor: item.chore.frequency.color,
+                            horizontalPadding: 6,
+                            verticalPadding: 1.5
+                        )
+                        
+                        if let date = item.displayDate {
+                            Text(date.formatted(date: .numeric, time: .omitted))
+                                .font(.system(size: 11))
+                                .foregroundStyle(.gray)
+                        } else if item.needsDateSelection {
+                            Text("Escolher data")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.gray)
+                        }
                     }
                 }
                 .padding(5)

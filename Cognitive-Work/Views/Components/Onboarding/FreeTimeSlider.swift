@@ -50,7 +50,7 @@ struct FreeTimeSlider: View {
     var squareSize: CGFloat = 38
 
     /// Color applied to the squares inside the current selection.
-    var activeColor: Color = .delimiteTimeSelectedSquareComponent
+    var activeColor: Color = .choreBlue
 
     /// Color applied to the squares outside the current selection.
     var inactiveColor: Color = .delimiteTimeSquareComponent

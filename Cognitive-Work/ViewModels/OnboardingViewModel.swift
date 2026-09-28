@@ -44,13 +44,8 @@ class OnboardingViewModel {
     var currentHouse: HouseModel?
     
     /// The default set of room choices offered to the user, including the trailing "add custom room" entry
-    var availableRooms: [RoomDTO] = [
-        RoomDTO(name: "Quarto", symbol: "bed.double", color: .green),
-        RoomDTO(name: "Sala de Estar", symbol: "sofa", color: .yellow),
-        RoomDTO(name: "Área de Serviço", symbol: "washer", color: .purple),
-        RoomDTO(name: "Cozinha", symbol: "cooktop", color: .orange),
-        RoomDTO(name: "Banheiro", symbol: "toilet", color: .blue),
-        RoomDTO(name: "Outro", symbol: "plus", isAddButton: true, color: .white)
+    var availableRooms: [RoomDTO] = DefaultRoomsOnboarding.onboardingOrder.map(\.roomDTO) + [
+        RoomDTO(name: "Outro", symbol: "plus", isAddButton: true, color: .purple)
     ]
     
     var hasSelectedRooms: Bool {
@@ -237,8 +232,18 @@ class OnboardingViewModel {
         let houseReference = house.reference(action: .deleteSelf)
         let parentReference = house.reference(action: .none)
         
-        var roomModels = selectedDrafts.map { draft in
-            RoomModel(name: draft.name,symbol: draft.symbol, house: houseReference, color: draft.color)
+        // One room per instance: a type set to 2 bedrooms saves "Quarto 1" and "Quarto 2" (or
+        // whatever the user named them), all of kind "Quarto" so they get its default chores.
+        var roomModels = selectedDrafts.flatMap { draft in
+            draft.instances.indices.map { index in
+                RoomModel(
+                    name: draft.instanceName(at: index),
+                    symbol: draft.symbol,
+                    house: houseReference,
+                    color: draft.color,
+                    kind: draft.name
+                )
+            }
         }
         
         let roomToRepresentChoresToAllHome = RoomModel(
@@ -326,8 +331,13 @@ class OnboardingViewModel {
         var recordsToCreate: [CKRecord] = []
         
         for choreDTO in selectedChores {
-            guard let choreRoom = rooms.first(where: { $0.name == choreDTO.roomDTO.name }),
-                  let roomRecordID = choreRoom.recordID else {
+            // The room the chore was picked under (set on selection). Matching by name alone
+            // no longer works once a type has several rooms ("Quarto 1", "Quarto 2") — the
+            // chore's `roomDTO` only knows the type, "Quarto". Name is the fallback.
+            let choreRoom = rooms.first(where: { $0.recordID == choreDTO.roomReference?.recordID })
+                ?? rooms.first(where: { $0.name == choreDTO.roomDTO.name })
+            
+            guard let choreRoom, let roomRecordID = choreRoom.recordID else {
                 continue
             }
             
@@ -509,6 +519,7 @@ class OnboardingViewModel {
         if let savedUser {
             self.currentUser = savedUser
             self.stateMachine.user = savedUser
+            CloudKitManager.shared.clearPendingJoin(ifMatching: houseRecordID.zoneID)
             return true
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
@@ -619,6 +630,9 @@ class OnboardingViewModel {
             isCheckingAccount = false
             isLoading = false
         }
+        
+        // Leaves any house this iCloud account is still attached to without a member record
+        await CloudKitManager.shared.pruneOrphanedSharedMemberships()
         
         async let fetchedUser = CloudKitManager.shared.fetchMyUser()
         async let fetchedHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)

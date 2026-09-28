@@ -9,33 +9,43 @@ import SwiftUI
 
 /// Constrains standard logical mapping translating room properties explicitly to `SwiftUI.Color`.
 enum RoomColor: String, CaseIterable, Identifiable {
-    case white = "white"
+    case purple = "purple"
     case orange = "orange"
     case yellow = "yellow"
     case green = "green"
     case blue = "blue"
-    case purple = "purple"
     
     var id: String { self.rawValue }
-
-    /// Maps custom identifier constants safely to rendering layouts contexts.
+    
+    /// The palette color for this case (see the asset catalog's `Colors` group).
     var uiColor: Color {
         switch self {
-        case .white: return .white
+        case .purple: return .chorePurple
         case .orange: return .choreOrange
         case .yellow: return .choreYellow
         case .green: return .choreGreen
         case .blue: return .choreBlue
-        case .purple: return .chorePink
         }
     }
-
-    /// The color icons and text should use when drawn directly over ``uiColor`` (chore cards,
-    /// carousel cards, etc.), so they stay legible against it.
+    
+    /// Decodes a color stored in CloudKit, including values from palettes that no longer exist.
     ///
-    /// Every case but ``white`` is saturated enough for white content on top; a white room
-    /// needs black content instead, or its icon and labels render white-on-white and vanish.
-    var contentColor: Color {
-        self == .white ? .black : .white
+    /// Rooms saved by older builds may hold `"red"`, `"white"` or `"pink"`. Failing on those made
+    /// ``RoomModel/init(record:)`` return `nil`, which dropped the whole room — and every chore
+    /// pointing at it rendered as an unknown (gray) room. Legacy values are now mapped to the
+    /// closest current color 
+    init?(storedValue: String?) {
+        guard let storedValue else { return nil }
+        
+        if let current = RoomColor(rawValue: storedValue) {
+            self = current
+            return
+        }
+        
+        switch storedValue {
+        case "pink", "red": self = .purple
+        case "white": self = .blue
+        default: return nil
+        }
     }
 }

@@ -61,10 +61,10 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     var color: Color {
         switch self {
         case .undefined: return .gray
-        case .veryQuick: return .green
-        case .quick: return .teal
-        case .moderate: return .yellow
-        case .slow: return .orange
+        case .veryQuick: return .choreGreen
+        case .quick: return .choreBlue
+        case .moderate: return .choreYellow
+        case .slow: return .choreOrange
         case .verySlow: return .red
         }
     }

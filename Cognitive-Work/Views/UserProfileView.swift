@@ -27,7 +27,6 @@ struct UserProfileView: View {
     @State private var viewModelHardware = HardwareViewModel()
     @State private var viewModelOnboarding = OnboardingViewModel()
     
-    
     init(viewModelUser: UserProfileViewModel = UserProfileViewModel()) {
         self._viewModelUser = State(initialValue: viewModelUser)
     }
@@ -73,7 +72,7 @@ struct UserProfileView: View {
         // MARK: Task
         .task {
             async let loadUserTask: () = viewModelUser.loadUser()
-            async let loadIpTask: () = viewModelHardware.fetchIp()
+            async let loadIpTask: () = viewModelHardware.fetchHostName()
             
             _ = await (loadUserTask, loadIpTask)
         }
@@ -140,7 +139,7 @@ private struct SettingsButtonsSection: View {
     @Binding var viewModelHardware: HardwareViewModel
     @Binding var viewModelOnboarding: OnboardingViewModel
     
-    @State private var showHardwareView = false
+    @State private var hardwareSheet: HardwareSheet?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
@@ -183,27 +182,47 @@ private struct SettingsButtonsSection: View {
             .padding(.horizontal)
             
             Button {
-                showHardwareView = true
+                if viewModelHardware.isPaired {
+                    hardwareSheet = .existing
+                } else if !viewModelHardware.hostName.isEmpty {
+                    hardwareSheet = .pair
+                } else {
+                    hardwareSheet = .wifi
+                }
             } label: {
                 Text("Conectar com meu Hardware")
             }
             .padding(.horizontal)
         }
-        .sheet(isPresented: $showHardwareView) {
-            if viewModelHardware.hardwareIp != nil {
-                ExistingIPView(
-                    viewModelHardware: $viewModelHardware,
-                    profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
-                )
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-            } else {
-                WifiCredentialsView()
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
+        .sheet(item: $hardwareSheet) { sheet in
+            Group {
+                switch sheet {
+                case .existing:
+                    ExistingIPView(
+                        viewModelHardware: $viewModelHardware,
+                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+                    )
+                case .pair:
+                    NavigationStack {
+                        DevicePairView(
+                            hardwareViewModel: viewModelHardware,
+                            onClose: { hardwareSheet = nil }
+                        )
+                    }
+                case .wifi:
+                    WifiCredentialsView(viewModel: viewModelHardware)
+                }
             }
+            .presentationDetents([.medium ])
+            .presentationDragIndicator(.visible)
         }
     }
+}
+
+/// Which hardware screen the sheet shows, decided when the button is tapped.
+private enum HardwareSheet: Identifiable {
+    case existing, pair, wifi
+    var id: Self { self }
 }
 
 // MARK: - Preview

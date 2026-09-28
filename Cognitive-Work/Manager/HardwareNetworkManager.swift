@@ -17,9 +17,12 @@ import Foundation
 /// 3. Use — text and images are sent, authenticated by that hash
 @Observable
 class HardwareNetworkManager {
+    /// Fixed address of the ESP32 while it is its own access point (the library default).
+    let accessPointIP: String = "192.168.4.1"
+    
     /// The device's IP. Typed by the user while the ESP32 is still an access point
     /// (usually 192.168.4.1), then replaced by the address it gets on the home network.
-    var ip: String = ""
+    var host: String = ""
 
     private var session = URLSession.shared
     private var decoder = JSONDecoder()
@@ -39,14 +42,18 @@ class HardwareNetworkManager {
     
     private enum StorageKey {
         static let hash = "hardware.hash"
-        static let ip = "hardware.ip"
+        static let host = "hardware.host"
     }
     
     init() {
-        if let savedHash = localPersistence.string(forKey: StorageKey.hash),
-           let savedIP = localPersistence.string(forKey: StorageKey.ip) {
+        // The host is saved right after provisioning, even before pairing succeeds
+        if let savedHost = localPersistence.string(forKey: StorageKey.host) {
+            self.host = savedHost
+        }
+        
+        print("host name: \(self.host)")
+        if let savedHash = localPersistence.string(forKey: StorageKey.hash), !host.isEmpty {
             self.hash = savedHash
-            self.ip = savedIP
             self.isConnected = true
         }
     }
@@ -65,9 +72,9 @@ class HardwareNetworkManager {
     ///   ``APIErrors/unableToEncode`` if the credentials can't be turned into JSON,
     ///   ``APIErrors/invalidResponse`` if the device answers with anything other than 200,
     ///   ``APIErrors/invalidData`` if the body doesn't match ``Esp32Answer``.
-    func sendWifiCredentials(ssid: String, password: String) async throws {
+    func sendWifiCredentials(ssid: String, password: String) async throws -> String {
         let route = "/save_wifi"
-        let endpoint = base + ip + route
+        let endpoint = base + self.accessPointIP + route
         let wifi = WifiCredentials(ssid: ssid, password: password)
 
         guard let url = URL(string: endpoint) else {
@@ -91,43 +98,45 @@ class HardwareNetworkManager {
 
         // The ESP32 answers 200 before actually connecting, since connecting
         // tears down the access point and this response would never arrive
-        try validate(data: data, response: response)
+        let answer = try validate(data: data, response: response)
+        
+        // Saves the host (harvi) name
+        guard let name = answer.name else { throw APIErrors.invalidData }
+        self.host = name + ".local"
+        localPersistence.set(host, forKey: StorageKey.host)
+
+        return self.host
     }
 
     // MARK: - Pairing
 
-    /// Asks the device for its pairing hash and stores it for the authenticated routes.
+    /// Finds the device by its network name and stores its pairing hash.
     ///
-    /// The hash is a UUID the ESP32 generates once at boot. Every later request carries it,
-    /// so a reboot on the device side invalidates the pairing and this call must be repeated.
-    ///
-    /// - Parameters:
-    ///   - ipcode: The device's IP, which also becomes this service's stored address.
-    /// - Throws: ``APIErrors/invalidURL``, ``APIErrors/invalidResponse``, ``APIErrors/invalidData``.
-    func askForParingCode(ipcode: String) async throws {
-        self.ip = ipcode
-
-        let route = "/ask_code"
-        let endpoint = base + ip + route
-
-        guard let url = URL(string: endpoint) else {
+    /// Retries a few times: right after provisioning the device may still be joining the network.
+    func askForParingCode() async throws {
+        guard !host.isEmpty, let url = URL(string: base + host + "/ask_code") else {
             throw APIErrors.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.httpBody = Data() // empty: the device reads nothing from this request
+        request.httpBody = Data()
+        request.timeoutInterval = 15
 
-        let (data, response) = try await session.data(for: request)
+        for attempt in 1...6 {
+            do {
+                let (data, response) = try await session.data(for: request)
+                let answer = try validate(data: data, response: response)
 
-        // The hash travels in the "message" field of the standard answer envelope
-        let answer = try validate(data: data, response: response)
-        self.hash = answer.message
-        isConnected = true
-        
-        // Persistence
-        localPersistence.set(self.hash, forKey: StorageKey.hash)
-        localPersistence.set(self.ip, forKey: StorageKey.ip)
+                hash = answer.message
+                isConnected = true
+                localPersistence.set(hash, forKey: StorageKey.hash)
+                localPersistence.set(host, forKey: StorageKey.host)
+                return
+            } catch is URLError where attempt < 10 {
+                try await Task.sleep(for: .seconds(3))
+            }
+        }
     }
 
     // MARK: - Sending content
@@ -144,7 +153,7 @@ class HardwareNetworkManager {
     ///   ``APIErrors/invalidResponse``, ``APIErrors/invalidData``.
     func printMessageOnDevice(messageOne: String, messageTwo: String) async throws {
         let route = "/send_text"
-        let endpoint = self.base + self.ip + route
+        let endpoint = self.base + self.host + route
 
         // The hash is part of the payload, alongside the two lines
         let message = MessageToSend(hash: hash, messageOne: messageOne, messageTwo: messageTwo)
@@ -184,7 +193,7 @@ class HardwareNetworkManager {
     func sendImageToDevice(imageData: Data) async throws {
         guard imageData.count == 800 * 480 / 4 else { throw APIErrors.invalidData }
 
-        let endpoint = self.base + self.ip + "/send_image"
+        let endpoint = self.base + self.host + "/send_image"
         guard let url = URL(string: endpoint) else { throw APIErrors.invalidURL }
 
         var request = URLRequest(url: url)
@@ -204,7 +213,7 @@ class HardwareNetworkManager {
     /// The ESP32 answers before restarting and comes back in access point mode,
     /// so provisioning and pairing must be done again.
     func resetDevice() async throws {
-        let endpoint = base + ip + "/reset"
+        let endpoint = base + host + "/reset"
         guard let url = URL(string: endpoint) else { throw APIErrors.invalidURL }
 
         var request = URLRequest(url: url)
@@ -222,10 +231,10 @@ class HardwareNetworkManager {
     /// by its button and can no longer be reached.
     func forgetDevice() {
         hash = ""
-        ip = ""
+        host = ""
         isConnected = false
         localPersistence.removeObject(forKey: StorageKey.hash)
-        localPersistence.removeObject(forKey: StorageKey.ip)
+        localPersistence.removeObject(forKey: StorageKey.host)
     }
 
     // MARK: - Response handling

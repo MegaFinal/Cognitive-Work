@@ -19,7 +19,7 @@ struct ChoreCard: View {
             title
             
             HStack {
-                Image(systemName: room?.symbol ?? "toilet")
+                Image(systemName: room?.symbol ?? chore.symbolName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.2)
@@ -28,11 +28,9 @@ struct ChoreCard: View {
                 ChorePriority(chore: chore, user: user)
             }
         }
-        // A white-colored room needs black content on top of it (see
-        // `RoomColor.contentColor`), otherwise the icon and title render white-on-white.
-        .foregroundColor(room?.color.contentColor ?? .white)
+        .foregroundColor(.white)
         .frame(width: width * 0.85, height: height * 0.35)
-        .background(room?.color.uiColor ?? .teal)
+        .background(room?.color.uiColor ?? .gray)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .black.opacity(0.32), radius: 5.8, x: 4, y: 6)
     }

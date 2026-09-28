@@ -21,10 +21,10 @@ enum Recurrence: String, CaseIterable, Hashable {
         switch self {
         case .undefined: return .gray
         case .none: return .black
-        case .daily: return .green
-        case .weekly: return .yellow
-        case .fortnightly: return .orange
-        case .monthly: return .indigo
+        case .daily: return .choreGreen
+        case .weekly: return .choreYellow
+        case .fortnightly: return .choreOrange
+        case .monthly: return .chorePurple
         }
     }
     
@@ -42,6 +42,16 @@ enum Recurrence: String, CaseIterable, Hashable {
             return 8
         case .monthly:
             return 13
+        }
+    }
+    
+    var displayName: String {
+        switch self {
+        case .none: return "Única"
+        case .daily: return "Diária"
+        case .weekly: return "Semanal"
+        case .fortnightly: return "Quinzenal"
+        case .monthly: return "Mensal"
         }
     }
 }

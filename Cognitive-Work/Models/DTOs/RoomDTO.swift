@@ -57,4 +57,45 @@ struct RoomDTO: Identifiable {
     ///
     /// Held per room so expanding one section leaves the others untouched.
     var isExpanded: Bool = false
+    
+    /// One entry per room of this type in the house (e.g. two bedrooms), edited with a long
+    /// press on the room's card. Never empty: every type has at least one room.
+    var instances: [RoomInstanceDTO] = [RoomInstanceDTO()]
+    
+    // MARK: - Quantity
+    
+    /// How many rooms of this type the house has.
+    var quantity: Int { instances.count }
+    
+    /// The name the room at `index` is saved with: the name the user typed for it, if any,
+    /// otherwise ``name`` — numbered ("Quarto 1", "Quarto 2") once there's more than one.
+    func instanceName(at index: Int) -> String {
+        if instances.indices.contains(index), let customName = instances[index].customName {
+            return customName
+        }
+        return quantity == 1 ? name : "\(name) \(index + 1)"
+    }
+    
+    /// Adds rooms to, or removes them from, the end of ``instances`` until there are exactly
+    /// `newQuantity` — never fewer than one.
+    mutating func setQuantity(_ newQuantity: Int) {
+        let target = max(1, newQuantity)
+        
+        if target > instances.count {
+            instances += (instances.count..<target).map { _ in RoomInstanceDTO() }
+        } else if target < instances.count {
+            instances.removeLast(instances.count - target)
+        }
+    }
+}
+
+/// One room of a ``RoomDTO`` type — e.g. the second bedroom.
+struct RoomInstanceDTO: Identifiable, Equatable {
+    
+    /// Stable identity used by `ForEach` and focus.
+    let id = UUID()
+    
+    /// A name the user typed for this room, or `nil` to use the default one
+    /// (see ``RoomDTO/instanceName(at:)``).
+    var customName: String?
 }

@@ -82,7 +82,20 @@ class CarouselViewModel {
     var activeIndex: Int = 0
     
     // MARK: - Focus & Flip State
+    
     private var focusedIndex: Int? = nil
+    /// Stores the recordID of the focused card, to keep it visible regardless of filters
+    private var focusedChoreRecordID: CKRecord.ID? = nil
+    
+    /// Stores a copy of the focused chore to keep it visible even if not present in cardModels due to filtering.
+    private var focusedChoreModel: ChoreModel? = nil
+    
+    /// Stores the assignment of the focused occurrence so it remains visible
+    /// even if it no longer matches the active user filter.
+    private var focusedAssignmentRecordID: CKRecord.ID? = nil
+
+    private var focusedAssignmentModel: RecurrentAssignmentModel? = nil
+    
     /// Tracks which cards are currently in the flipped state (180 degrees).
     private var flippedIndices: Set<Int> = []
     /// Tracks which cards should render their back face based on animation timing.
@@ -127,6 +140,9 @@ class CarouselViewModel {
     ///
     /// Recurring chores contribute one row per future assignment (capped by
     /// `occurrencesPerChore`); one-off chores contribute a single row.
+    ///
+    /// - Note: This method has been reverted to not enforce forced occurrences from
+    ///   focusedChoreAssignments, only from focusedChoreModel and focusedChoreRecordID.
     private func rebuildVisibleOccurrences() {
         let selectedUserIDs = Set(filterChoices.users.compactMap { $0.recordID })
         let today = Calendar.current.startOfDay(for: Date())
@@ -172,7 +188,48 @@ class CarouselViewModel {
             }
         }
         
+        // Revert forced showing of focused chore occurrences to previous behavior:
+        // Keep focused chore occurrences visible even if filtered out by adding one occurrence
+        // for the focused chore from focusedChoreModel (no assignments forced).
+        if let focusedAssignment = focusedAssignmentModel,
+           
+            let focusedAssignmentID = focusedAssignmentRecordID,
+            !occurrences.contains(where: {
+                $0.assignment?.recordID == focusedAssignmentID
+            }),
+           
+            let focusedChore = focusedChoreModel{
+            occurrences.append(
+                ChoreOccurrence(
+                    chore: focusedChore,
+                    assignment: focusedAssignment
+                )
+            )
+        }
+        
         visibleOccurrences = occurrences.sorted(by: self.areInIncreasingOrder)
+        
+        // Only the list layout indexes into `visibleOccurrences`. The grid focuses by index into
+        // `visibleChores` (already restored by `rebuildVisibleChores()`), and a chore can have
+        // up to `occurrencesPerChore` occurrences, so the two indexes differ: overwriting it here
+        // moved the focus to the wrong card, or dropped it, on every refresh in the grid.
+        guard layoutMode == .list else { return }
+
+        if let focusedAssignmentID = focusedAssignmentRecordID,
+            let index = visibleOccurrences.firstIndex(where: {
+                $0.assignment?.recordID == focusedAssignmentID
+            }) {
+            focusedIndex = index
+        }
+        else if let focusedChoreID = focusedChoreRecordID,
+            let index = visibleOccurrences.firstIndex(where: {
+                $0.chore.recordID == focusedChoreID
+            }) {
+            focusedIndex = index
+        }
+        else {
+            focusedIndex = nil
+        }
     }
     
     // MARK: - Sorting
@@ -233,6 +290,7 @@ class CarouselViewModel {
     /// Rebuilds every index and every derived collection, in dependency order.
     private func rebuildDerivedState() {
         rebuildIndexes()
+        rebuildLoadByDay()
         rebuildVisibleChores()
         rebuildUnassignedItems()
         rebuildDashboard()
@@ -323,15 +381,31 @@ class CarouselViewModel {
     
     /// Rebuilds and caches the list of visible chores based on active filters and sorting rules.
     ///
-    /// This method filters `cardModels` (either applying custom `ChoreFilters` or filtering out completed chores)
-    /// and sorts the resulting array by their next scheduled date and priority tag. The outcome is stored in `visibleChores`
+    /// Force add focused card to visibleChores even if it does not match current filters, to keep details open until user closes.
     private func rebuildVisibleChores() {
+        // Whether the focused card is showing its details, captured before the lists change
+        // and the card possibly moves to another index. See `reconcileFlipState(...)`.
+        let previousFocusedIndex = focusedIndex
+        let wasFlipped = previousFocusedIndex.map { flippedIndices.contains($0) } ?? false
+        let wasShowingBack = previousFocusedIndex.map { backVisibleIndices.contains($0) } ?? false
         
+        // Use focusedChoreRecordID to ensure focused chore remains visible regardless of filters
         let base = layoutMode == .grid
         ? cardModels.filter { isVisibleInGrid($0) }
         : (isFilterOn ? applyFilters(to: cardModels) : cardModels)
         
-        visibleChores = base.sorted { a, b in
+        // If there is a focused chore recordID, ensure its card appears in the visibleChores,
+        // even if not matching filters.
+        var result = base
+        if let recID = focusedChoreRecordID, !base.contains(where: { $0.recordID == recID }) {
+            if let forcedChore = cardModels.first(where: { $0.recordID == recID }) {
+                result.append(forcedChore)
+            } else if let tempChore = focusedChoreModel, tempChore.recordID == recID {
+                result.append(tempChore) // Use local copy if not found in cardModels
+            }
+        }
+        
+        visibleChores = result.sorted { a, b in
             let dateA = nextDate(for: a)
             let dateB = nextDate(for: b)
             
@@ -345,7 +419,40 @@ class CarouselViewModel {
             return a.priorityTag.intValue > b.priorityTag.intValue
         }
         
+        // Restore focus index to the currently focused chore's index if still present; otherwise clear focus.
+        if let recID = focusedChoreRecordID, let idx = visibleChores.firstIndex(where: { $0.recordID == recID }) {
+            focusedIndex = idx
+        } else {
+            focusedIndex = nil
+            focusedChoreRecordID = nil
+            focusedChoreModel = nil
+        }
+        
         rebuildVisibleOccurrences()
+        
+        reconcileFlipState(wasFlipped: wasFlipped, wasShowingBack: wasShowingBack)
+    }
+    
+    /// Keeps the details face tied to the focused card.
+    ///
+    /// ## Bug fix: details visual left behind after completing a chore
+    /// `flippedIndices`/`backVisibleIndices` are keyed by *index*, but a rebuild — which
+    /// completing a chore triggers — can move the focused card to another index or drop the
+    /// focus altogether. The flip state stayed on the old index, so the carousel ended up
+    /// with a card still drawn as the details card (`CarouselCardFrame` shows it whenever the
+    /// index is flipped) but not focused, which must never happen.
+    ///
+    /// The details face now follows the focus: it moves to the card's new index, and is
+    /// dropped entirely when nothing is focused any more.
+    private func reconcileFlipState(wasFlipped: Bool, wasShowingBack: Bool) {
+        guard let focusedIndex else {
+            flippedIndices.removeAll()
+            backVisibleIndices.removeAll()
+            return
+        }
+        
+        flippedIndices = wasFlipped ? [focusedIndex] : []
+        backVisibleIndices = wasShowingBack ? [focusedIndex] : []
     }
     
     var hasFocusedCard: Bool {
@@ -391,6 +498,8 @@ class CarouselViewModel {
             self.hasFetchedInitially = true
             self.isLoading = false
         }
+        
+        await RoomModel.migrateStoredColorsIfNeeded(rooms)
     }
     
     /// Refreshes the chores and recurrent assignments after a chore or its responsible user has been modified.
@@ -710,6 +819,15 @@ class CarouselViewModel {
     func focusImmediately(_ index: Int) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
             focusedIndex = index
+            // Store the focused chore's recordID to keep it visible regardless of filtering
+            if visibleChores.indices.contains(index) {
+                let chore = visibleChores[index]
+                focusedChoreRecordID = chore.recordID
+                focusedChoreModel = chore // Keep a local copy for visibility
+            } else {
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
+            }
         }
     }
     
@@ -719,6 +837,8 @@ class CarouselViewModel {
         if focusedIndex != nil {
             withAnimation(.easeOut(duration: 0.15)) {
                 focusedIndex = nil
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
             }
         }
         
@@ -732,6 +852,14 @@ class CarouselViewModel {
             guard let self, self.activeIndex == index else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                 self.focusedIndex = index
+                if self.visibleChores.indices.contains(index) {
+                    let chore = self.visibleChores[index]
+                    self.focusedChoreRecordID = chore.recordID
+                    self.focusedChoreModel = chore // Keep a local copy
+                } else {
+                    self.focusedChoreRecordID = nil
+                    self.focusedChoreModel = nil
+                }
             }
         }
     }
@@ -748,6 +876,15 @@ class CarouselViewModel {
             draggingItem = Double(index)
             activeIndex = index
             focusedIndex = index
+            // Store focused chore recordID for visibility during filters
+            if visibleChores.indices.contains(index) {
+                let chore = visibleChores[index]
+                focusedChoreRecordID = chore.recordID
+                focusedChoreModel = chore // Keep a local copy
+            } else {
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
+            }
         }
         
         flip(index)
@@ -760,6 +897,10 @@ class CarouselViewModel {
             }
             withAnimation(.easeOut(duration: 0.2)) {
                 focusedIndex = nil
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
+                focusedAssignmentRecordID = nil
+                focusedAssignmentModel = nil
             }
         }
     }
@@ -767,9 +908,25 @@ class CarouselViewModel {
     func focusDetailsImmediately(_ index: Int) {
         flippedIndices.insert(index)
         backVisibleIndices.insert(index)
-        
+
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             focusedIndex = index
+
+            guard visibleOccurrences.indices.contains(index) else {
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
+                focusedAssignmentRecordID = nil
+                focusedAssignmentModel = nil
+                return
+            }
+
+            let occurrence = visibleOccurrences[index]
+
+            focusedChoreRecordID = occurrence.chore.recordID
+            focusedChoreModel = occurrence.chore
+
+            focusedAssignmentRecordID = occurrence.assignment?.recordID
+            focusedAssignmentModel = occurrence.assignment
         }
     }
     
@@ -781,6 +938,10 @@ class CarouselViewModel {
         
         withAnimation(.easeOut(duration: 0.2)) {
             focusedIndex = nil
+            focusedChoreRecordID = nil
+            focusedChoreModel = nil
+            focusedAssignmentRecordID = nil
+            focusedAssignmentModel = nil
         }
     }
     
@@ -806,7 +967,10 @@ class CarouselViewModel {
         DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration / 2) { [weak self] in
             guard let self else { return }
             if isFlipping {
-                self.backVisibleIndices.insert(index)
+                // Skipped when the card lost its flip meanwhile (a refresh moved or cleared it).
+                if self.flippedIndices.contains(index) {
+                    self.backVisibleIndices.insert(index)
+                }
             } else {
                 self.backVisibleIndices.remove(index)
             }
@@ -905,6 +1069,17 @@ class CarouselViewModel {
         let choreType: ChoreType
         /// The date to show next to the chore, when there is one.
         let displayDate: Date?
+        
+        /// 领取前需要先让用户选日期：一次性项目且没有任何日期。
+        var needsDateSelection: Bool {
+            if case .oneOff = choreType, displayDate == nil { return true }
+            return false
+        }
+        
+        var isOneOffFresh: Bool {
+            if case .oneOff = choreType { return true }
+            return false
+        }
     }
     
     /// Recomputes ``unassignedItems``.
@@ -992,21 +1167,6 @@ class CarouselViewModel {
         }
     }
     
-    /// Whether the "unassigned chores" popup is currently visible.
-    var isShowingUnassignedList: Bool = false
-    
-    func toggleUnassignedList() {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            isShowingUnassignedList.toggle()
-        }
-    }
-    
-    func dismissUnassignedList() {
-        withAnimation(.easeOut(duration: 0.2)) {
-            isShowingUnassignedList = false
-        }
-    }
-    
     // MARK: - Calendar Synchronization
     
     /// Synchronizes a single, non-recurrent chore to the system calendar.
@@ -1053,4 +1213,267 @@ class CarouselViewModel {
             print("Failed to sync single assignment: \(error.localizedDescription)")
         }
     }
+    
+    
+    // MARK: Picking an unassigned chore that has no date
+    
+    var itemAwaitingDate: UnassignedItem?
+    
+    /// A single slot in the confirmation page: may correspond to an existing assignment or a brand new one to be created.
+    struct WeeklyPickSlot: Identifiable {
+        let id: UUID = UUID()
+        /// nil = The user has not selected yet.
+        var date: Date?
+        /// An existing assignment (e.g., claiming an empty slot, or another week in a weekly chore). nil = Needs to be created.
+        var existingAssignment: RecurrentAssignmentModel?
+        /// Whether the date can be edited. Existing slots and "this week" slots are usually locked.
+        var isDateEditable: Bool
+        /// Whether this slot is checked/included for claiming.
+        var included: Bool = true
+    }
+    
+    /// Another assignment within the same weekly chore that is still open (unassigned, incomplete).
+    func openSiblingWeeklyAssignment(for chore: ChoreModel, excluding: RecurrentAssignmentModel?) -> RecurrentAssignmentModel? {
+        guard chore.frequency == .weekly else { return nil }
+        return futureAssignments(for: chore).first { candidate in
+            candidate.recordID != excluding?.recordID
+            && candidate.userReference == nil
+            && !candidate.isCompleted
+        }
+    }
+    
+    /// The selectable date range; falls back to "15 days starting today" if no scheduling data is available.
+    var pickerWindow: Range<Date> {
+        if let selectableWindow { return selectableWindow }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let end = calendar.date(byAdding: .day, value: 15, to: today) ?? today
+        return today..<end
+    }
+    
+    /// Calculates which slots should initially be displayed based on the item and its frequency when the confirmation page opens.
+    func initialPickSlots(for item: UnassignedItem) -> [WeeklyPickSlot] {
+        let chore = item.chore
+        let calendar = Calendar.current
+        let window = pickerWindow
+         
+        // Daily: One slot per day within the window, all locked, checked by default
+        if chore.frequency == .daily {
+            var days: [Date] = []
+            var day = window.lowerBound
+            while day < window.upperBound {
+                days.append(day)
+                guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+                day = next
+            }
+            return days.map { WeeklyPickSlot(date: $0, existingAssignment: nil, isDateEditable: false) }
+        }
+         
+        if case .recurring(let assignment) = item.choreType {
+            switch chore.frequency {
+            case .weekly, .fortnightly, .monthly:
+                return [WeeklyPickSlot(date: assignment.day, existingAssignment: assignment, isDateEditable: true)]
+            default: break
+            }
+        }
+         
+        return [WeeklyPickSlot(date: nil, existingAssignment: nil, isDateEditable: true)]
+    }
+    
+    /// Tapping an item in the list: items requiring a date selection present a confirmation page.
+    @MainActor
+    func requestPick(_ item: UnassignedItem) {
+        var needsSheet = item.needsDateSelection
+
+        if case .recurring = item.choreType {
+            switch item.chore.frequency {
+            case .weekly, .fortnightly, .monthly: needsSheet = true
+            default: break
+            }
+        }
+
+        if needsSheet {
+            dismissUnassignedList()
+            itemAwaitingDate = item
+        } else {
+            Task { await pickForMyself(item) }
+        }
+    }
+    
+    /// Called after tapping "Confirm" on the confirmation page. Only slots where `included && date != nil` will be saved.
+    @MainActor
+    func confirmPick(_ item: UnassignedItem, slots: [WeeklyPickSlot]) async -> Bool {
+        let included = slots.filter { $0.included && $0.date != nil }
+        guard !included.isEmpty else { return false }
+        
+        var myUser = dashboardUser
+        if myUser == nil {
+            myUser = await CloudKitManager.shared.currentHouseUser()
+            dashboardUser = myUser
+        }
+        guard let myUserID = myUser?.recordID else { return false }
+        let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
+        let chore = item.chore
+        
+        // One-off chore: Update due date only
+        if chore.frequency == .none {
+            let previousDue = chore.dueDate
+            let previousCurrent = chore.currentResponsibleReference
+            let previousAll = chore.allResponsibleUsersReference
+            
+            chore.dueDate = included[0].date
+            chore.currentResponsibleReference = userRef
+            var refs = previousAll ?? []
+            if !refs.contains(where: { $0.recordID == myUserID }) { refs.append(userRef) }
+            chore.allResponsibleUsersReference = refs
+            
+            guard await CloudKitManager.shared.update(chore) else {
+                chore.dueDate = previousDue
+                chore.currentResponsibleReference = previousCurrent
+                chore.allResponsibleUsersReference = previousAll
+                return false
+            }
+            await syncSingleChoreToCalendar(chore)
+            await refreshAfterChoreUpdate()
+            return true
+        }
+        
+        // Recurring chore: Each checked slot corresponds to an assignment (update existing ones, create new ones)
+        var toUpdate: [RecurrentAssignmentModel] = []
+        var toCreate: [WeeklyPickSlot] = []
+        
+        for slot in included {
+            if let existing = slot.existingAssignment {
+                existing.userReference = userRef
+                if slot.isDateEditable, let date = slot.date {
+                    existing.day = Calendar.current.startOfDay(for: date)
+                }
+                toUpdate.append(existing)
+            } else {
+                toCreate.append(slot)
+            }
+        }
+        
+        var createdModels: [RecurrentAssignmentModel] = []
+        if !toCreate.isEmpty {
+            guard let room = chore.room,
+                  let houseRef = room.houseReference,
+                  let choreID = chore.recordID
+            else { return false }
+            
+            let parent = CKRecord.Reference(recordID: houseRef.recordID, action: .none)
+            let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
+            
+            for slot in toCreate {
+                guard let date = slot.date else { continue }
+                let model = RecurrentAssignmentModel(day: date, user: userRef, chore: choreRef)
+                guard let saved = await CloudKitManager.shared.create(model, zoneID: houseRef.recordID.zoneID, parent: parent) else {
+                    let ids = createdModels.compactMap { $0.recordID }
+                    if !ids.isEmpty { await CloudKitManager.shared.delete(recordIDs: ids, zoneID: houseRef.recordID.zoneID) }
+                    return false
+                }
+                createdModels.append(saved)
+            }
+        }
+        
+        if !toUpdate.isEmpty {
+            await CloudKitManager.shared.batchUpdate(toUpdate)
+        }
+        
+        chore.currentResponsibleReference = userRef
+        var refs = chore.allResponsibleUsersReference ?? []
+        if !refs.contains(where: { $0.recordID == myUserID }) { refs.append(userRef) }
+        chore.allResponsibleUsersReference = refs
+        
+        let newRefs = createdModels.compactMap { $0.recordID.map { CKRecord.Reference(recordID: $0, action: .none) } }
+        if !newRefs.isEmpty {
+            chore.dailyAssignmentsReference = (chore.dailyAssignmentsReference ?? []) + newRefs
+        }
+        if chore.frequency == .monthly, !createdModels.isEmpty {
+            chore.shouldBeIncluded = false
+        }
+        await CloudKitManager.shared.update(chore)
+        
+        for assignment in toUpdate + createdModels {
+            await syncSingleAssignmentToCalendar(for: assignment, chore: chore)
+        }
+        
+        await refreshAfterChoreUpdate()
+        return true
+    }
+    
+    /// Whether the "unassigned chores" popup is currently visible.
+    var isShowingUnassignedList: Bool = false
+    
+    func toggleUnassignedList() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            isShowingUnassignedList.toggle()
+        }
+    }
+    
+    func dismissUnassignedList() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            isShowingUnassignedList = false
+        }
+    }
+    
+    // MARK: - Custom Calendar
+    
+    /// Number of uncompleted tasks per day (recurring assignments + one-off chores with a dueDate)
+    private(set) var loadByDay: [Date: Int] = [:]
+        
+    /// From today until the last day of the algorithm window
+    var selectableWindow: Range<Date>? {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        guard let lastDay = dailyAssignments.map({ calendar.startOfDay(for: $0.day) }).max(),
+              lastDay >= today,
+              let end = calendar.date(byAdding: .day, value: 1, to: lastDay)
+        else { return nil }
+        
+        return today..<end
+    }
+    
+    /// The two weeks the engine last generated (starts on the cycle's first day, NOT today).
+    /// Derived from the last assignment day: engine window = 15 days, so first day = last day - 14.
+    /// Falls back to nil when there is no schedule.
+    var cycleWindow: Range<Date>? {
+        let calendar = Calendar.current
+        guard let cycleEnd = currentCycleEnd else { return nil }
+        let lastDay = calendar.startOfDay(for: cycleEnd)
+        guard let start = calendar.date(byAdding: .day, value: -14, to: lastDay),
+              let end = calendar.date(byAdding: .day, value: 1, to: lastDay)
+        else { return nil }
+        return start..<end
+    }
+    
+    private func rebuildLoadByDay() {
+        let calendar = Calendar.current
+        var result: [Date: Int] = [:]
+        
+        for assignment in dailyAssignments where !assignment.isCompleted {
+            result[calendar.startOfDay(for: assignment.day), default: 0] += 1
+        }
+        
+        // One-off chores: no assignment, has a dueDate, and uncompleted
+        for chore in cardModels where !chore.isDone && (chore.dailyAssignmentsReference ?? []).isEmpty {
+            if let due = chore.dueDate {
+                result[calendar.startOfDay(for: due), default: 0] += 1
+            }
+        }
+        
+        loadByDay = result
+    }
+    
+    
+    /// 0 (no tasks on that day, no background) ... 1.0 (the busiest day within the window)
+    func loadOpacity(on day: Date, in window: Range<Date>) -> Double {
+        let count = loadByDay[Calendar.current.startOfDay(for: day)] ?? 0
+        guard count > 0 else { return 0 }
+        
+        let peak = max(loadByDay.filter { window.contains($0.key) }.values.max() ?? 0, 1)
+        return 0.25 + 0.75 * Double(count) / Double(peak)   // Days with tasks have at least 0.25 opacity
+    }
 }
+

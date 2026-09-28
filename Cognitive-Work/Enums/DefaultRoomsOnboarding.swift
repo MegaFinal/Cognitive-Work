@@ -27,6 +27,11 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
     case kitchen = "Cozinha"
     case bathroom = "Banheiro"
     case homeOffice = "Escritório"
+    case balcony = "Varanda"
+    case pantry = "Despensa"
+    case powderRoom = "Lavabo"
+    case garage = "Garagem"
+    case garden = "Jardim"
 
     // MARK: - Identity
 
@@ -34,45 +39,54 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     
     // MARK: - Room
-    /// Room representation used by onboarding chore previews.
-    var roomDTO: RoomDTO {
+    
+    /// The order rooms are offered in on the room selection screen.
+    static let onboardingOrder: [DefaultRoomsOnboarding] = [
+        .bedroom, .livingRoom, .kitchen, .laundryRoom, .bathroom, .balcony,
+        .homeOffice, .pantry, .powderRoom, .garage, .garden
+    ]
+    
+    /// The room type a saved room was created from, matched by its `kind` (e.g. `"Quarto"` for
+    /// "Quarto 2") or, for rooms saved before `kind` existed, by its name.
+    init?(kind: String?, name: String) {
+        self.init(rawValue: kind ?? name)
+    }
+    
+    /// SF Symbol shown for this room
+    var symbol: String {
         switch self {
-        case .bedroom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "bed.double.fill",
-                color: .purple )
-            
-        case .livingRoom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "sofa.fill",
-                color: .orange )
-            
-        case .laundryRoom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "washer",
-                color: .blue )
-            
-        case .kitchen:
-            RoomDTO(
-                name: rawValue,
-                symbol: "cooktop",
-                color: .green )
-            
-        case .bathroom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "toilet.fill",
-                color: .white )
-            
-        case .homeOffice:
-            RoomDTO(
-                name: rawValue,
-                symbol: "desktopcomputer",
-                color: .yellow )
+        case .bedroom: "bed.double"
+        case .livingRoom: "sofa"
+        case .laundryRoom: "washer"
+        case .kitchen: "cooktop"
+        case .bathroom: "toilet"
+        case .homeOffice: "macbook.and.iphone"
+        case .balcony: "window.casement"
+        case .pantry: "cabinet"
+        case .powderRoom: "sink"
+        case .garage: "door.garage.open"
+        case .garden: "sprinkler.and.droplets"
         }
+    }
+    
+    /// Palette color for this room (see ``RoomColor``).
+    var color: RoomColor {
+        switch self {
+        case .bathroom, .powderRoom, .laundryRoom: .blue
+        case .livingRoom, .garage: .orange
+        case .kitchen, .pantry: .yellow
+        case .bedroom, .homeOffice: .purple
+        case .balcony, .garden: .green
+        }
+    }
+    
+    /// Room representation used by the selection screen and the onboarding chore previews.
+    ///
+    /// The single source of truth for a default room's name, symbol and color: the selection
+    /// screen (``OnboardingViewModel/availableRooms``) and the saved ``RoomModel`` both come
+    /// from here, so they can't drift apart again.
+    var roomDTO: RoomDTO {
+        RoomDTO(name: rawValue, symbol: symbol, color: color)
     }
 
     // MARK: - Default Chores
@@ -98,6 +112,16 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
             DefaultRoomsOnboarding.bathroomChores
         case .homeOffice:
             DefaultRoomsOnboarding.homeOfficeChores
+        case .balcony:
+            DefaultRoomsOnboarding.balconyChores
+        case .pantry:
+            DefaultRoomsOnboarding.pantryChores
+        case .powderRoom:
+            DefaultRoomsOnboarding.powderRoomChores
+        case .garage:
+            DefaultRoomsOnboarding.garageChores
+        case .garden:
+            DefaultRoomsOnboarding.gardenChores
         }
     }
 
@@ -190,7 +214,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Limpar eletrônicos",
+                name: "Limpar TV e rack",
                 description: "Passar pano de microfibra na tela, no rack e nos controles.",
                 frequency: .monthly,
                 duration: 10,
@@ -418,6 +442,252 @@ private extension DefaultRoomsOnboarding {
                 description: "Arquivar o que é importante e descartar os papéis desnecessários.",
                 frequency: .monthly,
                 duration: 30,
+                priorityTag: .low,
+                room: room
+            )
+        ]
+    }
+
+    static var balconyChores: [ChoreDTO] {
+        let room = DefaultRoomsOnboarding.balcony.roomDTO
+        return [
+            ChoreDTO(
+                name: "Regar plantas",
+                description: "Regar os vasos e tirar as folhas secas.",
+                frequency: .daily,
+                duration: 5,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Varrer varanda",
+                description: "Varrer o piso e recolher folhas e poeira dos cantos.",
+                frequency: .weekly,
+                duration: 10,
+                priorityTag: .medium,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Limpar móveis",
+                description: "Passar pano nas cadeiras, na mesa e sacudir as almofadas.",
+                frequency: .weekly,
+                duration: 10,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Limpar vidros",
+                description: "Limpar as portas de vidro e o guarda-corpo.",
+                frequency: .monthly,
+                duration: 30,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Lavar piso",
+                description: "Lavar o piso com água e sabão e puxar a água para o ralo.",
+                frequency: .monthly,
+                duration: 25,
+                priorityTag: .low,
+                room: room
+            )
+        ]
+    }
+
+    static var pantryChores: [ChoreDTO] {
+        let room = DefaultRoomsOnboarding.pantry.roomDTO
+        return [
+            ChoreDTO(
+                name: "Checar validades",
+                description: "Conferir as datas de validade e separar o que vence logo.",
+                frequency: .weekly,
+                duration: 10,
+                priorityTag: .medium,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Listar compras",
+                description: "Anotar o que está acabando para a próxima compra.",
+                frequency: .weekly,
+                duration: 5,
+                priorityTag: .medium,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Guardar compras",
+                description: "Guardar as compras novas atrás das mais antigas.",
+                frequency: .weekly,
+                duration: 15,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Organizar itens",
+                description: "Agrupar por categoria e deixar o que vence antes na frente.",
+                frequency: .weekly,
+                duration: 15,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Limpar armários",
+                description: "Tirar os itens, passar pano nas prateleiras e reorganizar.",
+                frequency: .monthly,
+                duration: 30,
+                priorityTag: .low,
+                room: room
+            )
+        ]
+    }
+
+    static var powderRoomChores: [ChoreDTO] {
+        let room = DefaultRoomsOnboarding.powderRoom.roomDTO
+        return [
+            ChoreDTO(
+                name: "Limpar vaso",
+                description: "Escovar por dentro, desinfetar o assento e a parte externa.",
+                frequency: .weekly,
+                duration: 10,
+                priorityTag: .high,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Limpar pia",
+                description: "Esfregar a cuba e a torneira e secar a bancada.",
+                frequency: .weekly,
+                duration: 5,
+                priorityTag: .medium,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Trocar toalha",
+                description: "Recolher a toalha de rosto usada e pendurar uma limpa.",
+                frequency: .weekly,
+                duration: 5,
+                priorityTag: .medium,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Repor sabonete",
+                description: "Conferir sabonete e papel higiênico e repor o que faltar.",
+                frequency: .weekly,
+                duration: 5,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Limpar espelho",
+                description: "Tirar manchas e respingos do espelho.",
+                frequency: .weekly,
+                duration: 5,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Lavar chão",
+                description: "Esfregar o piso com desinfetante e limpar o ralo.",
+                frequency: .monthly,
+                duration: 15,
+                priorityTag: .low,
+                room: room
+            )
+        ]
+    }
+
+    static var garageChores: [ChoreDTO] {
+        let room = DefaultRoomsOnboarding.garage.roomDTO
+        return [
+            ChoreDTO(
+                name: "Varrer garagem",
+                description: "Varrer o piso e recolher folhas e poeira.",
+                frequency: .weekly,
+                duration: 20,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Tirar manchas",
+                description: "Remover manchas de óleo e sujeira do piso.",
+                frequency: .monthly,
+                duration: 30,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Organizar caixas",
+                description: "Reorganizar caixas, ferramentas e objetos guardados.",
+                frequency: .monthly,
+                duration: 40,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Tirar teias",
+                description: "Tirar as teias de aranha dos cantos e do teto.",
+                frequency: .monthly,
+                duration: 15,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Lavar o carro",
+                description: "Lavar a parte de fora e aspirar a parte de dentro.",
+                frequency: .monthly,
+                duration: 60,
+                priorityTag: .medium,
+                room: room
+            )
+        ]
+    }
+
+    static var gardenChores: [ChoreDTO] {
+        let room = DefaultRoomsOnboarding.garden.roomDTO
+        return [
+            ChoreDTO(
+                name: "Regar jardim",
+                description: "Regar os canteiros e as plantas, de preferência cedo ou no fim do dia.",
+                frequency: .daily,
+                duration: 15,
+                priorityTag: .medium,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Varrer folhas",
+                description: "Varrer e recolher folhas e galhos do chão.",
+                frequency: .weekly,
+                duration: 15,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Arrancar ervas",
+                description: "Tirar as ervas daninhas dos canteiros.",
+                frequency: .weekly,
+                duration: 20,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Cortar grama",
+                description: "Cortar a grama e recolher o que foi aparado.",
+                frequency: .fortnightly,
+                duration: 45,
+                priorityTag: .medium,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Podar plantas",
+                description: "Aparar galhos secos e dar forma às plantas.",
+                frequency: .monthly,
+                duration: 30,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Adubar plantas",
+                description: "Colocar adubo nos canteiros e nos vasos.",
+                frequency: .monthly,
+                duration: 15,
                 priorityTag: .low,
                 room: room
             )

@@ -33,6 +33,13 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// The house this room belongs to.
     var houseReference: CKRecord.Reference?
     
+    /// The room type this room was created from during onboarding (e.g. `"Quarto"`)
+    var kind: String?
+    
+    /// Whether the color or symbol stored in CloudKit differs from ``color``/``symbol`` — a
+    /// value from an older palette, or a default room still carrying its old look — so the
+    /// record should be re-saved. See ``migrateStoredColorsIfNeeded(_:)``.
+    private(set) var needsColorMigration = false
     
     var relatedChores: [ChoreModel] {
         get async {
@@ -55,24 +62,30 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
-    /// - Returns: `nil` when `name` is missing or the stored color is not a valid ``RoomColor``.
-    ///
-    /// > Warning: The color falls back to the raw string `"notUrgent"`, which looks like a
-    /// > ``PriorityTag`` value rather than a ``RoomColor``. Verify the intended default.
+    /// - Returns: `nil` only when `name` is missing.
     init?(record: CKRecord) {
-        guard
-            let name = record["name"] as? String,
-            let color = RoomColor(rawValue: record["roomColor"] as? String ?? "notUrgent")
-        else {
+        guard let name = record["name"] as? String else {
             return nil
         }
         
+        let kind = record["kind"] as? String
+        let storedColor = record["roomColor"] as? String
+        let storedSymbol = record["symbol"] as? String
+        let defaultRoom = DefaultRoomsOnboarding(kind: kind, name: name)
+        
+        let color = defaultRoom?.color
+            ?? RoomColor(storedValue: storedColor)
+            ?? .blue
+        let symbol = defaultRoom?.symbol ?? storedSymbol ?? "house"
+        
         self.recordID = record.recordID
         self.name = name
-        self.symbol = record["symbol"] as? String ?? "house"
+        self.symbol = symbol
         self.relatedChoresReference = record["relatedChores"] as? [CKRecord.Reference]
         self.houseReference = record["house"] as? CKRecord.Reference
+        self.kind = kind
         self.color = color
+        self.needsColorMigration = storedColor != color.rawValue || storedSymbol != symbol
     }
     
     /// Creates a new, unsaved room.
@@ -87,7 +100,8 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         symbol: String,
         relatedChores: [CKRecord.Reference]? = nil,
         house: CKRecord.Reference? = nil,
-        color: RoomColor
+        color: RoomColor,
+        kind: String? = nil
     ) {
         self.recordID = nil
         self.name = name
@@ -95,6 +109,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         self.relatedChoresReference = relatedChores
         self.houseReference = house
         self.color = color
+        self.kind = kind
     }
     
     /// Writes this model's values into a CloudKit record.
@@ -113,6 +128,16 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
             record["house"] = houseReference
         }
         record["roomColor"] = color.rawValue
+        if let kind {
+            record["kind"] = kind
+        }
+    }
+    
+    /// Writes the palette color back to CloudKit for every room whose stored color is outdated
+    static func migrateStoredColorsIfNeeded(_ rooms: [RoomModel]) async {
+        let outdated = rooms.filter { $0.needsColorMigration && $0.recordID != nil }
+        guard !outdated.isEmpty else { return }
+        await CloudKitManager.shared.batchUpdate(outdated)
     }
     
     func fetchRelatedChores() async -> [ChoreModel] {

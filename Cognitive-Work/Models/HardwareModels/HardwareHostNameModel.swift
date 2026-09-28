@@ -8,10 +8,10 @@
 import Foundation
 import CloudKit
 
-struct HardwareIpModel: CloudKitSyncable{
+struct HardwareHostNameModel: CloudKitSyncable {
     var id = UUID()
     
-    var ip: String
+    var hostName: String
     
     static let recordType: String = "HardwareIpModel"
     
@@ -25,15 +25,15 @@ struct HardwareIpModel: CloudKitSyncable{
         }
         
         self.recordID = record.recordID
-        self.ip = ip
+        self.hostName = ip
     }
     
-    init(ip: String) {
-        self.ip = ip
+    init(hostName: String) {
+        self.hostName = hostName
     }
     
     func populate(record: CKRecord) {
-        record["ip"] = ip
+        record["ip"] = hostName
     }
     
     
