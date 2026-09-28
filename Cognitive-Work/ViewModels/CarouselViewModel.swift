@@ -82,7 +82,20 @@ class CarouselViewModel {
     var activeIndex: Int = 0
     
     // MARK: - Focus & Flip State
+    
     private var focusedIndex: Int? = nil
+    /// Stores the recordID of the focused card, to keep it visible regardless of filters
+    private var focusedChoreRecordID: CKRecord.ID? = nil
+    
+    /// Stores a copy of the focused chore to keep it visible even if not present in cardModels due to filtering.
+    private var focusedChoreModel: ChoreModel? = nil
+    
+    /// Stores the assignment of the focused occurrence so it remains visible
+    /// even if it no longer matches the active user filter.
+    private var focusedAssignmentRecordID: CKRecord.ID? = nil
+
+    private var focusedAssignmentModel: RecurrentAssignmentModel? = nil
+    
     /// Tracks which cards are currently in the flipped state (180 degrees).
     private var flippedIndices: Set<Int> = []
     /// Tracks which cards should render their back face based on animation timing.
@@ -127,6 +140,9 @@ class CarouselViewModel {
     ///
     /// Recurring chores contribute one row per future assignment (capped by
     /// `occurrencesPerChore`); one-off chores contribute a single row.
+    ///
+    /// - Note: This method has been reverted to not enforce forced occurrences from
+    ///   focusedChoreAssignments, only from focusedChoreModel and focusedChoreRecordID.
     private func rebuildVisibleOccurrences() {
         let selectedUserIDs = Set(filterChoices.users.compactMap { $0.recordID })
         let today = Calendar.current.startOfDay(for: Date())
@@ -172,7 +188,42 @@ class CarouselViewModel {
             }
         }
         
+        // Revert forced showing of focused chore occurrences to previous behavior:
+        // Keep focused chore occurrences visible even if filtered out by adding one occurrence
+        // for the focused chore from focusedChoreModel (no assignments forced).
+        if let focusedAssignment = focusedAssignmentModel,
+           
+            let focusedAssignmentID = focusedAssignmentRecordID,
+            !occurrences.contains(where: {
+                $0.assignment?.recordID == focusedAssignmentID
+            }),
+           
+            let focusedChore = focusedChoreModel{
+            occurrences.append(
+                ChoreOccurrence(
+                    chore: focusedChore,
+                    assignment: focusedAssignment
+                )
+            )
+        }
+        
         visibleOccurrences = occurrences.sorted(by: self.areInIncreasingOrder)
+
+        if let focusedAssignmentID = focusedAssignmentRecordID,
+            let index = visibleOccurrences.firstIndex(where: {
+                $0.assignment?.recordID == focusedAssignmentID
+            }) {
+            focusedIndex = index
+        }
+        else if let focusedChoreID = focusedChoreRecordID,
+            let index = visibleOccurrences.firstIndex(where: {
+                $0.chore.recordID == focusedChoreID
+            }) {
+            focusedIndex = index
+        }
+        else {
+            focusedIndex = nil
+        }
     }
     
     // MARK: - Sorting
@@ -324,15 +375,25 @@ class CarouselViewModel {
     
     /// Rebuilds and caches the list of visible chores based on active filters and sorting rules.
     ///
-    /// This method filters `cardModels` (either applying custom `ChoreFilters` or filtering out completed chores)
-    /// and sorts the resulting array by their next scheduled date and priority tag. The outcome is stored in `visibleChores`
+    /// Force add focused card to visibleChores even if it does not match current filters, to keep details open until user closes.
     private func rebuildVisibleChores() {
-        
+        // Use focusedChoreRecordID to ensure focused chore remains visible regardless of filters
         let base = layoutMode == .grid
         ? cardModels.filter { isVisibleInGrid($0) }
         : (isFilterOn ? applyFilters(to: cardModels) : cardModels)
         
-        visibleChores = base.sorted { a, b in
+        // If there is a focused chore recordID, ensure its card appears in the visibleChores,
+        // even if not matching filters.
+        var result = base
+        if let recID = focusedChoreRecordID, !base.contains(where: { $0.recordID == recID }) {
+            if let forcedChore = cardModels.first(where: { $0.recordID == recID }) {
+                result.append(forcedChore)
+            } else if let tempChore = focusedChoreModel, tempChore.recordID == recID {
+                result.append(tempChore) // Use local copy if not found in cardModels
+            }
+        }
+        
+        visibleChores = result.sorted { a, b in
             let dateA = nextDate(for: a)
             let dateB = nextDate(for: b)
             
@@ -344,6 +405,15 @@ class CarouselViewModel {
             }
             
             return a.priorityTag.intValue > b.priorityTag.intValue
+        }
+        
+        // Restore focus index to the currently focused chore's index if still present; otherwise clear focus.
+        if let recID = focusedChoreRecordID, let idx = visibleChores.firstIndex(where: { $0.recordID == recID }) {
+            focusedIndex = idx
+        } else {
+            focusedIndex = nil
+            focusedChoreRecordID = nil
+            focusedChoreModel = nil
         }
         
         rebuildVisibleOccurrences()
@@ -694,6 +764,15 @@ class CarouselViewModel {
     func focusImmediately(_ index: Int) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
             focusedIndex = index
+            // Store the focused chore's recordID to keep it visible regardless of filtering
+            if visibleChores.indices.contains(index) {
+                let chore = visibleChores[index]
+                focusedChoreRecordID = chore.recordID
+                focusedChoreModel = chore // Keep a local copy for visibility
+            } else {
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
+            }
         }
     }
     
@@ -703,6 +782,8 @@ class CarouselViewModel {
         if focusedIndex != nil {
             withAnimation(.easeOut(duration: 0.15)) {
                 focusedIndex = nil
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
             }
         }
         
@@ -716,6 +797,14 @@ class CarouselViewModel {
             guard let self, self.activeIndex == index else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                 self.focusedIndex = index
+                if self.visibleChores.indices.contains(index) {
+                    let chore = self.visibleChores[index]
+                    self.focusedChoreRecordID = chore.recordID
+                    self.focusedChoreModel = chore // Keep a local copy
+                } else {
+                    self.focusedChoreRecordID = nil
+                    self.focusedChoreModel = nil
+                }
             }
         }
     }
@@ -732,6 +821,15 @@ class CarouselViewModel {
             draggingItem = Double(index)
             activeIndex = index
             focusedIndex = index
+            // Store focused chore recordID for visibility during filters
+            if visibleChores.indices.contains(index) {
+                let chore = visibleChores[index]
+                focusedChoreRecordID = chore.recordID
+                focusedChoreModel = chore // Keep a local copy
+            } else {
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
+            }
         }
         
         flip(index)
@@ -744,6 +842,10 @@ class CarouselViewModel {
             }
             withAnimation(.easeOut(duration: 0.2)) {
                 focusedIndex = nil
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
+                focusedAssignmentRecordID = nil
+                focusedAssignmentModel = nil
             }
         }
     }
@@ -751,9 +853,25 @@ class CarouselViewModel {
     func focusDetailsImmediately(_ index: Int) {
         flippedIndices.insert(index)
         backVisibleIndices.insert(index)
-        
+
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             focusedIndex = index
+
+            guard visibleOccurrences.indices.contains(index) else {
+                focusedChoreRecordID = nil
+                focusedChoreModel = nil
+                focusedAssignmentRecordID = nil
+                focusedAssignmentModel = nil
+                return
+            }
+
+            let occurrence = visibleOccurrences[index]
+
+            focusedChoreRecordID = occurrence.chore.recordID
+            focusedChoreModel = occurrence.chore
+
+            focusedAssignmentRecordID = occurrence.assignment?.recordID
+            focusedAssignmentModel = occurrence.assignment
         }
     }
     
@@ -765,6 +883,10 @@ class CarouselViewModel {
         
         withAnimation(.easeOut(duration: 0.2)) {
             focusedIndex = nil
+            focusedChoreRecordID = nil
+            focusedChoreModel = nil
+            focusedAssignmentRecordID = nil
+            focusedAssignmentModel = nil
         }
     }
     
@@ -1280,3 +1402,4 @@ class CarouselViewModel {
         return 0.25 + 0.75 * Double(count) / Double(peak)   // Days with tasks have at least 0.25 opacity
     }
 }
+
