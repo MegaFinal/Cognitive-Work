@@ -518,7 +518,7 @@ class CloudKitManager {
     @discardableResult
     func switchHouse(to metadata: CKShare.Metadata) async -> Bool {
         do {
-            try await leaveCurrentHouse()
+            guard try await leaveCurrentHouse() else { return false }
             return await acceptShare(metadata: metadata)
         }
         catch {

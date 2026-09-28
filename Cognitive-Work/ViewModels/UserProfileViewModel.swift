@@ -207,8 +207,8 @@ final class UserProfileViewModel {
     }
     
     // MARK: - Delete Account
-    
-    /// Deletes the private profile and, when it exists, the in-house copy.
+
+    /// Deletes the private profile and, when it exists, fully detaches the in-house copy.
     func deleteAccount() async {
         guard let privateUser else {
             errorMessage = "Perfil não carregado. Tente novamente."
@@ -219,42 +219,36 @@ final class UserProfileViewModel {
         defer { isSaving = false }
         
         if let user {
-            // Resolve the house and ownership before the in-house user record is gone,
-            // since both are derived from it.
+            // Resolve the house and ownership before either record is gone
             let house = await user.house
             let isHouseOwner = await house?.isAdmin() == true
             
-            async let deletePrivate = CloudKitManager.shared.delete(privateUser)
-            async let deleteHouseUser = CloudKitManager.shared.delete(user)
-            
-            let (privateSuccess, houseUserSuccess) = await (deletePrivate, deleteHouseUser)
-            
-            guard privateSuccess && houseUserSuccess else {
-                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
-                return
-            }
-            
-            if let house {
-                if isHouseOwner {
-                    await house.deleteAllChildren()
-                    await CloudKitManager.shared.delete(house)
-                } else {
-                    await house.removeUser(user)
+            if let house, isHouseOwner {
+                // Owner: the whole house is deleted along with the account.
+                guard await house.deleteAllChildren() else {
+                    errorMessage = "Erro ao apagar os dados da casa."
+                    return
+                }
+                guard await CloudKitManager.shared.delete(house) else {
+                    errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao apagar a casa."
+                    return
+                }
+            } else {
+                do {
+                    _ = try await CloudKitManager.shared.leaveCurrentHouse()
+                } catch {
+                    print("Failed to fully leave house while deleting account: \(error)")
                 }
             }
-            
-            CloudKitManager.shared.clearCurrentUser()
-            onAccountDeleted()
-        } else {
-            let success = await CloudKitManager.shared.delete(privateUser)
-            guard success else {
-                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
-                return
-            }
-            
-            CloudKitManager.shared.clearCurrentUser()
-            onAccountDeleted()
         }
+        
+        guard await CloudKitManager.shared.delete(privateUser) else {
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+            return
+        }
+        
+        CloudKitManager.shared.clearCurrentUser()
+        onAccountDeleted()
     }
     
     // MARK: - Calendar

@@ -128,8 +128,6 @@ struct GeneralProfileSettingsView: View {
         .navigationTitle("Configurações Gerais")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .disabled(isDeletingAccount)
-        .navigationBarBackButtonHidden(isDeletingAccount)
         
         // MARK: - Alerts
         .alert("Excluir Perfil?", isPresented: $showDeleteConfirmation) {
@@ -149,28 +147,7 @@ struct GeneralProfileSettingsView: View {
             Text("Esta ação é permanente. Todos os seus dados serão apagados do iCloud.")
         }
         // MARK: - Blocking loading screen
-        
-        .fullScreenCover(isPresented: $isDeletingAccount) {
-            DeletingAccountLoadingView()
-        }
-    }
-}
-
-/// Full-screen blocking state shown while ``UserProfileViewModel/deleteAccount()`` is running
-private struct DeletingAccountLoadingView: View {
-    var body: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
-                .padding(.bottom, 8)
-            Text("Excluindo seu perfil...")
-                .foregroundStyle(.gray)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.horizontal, 10)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
-        .interactiveDismissDisabled()
+        .blockingOperation(isPresented: $isDeletingAccount, message: "Excluindo seu perfil...")
     }
 }
 

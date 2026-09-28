@@ -183,6 +183,7 @@ struct CreateAndEditChoreView: View {
         } message: {
             Text(carouselViewModel.errorMessage ?? "")
         }
+        .blockingOperation(isPresented: $isDeleting, message: "Excluindo tarefa...")
     }
     
     // MARK: - Subviews
