@@ -462,6 +462,8 @@ class CarouselViewModel {
             self.hasFetchedInitially = true
             self.isLoading = false
         }
+        
+        await RoomModel.migrateStoredColorsIfNeeded(rooms)
     }
     
     /// Refreshes the chores and recurrent assignments after a chore or its responsible user has been modified.
