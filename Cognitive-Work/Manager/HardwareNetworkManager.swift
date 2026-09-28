@@ -46,10 +46,14 @@ class HardwareNetworkManager {
     }
     
     init() {
-        if let savedHash = localPersistence.string(forKey: StorageKey.hash),
-           let savedHost = localPersistence.string(forKey: StorageKey.host) {
-            self.hash = savedHash
+        // The host is saved right after provisioning, even before pairing succeeds
+        if let savedHost = localPersistence.string(forKey: StorageKey.host) {
             self.host = savedHost
+        }
+        
+        print("host name: \(self.host)")
+        if let savedHash = localPersistence.string(forKey: StorageKey.hash), !host.isEmpty {
+            self.hash = savedHash
             self.isConnected = true
         }
     }
@@ -99,7 +103,8 @@ class HardwareNetworkManager {
         // Saves the host (harvi) name
         guard let name = answer.name else { throw APIErrors.invalidData }
         self.host = name + ".local"
-        
+        localPersistence.set(host, forKey: StorageKey.host)
+
         return self.host
     }
 
@@ -116,9 +121,9 @@ class HardwareNetworkManager {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = Data()
-        request.timeoutInterval = 5
+        request.timeoutInterval = 15
 
-        for attempt in 1...5 {
+        for attempt in 1...6 {
             do {
                 let (data, response) = try await session.data(for: request)
                 let answer = try validate(data: data, response: response)
@@ -128,7 +133,7 @@ class HardwareNetworkManager {
                 localPersistence.set(hash, forKey: StorageKey.hash)
                 localPersistence.set(host, forKey: StorageKey.host)
                 return
-            } catch is URLError where attempt < 5 {
+            } catch is URLError where attempt < 10 {
                 try await Task.sleep(for: .seconds(3))
             }
         }
