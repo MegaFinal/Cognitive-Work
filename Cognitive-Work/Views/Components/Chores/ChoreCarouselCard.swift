@@ -19,7 +19,6 @@ struct ChoreCarouselCard: View {
     
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     
-    
     var body: some View {
         ZStack {
             VStack {
@@ -40,10 +39,20 @@ struct ChoreCarouselCard: View {
         }
         .foregroundColor(.white)
         .frame(width: width * 0.7, height: height * 0.43)
-        .background(room?.color.uiColor ?? .gray)
+        .background { cardBackground }
         .clipShape(RoundedRectangle(cornerRadius: 31))
         .shadow(color: .black.opacity(0.14), radius: 16.84883, x: 0, y: 4.79682)
         .transition(.identity)
+    }
+    
+    /// The room's color with its texture; gray when the chore's room is unknown.
+    @ViewBuilder
+    private var cardBackground: some View {
+        if let room {
+            RoomTextureBackground(room: room)
+        } else {
+            Color.gray
+        }
     }
 }
 
