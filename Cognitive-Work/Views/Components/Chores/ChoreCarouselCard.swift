@@ -32,15 +32,13 @@ struct ChoreCarouselCard: View {
             }
             .padding(.top, 30)
             
-            Image(systemName: chore.symbolName)
+            Image(systemName: room?.symbol ?? chore.symbolName)
                 .resizable()
                 .scaledToFill()
                 .frame(width: width * 0.17, height: height * 0.17)
                 .fontWeight(.ultraLight)
         }
-        // A white-colored room needs black content on top of it (see
-        // `RoomColor.contentColor`), otherwise the icon and title render white-on-white.
-        .foregroundColor(room?.color.contentColor ?? .white)
+        .foregroundColor(.white)
         .frame(width: width * 0.7, height: height * 0.43)
         .background(room?.color.uiColor ?? .gray)
         .clipShape(RoundedRectangle(cornerRadius: 31))

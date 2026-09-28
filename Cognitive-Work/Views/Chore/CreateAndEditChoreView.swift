@@ -191,7 +191,7 @@ struct CreateAndEditChoreView: View {
     /// The uppermost structural section of the form: iconography, chore name field and room selection.
     private var header: some View {
         HStack {
-            Image(systemName: choreDTO.symbolName)
+            Image(systemName: choreDTO.room?.symbol ?? choreDTO.symbolName)
                 .resizable()
                 .scaledToFit()
                 .frame(width: width * 0.15)

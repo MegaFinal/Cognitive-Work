@@ -140,7 +140,7 @@ struct PickUnassignedChoreSheet: View {
     
     private var header: some View {
         HStack(spacing: 12) {
-            Image(systemName: chore.symbolName)
+            Image(systemName: carouselViewModel.getRoom(for: chore)?.symbol ?? chore.symbolName)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 44, height: 44)

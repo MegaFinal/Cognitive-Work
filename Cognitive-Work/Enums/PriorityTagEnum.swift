@@ -27,9 +27,9 @@ enum PriorityTag: String, CaseIterable, Hashable {
     /// Color layout representing an abstract priority urgency.
     var color: Color {
         switch self {
-        case .low: return .green
-        case .medium: return .yellow
-        case .high: return .orange
+        case .low: return .choreGreen
+        case .medium: return .choreYellow
+        case .high: return .choreOrange
         case .urgent: return .red
         }
     }

@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 enum UserColorPalette {
-    private static let colors: [Color] = [.blue, .green, .orange, .purple, .pink, .yellow]
+    private static let colors: [Color] = [.choreBlue, .choreGreen, .choreOrange, .chorePurple, .choreYellow]
 
     static func color(for index: Int) -> Color {
         colors[index % colors.count]

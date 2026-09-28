@@ -39,75 +39,54 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     
     // MARK: - Room
-    /// Room representation used by onboarding chore previews.
-    var roomDTO: RoomDTO {
+    
+    /// The order rooms are offered in on the room selection screen.
+    static let onboardingOrder: [DefaultRoomsOnboarding] = [
+        .bedroom, .livingRoom, .kitchen, .laundryRoom, .bathroom, .balcony,
+        .homeOffice, .pantry, .powderRoom, .garage, .garden
+    ]
+    
+    /// The room type a saved room was created from, matched by its `kind` (e.g. `"Quarto"` for
+    /// "Quarto 2") or, for rooms saved before `kind` existed, by its name.
+    init?(kind: String?, name: String) {
+        self.init(rawValue: kind ?? name)
+    }
+    
+    /// SF Symbol shown for this room
+    var symbol: String {
         switch self {
-        case .bedroom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "bed.double.fill",
-                color: .purple )
-            
-        case .livingRoom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "sofa.fill",
-                color: .orange )
-            
-        case .laundryRoom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "washer",
-                color: .blue )
-            
-        case .kitchen:
-            RoomDTO(
-                name: rawValue,
-                symbol: "cooktop",
-                color: .green )
-            
-        case .bathroom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "toilet.fill",
-                color: .purple )
-            
-        case .homeOffice:
-            RoomDTO(
-                name: rawValue,
-                symbol: "desktopcomputer",
-                color: .yellow )
-            
-        case .balcony:
-            RoomDTO(
-                name: rawValue,
-                symbol: "window.casement",
-                color: .blue )
-            
-        case .pantry:
-            RoomDTO(
-                name: rawValue,
-                symbol: "cabinet",
-                color: .blue )
-            
-        case .powderRoom:
-            RoomDTO(
-                name: rawValue,
-                symbol: "sink",
-                color: .blue )
-            
-        case .garage:
-            RoomDTO(
-                name: rawValue,
-                symbol: "door.garage.open",
-                color: .blue )
-            
-        case .garden:
-            RoomDTO(
-                name: rawValue,
-                symbol: "sprinkler.and.droplets",
-                color: .blue )
+        case .bedroom: "bed.double"
+        case .livingRoom: "sofa"
+        case .laundryRoom: "washer"
+        case .kitchen: "cooktop"
+        case .bathroom: "toilet"
+        case .homeOffice: "macbook.and.iphone"
+        case .balcony: "window.casement"
+        case .pantry: "cabinet"
+        case .powderRoom: "sink"
+        case .garage: "door.garage.open"
+        case .garden: "sprinkler.and.droplets"
         }
+    }
+    
+    /// Palette color for this room (see ``RoomColor``).
+    var color: RoomColor {
+        switch self {
+        case .bathroom, .powderRoom, .laundryRoom: .blue
+        case .livingRoom, .garage: .orange
+        case .kitchen, .pantry: .yellow
+        case .bedroom, .homeOffice: .purple
+        case .balcony, .garden: .green
+        }
+    }
+    
+    /// Room representation used by the selection screen and the onboarding chore previews.
+    ///
+    /// The single source of truth for a default room's name, symbol and color: the selection
+    /// screen (``OnboardingViewModel/availableRooms``) and the saved ``RoomModel`` both come
+    /// from here, so they can't drift apart again.
+    var roomDTO: RoomDTO {
+        RoomDTO(name: rawValue, symbol: symbol, color: color)
     }
 
     // MARK: - Default Chores
