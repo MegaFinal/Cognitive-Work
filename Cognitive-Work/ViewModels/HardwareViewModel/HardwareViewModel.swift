@@ -84,7 +84,6 @@ class HardwareViewModel {
             }
             conectionResult = .success
         } catch {
-            print("Pairing failed: \(error)")
             conectionResult = .failureParing
         }
         isPairing = false
@@ -115,6 +114,46 @@ class HardwareViewModel {
             case .failureParing: "Certifique-se que o Harvi está conectado no WiFi e tente novamente."
             }
         }
+    }
+    
+    // MARK: - Background delivery
+
+    private static let pendingUpdateKey = "hardware.pendingUpdate"
+
+    /// Marks that the device is missing the latest changes. Delivered on the next chance
+    /// (app opening, silent push or background refresh), as soon as this phone is at home.
+    static func markPendingUpdate() {
+        UserDefaults.standard.set(true, forKey: pendingUpdateKey)
+    }
+
+    /// Sends the chart when this phone has pending changes or the device lost its screen.
+    ///
+    /// The /status call doubles as an "am I at home?" check: away from the home network it
+    /// fails, the pending flag stays set and the next chance tries again.
+    func refreshDeviceIfNeeded() async {
+        guard isPaired else { return }
+
+        let hasPendingUpdate = UserDefaults.standard.bool(forKey: Self.pendingUpdateKey)
+
+        do {
+            let deviceLostChart = try await hardwareNetworkManager.deviceNeedsRefresh()
+            guard hasPendingUpdate || deviceLostChart else { return }
+
+            try await sendChartToESP32()
+            UserDefaults.standard.set(false, forKey: Self.pendingUpdateKey)
+        } catch {
+            // Colocar erro
+        }
+    }
+    
+    /// Call after any change saved to CloudKit.
+    ///
+    /// Marks the change as pending and tries to deliver it right away. Away from home,
+    /// the next chance (app opening, silent push or background refresh) retries.
+    static func notifyDataChanged(file: String = #fileID, line: Int = #line) {
+        print("notifyDataChanged from \(file):\(line)")
+        markPendingUpdate()
+        Task { await HardwareViewModel().refreshDeviceIfNeeded() }
     }
     
     // MARK: - Image & Chart Transmission (ESP32 Display)

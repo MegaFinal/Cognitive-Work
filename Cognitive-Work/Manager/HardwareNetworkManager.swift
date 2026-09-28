@@ -50,8 +50,6 @@ class HardwareNetworkManager {
         if let savedHost = localPersistence.string(forKey: StorageKey.host) {
             self.host = savedHost
         }
-        
-        print("host name: \(self.host)")
         if let savedHash = localPersistence.string(forKey: StorageKey.hash), !host.isEmpty {
             self.hash = savedHash
             self.isConnected = true
@@ -133,10 +131,30 @@ class HardwareNetworkManager {
                 localPersistence.set(hash, forKey: StorageKey.hash)
                 localPersistence.set(host, forKey: StorageKey.host)
                 return
-            } catch is URLError where attempt < 10 {
+            } catch is URLError where attempt < 6 {
                 try await Task.sleep(for: .seconds(3))
             }
         }
+    }
+    
+    // MARK: - Status
+
+    /// Asks the device whether its screen lost the chart (after a reboot or a reconnection).
+    ///
+    /// Also works as an "am I at home?" check: away from the home network it throws.
+    func deviceNeedsRefresh() async throws -> Bool {
+        guard !host.isEmpty, let url = URL(string: base + host + "/status") else {
+            throw APIErrors.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue(hash, forHTTPHeaderField: "X-Auth-Hash")
+        request.timeoutInterval = 15
+
+        let (data, response) = try await session.data(for: request)
+        let answer = try validate(data: data, response: response)
+        return answer.needsRefresh ?? false
     }
 
     // MARK: - Sending content
