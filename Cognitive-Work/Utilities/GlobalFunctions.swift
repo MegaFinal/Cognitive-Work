@@ -285,7 +285,8 @@ func occurrenceDays(
 func scheduleNewRecurringChore(
     _ chore: ChoreModel,
     responsibleUsers: [UserModel],
-    cycleEnd: Date?
+    cycleEnd: Date?,
+    pickedDate: Date? = nil
 ) async {
     guard let cycleEnd,
           chore.frequency != .none,
@@ -294,7 +295,8 @@ func scheduleNewRecurringChore(
           (chore.dailyAssignmentsReference ?? []).isEmpty
     else { return }
     
-    let days = occurrenceDays(for: chore.frequency, from: Date(), through: cycleEnd)
+    let start = pickedDate ?? Date() 
+    let days = occurrenceDays(for: chore.frequency, from: start, through: cycleEnd)
     guard !days.isEmpty else { return }
     
     let rotation = responsibleUsers.compactMap { $0.recordID }
