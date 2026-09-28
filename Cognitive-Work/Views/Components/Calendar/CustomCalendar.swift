@@ -13,6 +13,7 @@ struct CustomCalendar: View {
     let opacityForDay: (Date) -> Double
     var highlightedDays: [Date] = []
     var showsSelectionLabel: Bool = true
+    var earliestSelectable: Date? = nil   // days before this are shown grey and can't be tapped
     
     private let daysOfWeek = Date.capitalizedFirstLettersOfWeekdays
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
@@ -104,6 +105,7 @@ struct CustomCalendar: View {
         LazyVGrid(columns: columns, spacing: 10) {
             ForEach(gridDays, id: \.self) { day in
                 let selectable = window.contains(day.startOfDay)
+                    && day.startOfDay >= (earliestSelectable ?? .distantPast)
                 DayCell(
                     day: day,
                     opacity: selectable ? opacityForDay(day) : 0,
