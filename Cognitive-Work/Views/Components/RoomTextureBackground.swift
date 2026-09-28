@@ -12,20 +12,23 @@ struct RoomTextureBackground: View {
     let color: RoomColor
     let pattern: RoomTexturePattern
     
-    /// The texture is always drawn at this opacity, over the room's color.
-    static let textureOpacity: Double = 0.3
+    /// Enlargement of this texture; each card picks the one that fits its size.
+    let zoom: CGFloat
     
-    /// How much the texture is enlarged past "fill the card" (centered, the excess is clipped).
+    /// The texture is always drawn at this opacity, over the room's color.
+    static let textureOpacity: Double = 0.2
+    
     /// Higher means bigger, fewer shapes.
     static let textureZoom: CGFloat = 2.5
     
-    init(color: RoomColor, pattern: RoomTexturePattern) {
+    init(color: RoomColor, pattern: RoomTexturePattern, zoom: CGFloat = textureZoom) {
         self.color = color
         self.pattern = pattern
+        self.zoom = zoom
     }
     
-    init(room: RoomModel) {
-        self.init(color: room.color, pattern: room.texturePattern)
+    init(room: RoomModel, zoom: CGFloat = textureZoom) {
+        self.init(color: room.color, pattern: room.texturePattern, zoom: zoom)
     }
     
     var body: some View {
@@ -34,8 +37,9 @@ struct RoomTextureBackground: View {
                 Image(pattern.assetName(for: color))
                     .resizable()
                     .scaledToFill()
-                    .scaleEffect(Self.textureZoom)
+                    .scaleEffect(zoom)
                     .opacity(Self.textureOpacity)
+                    .allowsHitTesting(false)
             }
             .clipped()
     }

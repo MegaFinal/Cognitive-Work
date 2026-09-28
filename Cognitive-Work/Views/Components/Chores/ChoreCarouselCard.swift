@@ -45,11 +45,14 @@ struct ChoreCarouselCard: View {
         .transition(.identity)
     }
     
+    /// The carousel card is bigger than the onboarding ones, so its texture needs less zoom.
+    private static let textureZoom: CGFloat = 1.5
+    
     /// The room's color with its texture; gray when the chore's room is unknown.
     @ViewBuilder
     private var cardBackground: some View {
         if let room {
-            RoomTextureBackground(room: room)
+            RoomTextureBackground(room: room, zoom: Self.textureZoom)
         } else {
             Color.gray
         }
