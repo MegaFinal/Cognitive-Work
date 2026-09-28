@@ -28,6 +28,18 @@ enum RoomColor: String, CaseIterable, Identifiable {
         }
     }
     
+    /// The soft counterpart of ``uiColor`` (asset catalog `Colors/LowOpacity`), used on cards that
+    /// sit behind or beside the main content, like the chart's chore card and the progress cards.
+    var lowOpacityColor: Color {
+        switch self {
+        case .purple: return .lowOpacityPurple
+        case .orange: return .lowOpacityOrange
+        case .yellow: return .lowOpacityYellow
+        case .green: return .lowOpacityGreen
+        case .blue: return .lowOpacityBlue
+        }
+    }
+    
     /// Decodes a color stored in CloudKit, including values from palettes that no longer exist.
     ///
     /// Rooms saved by older builds may hold `"red"`, `"white"` or `"pink"`. Failing on those made

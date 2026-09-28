@@ -61,12 +61,11 @@ struct FortnightlyView: View {
                     users: users,
                     entries: viewModel.usageEntries,
                     startDate: viewModel.startDate,
+                    selectedEntry: selectedEntry,
                     onSelect: { entry in
-                        selectedEntry = entry
-                        selectedUser = viewModel.users.first {
-                            $0.recordID == entry.userID
-                        }
-                    }
+                        select(entry)
+                    },
+                    selectionInset: 12
                 )
                 
                 legend
@@ -84,7 +83,26 @@ struct FortnightlyView: View {
         }
         .task {
             await viewModel.setup(users: users, chores: chores)
+            selectInitialEntry()
         }
+    }
+    
+    // MARK: - Selection
+    
+    private func select(_ entry: DailyUsageEntry) {
+        selectedEntry = entry
+        selectedUser = viewModel.users.first { $0.recordID == entry.userID }
+    }
+    
+    /// The screen always opens with the first chore of the first day (the leftmost column,
+    /// its topmost bar) selected.
+    private func selectInitialEntry() {
+        guard selectedEntry == nil,
+              let firstDay = viewModel.usageEntries.map(\.day).min(),
+              let first = viewModel.usageEntries.first(where: { Calendar.current.isDate($0.day, inSameDayAs: firstDay) })
+        else { return }
+        
+        select(first)
     }
     
     private var legend: some View {

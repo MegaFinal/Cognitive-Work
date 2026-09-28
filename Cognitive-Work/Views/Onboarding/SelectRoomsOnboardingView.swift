@@ -54,6 +54,7 @@ struct SelectRoomsOnboardingView: View {
                             text: roomDraft.name,
                             symbol: roomDraft.symbol,
                             color: roomDraft.color,
+                            pattern: roomDraft.texturePattern,
                             isSelected: roomDraft.isSelected,
                             quantity: roomDraft.quantity
                         )
@@ -226,6 +227,7 @@ private struct OnboardingRoomCard: View {
     var text: String
     var symbol: String
     var color: RoomColor
+    var pattern: RoomTexturePattern
     var isSelected: Bool = false
     
     /// How many rooms of this type were set with a long press; shown as a badge above one.
@@ -257,6 +259,12 @@ private struct OnboardingRoomCard: View {
             RoundedRectangle(cornerRadius: 14)
                 .foregroundColor(isSelected ? color.uiColor : .white)
                 .shadow(color: .black.opacity(0.25), radius: 6.85, x: 0, y: 4)
+                .overlay {
+                    if isSelected {
+                        RoomTextureBackground(color: color, pattern: pattern)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                }
         )
     }
 }

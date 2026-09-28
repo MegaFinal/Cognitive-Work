@@ -266,7 +266,7 @@ struct ChoresView: View {
         let centeredChore = carouselVM.visibleChores[carouselVM.activeIndex]
         
         if let room = carouselVM.getRoom(for: centeredChore) {
-            activeRoomColor = room.color.uiColor
+            activeRoomColor = room.color.lowOpacityColor
         } else {
             activeRoomColor = .gray
         }

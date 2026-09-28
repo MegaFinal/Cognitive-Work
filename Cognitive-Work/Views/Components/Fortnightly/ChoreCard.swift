@@ -30,7 +30,7 @@ struct ChoreCard: View {
         }
         .foregroundColor(.white)
         .frame(width: width * 0.85, height: height * 0.35)
-        .background(room?.color.uiColor ?? .gray)
+        .background(room?.color.lowOpacityColor ?? .gray)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .black.opacity(0.32), radius: 5.8, x: 4, y: 6)
     }
