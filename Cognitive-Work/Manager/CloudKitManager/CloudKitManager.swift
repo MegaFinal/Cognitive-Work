@@ -471,7 +471,7 @@ class CloudKitManager {
             shareMetadatas: [metadata]
         )
         
-        return await withCheckedContinuation { continuation in
+        let accepted: Bool = await withCheckedContinuation { continuation in
             operation.acceptSharesResultBlock = { result in
                 switch result {
                 case .success:
@@ -487,6 +487,11 @@ class CloudKitManager {
             
             container.add(operation)
         }
+        
+        if accepted {
+            rememberPendingJoin(zoneID: metadata.share.recordID.zoneID)
+        }
+        return accepted
     }
     
     @discardableResult
@@ -504,15 +509,9 @@ class CloudKitManager {
             throw CloudKitErrors<Any>.currentHouseOwnerCannotLeaveTheHouse
         }
         
-        do {
-            _ = try await sharedDB.deleteRecord(withID: share.recordID)
-            invalidateSessionCache()
-            await UserProfileCache.shared.removeAll()
-            return true
-        } catch {
-            errorMessage = "Failed to leave house: \(error.localizedDescription)"
-            return false
-        }
+        // Removes this user's member record from the house *before* leaving the share, so no
+        // ghost member is left behind
+        return await leaveSharedHouse(in: share.recordID.zoneID)
     }
     
     @discardableResult

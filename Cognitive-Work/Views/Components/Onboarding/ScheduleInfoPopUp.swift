@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ScheduleInfoPopUp: View {
-    @Environment(\.dismiss) private var dismiss
+    var onDismiss: () -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -20,9 +20,9 @@ struct ScheduleInfoPopUp: View {
                 Spacer()
                 
                 Button {
-                    dismiss()
+                    onDismiss()
                 } label: {
-                    Image(systemName: "plus")
+                    Image(systemName: "xmark")
                         .foregroundColor(.black)
                         .fontWeight(.medium)
                         .padding(12)
@@ -74,7 +74,7 @@ struct ScheduleInfoPopUp: View {
                             .font(.system(size: 18))
                             .bold()
                         
-                        Text("As tarefas que sobraram da divisão ficam na tela inicial, no botão.\nPegue as que couberem no \nseu tempo.")
+                        Text("As tarefas que sobraram da divisão ficam na tela inicial, no botão. Pegue as que couberem no seu tempo.")
                             .font(.system(size: 15))
                     }
                     .frame(width: width * 0.6)
@@ -85,6 +85,7 @@ struct ScheduleInfoPopUp: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: width * 0.11)
+                        .foregroundColor(.chorePurple)
                     
                     VStack(alignment: .leading, spacing: 7) {
                         Text("Retrospectiva quinzenal")
@@ -100,7 +101,7 @@ struct ScheduleInfoPopUp: View {
             .padding(.top, 15)
             
             Button {
-                dismiss()
+                onDismiss()
             } label: {
                 Text("Ver minha escala")
                     .foregroundColor(.white)
@@ -126,5 +127,5 @@ struct ScheduleInfoPopUp: View {
 }
 
 #Preview {
-    ScheduleInfoPopUp()
+    ScheduleInfoPopUp(onDismiss: {})
 }

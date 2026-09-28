@@ -14,6 +14,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func windowScene(_ windowScene: UIWindowScene, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {
         Task {
+            // A house this account is still attached to without being a member of it must not
+            // block a new invitation.
+            await CloudKitManager.shared.pruneOrphanedSharedMemberships()
+            
             do {
                 let _ = try await CloudKitManager.shared.fetchFirst(HouseModel.self)
                 NotificationCenter.default.post(name: .notAcceptShare, object: cloudKitShareMetadata)

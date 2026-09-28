@@ -26,9 +26,9 @@ struct ChoresViewButtonsSection: View {
             Button {
                 carouselViewModel.toggleUnassignedList()
             } label: {
-                Image(systemName: "hand.rays")
-                    .font(.system(size: 28))
-                    .padding(15)
+                Image(systemName: "hand.tap")
+                    .font(.system(size: 32))
+                    .padding(17)
                     .foregroundColor(.black)
                     .contentShape(Circle())
             }

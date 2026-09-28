@@ -49,6 +49,7 @@ struct Onboarding: View {
                     }
                 }
         }
+        .blockingWhileUnlinkingOrphanedHouse()
         .task {
             #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
             await CloudKitManager.shared.deleteAllRecords()
@@ -106,9 +107,6 @@ struct Onboarding: View {
                 }
         case .waitGuestsFreeTime:
             WaitUsersFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: false)
-            
-//        case .choreScheduleResult:
-//            FortnightlyView()
             
         case .none:
             EmptyView()
