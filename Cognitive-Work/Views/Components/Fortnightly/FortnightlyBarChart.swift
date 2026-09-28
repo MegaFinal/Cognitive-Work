@@ -12,9 +12,13 @@ struct FortnightlyBarChart: View {
     var users: [UserModel]
     var entries: [DailyUsageEntry]
     var startDate: Date = Date()
+    var selectedEntry: DailyUsageEntry?
     var onSelect: (DailyUsageEntry) -> Void
     var scrollEnabled: Bool = true
     var daysToShow: Int = 14
+    
+    /// Empty space around the columns
+    var selectionInset: CGFloat = 0
     
     var body: some View {
         let calendar = Calendar.current
@@ -28,18 +32,21 @@ struct FortnightlyBarChart: View {
                         day: day,
                         entries: dayEntries,
                         users: users,
+                        selectedEntry: selectedEntry,
                         onSelect: onSelect
                     )
                 }
             }
         }
         
+        let paddedContent = content.padding(selectionInset)
+        
         if scrollEnabled {
             ScrollView(.horizontal, showsIndicators: false) {
-                content
+                paddedContent
             }
         } else {
-            content
+            paddedContent
         }
     }
 }
@@ -48,6 +55,7 @@ private struct FortnightlyDayUserBar: View {
     var day: Date
     var entries: [DailyUsageEntry]
     var users: [UserModel]
+    var selectedEntry: DailyUsageEntry?
     var onSelect: (DailyUsageEntry) -> Void
     
     private let maxBarHeight: Double = 100
@@ -57,6 +65,20 @@ private struct FortnightlyDayUserBar: View {
         formatter.locale = Locale(identifier: "pt_BR")
         formatter.dateFormat = "EEE"
         return formatter
+    }
+    
+    /// Two soft rings around the selected bar, in the bar's own color. 
+    private func selectionHalo(color: Color, isSelected: Bool) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 15 + 9)
+                .fill(color.opacity(0.2))
+                .padding(-9)
+            RoundedRectangle(cornerRadius: 15 + 5)
+                .fill(color.opacity(0.45))
+                .padding(-5)
+        }
+        .opacity(isSelected ? 1 : 0)
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
     
     var body: some View {
@@ -72,9 +94,13 @@ private struct FortnightlyDayUserBar: View {
                     ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
                         let userIndex = users.firstIndex(where: { $0.recordID == entry.userID }) ?? (users.isEmpty ? 0 : index % users.count)
                         
+                        let barColor = UserColorPalette.color(for: userIndex)
+                        let isSelected = entry == selectedEntry
+                        
                         RoundedRectangle(cornerRadius: 15)
-                            .fill(UserColorPalette.color(for: userIndex))
+                            .fill(barColor)
                             .frame(width: 45, height: maxBarHeight * entry.tier.heightRatio)
+                            .background { selectionHalo(color: barColor, isSelected: isSelected) }
                             .onTapGesture {
                                 onSelect(entry)
                             }

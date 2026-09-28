@@ -10,7 +10,7 @@ import CloudKit
 
 /// A data model representing a single daily usage or chore entry for a user,
 /// typically utilized for charting and e-paper display formatting.
-struct DailyUsageEntry {
+struct DailyUsageEntry: Equatable {
     let day: Date
     let userID: CKRecord.ID
     let choreID: CKRecord.ID
