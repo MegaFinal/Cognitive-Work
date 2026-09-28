@@ -21,6 +21,9 @@ struct ContentView: View {
 
     /// Metadata of the invitation that triggered the warning.
     @State var shareMetadata: CKShare.Metadata? = nil
+    @State private var isSwitchingHouse = false
+    
+    @AppStorage("didOnboard") private var didOnboard: Bool = true
 
     // MARK: - Body
 
@@ -35,11 +38,6 @@ struct ContentView: View {
                 .tabItem {
                     Label("Compras", systemImage: "basket")
                 }
-//
-//            ChoresView()
-//                .tabItem {
-//                    Label("Progresso", systemImage: "figure.2")
-//                }
             
             NavigationStack {
                 UserProfileView()
@@ -55,10 +53,12 @@ struct ContentView: View {
         }
         .alert("Não é possivel estar em duas casas ao mesmo tempo", isPresented: $showEnviteAcceptAlert) {
             Button("Trocar de casa",role: .destructive) {
+                isSwitchingHouse = true
                 Task {
                     if let shareMetadata {
                         await viewModel.switchHouse(to: shareMetadata)
                     }
+                    isSwitchingHouse = false
                 }
             }
         } message: {
@@ -69,10 +69,10 @@ struct ContentView: View {
         } message: {
             Text(viewModel.errorMessage ?? "Deu algum erro.")
         }
+        .blockingOperation(isPresented: $isSwitchingHouse, message: "Trocando de casa...")
     }
 }
 
 #Preview {
     ContentView()
 }
-

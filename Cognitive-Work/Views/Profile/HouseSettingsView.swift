@@ -13,6 +13,9 @@ struct HouseSettingsView: View {
     @State private var isResetting = false
     @State private var showDeleteConfirmation = false
     
+    @State private var isDeletingHouse = false
+    @State private var deleteErrorMessage: String?
+    
     @AppStorage("didOnboard") private var didOnboard: Bool = true
     
     var body: some View {
@@ -65,22 +68,27 @@ struct HouseSettingsView: View {
         .navigationTitle("Ajustes da Casa")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        
         .alert("Excluir Casa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {
+                isDeletingHouse = true
                 Task {
-                    await viewModel.deleteHouse()
-                    didOnboard = false
+                    let success = await viewModel.deleteHouse()
+                    if success {
+                        didOnboard = false
+                    } else {
+                        deleteErrorMessage = "Não foi possível excluir a casa. Verifique sua conexão e tente novamente."
+                        isDeletingHouse = false
+                    }
                 }
             }
         } message: {
             Text("Esta ação é permanente. Todos os dados desta casa serão apagados do iCloud.")
         }
+        .blockingOperation(isPresented: $isDeletingHouse, message: "Excluindo sua casa...")
         .task {
             await viewModel.checkAdminStatus()
         }
-        
         .alert("Deseja reiniciar a divisão de tarefas?", isPresented: $showChoreResetConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Reiniciar", role: .destructive) {
@@ -89,7 +97,6 @@ struct HouseSettingsView: View {
         } message: {
             Text("Ao clicar em \"Reiniciar\" a divisão de tarefas atual será excluída.")
         }
-        
         .navigationDestination(isPresented: $isResetting) {
             FortnightlyScheduleView(shouldGenerate: true) {
                 isResetting = false
