@@ -519,6 +519,7 @@ class OnboardingViewModel {
         if let savedUser {
             self.currentUser = savedUser
             self.stateMachine.user = savedUser
+            CloudKitManager.shared.clearPendingJoin(ifMatching: houseRecordID.zoneID)
             return true
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
@@ -629,6 +630,9 @@ class OnboardingViewModel {
             isCheckingAccount = false
             isLoading = false
         }
+        
+        // Leaves any house this iCloud account is still attached to without a member record
+        await CloudKitManager.shared.pruneOrphanedSharedMemberships()
         
         async let fetchedUser = CloudKitManager.shared.fetchMyUser()
         async let fetchedHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)

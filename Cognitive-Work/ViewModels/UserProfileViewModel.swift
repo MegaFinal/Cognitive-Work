@@ -208,46 +208,19 @@ final class UserProfileViewModel {
     
     // MARK: - Delete Account
 
-    /// Deletes the private profile and, when it exists, fully detaches the in-house copy.
+    /// Deletes everything this account has in the app and detaches it from every house.
     func deleteAccount() async {
-        guard let privateUser else {
-            errorMessage = "Perfil não carregado. Tente novamente."
-            return
-        }
-        
+        errorMessage = nil
         isSaving = true
         defer { isSaving = false }
         
-        if let user {
-            // Resolve the house and ownership before either record is gone
-            let house = await user.house
-            let isHouseOwner = await house?.isAdmin() == true
-            
-            if let house, isHouseOwner {
-                // Owner: the whole house is deleted along with the account.
-                guard await house.deleteAllChildren() else {
-                    errorMessage = "Erro ao apagar os dados da casa."
-                    return
-                }
-                guard await CloudKitManager.shared.delete(house) else {
-                    errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao apagar a casa."
-                    return
-                }
-            } else {
-                do {
-                    _ = try await CloudKitManager.shared.leaveCurrentHouse()
-                } catch {
-                    print("Failed to fully leave house while deleting account: \(error)")
-                }
-            }
-        }
-        
-        guard await CloudKitManager.shared.delete(privateUser) else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+        guard await CloudKitManager.shared.deleteCurrentAccount() else {
+            errorMessage = CloudKitManager.shared.errorMessage ?? "Não foi possível excluir o perfil. Tente novamente."
             return
         }
         
-        CloudKitManager.shared.clearCurrentUser()
+        privateUser = nil
+        user = nil
         onAccountDeleted()
     }
     

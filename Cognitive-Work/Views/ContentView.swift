@@ -70,6 +70,24 @@ struct ContentView: View {
             Text(viewModel.errorMessage ?? "Deu algum erro.")
         }
         .blockingOperation(isPresented: $isSwitchingHouse, message: "Trocando de casa...")
+        .blockingWhileUnlinkingOrphanedHouse()
+        .task {
+            await leaveOrphanedHouses()
+        }
+    }
+    
+    // MARK: - Orphaned houses
+    
+    /// Leaves any house this iCloud account is still attached to without a member record
+    private func leaveOrphanedHouses() async {
+        let removed = await CloudKitManager.shared.pruneOrphanedSharedMemberships()
+        guard removed > 0 else { return }
+        
+        if await CloudKitManager.shared.currentHouse(forceRefresh: true) == nil {
+            didOnboard = false
+        } else {
+            NotificationCenter.default.post(name: .cloudKitDidChange, object: nil)
+        }
     }
 }
 
