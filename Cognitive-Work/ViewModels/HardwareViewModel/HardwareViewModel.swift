@@ -49,6 +49,10 @@ class HardwareViewModel {
     
     private var hardwareNetworkManager = HardwareNetworkManager()
     
+    init() {
+        hostName = hardwareNetworkManager.host
+    }
+    
     //MARK: - Connection with Esp32
     
     /// Sends the WiFi credentials over the ESP32 network, keeps the returned host name and moves to pairing.

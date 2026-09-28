@@ -29,16 +29,25 @@ struct WifiCredentialsView: View {
                         Text("Para que seja possível conectar o Harvi ao WiFi da sua casa, entre no WiFi ESP32, com senha 12345678, retorne ao app e envie o nome e senha do WiFi.")
                             .foregroundStyle(.secondary)
                     }
-
-                    LabeledInput(title: "Nome do Wi-Fi") {
-                        TextField("", text: $viewModel.userWifiName)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    }
-                    LabeledInput(title: "Senha do Wi-Fi") {
-                        SecureField("", text: $viewModel.userWifiPassord)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
+                    
+                    if !viewModel.hostName.isEmpty {
+                        Button("Já enviei o WiFi, ir para o pareamento") {
+                            viewModel.navigateToParingView = true
+                        }
+                        .font(.callout)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 8)
+                    } else {
+                        LabeledInput(title: "Nome do Wi-Fi") {
+                            TextField("", text: $viewModel.userWifiName)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                        }
+                        LabeledInput(title: "Senha do Wi-Fi") {
+                            SecureField("", text: $viewModel.userWifiPassord)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                        }
                     }
                 }
                 .padding(.horizontal, 16)
