@@ -1109,6 +1109,54 @@ class CarouselViewModel {
         }
     }
     
+    // MARK: - Calendar Synchronization
+    
+    /// Synchronizes a single, non-recurrent chore to the system calendar.
+    ///
+    /// This method checks if calendar synchronization is enabled in user defaults, verifies access permissions,
+    /// retrieves the current user's CloudKit record ID, and upserts or removes the corresponding calendar event.
+    ///
+    /// - Parameter chore: The `ChoreModel` instance to be synchronized.
+    /// - Returns: An asynchronous task that executes on the main actor.
+    @MainActor
+    func syncSingleChoreToCalendar(_ chore: ChoreModel) async {
+        let isSyncEnabled = UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled")
+        guard isSyncEnabled else { return }
+        guard await CalendarManager.shared.requestAccess() else { return }
+        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
+              let myUserID = myUser.recordID else { return }
+        
+        do {
+            try await CalendarManager.shared.upsertOneOffEvent(for: chore, currentUserID: myUserID)
+        } catch {
+            print("Failed to sync single chore: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Accurately synchronizes a single day's recurrent assignment.
+    ///
+    /// Use this method when a specific day's assignment status or assignee changes without altering the global recurrence rule.
+    ///
+    /// - Parameters:
+    ///   - assignment: The `RecurrentAssignmentModel` representing the specific daily instance.
+    ///   - chore: The parent `ChoreModel` associated with the assignment.
+    /// - Returns: An asynchronous task that executes on the main actor.
+    @MainActor
+    func syncSingleAssignmentToCalendar(for assignment: RecurrentAssignmentModel, chore: ChoreModel) async {
+        let isSyncEnabled = UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled")
+        guard isSyncEnabled else { return }
+        guard await CalendarManager.shared.requestAccess() else { return }
+        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
+              let myUserID = myUser.recordID else { return }
+        
+        do {
+            try await CalendarManager.shared.upsertRecurrentEvent(for: assignment, chore: chore, currentUserID: myUserID)
+        } catch {
+            print("Failed to sync single assignment: \(error.localizedDescription)")
+        }
+    }
+    
+    
     // MARK: Picking an unassigned chore that has no date
     
     var itemAwaitingDate: UnassignedItem?
@@ -1150,7 +1198,7 @@ class CarouselViewModel {
         let chore = item.chore
         let calendar = Calendar.current
         let window = pickerWindow
-        
+         
         // Daily: One slot per day within the window, all locked, checked by default
         if chore.frequency == .daily {
             var days: [Date] = []
@@ -1162,29 +1210,31 @@ class CarouselViewModel {
             }
             return days.map { WeeklyPickSlot(date: $0, existingAssignment: nil, isDateEditable: false) }
         }
-        
-        // Weekly + tapped an existing empty slot: This week is locked, next week (if still open) is editable and optional
-        if chore.frequency == .weekly, case .recurring(let thisWeek) = item.choreType {
-            var list = [WeeklyPickSlot(date: thisWeek.day, existingAssignment: thisWeek, isDateEditable: false)]
-            if let sibling = openSiblingWeeklyAssignment(for: chore, excluding: thisWeek) {
-                list.append(WeeklyPickSlot(date: sibling.day, existingAssignment: sibling, isDateEditable: true))
+         
+        if case .recurring(let assignment) = item.choreType {
+            switch chore.frequency {
+            case .weekly, .fortnightly, .monthly:
+                return [WeeklyPickSlot(date: assignment.day, existingAssignment: assignment, isDateEditable: true)]
+            default: break
             }
-            return list
         }
-        
-        // Other cases (fortnightly / monthly / one-off / brand new weekly): One selectable slot
+         
         return [WeeklyPickSlot(date: nil, existingAssignment: nil, isDateEditable: true)]
     }
     
-    /// Tapping an item in the list: items requiring a date selection (or weekly empty slots) present a confirmation page, while others are claimed immediately.
+    /// Tapping an item in the list: items requiring a date selection present a confirmation page.
     @MainActor
     func requestPick(_ item: UnassignedItem) {
-        var isWeeklyRecurring = false
-        if item.chore.frequency == .weekly, case .recurring = item.choreType {
-            isWeeklyRecurring = true
+        var needsSheet = item.needsDateSelection
+
+        if case .recurring = item.choreType {
+            switch item.chore.frequency {
+            case .weekly, .fortnightly, .monthly: needsSheet = true
+            default: break
+            }
         }
-        
-        if item.needsDateSelection || isWeeklyRecurring {
+
+        if needsSheet {
             dismissUnassignedList()
             itemAwaitingDate = item
         } else {
@@ -1281,7 +1331,7 @@ class CarouselViewModel {
         if !newRefs.isEmpty {
             chore.dailyAssignmentsReference = (chore.dailyAssignmentsReference ?? []) + newRefs
         }
-        if chore.frequency == .monthly {
+        if chore.frequency == .monthly, !createdModels.isEmpty {
             chore.shouldBeIncluded = false
         }
         await CloudKitManager.shared.update(chore)
@@ -1309,58 +1359,11 @@ class CarouselViewModel {
         }
     }
     
-    // MARK: - Calendar Synchronization
-    
-    /// Synchronizes a single, non-recurrent chore to the system calendar.
-    ///
-    /// This method checks if calendar synchronization is enabled in user defaults, verifies access permissions,
-    /// retrieves the current user's CloudKit record ID, and upserts or removes the corresponding calendar event.
-    ///
-    /// - Parameter chore: The `ChoreModel` instance to be synchronized.
-    /// - Returns: An asynchronous task that executes on the main actor.
-    @MainActor
-    func syncSingleChoreToCalendar(_ chore: ChoreModel) async {
-        let isSyncEnabled = UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled")
-        guard isSyncEnabled else { return }
-        guard await CalendarManager.shared.requestAccess() else { return }
-        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
-              let myUserID = myUser.recordID else { return }
-        
-        do {
-            try await CalendarManager.shared.upsertOneOffEvent(for: chore, currentUserID: myUserID)
-        } catch {
-            print("Failed to sync single chore: \(error.localizedDescription)")
-        }
-    }
-    
-    /// Accurately synchronizes a single day's recurrent assignment.
-    ///
-    /// Use this method when a specific day's assignment status or assignee changes without altering the global recurrence rule.
-    ///
-    /// - Parameters:
-    ///   - assignment: The `RecurrentAssignmentModel` representing the specific daily instance.
-    ///   - chore: The parent `ChoreModel` associated with the assignment.
-    /// - Returns: An asynchronous task that executes on the main actor.
-    @MainActor
-    func syncSingleAssignmentToCalendar(for assignment: RecurrentAssignmentModel, chore: ChoreModel) async {
-        let isSyncEnabled = UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled")
-        guard isSyncEnabled else { return }
-        guard await CalendarManager.shared.requestAccess() else { return }
-        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
-              let myUserID = myUser.recordID else { return }
-        
-        do {
-            try await CalendarManager.shared.upsertRecurrentEvent(for: assignment, chore: chore, currentUserID: myUserID)
-        } catch {
-            print("Failed to sync single assignment: \(error.localizedDescription)")
-        }
-    }
-    
     // MARK: - Custom Calendar
     
     /// Number of uncompleted tasks per day (recurring assignments + one-off chores with a dueDate)
     private(set) var loadByDay: [Date: Int] = [:]
-    
+        
     /// From today until the last day of the algorithm window
     var selectableWindow: Range<Date>? {
         let calendar = Calendar.current
@@ -1372,6 +1375,19 @@ class CarouselViewModel {
         else { return nil }
         
         return today..<end
+    }
+    
+    /// The two weeks the engine last generated (starts on the cycle's first day, NOT today).
+    /// Derived from the last assignment day: engine window = 15 days, so first day = last day - 14.
+    /// Falls back to nil when there is no schedule.
+    var cycleWindow: Range<Date>? {
+        let calendar = Calendar.current
+        guard let cycleEnd = currentCycleEnd else { return nil }
+        let lastDay = calendar.startOfDay(for: cycleEnd)
+        guard let start = calendar.date(byAdding: .day, value: -14, to: lastDay),
+              let end = calendar.date(byAdding: .day, value: 1, to: lastDay)
+        else { return nil }
+        return start..<end
     }
     
     private func rebuildLoadByDay() {

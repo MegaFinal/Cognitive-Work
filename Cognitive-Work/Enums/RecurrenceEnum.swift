@@ -40,4 +40,14 @@ enum Recurrence: String, CaseIterable, Hashable {
             return 13
         }
     }
+    
+    var displayName: String {
+        switch self {
+        case .none: return "Única"
+        case .daily: return "Diária"
+        case .weekly: return "Semanal"
+        case .fortnightly: return "Quinzenal"
+        case .monthly: return "Mensal"
+        }
+    }
 }
