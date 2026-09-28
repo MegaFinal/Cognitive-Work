@@ -15,10 +15,10 @@ class HardwareViewModel {
     
     // MARK: - Device Connection & Pairing (IP & Wi-Fi)
     
-    /// The IP address of the target hardware device.
-    var deviceIP = ""
+    /// The host name  of the target hardware device.
+    var hostName = ""
     
-    var hardwareIp: HardwareIpModel?
+    var hardwareHostName: HardwareHostNameModel?
     
     var house: HouseModel?
     
@@ -37,19 +37,80 @@ class HardwareViewModel {
     /// An optional error message capturing the latest failure state.
     var errorMessage: String?
     
+    var isPairing = false
+    var conectionResult: ConectionResult?
+    var isSending = false
+
+    /// Result shown on the WiFi screen (failure only; success just moves on to pairing).
+    var wifiResult: ConectionResult?
+
+    /// Whether this phone already has a pairing hash for the device.
+    var isPaired: Bool { hardwareNetworkManager.isConnected }
+    
     private var hardwareNetworkManager = HardwareNetworkManager()
     
-    /// Sends Wi-Fi credentials to the connected hardware device.
-    func sendWifiCredentials() async throws {
-        hardwareNetworkManager.ip = deviceIP
-        try await hardwareNetworkManager.sendWifiCredentials(ssid: self.userWifiName, password: self.userWifiPassord)
+    //MARK: - Connection with Esp32
+    
+    /// Sends the WiFi credentials over the ESP32 network, keeps the returned host name and moves to pairing.
+    func sendWifiCredentials() async {
+        isSending = true
+        defer { isSending = false }
+
+        do {
+            hostName = try await hardwareNetworkManager.sendWifiCredentials(
+                ssid: userWifiName,
+                password: userWifiPassord
+            )
+            navigateToParingView = true
+        } catch {
+            wifiResult = .failureWiFi
+        }
+    }
+
+    /// Asks the device for its hash, saves the host name for the other users and shows the result alert.
+    func pair() async {
+        isPairing = true
+
+        do {
+            hardwareNetworkManager.host = hostName
+            try await hardwareNetworkManager.askForParingCode()
+
+            if !(await createHostName()) {
+                print("Paired, but the host name was not saved to CloudKit")
+            }
+            conectionResult = .success
+        } catch {
+            print("Pairing failed: \(error)")
+            conectionResult = .failureParing
+        }
+        isPairing = false
+
+        if conectionResult == .success {
+            try? await sendChartToESP32()
+        }
     }
     
-    /// Requests a pairing code from the device using the current IP.
-    func askForParingCode() async throws -> Bool {
-        hardwareNetworkManager.ip = deviceIP
-        try await hardwareNetworkManager.askForParingCode(ipcode: deviceIP)
-        return hardwareNetworkManager.isConnected
+    /// Outcome of a pairing attempt, used to drive the result alert.
+    enum ConectionResult {
+        case success
+        case failureWiFi
+        case failureParing
+
+        var title: String {
+            switch self {
+            case .success: "Pareamento completo!"
+            case .failureWiFi: "Falha na conexão"
+            case .failureParing: "Falha no pareamento"
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .success: "Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvi!"
+            case .failureWiFi: "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente."
+            case .failureParing: "Certifique-se que o Harvi está conectado no WiFi e tente novamente."
+            }
+        }
     }
     
     // MARK: - Image & Chart Transmission (ESP32 Display)
@@ -102,57 +163,104 @@ class HardwareViewModel {
     }
     //MARK: - Cloudkit
     
-    /// Creates a new IP record only if one doesn't already exist for this IP, avoiding duplicate records.
+    /// Makes sure the house has the device's host name in CloudKit, so the other users can pair.
+    ///
+    /// Reuses the existing record when it already has this name, replaces it when the house
+    /// switched devices, and only creates a new one when there is none.
     @MainActor
-    func createIp() async -> Bool {
+    func createHostName() async -> Bool {
         errorMessage = nil
-         
+
+        if let existing = try? await CloudKitManager.shared.fetchFirst(HardwareHostNameModel.self) {
+            if existing.hostName == hostName {
+                hardwareHostName = existing
+                return true
+            }
+            await CloudKitManager.shared.delete(existing)
+        }
+
         house = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
-         
-        guard let houseRecordID = house?.recordID else { 
+
+        guard let houseRecordID = house?.recordID else {
             errorMessage = "Casa não encontrada."
             return false
         }
-         
+
         let houseReference = CKRecord.Reference(recordID: houseRecordID, action: .none)
-         
-        if let existing = try? await CloudKitManager.shared.fetchFirst(HardwareIpModel.self),
-           existing.ip == self.deviceIP {
-            self.hardwareIp = existing
-            return true
-        }
-         
-        let ip = HardwareIpModel(ip: self.deviceIP)
-         
-        if let created = await CloudKitManager.shared.create(ip, zoneID: house?.recordID?.zoneID, parent: houseReference) {
-            self.hardwareIp = created
-            return true
-        } else {
-            errorMessage = "Erro ao criar IP."
+        let model = HardwareHostNameModel(hostName: hostName)
+
+        guard let created = await CloudKitManager.shared.create(
+            model,
+            zoneID: houseRecordID.zoneID,
+            parent: houseReference
+        ) else {
+            errorMessage = "Erro ao criar nome do host (Harvi)."
             return false
         }
+
+        hardwareHostName = created
+        return true
     }
     
-    func fetchIp() async {
+    /// Loads the host name saved by whoever set up the device. Skipped when it is already known.
+    func fetchHostName() async {
+        guard hostName.isEmpty else { return }
         errorMessage = nil
-        
+
         do {
-            hardwareIp = try await CloudKitManager.shared.fetchFirst(HardwareIpModel.self)
+            hardwareHostName = try await CloudKitManager.shared.fetchFirst(HardwareHostNameModel.self)
+            hostName = hardwareHostName?.hostName ?? ""
         } catch {
             errorMessage = error.localizedDescription
         }
-        
-        deviceIP = hardwareIp?.ip ?? ""
-        
     }
     
     /// Deletes the current IP record and clears local state so the UI reflects the change immediately.
-    func deleteIp() async {
-        guard let hardwareIp else { return }
+    func deleteHostName() async {
+        guard let hardwareHostName else { return }
 
-        await CloudKitManager.shared.delete(hardwareIp)
+        await CloudKitManager.shared.delete(hardwareHostName)
         
-        self.hardwareIp = nil
-        self.deviceIP = ""
+        self.hardwareHostName = nil
+        self.hostName = ""
+    }
+    
+    // MARK: - Disconnect & Reset
+
+    /// Forgets the pairing on this phone only. The device and the other users are not affected,
+    /// and the host name stays, so this phone can pair again later.
+    func disconnectThisPhone() {
+        hardwareNetworkManager.forgetDevice()
+    }
+
+    /// Wipes the device (WiFi and hash) and removes its host name from CloudKit for the whole house.
+    ///
+    /// Afterwards the ESP32 is back in access point mode and must be set up again.
+    func resetHardware() async throws {
+        try await hardwareNetworkManager.resetDevice()
+        await deleteHostName()
+    }
+}
+
+extension View {
+    /// Shows the result alert of a hardware step. "Voltar" runs `onSuccess` only when it succeeded.
+    func resultAlert(
+        _ result: Binding<HardwareViewModel.ConectionResult?>,
+        onSuccess: @escaping () -> Void = {}
+    ) -> some View {
+        alert(
+            result.wrappedValue?.title ?? "",
+            isPresented: Binding(
+                get: { result.wrappedValue != nil },
+                set: { if !$0 { result.wrappedValue = nil } }
+            ),
+            presenting: result.wrappedValue
+        ) { value in
+            Button("Voltar", role: .cancel) {
+                if value == .success { onSuccess() }
+            }
+        } message: { value in
+            Text(value.message)
+        }
     }
 }

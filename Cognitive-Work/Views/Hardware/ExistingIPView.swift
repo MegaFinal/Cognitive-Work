@@ -7,51 +7,22 @@
 
 import SwiftUI
 
+/// Shown when this phone is already paired: lets the user test the device, disconnect
+/// this phone or reset the device for the whole house.
 struct ExistingIPView: View {
     @Binding var viewModelHardware: HardwareViewModel
-    
+    @Environment(\.dismiss) private var dismiss
+
     var profileImage: UIImage?
-    
+
     @State private var errorMessage: String?
-    
+    @State private var showResetConfirmation = false
+
     var body: some View {
-        VStack {
-            
-            Button {
-                print("Botão Parear clicado! IP atual: \(viewModelHardware.deviceIP)")
-                
-                if !viewModelHardware.deviceIP.isEmpty {
-                    Task {
-                        do {
-                            let connected = try await viewModelHardware.askForParingCode()
-                            print("Resultado do pareamento: \(connected)")
-                            if !connected {
-                                errorMessage = "Não foi possível parear com o dispositivo."
-                            }
-                        } catch {
-                            print("Erro no pareamento: \(error.localizedDescription)")
-                            errorMessage = error.localizedDescription
-                        }
-                    }
-                } else {
-                    errorMessage = "IP do dispositivo não encontrado."
-                }
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20)
-                        .frame(width: 100, height: 44)
-                        .foregroundStyle(.indigo)
-                    Text("Parear")
-                        .foregroundStyle(.white)
-                        .font(.system(size: 22))
-                }
-            }
-            .padding(.bottom, 20)
-            
-            
+        VStack(spacing: 20) {
             avatarView
                 .frame(width: 100, height: 100)
-            
+
             Button {
                 Task {
                     do {
@@ -70,23 +41,34 @@ struct ExistingIPView: View {
                         .padding()
                 }
             }
-            
-            Button {
-                Task {
-                    await viewModelHardware.deleteIp()
-                }
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20)
-                        .frame(width: 150, height: 44)
-                        .foregroundStyle(.orange)
-                    Text("Delete Ip")
-                        .foregroundStyle(.white)
-                        .padding()
-                }
+
+            Button("Desconectar este celular") {
+                viewModelHardware.disconnectThisPhone()
+                dismiss()
+            }
+
+            Button("Resetar o Harvi", role: .destructive) {
+                showResetConfirmation = true
             }
         }
-        .toolbar(.hidden, for: .tabBar)
+        .confirmationDialog(
+            "Resetar o Harvi?",
+            isPresented: $showResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Resetar", role: .destructive) {
+                Task {
+                    do {
+                        try await viewModelHardware.resetHardware()
+                        dismiss()
+                    } catch {
+                        errorMessage = "Não foi possível falar com o Harvi. Segure o botão BOOT por 5 segundos para resetar direto no dispositivo."
+                    }
+                }
+            }
+        } message: {
+            Text("O Harvi vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo.")
+        }
         .alert("Ops", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -96,7 +78,7 @@ struct ExistingIPView: View {
             Text(errorMessage ?? "Ocorreu um erro.")
         }
     }
-    
+
     private var avatarView: some View {
         Group {
             if let profileImage {
@@ -113,7 +95,7 @@ struct ExistingIPView: View {
         }
         .clipShape(Circle())
     }
-    
+
     private var avatarForDevice: some View {
         avatarView
             .frame(width: 100, height: 100)
