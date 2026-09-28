@@ -62,13 +62,11 @@ struct ChoreCardListStyle: View {
             .shadow(color: .black.opacity(0.21), radius: 3.35, x: 0, y: 5)
             
             HStack(spacing: 30) {
-                Image(systemName: chore.symbolName)
+                Image(systemName: room?.symbol ?? chore.symbolName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.1, height: height * 0.08)
-                    // A white-colored room needs a black icon here (see
-                    // `RoomColor.contentColor`), otherwise it renders white-on-white.
-                    .foregroundColor(room?.color.contentColor ?? .white)
+                    .foregroundColor(.white)
                     .fontWeight(.thin)
                 
                 VStack(alignment: .leading, spacing: 20) {
@@ -113,7 +111,7 @@ struct ChoreCardListStyle: View {
                                     .font(.system(size: 22))
                                     .bold()
                             }
-                            .foregroundColor(room?.color.contentColor ?? .white)
+                            .foregroundColor(.white)
                             
                             Spacer()
                             

@@ -106,7 +106,7 @@ struct ChoreDetailsCard: View {
     /// The upper header section: the chore's primary icon, name, and status tags.
     private var header: some View {
         VStack(spacing: 10) {
-            Image(systemName: chore.symbolName)
+            Image(systemName: room?.symbol ?? chore.symbolName)
                 .resizable()
                 .scaledToFit()
                 .frame(width: width * 0.19, height: height * 0.09)

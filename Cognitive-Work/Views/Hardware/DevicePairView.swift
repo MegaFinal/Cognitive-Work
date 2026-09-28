@@ -7,11 +7,10 @@
 
 import SwiftUI
 
-import SwiftUI
-
 /// Pairs the phone with the device using the IP shown on its screen.
 struct DevicePairView: View {
     @Bindable var hardwareViewModel: HardwareViewModel
+    @State private var disconectThisPhone = false
     
     /// Closes the whole sheet, not just this step.
     var onClose: () -> Void
@@ -38,6 +37,11 @@ struct DevicePairView: View {
                 ) {
                     await hardwareViewModel.pair()
                 }
+                
+                Button("Desconectar este celular") {
+                    hardwareViewModel.disconnectThisPhone()
+                    disconectThisPhone = true
+                }
                 .padding(.bottom, 100)
             }
             .padding(.horizontal, 16)
@@ -62,6 +66,12 @@ struct DevicePairView: View {
             Text(result.message)
         }
         .dismissKeyboardOnTap()
+        
+        .alert("Celular desconectado.", isPresented: $disconectThisPhone) {
+            Button("OK") { onClose() }
+        } message: {
+            Text("Seu celular foi desconectado com sucesso!")
+        }
     }
     
 }

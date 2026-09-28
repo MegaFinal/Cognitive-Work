@@ -57,10 +57,10 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     /// Color schema context representation dictating visual complexity.
     var color: Color {
         switch self {
-        case .muitoRapido: return .green
-        case .rapido: return .teal
-        case .moderado: return .yellow
-        case .demorado: return .orange
+        case .muitoRapido: return .choreGreen
+        case .rapido: return .choreBlue
+        case .moderado: return .choreYellow
+        case .demorado: return .choreOrange
         case .muitoDemorado: return .red
         }
     }

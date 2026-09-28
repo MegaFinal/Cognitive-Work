@@ -19,10 +19,10 @@ enum Recurrence: String, CaseIterable, Hashable {
     var color: Color {
         switch self {
         case .none: return .gray
-        case .daily: return .green
-        case .weekly: return .yellow
-        case .fortnightly: return .orange
-        case .monthly: return .indigo
+        case .daily: return .choreGreen
+        case .weekly: return .choreYellow
+        case .fortnightly: return .choreOrange
+        case .monthly: return .chorePurple
         }
     }
     

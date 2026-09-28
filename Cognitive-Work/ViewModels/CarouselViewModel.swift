@@ -208,6 +208,12 @@ class CarouselViewModel {
         }
         
         visibleOccurrences = occurrences.sorted(by: self.areInIncreasingOrder)
+        
+        // Only the list layout indexes into `visibleOccurrences`. The grid focuses by index into
+        // `visibleChores` (already restored by `rebuildVisibleChores()`), and a chore can have
+        // up to `occurrencesPerChore` occurrences, so the two indexes differ: overwriting it here
+        // moved the focus to the wrong card, or dropped it, on every refresh in the grid.
+        guard layoutMode == .list else { return }
 
         if let focusedAssignmentID = focusedAssignmentRecordID,
             let index = visibleOccurrences.firstIndex(where: {
@@ -377,6 +383,12 @@ class CarouselViewModel {
     ///
     /// Force add focused card to visibleChores even if it does not match current filters, to keep details open until user closes.
     private func rebuildVisibleChores() {
+        // Whether the focused card is showing its details, captured before the lists change
+        // and the card possibly moves to another index. See `reconcileFlipState(...)`.
+        let previousFocusedIndex = focusedIndex
+        let wasFlipped = previousFocusedIndex.map { flippedIndices.contains($0) } ?? false
+        let wasShowingBack = previousFocusedIndex.map { backVisibleIndices.contains($0) } ?? false
+        
         // Use focusedChoreRecordID to ensure focused chore remains visible regardless of filters
         let base = layoutMode == .grid
         ? cardModels.filter { isVisibleInGrid($0) }
@@ -417,6 +429,30 @@ class CarouselViewModel {
         }
         
         rebuildVisibleOccurrences()
+        
+        reconcileFlipState(wasFlipped: wasFlipped, wasShowingBack: wasShowingBack)
+    }
+    
+    /// Keeps the details face tied to the focused card.
+    ///
+    /// ## Bug fix: details visual left behind after completing a chore
+    /// `flippedIndices`/`backVisibleIndices` are keyed by *index*, but a rebuild — which
+    /// completing a chore triggers — can move the focused card to another index or drop the
+    /// focus altogether. The flip state stayed on the old index, so the carousel ended up
+    /// with a card still drawn as the details card (`CarouselCardFrame` shows it whenever the
+    /// index is flipped) but not focused, which must never happen.
+    ///
+    /// The details face now follows the focus: it moves to the card's new index, and is
+    /// dropped entirely when nothing is focused any more.
+    private func reconcileFlipState(wasFlipped: Bool, wasShowingBack: Bool) {
+        guard let focusedIndex else {
+            flippedIndices.removeAll()
+            backVisibleIndices.removeAll()
+            return
+        }
+        
+        flippedIndices = wasFlipped ? [focusedIndex] : []
+        backVisibleIndices = wasShowingBack ? [focusedIndex] : []
     }
     
     var hasFocusedCard: Bool {
@@ -462,6 +498,8 @@ class CarouselViewModel {
             self.hasFetchedInitially = true
             self.isLoading = false
         }
+        
+        await RoomModel.migrateStoredColorsIfNeeded(rooms)
     }
     
     /// Refreshes the chores and recurrent assignments after a chore or its responsible user has been modified.
@@ -912,7 +950,10 @@ class CarouselViewModel {
         DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration / 2) { [weak self] in
             guard let self else { return }
             if isFlipping {
-                self.backVisibleIndices.insert(index)
+                // Skipped when the card lost its flip meanwhile (a refresh moved or cleared it).
+                if self.flippedIndices.contains(index) {
+                    self.backVisibleIndices.insert(index)
+                }
             } else {
                 self.backVisibleIndices.remove(index)
             }

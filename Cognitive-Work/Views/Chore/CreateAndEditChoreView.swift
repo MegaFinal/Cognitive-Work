@@ -55,6 +55,9 @@ struct CreateAndEditChoreView: View {
     /// Indicates whether an asynchronous save operation is currently in progress.
     @State private var isSaving = false
     
+    /// The date picked in the calendar (nil = not chosen; the engine schedules it as before).
+    @State private var selectedDate: Date?
+    
     /// Indicates whether the delete operation triggered by ``deleteButton`` is in progress.
     @State private var isDeleting = false
     @State private var showDeleteConfirmation = false
@@ -68,6 +71,35 @@ struct CreateAndEditChoreView: View {
     /// ``deleteButton`` only ever appears on the edit side of this shared screen.
     private var isEditingExistingChore: Bool {
         originalModel.recordID != nil
+    }
+    
+    /// Days the calendar shows. Same rules as the claim sheet:
+    /// weekly (editing an occurrence):  that occurrence's week;
+    /// everything else: the two weeks the engine generated.
+    private var dateWindow: Range<Date> {
+        let calendar = Calendar.current
+
+        if choreDTO.frequency == .weekly {
+            if let anchor = targetAssignments.first?.day {
+                // Editing an occurrence: that occurrence's week.
+                return weekRange(containing: anchor, calendar: calendar)
+            }
+            if !isEditingExistingChore {
+                // Creating a new chore: the current week.
+                return weekRange(containing: Date(), calendar: calendar)
+            }
+        }
+
+        // Everything else (including editing without an occurrence): the engine's two weeks.
+        return carouselViewModel.cycleWindow ?? carouselViewModel.pickerWindow
+    }
+
+    private func weekRange(containing date: Date, calendar: Calendar) -> Range<Date> {
+        let startOfWeek = calendar.date(
+            from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        ) ?? calendar.startOfDay(for: date)
+        let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek) ?? startOfWeek
+        return startOfWeek..<endOfWeek
     }
     
     
@@ -96,6 +128,11 @@ struct CreateAndEditChoreView: View {
                         Spacer()
                         ChoreTagPicker(chore: $choreDTO, type: .frequency)
                     }
+                    
+                    if choreDTO.frequency != .daily {
+                        dateSection
+                    }
+                    
                 }
                 .font(.system(size: 15))
                 .fontWeight(.semibold)
@@ -159,6 +196,19 @@ struct CreateAndEditChoreView: View {
                 let userIDs = Set(refs.map { $0.recordID })
                 choreDTO.responsibleUsers = availableHouseUsers.filter { userIDs.contains($0.recordID ?? CKRecord.ID(recordName: "")) }
             }
+            
+            if let occurrence = targetAssignments.first {
+                selectedDate = occurrence.day
+            } else {
+                selectedDate = originalModel.dueDate
+            }
+        }
+        .onChange(of: choreDTO.frequency) { _, _ in
+            // The window changes with the frequency; drop a date that no longer fits.
+            if let date = selectedDate,
+               !dateWindow.contains(date.startOfDay) || date.startOfDay < Calendar.current.startOfDay(for: Date()) {
+                selectedDate = nil
+            }
         }
         .toolbar(.hidden, for: .tabBar)
         .dismissKeyboardOnTap()
@@ -191,7 +241,7 @@ struct CreateAndEditChoreView: View {
     /// The uppermost structural section of the form: iconography, chore name field and room selection.
     private var header: some View {
         HStack {
-            Image(systemName: choreDTO.symbolName)
+            Image(systemName: choreDTO.room?.symbol ?? choreDTO.symbolName)
                 .resizable()
                 .scaledToFit()
                 .frame(width: width * 0.15)
@@ -249,6 +299,22 @@ struct CreateAndEditChoreView: View {
             .frame(width: width * 0.65)
         }
         
+    }
+    
+    /// Calendar shown below the pickers for every frequency except daily.
+    private var dateSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Data")
+                .font(.system(size: 15))
+                .fontWeight(.semibold)
+            
+            CustomCalendar(
+                selectedDate: $selectedDate,
+                window: dateWindow,
+                opacityForDay: { carouselViewModel.loadOpacity(on: $0, in: dateWindow) },
+                earliestSelectable: Calendar.current.startOfDay(for: Date())
+            )
+        }
     }
     
     /// Encapsulates the toggle and the inline editor for the chore's checklist.
@@ -365,6 +431,10 @@ struct CreateAndEditChoreView: View {
         let isNewChore = !isEditingExistingChore
         let cycleEnd = carouselViewModel.currentCycleEnd
         
+        if choreDTO.frequency == .none {
+                originalModel.dueDate = selectedDate
+            }
+        
         await originalModel.save(from: choreDTO, targetAssignments: targetAssignments)
         
         // A recurring chore created mid-cycle gets its occurrences for the rest of the cycle
@@ -372,9 +442,13 @@ struct CreateAndEditChoreView: View {
             await scheduleNewRecurringChore(
                 originalModel,
                 responsibleUsers: choreDTO.responsibleUsers,
-                cycleEnd: cycleEnd
+                cycleEnd: cycleEnd,
+                pickedDate: selectedDate
             )
         }
+        
+        await applyPickedDateToOccurrence(isNewChore: isNewChore)
+        
         let newOccurrenceIDs: Set<CKRecord.ID> = isNewChore
             ? Set((originalModel.dailyAssignmentsReference ?? []).map { $0.recordID })
             : []
@@ -400,6 +474,33 @@ struct CreateAndEditChoreView: View {
         
         isSaving = false
         dismiss()
+    }
+    
+    /// Writes the date picked in the calendar onto the recurring chore's assignment.
+    @MainActor
+    private func applyPickedDateToOccurrence(isNewChore: Bool) async {
+        switch choreDTO.frequency {
+        case .weekly, .fortnightly, .monthly: break
+        default: return
+        }
+        
+        guard let selectedDate else { return }
+        let calendar = Calendar.current
+        let picked = calendar.startOfDay(for: selectedDate)
+        
+        if let target = targetAssignments.first {
+            guard !calendar.isDate(target.day, inSameDayAs: picked) else { return }
+            target.day = picked
+            await CloudKitManager.shared.update(target)
+        } else if isNewChore {
+            // Find the just-generated assignment closest to the picked date and move it to that date
+            let created = await originalModel.dailyAssignments
+            guard let closest = created.min(by: {
+                abs($0.day.timeIntervalSince(picked)) < abs($1.day.timeIntervalSince(picked))
+            }) else { return }
+            closest.day = picked
+            await CloudKitManager.shared.update(closest)
+        }
     }
     
     /// Deletes the chore being edited — or, when it's recurring, just the occurrence(s) this
