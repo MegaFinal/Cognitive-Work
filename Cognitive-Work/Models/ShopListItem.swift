@@ -37,7 +37,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
     private var buyerUserReference: CKRecord.Reference?
 
     /// Other users who will use/share this item, e.g. to split its cost.
-    private var relatedUsersReference: [CKRecord.Reference]?
+    var relatedUsersReference: [CKRecord.Reference]?
 
     /// The user who added this item to the list
     private var addedByUserReference: CKRecord.Reference?

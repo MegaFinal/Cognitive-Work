@@ -9,6 +9,7 @@ import SwiftUI
 
 /// Enumerates strict constraints defining urgency characteristics applied within context filters.
 enum PriorityTag: String, CaseIterable, Hashable {
+    case undefined = "indefinido"
     case low = "não urgente"
     case medium = "pouco urgente"
     case high = "urgente"
@@ -17,6 +18,7 @@ enum PriorityTag: String, CaseIterable, Hashable {
     /// Structural value evaluating ranking priorities.
     var intValue: Int {
         switch self {
+        case .undefined: return -1
         case .low: return 0
         case .medium: return 1
         case .high: return 2
@@ -27,6 +29,7 @@ enum PriorityTag: String, CaseIterable, Hashable {
     /// Color layout representing an abstract priority urgency.
     var color: Color {
         switch self {
+        case .undefined: return .gray
         case .low: return .choreGreen
         case .medium: return .choreYellow
         case .high: return .choreOrange
@@ -36,14 +39,11 @@ enum PriorityTag: String, CaseIterable, Hashable {
     
     var scoreValue: Int {
         switch self {
-        case .low:
-            5
-        case .medium:
-            8
-        case .high:
-            13
-        case .urgent:
-            21
+        case .undefined: return 0
+        case .low: return 5
+        case .medium: return 8
+        case .high: return 13
+        case .urgent: return 21
         }
     }
     

@@ -82,11 +82,11 @@ struct ChoreTagPicker: View {
             },
             set: { newTier in
                 switch newTier {
-                case .muitoRapido: chore.duration = 5 * 60
-                case .rapido: chore.duration = 15 * 60
-                case .moderado: chore.duration = 30 * 60
-                case .demorado: chore.duration = 60 * 60
-                case .muitoDemorado: chore.duration = 120 * 60
+                case .veryQuick: chore.duration = 5 * 60
+                case .quick: chore.duration = 15 * 60
+                case .moderate: chore.duration = 30 * 60
+                case .slow: chore.duration = 60 * 60
+                case .verySlow: chore.duration = 120 * 60
                 }
             }
         )

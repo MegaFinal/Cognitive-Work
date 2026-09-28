@@ -62,10 +62,10 @@ struct ChoresViewButtonsSection: View {
                     name: "",
                     description: "",
                     isDone: false,
-                    frequency: .daily,
+                    frequency: .undefined,
                     duration: 0,
                     isPublic: true,
-                    priorityTag: .low
+                    priorityTag: .undefined
                 ),
                 availableHouseUsers: houseUsers, carouselViewModel: carouselViewModel
             )

@@ -138,6 +138,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    var score: Int {
+        return priorityTag.scoreValue + frequency.scoreValue + TimeScore.getPoints(time: duration)
+    }
+    
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
@@ -276,37 +280,17 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     }
     
     @discardableResult
-    func toggleAndAssignPointsToTheUser() async -> Bool {
-        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser(),
-              let myUserRecordID = myUser.recordID
+    func toggle() async -> Bool {
+        guard let myUserRecordID = await CloudKitManager.shared.fetchMyHouseUser()?.recordID
         else { return false }
         
-        let wasDone = isDone
-        let previousReference = userThatHaveDoneReference
-        let score = calculatePoints()
-        
-        // Atualiza o estado local
         isDone.toggle()
+        
         userThatHaveDoneReference = isDone
         ? CKRecord.Reference(recordID: myUserRecordID, action: .none)
         : nil
         
-        // Dispara as duas operações em paralelo
-        async let scoreUpdated = isDone
-        ? myUser.addScore(value: score)
-        : myUser.subtractScore(value: score)
-        async let taskUpdated = CloudKitManager.shared.update(self)
-        
-        let (scoreOK, taskOK) = await (scoreUpdated, taskUpdated)
-        
-        // Se a tarefa não salvou, desfaz a mudança local
-        if !taskOK {
-            isDone = wasDone
-            userThatHaveDoneReference = previousReference
-        }
-        //TODO: remove print
-        print(myUser.points)
-        return scoreOK && taskOK
+        return true
     }
     
     /// Applies the edits made in `DTO` to this chore and persists everything to CloudKit.
@@ -409,23 +393,6 @@ class ChoreModel: CloudKitSyncable, Identifiable {
                 await CloudKitManager.shared.batchUpdate(modelsToUpdate)
             }
         }
-    
-    private func calculatePoints() -> Int {
-        let score = priorityTag.scoreValue + frequency.scoreValue + TimeScore.getPoints(time: duration)
-        
-        guard let dueDate else { return score }
-        
-        let calendar = Calendar.current
-        let daysUntilDue = calendar.dateComponents(
-            [.day],
-            from: calendar.startOfDay(for: .now),
-            to: calendar.startOfDay(for: dueDate)
-        ).day ?? 0
-        
-        guard daysUntilDue > 0 else { return score }
-        
-        return score >> min(daysUntilDue, Int.bitWidth - 1)
-    }
   
     // MARK: - Delete
     
