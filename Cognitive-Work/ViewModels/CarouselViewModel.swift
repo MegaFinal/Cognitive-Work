@@ -478,16 +478,33 @@ class CarouselViewModel {
     @MainActor
     @discardableResult
     func toggle(chore: ChoreModel) async -> Bool {
-        async let success: Bool = chore.toggleAndAssignPointsToTheUser()
+        let willBeDone = !chore.isDone   // decidido antes de qualquer await
+
+        async let toggled = chore.toggle()
+        async let scored = willBeDone
+        ? ScoreManager.shared.assignScoreForMyUser(chore: chore)
+        : ScoreManager.shared.removeScore(score: chore.score, for: chore.userThatHaveDone!)
+
         refreshVisible()
-        
-        return await success
+
+        let (toggledSuccessfully, scoredSuccessfully) = await (toggled, scored)
+        return toggledSuccessfully && scoredSuccessfully
     }
+
+    @MainActor
+    @discardableResult
     func toggle(assignment: RecurrentAssignmentModel) async -> Bool {
-        async let success: Bool = assignment.toggleAndAssignPointsToTheUser()
+        let willBeDone = !assignment.isCompleted
+
+        async let toggled = assignment.toggle()
+        async let scored = willBeDone
+            ? ScoreManager.shared.assignScoreForMyUser(assignment: assignment)
+        : ScoreManager.shared.removeScoreForMyUser(assignment: assignment)
+
         refreshVisible()
-        
-        return await success
+
+        let (toggledSuccessfully, scoredSuccessfully) = await (toggled, scored)
+        return toggledSuccessfully && scoredSuccessfully
     }
     
     // MARK: - Delete

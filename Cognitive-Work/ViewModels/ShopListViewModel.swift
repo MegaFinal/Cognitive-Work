@@ -160,7 +160,9 @@ final class ShopListViewModel {
                 relatedUsers: relatedUsers
             )
         }
-
+        //MARK: Gamification cognitive Points
+        async let scoredSuccessfully = ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.shoppingItemAdded.points)
+        
         return await addItem(
             name: name,
             value: value,
@@ -215,6 +217,9 @@ final class ShopListViewModel {
             return false
         }
 
+        //MARK: Gamification Cognitive points
+        let score = ScoreValues.shoppingItemBeneficiaryAssigned.points * relatedUsers.count
+        async let scoredSuccessfully = ScoreManager.shared.assignScoreForMyUser(score: score)
         items.append(created)
         return true
     }
@@ -230,6 +235,7 @@ final class ShopListViewModel {
         unitMeasurement: UnitMeasurement,
         relatedUsers: [UserModel]
     ) async -> Bool {
+
         guard await item.update(
             name: name,
             value: value,

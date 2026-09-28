@@ -373,6 +373,12 @@ struct CreateAndEditChoreView: View {
                 responsibleUsers: choreDTO.responsibleUsers,
                 cycleEnd: cycleEnd
             )
+            
+            //MARK: Gamificatoin score system
+            let score = choreDTO.hasFullDetails
+            ? ScoreValues.choreAdded.points + ScoreValues.choreCreatedWithFullDetails.points
+            : ScoreValues.choreAdded.points
+            async let assignSuccesfully = ScoreManager.shared.assignScoreForMyUser(score: score)
         }
         let newOccurrenceIDs: Set<CKRecord.ID> = isNewChore
             ? Set((originalModel.dailyAssignmentsReference ?? []).map { $0.recordID })
@@ -432,5 +438,15 @@ struct CreateAndEditChoreView: View {
                     .renderingMode(.original)
             }
         }
+    }
+}
+
+extension ChoreDTO {
+    private(set) var hasFullDetails: Bool {
+        choreDTO.room != nil
+        && choreDTO.priorityTag != .undefined
+        && choreDTO.frequency != .undefined
+        && choreDTO.duration > 0
+        && !choreDTO.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }

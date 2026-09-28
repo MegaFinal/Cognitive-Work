@@ -22,7 +22,8 @@ import Foundation
 /// let invalid = unit.convert(2, to: .liter)                // nil
 /// ```
 enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
-
+    case undefined
+    
     /// Grams, used for small amounts of powder or solid products.
     case gram
 
@@ -55,6 +56,8 @@ enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
     ///
     /// Conversions are only defined between units of the same dimension.
     enum Dimension: String, CaseIterable, Codable {
+        case undefined
+        
         /// Units measuring weight, such as grams and kilograms.
         case mass
 
@@ -79,6 +82,8 @@ enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
             return .volume
         case .unit, .package:
             return .count
+        case .undefined:
+            return .undefined
         }
     }
 
@@ -91,6 +96,7 @@ enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
         case .liter: return "L"
         case .unit: return "un"
         case .package: return "pct"
+        case .undefined: return "indefinido"
         }
     }
 
@@ -110,6 +116,8 @@ enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
             return Conversion.gramsPerKilogram
         case .liter:
             return Conversion.millilitersPerLiter
+        case .undefined:
+            return 0
         }
     }
 
@@ -129,6 +137,7 @@ enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
         case .liter: return isSingular ? "litro" : "litros"
         case .unit: return isSingular ? "unidade" : "unidades"
         case .package: return isSingular ? "pacote" : "pacotes"
+        case .undefined: return "indefinido"
         }
     }
 

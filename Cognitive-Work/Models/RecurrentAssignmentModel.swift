@@ -87,72 +87,16 @@ class RecurrentAssignmentModel: CloudKitSyncable {
     
     @MainActor
     @discardableResult
-    func toggleAndAssignPointsToTheUser() async -> Bool {
-        guard !isUpdating else { return false }
-        isUpdating = true
-        defer { isUpdating = false }
-
-        // 1. Muda a UI na hora
-        let wasDone = isCompleted
-        let previousReference = userThatHaveDoneReference
-        isCompleted.toggle()
-
-        // 2. Buscas em paralelo
-        async let userFetch = CloudKitManager.shared.fetchMyHouseUser()
-        async let choreFetch = chore
-
-        guard let myUser = await userFetch,
-              let myUserRecordID = myUser.recordID,
-              let chore = await choreFetch
-        else {
-            rollback(to: wasDone, reference: previousReference)
-            return false
-        }
-
-        if isCompleted {
-            userThatHaveDoneReference = CKRecord.Reference(recordID: myUserRecordID, action: .none)
-        } else {
-            userThatHaveDoneReference = nil
-        }
-
-        let score = calculatePoints(for: chore)
-        async let scoreUpdated = isCompleted
-            ? myUser.addScore(value: score)
-            : myUser.subtractScore(value: score)
-        async let taskUpdated = CloudKitManager.shared.update(self)
-
-        let (scoreOK, taskOK) = await (scoreUpdated, taskUpdated)
-
+    func toggle() async -> Bool {
+        guard let myUserRecordID = await CloudKitManager.shared.fetchMyHouseUser()?.recordID
+        else { return false }
         
-        if !taskOK {
-            rollback(to: wasDone, reference: previousReference)
-        }
-        //TODO: remove print
-        print(myUser.points)
-        return scoreOK && taskOK
-    }
-
-    @MainActor
-    private func rollback(to wasDone: Bool, reference: CKRecord.Reference?) {
-        isCompleted = wasDone
-        userThatHaveDoneReference = reference
-    }
-
-    private func calculatePoints(for chore: ChoreModel, now: Date = .now) -> Int {
-        let base = chore.priorityTag.scoreValue
-                 + chore.frequency.scoreValue
-                 + TimeScore.getPoints(time: chore.duration)
-
-        guard let dueDate = chore.dueDate else { return base }
-
-        let calendar = Calendar.current
-        let daysUntilDue = calendar.dateComponents(
-            [.day],
-            from: calendar.startOfDay(for: now),
-            to: calendar.startOfDay(for: dueDate)
-        ).day ?? 0
-
-        guard daysUntilDue > 0 else { return base }
-        return base >> daysUntilDue
+        isCompleted.toggle()
+        
+        userThatHaveDoneReference = isCompleted
+        ? CKRecord.Reference(recordID: myUserRecordID, action: .none)
+        : nil
+        
+        return true
     }
 }

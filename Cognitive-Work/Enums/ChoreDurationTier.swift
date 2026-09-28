@@ -10,58 +10,62 @@ import SwiftUI
 
 /// Abstract tier categorizing length constraints mapping expected completion difficulty.
 enum ChoreDurationTier: Int, CaseIterable, Hashable {
-    case muitoRapido = 0
-    case rapido = 1
-    case moderado = 2
-    case demorado = 3
-    case muitoDemorado = 4
+    case undefined = -1
+    case veryQuick = 0
+    case quick = 1
+    case moderate = 2
+    case slow = 3
+    case verySlow = 4
 
     /// Resolves an exact minute value into an abstracted layout representation.
     static func from(minutes: Double) -> ChoreDurationTier {
         switch minutes {
         case ..<10:
-            return .muitoRapido
+            return .veryQuick
         case ..<20:
-            return .rapido
+            return .quick
         case 20..<60:
-            return .moderado
+            return .moderate
         case 60..<90:
-            return .demorado
+            return .slow
         default:
-            return .muitoDemorado
+            return .undefined
         }
     }
 
     /// Derives proportion scaling specific to a visual representation logic sequence.
     var heightRatio: Double {
         switch self {
-        case .muitoRapido: return 0.1
-        case .rapido: return 0.3
-        case .moderado: return 0.6
-        case .demorado: return 1.0
-        case .muitoDemorado: return 1.5
+        case .undefined: return 0
+        case .veryQuick: return 0.1
+        case .quick: return 0.3
+        case .moderate: return 0.6
+        case .slow: return 1.0
+        case .verySlow: return 1.5
         }
     }
 
     /// Localized structural string.
     var displayText: String {
         switch self {
-        case .muitoRapido: return "muito rápido"
-        case .rapido: return "rápido"
-        case .moderado: return "moderado"
-        case .demorado: return "demorado"
-        case .muitoDemorado: return "muito demorado"
+        case .undefined: return "indefinido"
+        case .veryQuick: return "muito rápido"
+        case .quick: return "rápido"
+        case .moderate: return "moderado"
+        case .slow: return "demorado"
+        case .verySlow: return "muito demorado"
         }
     }
     
     /// Color schema context representation dictating visual complexity.
     var color: Color {
         switch self {
-        case .muitoRapido: return .green
-        case .rapido: return .teal
-        case .moderado: return .yellow
-        case .demorado: return .orange
-        case .muitoDemorado: return .red
+        case .undefined: return .gray
+        case .veryQuick: return .green
+        case .quick: return .teal
+        case .moderate: return .yellow
+        case .slow: return .orange
+        case .verySlow: return .red
         }
     }
 }
