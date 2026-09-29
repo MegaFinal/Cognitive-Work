@@ -40,7 +40,7 @@ class HardwareDailyChoresViewModel {
     /// > the scheduler seeds its 14-day window starting tomorrow
     /// > (see ``TaskSchedulerEngine/schedule(chores:users:)``), so "today" is empty on a freshly
     /// > generated division. Set this to `0` to ship the real "Tarefas do Dia".
-    static let dayOffsetFromToday = 1
+    static let dayOffsetFromToday = 0
 
     /// The day the dashboard renders: ``dayOffsetFromToday`` days after `reference`, normalised
     /// to the start of that day.
@@ -103,10 +103,13 @@ class HardwareDailyChoresViewModel {
         async let fetchAssignment = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
 
         let (chores, users, rooms, assignments) = await (fetchChores, fetchUsers, fetchRoom, fetchAssignment)
-
-        self.allChores = chores
+        
+        let filteredChores = chores.filter{ $0.isDone == false }
+        let filteredAssignments = assignments.filter { $0.isCompleted == false }
+    
+        self.allChores = filteredChores
         self.roomModels = rooms
-        self.dailyAssignments = assignments
+        self.dailyAssignments = filteredAssignments
 
         rebuildUserGroups(for: users)
     }
