@@ -62,6 +62,10 @@ struct CreateAndEditChoreView: View {
     @State private var isDeleting = false
     @State private var showDeleteConfirmation = false
     
+    /// Responsible users the chore already had when this screen opened.
+    /// Only users added on top of these earn points on save.
+    @State private var initialResponsibleIDs: Set<CKRecord.ID> = []
+    
     @Bindable var carouselViewModel: CarouselViewModel
     
     @Environment(\.dismiss) private var dismiss
@@ -202,6 +206,8 @@ struct CreateAndEditChoreView: View {
             } else {
                 selectedDate = originalModel.dueDate
             }
+            
+            initialResponsibleIDs = Set(choreDTO.responsibleUsers.compactMap(\.recordID))
         }
         .onChange(of: choreDTO.frequency) { _, newFrequency in
             if newFrequency == .daily {
@@ -424,7 +430,8 @@ struct CreateAndEditChoreView: View {
     
     // MARK: - Methods
     
-    /// Persists the modifications from the local copy onto `originalModel` and dismisses the view.
+    /// Persists the modifications from the local copy onto `originalModel`, applies gamification rewards,
+    /// handles calendar synchronization, and dismisses the view.
     @MainActor
     private func confirmAndSave() async {
         isSaving = true
@@ -434,12 +441,15 @@ struct CreateAndEditChoreView: View {
         let previousFrequency = originalModel.frequency
         let frequencyChanged = isEditingExistingChore && previousFrequency != choreDTO.frequency
         
+        // Set explicit due date for non-recurring (one-off) chores
         if choreDTO.frequency == .none {
             originalModel.dueDate = selectedDate
         }
         
+        // Save structural chore attributes and updated target assignments
         await originalModel.save(from: choreDTO, targetAssignments: targetAssignments)
         
+        // MARK: - Schedule Generation & Frequency Handling
         if isNewChore {
             await scheduleNewRecurringChore(
                 originalModel,
@@ -447,14 +457,9 @@ struct CreateAndEditChoreView: View {
                 cycleEnd: cycleEnd,
                 pickedDate: selectedDate
             )
-            
-            //MARK: Gamification score system
-            let score = choreDTO.hasFullDetails
-            ? ScoreValues.choreAdded.points + ScoreValues.choreCreatedWithFullDetails.points
-            : ScoreValues.choreAdded.points
-            async let assignSuccesfully = ScoreManager.shared.assignScoreForMyUser(score: score)
         } else if frequencyChanged {
-            // Frequency changed: wipe the old series' future occurrences, generate a new series.
+            // Frequency changed: purge future occurrences generated under the previous frequency
+            // and spawn a new series covering the remaining cycle window.
             await carouselViewModel.handleFrequencyChange(
                 for: originalModel,
                 from: previousFrequency,
@@ -462,29 +467,48 @@ struct CreateAndEditChoreView: View {
                 pickedDate: selectedDate
             )
         } else {
-            // Same frequency: just move the picked occurrence's date, as before.
+            // Same frequency: adjust only the specific targeted occurrence's date
             await applyPickedDateToOccurrence(isNewChore: isNewChore)
         }
         
+        // MARK: - Gamification System Integration
+        var score = 0
+        if isNewChore {
+            score += choreDTO.hasFullDetails
+                ? ScoreValues.choreAdded.points + ScoreValues.choreCreatedWithFullDetails.points
+                : ScoreValues.choreAdded.points
+        }
+        score += await responsibleAssignmentScore()
+        if score > 0 {
+            await ScoreManager.shared.assignScoreForMyUser(score: score)
+        }
+        
+        // MARK: - Local & Remote Sync
+        // Capture generated assignment IDs when creating a chore or shifting frequencies
         let newOccurrenceIDs: Set<CKRecord.ID> = (isNewChore || frequencyChanged)
             ? Set((originalModel.dailyAssignmentsReference ?? []).map { $0.recordID })
             : []
-        
+            
         await carouselViewModel.refreshAfterChoreUpdate()
         
         let updatedChore = originalModel
         
+        // Synchronize modified occurrences or single chore with EventKit Calendar
         if updatedChore.frequency == .none {
             await carouselViewModel.syncSingleChoreToCalendar(updatedChore)
         } else {
             let freshAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
             carouselViewModel.dailyAssignments = freshAssignments
             
-            // When the frequency changed, targetAssignments were deleted — don't try to sync them.
+            // When frequency changes, use new occurrence IDs since targetAssignments were wiped
             let targetIDs = frequencyChanged
                 ? newOccurrenceIDs
                 : Set(targetAssignments.compactMap { $0.recordID }).union(newOccurrenceIDs)
-            let updatedTargets = freshAssignments.filter { targetIDs.contains($0.recordID ?? CKRecord.ID(recordName: "")) }
+                
+            let updatedTargets = freshAssignments.filter { assignment in
+                guard let recordID = assignment.recordID else { return false }
+                return targetIDs.contains(recordID)
+            }
             
             for assignment in updatedTargets {
                 await carouselViewModel.syncSingleAssignmentToCalendar(for: assignment, chore: updatedChore)
@@ -493,6 +517,24 @@ struct CreateAndEditChoreView: View {
         
         isSaving = false
         dismiss()
+    }
+    
+    /// Points for the responsible users added during this edit (users already assigned when
+    /// the screen opened don't count). Assigning yourself is worth more than assigning others.
+    @MainActor
+    private func responsibleAssignmentScore() async -> Int {
+        let addedUsers = choreDTO.responsibleUsers.filter { user in
+            guard let id = user.recordID else { return false }
+            return !initialResponsibleIDs.contains(id)
+        }
+        guard !addedUsers.isEmpty else { return 0 }
+        
+        let myOwnerRecordName = await CloudKitManager.shared.fetchMyHouseUser()?.ownerRecordName
+        
+        return addedUsers.reduce(0) { total, user in
+            let isSelf = user.ownerRecordName == myOwnerRecordName
+            return total + ScoreValues.responsibleAssigned(isSelf: isSelf).points
+        }
     }
     
     /// Writes the date picked in the calendar onto the recurring chore's assignment.
@@ -563,5 +605,6 @@ extension ChoreDTO {
         && self.frequency != .undefined
         && self.duration > 0
         && !self.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        && !self.responsibleUsers.isEmpty
     }
 }

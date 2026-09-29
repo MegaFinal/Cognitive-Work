@@ -150,8 +150,26 @@ final class ShopListViewModel {
     ) async -> Bool {
         let value = Double(valueText.replacingOccurrences(of: ",", with: "."))
 
+        //MARK: Gamification cognitive points (accumulated, then a single call after a successful save)
+        var score = 0
+        let hasNewPrice = (value ?? 0) > 0
+        let success: Bool
+
         if let existingItem {
-            return await updateItem(
+            // Captured before the update, since it changes the item.
+            let previousUserIDs = Set(existingItem.relatedUsers(in: houseUsers).compactMap(\.recordID))
+            let hadPrice = (existingItem.value ?? 0) > 0
+
+            let addedBeneficiaries = relatedUsers.filter { user in
+                guard let id = user.recordID else { return false }
+                return !previousUserIDs.contains(id)
+            }
+            score += addedBeneficiaries.count * ScoreValues.shoppingItemBeneficiaryAssigned.points
+            if hasNewPrice && !hadPrice {
+                score += ScoreValues.receiptScanned(itemCount: 1).points
+            }
+
+            success = await updateItem(
                 existingItem,
                 name: name,
                 value: value,
@@ -159,18 +177,27 @@ final class ShopListViewModel {
                 unitMeasurement: unitMeasurement,
                 relatedUsers: relatedUsers
             )
+        } else {
+            score += ScoreValues.shoppingItemAdded.points
+            score += relatedUsers.count * ScoreValues.shoppingItemBeneficiaryAssigned.points
+            if hasNewPrice {
+                score += ScoreValues.receiptScanned(itemCount: 1).points
+            }
+
+            success = await addItem(
+                name: name,
+                value: value,
+                quantity: quantity,
+                unitMeasurement: unitMeasurement,
+                relatedUsers: relatedUsers,
+                addedBy: addedBy
+            )
         }
-        //MARK: Gamification cognitive Points
-        async let scoredSuccessfully = ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.shoppingItemAdded.points)
-        
-        return await addItem(
-            name: name,
-            value: value,
-            quantity: quantity,
-            unitMeasurement: unitMeasurement,
-            relatedUsers: relatedUsers,
-            addedBy: addedBy
-        )
+
+        if success && score > 0 {
+            await ScoreManager.shared.assignScoreForMyUser(score: score)
+        }
+        return success
     }
 
     /// Adds a new item to ``list`` and appends it to ``items``.
@@ -217,9 +244,6 @@ final class ShopListViewModel {
             return false
         }
 
-        //MARK: Gamification Cognitive points
-        let score = ScoreValues.shoppingItemBeneficiaryAssigned.points * relatedUsers.count
-        async let scoredSuccessfully = ScoreManager.shared.assignScoreForMyUser(score: score)
         items.append(created)
         return true
     }
