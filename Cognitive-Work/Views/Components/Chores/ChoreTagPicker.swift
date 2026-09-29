@@ -28,7 +28,7 @@ struct ChoreTagPicker: View {
             switch type {
             case .priority:
                 Picker("Prioridade", selection: $chore.priorityTag) {
-                    ForEach(PriorityTag.allCases, id: \.self) { tag in
+                    ForEach(PriorityTag.allCases.filter { $0 != .undefined }, id: \.self) { tag in
                         ColorIconTagLabel(title: tag.rawValue.capitalized, color: tag.color)
                             .tag(tag)
                     }
@@ -36,7 +36,7 @@ struct ChoreTagPicker: View {
                 
             case .frequency:
                 Picker("Frequência", selection: $chore.frequency) {
-                    ForEach(Recurrence.allCases, id: \.self) { freq in
+                    ForEach(Recurrence.allCases.filter { $0 != .undefined }, id: \.self) { freq in
                         ColorIconTagLabel(title: freq.rawValue.capitalized, color: freq.color)
                             .tag(freq)
                     }
@@ -44,7 +44,7 @@ struct ChoreTagPicker: View {
                 
             case .duration:
                 Picker("Duração", selection: durationTierBinding) {
-                    ForEach(ChoreDurationTier.allCases, id: \.self) { tier in
+                    ForEach(ChoreDurationTier.allCases.filter { $0 != .undefined }, id: \.self) { tier in
                         ColorIconTagLabel(title: tier.displayText.capitalized, color: tier.color)
                             .tag(tier)
                     }

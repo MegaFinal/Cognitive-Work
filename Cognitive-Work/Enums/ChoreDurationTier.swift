@@ -29,7 +29,7 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         case 60..<90:
             return .slow
         default:
-            return .undefined
+            return .verySlow
         }
     }
 

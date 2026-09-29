@@ -487,7 +487,7 @@ class CarouselViewModel {
         guard !Task.isCancelled else { return }
         
         await MainActor.run {
-            self.cardModels = chores
+            self.cardModels = self.choresVisible(chores, to: currentHouseUser, among: users)
             self.userModels = users
             self.roomModels = rooms
             self.dailyAssignments = assignments
@@ -512,10 +512,22 @@ class CarouselViewModel {
         guard !Task.isCancelled else { return }
         
         await MainActor.run {
-            self.cardModels = chores
+            self.cardModels = self.choresVisible(chores, to: self.dashboardUser, among: self.userModels)
             self.dailyAssignments = assignments
             self.rebuildDerivedState()
         }
+    }
+    
+    /// Private chores only reach the residents they belong to. The viewer is matched by
+    /// `ownerRecordName`, so every record of the same person counts as theirs.
+    private func choresVisible(_ chores: [ChoreModel], to viewer: UserModel?, among users: [UserModel]) -> [ChoreModel] {
+        guard let viewer else { return chores }
+        
+        let isViewer: (UserModel) -> Bool = { $0.ownerRecordName == viewer.ownerRecordName }
+        let viewerIDs = Set((users.filter(isViewer) + [viewer]).compactMap(\.recordID))
+        let otherResidentIDs = Set(users.filter { !isViewer($0) }.compactMap(\.recordID))
+        
+        return chores.filter { $0.isVisible(viewerIDs: viewerIDs, otherResidentIDs: otherResidentIDs) }
     }
     
     /// Retrieves all assignment records corresponding to a specific chore on a given date.

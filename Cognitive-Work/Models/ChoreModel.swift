@@ -293,54 +293,117 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         return true
     }
     
-    /// Applies the edits made in `DTO` to this chore and persists everything to CloudKit.
-    ///
-    /// The chore is saved first (if it doesn't exist yet) so it has a `recordID` before its
-    /// checklist items are created. On failure at any step, the method returns early and
-    /// leaves ``CloudKitManager/errorMessage`` set with the reason.
+    /// Applies the edits made in `choreDTO` to this chore and persists everything to CloudKit.
     ///
     /// - Parameters:
     ///   - choreDTO: The edited values collected by the create/edit screen.
-    ///   - targetAssignments: Optional recurrent assignment instances to update if this is an occurrence of a recurring chore.
-    func save(from choreDTO: ChoreDTO, targetAssignments: [RecurrentAssignmentModel] = []) async {
-        // Copy user-editable fields from the DTO onto the model
-        applyEditableFields(from: choreDTO)
-        
-        // Validate required CloudKit reference properties from the related room and house
-        guard let house = await room?.house,
-              let zoneID = house.recordID?.zoneID,
-              let houseReference = await room?.houseReference
-        else { return }
-        
-        let parentReference = CKRecord.Reference(recordID: houseReference.recordID, action: .none)
-        
-        // Create the record in CloudKit if it's new, ensuring it obtains a valid recordID
-        if recordID == nil {
-            guard let createdChore = await CloudKitManager.shared.create(self, zoneID: zoneID, parent: parentReference)
-            else { return }
-            recordID = createdChore.recordID
+    ///   - oneOffDueDate: The date picked in the form. Only applied when the chore is a one-off
+    ///     (`.none` frequency), exactly like before.
+    ///   - targetAssignments: Optional recurrent assignment instances to update if this is an
+    ///     occurrence of a recurring chore.
+    /// - Throws: ``ChoreSaveError`` describing why nothing (or not everything) was saved.
+    func save(
+        from choreDTO: ChoreDTO,
+        oneOffDueDate: Date? = nil,
+        targetAssignments: [RecurrentAssignmentModel] = []
+    ) async throws {
+        guard let roomReference = choreDTO.roomReference else {
+            throw ChoreSaveError.missingRoom
         }
         
-        guard let choreRecordID = recordID else { return }
+        guard let room = await CloudKitManager.shared.fetchRecordsByRecordReference(
+            for: RoomModel.self,
+            recordReferences: [roomReference]
+        )?.first else {
+            throw ChoreSaveError.missingRoom
+        }
+        
+        guard let houseReference = room.houseReference else {
+            throw ChoreSaveError.missingHouse
+        }
+        
+        let zoneID = houseReference.recordID.zoneID
+        let parentReference = CKRecord.Reference(recordID: houseReference.recordID, action: .none)
+        
+        let responsibleUsers: [UserModel]
+        var newCurrentResponsibleReference = currentResponsibleReference
+        
+        if choreDTO.isPublic {
+            responsibleUsers = choreDTO.responsibleUsers
+            if !isPublic {
+                newCurrentResponsibleReference = nil
+            }
+        } else {
+            guard let me = await CloudKitManager.shared.currentHouseUser(),
+                  let myRecordID = me.recordID
+            else {
+                throw ChoreSaveError.missingCurrentUser
+            }
+            responsibleUsers = [me]
+            newCurrentResponsibleReference = CKRecord.Reference(recordID: myRecordID, action: .none)
+        }
+                
+        let snapshot = EditableSnapshot(of: self)
+        
+        applyEditableFields(from: choreDTO, responsibleUsers: responsibleUsers)
+        currentResponsibleReference = newCurrentResponsibleReference
+        if choreDTO.frequency == .none {
+            dueDate = oneOffDueDate
+        }
+        
+        if recordID == nil {
+            guard let createdChore = await CloudKitManager.shared.create(self, zoneID: zoneID, parent: parentReference),
+                  let createdRecordID = createdChore.recordID
+            else {
+                snapshot.restore(on: self)
+                throw ChoreSaveError.cloudKit(CloudKitManager.shared.errorMessage)
+            }
+            recordID = createdRecordID
+        }
+        
+        guard let choreRecordID = recordID else {
+            snapshot.restore(on: self)
+            throw ChoreSaveError.cloudKit(nil)
+        }
         let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
         
-        // Sync and associate checklist items with the saved chore reference
         self.checkListReference = await CheckItemModel.sync(from: choreDTO.checklist, parent: choreReference)
         
-        // Handle recurrent assignments if specific occurrences are being targeted
         if !targetAssignments.isEmpty {
             await updateRecurrentAssignments(
-                for: choreDTO.responsibleUsers,
+                for: responsibleUsers,
                 targetAssignments: targetAssignments
             )
         }
         
-        // Perform a final update to persist all modified fields to CloudKit
-        await CloudKitManager.shared.update(self)
+        guard await CloudKitManager.shared.update(self) else {
+            snapshot.restore(on: self)
+            throw ChoreSaveError.cloudKit(CloudKitManager.shared.errorMessage)
+        }
+    }
+    
+    /// Whether the viewer should see this chore.
+    ///
+    /// A private chore is hidden only when it clearly belongs to other residents, so a chore is
+    /// never lost because the viewer's records couldn't be matched.
+    ///
+    /// - Parameters:
+    ///   - viewerIDs: Every `UserModel` record ID of the viewer.
+    ///   - otherResidentIDs: The record IDs of every other resident.
+    func isVisible(viewerIDs: Set<CKRecord.ID>, otherResidentIDs: Set<CKRecord.ID>) -> Bool {
+        guard !isPublic else { return true }
+        
+        var ownerIDs = Set((allResponsibleUsersReference ?? []).map(\.recordID))
+        if let currentResponsibleReference {
+            ownerIDs.insert(currentResponsibleReference.recordID)
+        }
+        
+        guard ownerIDs.isDisjoint(with: viewerIDs) else { return true }
+        return ownerIDs.isDisjoint(with: otherResidentIDs)
     }
     
     /// Copies every user-editable field from `choreDTO` onto this chore.
-    private func applyEditableFields(from choreDTO: ChoreDTO) {
+    private func applyEditableFields(from choreDTO: ChoreDTO, responsibleUsers: [UserModel]) {
         name = choreDTO.name
         description = choreDTO.description
         frequency = choreDTO.frequency
@@ -350,8 +413,55 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         symbolName = choreDTO.symbolName
         roomReference = choreDTO.roomReference
         
-        allResponsibleUsersReference = choreDTO.responsibleUsers.compactMap { responsibleUser in
+        allResponsibleUsersReference = responsibleUsers.compactMap { responsibleUser in
             responsibleUser.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+        }
+    }
+    
+    /// The fields ``save(from:oneOffDueDate:targetAssignments:)`` may change, captured so a
+    /// failed save can put the chore back exactly as it was.
+    private struct EditableSnapshot {
+        let name: String
+        let description: String
+        let frequency: Recurrence
+        let duration: Double
+        let priorityTag: PriorityTag
+        let isPublic: Bool
+        let symbolName: String
+        let roomReference: CKRecord.Reference?
+        let allResponsibleUsersReference: [CKRecord.Reference]?
+        let currentResponsibleReference: CKRecord.Reference?
+        let dueDate: Date?
+        let checkListReference: [CKRecord.Reference]?
+        
+        init(of chore: ChoreModel) {
+            name = chore.name
+            description = chore.description
+            frequency = chore.frequency
+            duration = chore.duration
+            priorityTag = chore.priorityTag
+            isPublic = chore.isPublic
+            symbolName = chore.symbolName
+            roomReference = chore.roomReference
+            allResponsibleUsersReference = chore.allResponsibleUsersReference
+            currentResponsibleReference = chore.currentResponsibleReference
+            dueDate = chore.dueDate
+            checkListReference = chore.checkListReference
+        }
+        
+        func restore(on chore: ChoreModel) {
+            chore.name = name
+            chore.description = description
+            chore.frequency = frequency
+            chore.duration = duration
+            chore.priorityTag = priorityTag
+            chore.isPublic = isPublic
+            chore.symbolName = symbolName
+            chore.roomReference = roomReference
+            chore.allResponsibleUsersReference = allResponsibleUsersReference
+            chore.currentResponsibleReference = currentResponsibleReference
+            chore.dueDate = dueDate
+            chore.checkListReference = checkListReference
         }
     }
     
@@ -453,5 +563,28 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         CalendarManager.shared.removeEvent(identifier: calendarEventIdentifier, title: name, date: dueDate)
         
         return true
+    }
+}
+
+// MARK: - Save errors
+
+/// Why ``ChoreModel/save(from:oneOffDueDate:targetAssignments:)`` did not save the chore.
+enum ChoreSaveError: LocalizedError {
+    case missingRoom
+    case missingHouse
+    case missingCurrentUser
+    case cloudKit(String?)
+    
+    var errorDescription: String? {
+        switch self {
+        case .missingRoom:
+            return "Escolha um cômodo para a tarefa."
+        case .missingHouse:
+            return "Não foi possível identificar a casa deste cômodo."
+        case .missingCurrentUser:
+            return "Não foi possível identificar seu perfil para salvar a tarefa privada."
+        case .cloudKit(let message):
+            return message ?? "Não foi possível salvar a tarefa. Tente novamente."
+        }
     }
 }

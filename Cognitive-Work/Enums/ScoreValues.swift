@@ -5,16 +5,18 @@
 //  Created by Jonas Fernando Nascimento Melo on 28/09/26.
 //
 
-
 /// In-app actions considered cognitive work, and how many points each one is worth.
 enum ScoreValues {
 
     /// Creating a chore with room, priority, duration, frequency and description filled in (bonus).
     case choreCreatedWithFullDetails
+    
     /// Adding a chore.
     case choreAdded
+    
     /// Adding an item to the shopping list.
     case shoppingItemAdded
+    
     /// Setting the beneficiary when creating a shopping list item (bonus).
     case shoppingItemBeneficiaryAssigned
 
@@ -29,6 +31,7 @@ enum ScoreValues {
 
     /// Picking up an unassigned chore.
     case unassignedChorePicked
+    
     /// Writing a chore's description/checklist.
     case descriptionWritten
 
