@@ -42,7 +42,7 @@ struct UnassignmentList: View {
                 .frame(maxHeight: 190)
             }
         }
-        .padding(12)
+        .padding(25)
         .frame(width: 260)
         .glassEffect(.regular.tint(.white.opacity(0.35)), in: .rect(cornerRadius: 28))
         .shadow(radius: 28, y: 4)

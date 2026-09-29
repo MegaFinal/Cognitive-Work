@@ -167,3 +167,14 @@ final class ChoreDTO: Identifiable {
         self.roomDTO = room
     }
 }
+
+extension ChoreDTO {
+    /// Whether every optional detail was filled in. Creating such a chore earns bonus points.
+    var hasFullDetails: Bool {
+        room != nil
+        && priorityTag != .undefined
+        && frequency != .undefined
+        && duration > 0
+        && !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
