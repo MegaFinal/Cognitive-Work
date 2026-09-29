@@ -116,6 +116,7 @@ func occurrenceOffsets(for frequency: Recurrence, windowDays: Int, phase: Int = 
     case .fortnightly: period = 14
     case .monthly:    period = 14
     case .none:       return []
+    case .undefined:  return []
     }
     
     let start = phase % period
@@ -256,6 +257,7 @@ func occurrenceDays(
     case .fortnightly: step = DateComponents(day: 14)
     case .monthly: step = DateComponents(month: 1)
     case .none: return []
+    case .undefined: return []
     }
     
     let lastDay = calendar.startOfDay(for: cycleEnd)

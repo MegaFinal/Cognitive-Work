@@ -52,9 +52,15 @@ final class UserProfileViewModel {
                             self.isCalendarSyncEnabled = false
                         }
                     }
+                    
+                    //MARK: Gamification Cognitiev Scores
+                    async let scoredSuccessully = ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.appleCalendarLinked.points)
                 } else {
                     // Switch turned off: remove all synchronized events from the calendar
                     await removeAllMyAssignmentsFromCalendar()
+                    
+                    //MARK: Gamification Cognitiev Scores
+                    async let scoredSuccessully = ScoreManager.shared.removeScoreForMyUser(score: ScoreValues.appleCalendarLinked.points)
                 }
             }
         }

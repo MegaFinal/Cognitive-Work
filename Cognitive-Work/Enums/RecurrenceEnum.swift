@@ -52,6 +52,7 @@ enum Recurrence: String, CaseIterable, Hashable {
         case .weekly: return "Semanal"
         case .fortnightly: return "Quinzenal"
         case .monthly: return "Mensal"
+        case .undefined: return "Indefinida"
         }
     }
 }
