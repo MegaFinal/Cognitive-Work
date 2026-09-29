@@ -87,6 +87,7 @@ struct ChoreTagPicker: View {
                 case .moderate: chore.duration = 30 * 60
                 case .slow: chore.duration = 60 * 60
                 case .verySlow: chore.duration = 120 * 60
+                case .undefined: chore.duration = 0
                 }
             }
         )

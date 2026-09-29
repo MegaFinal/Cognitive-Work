@@ -544,11 +544,11 @@ struct CreateAndEditChoreView: View {
 }
 
 extension ChoreDTO {
-    private(set) var hasFullDetails: Bool {
-        choreDTO.room != nil
-        && choreDTO.priorityTag != .undefined
-        && choreDTO.frequency != .undefined
-        && choreDTO.duration > 0
-        && !choreDTO.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    var hasFullDetails: Bool {
+        self.room != nil
+        && self.priorityTag != .undefined
+        && self.frequency != .undefined
+        && self.duration > 0
+        && !self.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
