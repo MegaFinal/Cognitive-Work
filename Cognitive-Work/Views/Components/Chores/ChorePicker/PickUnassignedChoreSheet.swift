@@ -168,7 +168,7 @@ struct PickUnassignedChoreSheet: View {
                 let success = await carouselViewModel.confirmPick(item, slots: slots)
                 isSaving = false
                 if success {
-                    async let scoredSuccessfully = ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.unassignedChorePicked)
+                    async let scoredSuccessfully = ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.unassignedChorePicked.points)
                     dismiss()
                 }
                 else {
