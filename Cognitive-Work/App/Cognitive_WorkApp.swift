@@ -33,7 +33,7 @@ struct Cognitive_WorkApp: App {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
-                Task { await hardwareViewModel.refreshDeviceIfNeeded() }
+                Task { await HardwareViewModel.deliverNow() }
             case .background:
                 HardwareBackgroundSync.scheduleAppRefresh()
             default:
@@ -42,7 +42,7 @@ struct Cognitive_WorkApp: App {
         }
         .backgroundTask(.appRefresh(HardwareBackgroundSync.refreshTaskID)) {
             await HardwareBackgroundSync.scheduleAppRefresh()   // schedule the next one
-            await HardwareViewModel().refreshDeviceIfNeeded()
+            await HardwareViewModel.deliverNow()
         }
     }
 }
