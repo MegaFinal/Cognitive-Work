@@ -203,9 +203,10 @@ struct CreateAndEditChoreView: View {
                 selectedDate = originalModel.dueDate
             }
         }
-        .onChange(of: choreDTO.frequency) { _, _ in
-            // The window changes with the frequency; drop a date that no longer fits.
-            if let date = selectedDate,
+        .onChange(of: choreDTO.frequency) { _, newFrequency in
+            if newFrequency == .daily {
+                selectedDate = Calendar.current.startOfDay(for: Date())
+            } else if let date = selectedDate,
                !dateWindow.contains(date.startOfDay) || date.startOfDay < Calendar.current.startOfDay(for: Date()) {
                 selectedDate = nil
             }
@@ -430,14 +431,15 @@ struct CreateAndEditChoreView: View {
         
         let isNewChore = !isEditingExistingChore
         let cycleEnd = carouselViewModel.currentCycleEnd
+        let previousFrequency = originalModel.frequency
+        let frequencyChanged = isEditingExistingChore && previousFrequency != choreDTO.frequency
         
         if choreDTO.frequency == .none {
-                originalModel.dueDate = selectedDate
-            }
+            originalModel.dueDate = selectedDate
+        }
         
         await originalModel.save(from: choreDTO, targetAssignments: targetAssignments)
         
-        // A recurring chore created mid-cycle gets its occurrences for the rest of the cycle
         if isNewChore {
             await scheduleNewRecurringChore(
                 originalModel,
@@ -446,16 +448,25 @@ struct CreateAndEditChoreView: View {
                 pickedDate: selectedDate
             )
             
-            //MARK: Gamificatoin score system
+            //MARK: Gamification score system
             let score = choreDTO.hasFullDetails
             ? ScoreValues.choreAdded.points + ScoreValues.choreCreatedWithFullDetails.points
             : ScoreValues.choreAdded.points
             async let assignSuccesfully = ScoreManager.shared.assignScoreForMyUser(score: score)
+        } else if frequencyChanged {
+            // Frequency changed: wipe the old series' future occurrences, generate a new series.
+            await carouselViewModel.handleFrequencyChange(
+                for: originalModel,
+                from: previousFrequency,
+                responsibleUsers: choreDTO.responsibleUsers,
+                pickedDate: selectedDate
+            )
+        } else {
+            // Same frequency: just move the picked occurrence's date, as before.
+            await applyPickedDateToOccurrence(isNewChore: isNewChore)
         }
         
-        await applyPickedDateToOccurrence(isNewChore: isNewChore)
-        
-        let newOccurrenceIDs: Set<CKRecord.ID> = isNewChore
+        let newOccurrenceIDs: Set<CKRecord.ID> = (isNewChore || frequencyChanged)
             ? Set((originalModel.dailyAssignmentsReference ?? []).map { $0.recordID })
             : []
         
@@ -469,8 +480,10 @@ struct CreateAndEditChoreView: View {
             let freshAssignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
             carouselViewModel.dailyAssignments = freshAssignments
             
-            // The occurrences just created for a new chore are synced too.
-            let targetIDs = Set(targetAssignments.compactMap { $0.recordID }).union(newOccurrenceIDs)
+            // When the frequency changed, targetAssignments were deleted — don't try to sync them.
+            let targetIDs = frequencyChanged
+                ? newOccurrenceIDs
+                : Set(targetAssignments.compactMap { $0.recordID }).union(newOccurrenceIDs)
             let updatedTargets = freshAssignments.filter { targetIDs.contains($0.recordID ?? CKRecord.ID(recordName: "")) }
             
             for assignment in updatedTargets {
