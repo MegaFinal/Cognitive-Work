@@ -21,7 +21,8 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     static let listDesiredKeys: [CKRecord.FieldKey]? = [
         "name", "description", "isDone", "dueDate", "frequency", "shouldBeIncluded",
         "duration", "isPublic", "isLate", "weight", "priorityTag",
-        "checkList", "currentResponsible", "allResponsibleUsers", "room", "dailyAssignment"
+        "checkList", "currentResponsible", "allResponsibleUsers", "room", "dailyAssignment",
+        "userThatHaveDone"
     ]
     
     /// Identifier of the stored record, or `nil` before the chore is saved.
@@ -84,6 +85,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// EventKit calendar item persistent identifier
     var calendarEventIdentifier: String?
     
+    /// Blocks a second toggle while the first one is still being saved.
+    @ObservationIgnored
+    private var isUpdating = false
+    
     var checkList: [CheckItemModel] {
         get async {
             if let checkListReference {
@@ -131,8 +136,8 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     
     var userThatHaveDone: UserModel? {
         get async {
-            if let currentResponsibleReference {
-                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [currentResponsibleReference])?.first
+            if let userThatHaveDoneReference {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [userThatHaveDoneReference])?.first
             }
             return nil
         }
@@ -263,9 +268,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["allResponsibleUsers"] = allResponsibleUsersReference ?? []
         record["room"] = roomReference
         record["dailyAssignment"] = dailyAssignmentsReference ?? []
-        if let userThatHaveDoneReference {
-            record["userThatHaveDone"] = userThatHaveDoneReference
-        }
+        record["userThatHaveDone"] = userThatHaveDoneReference
         record["calendarEventIdentifier"] = calendarEventIdentifier
     }
     
@@ -279,17 +282,31 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    /// Flips ``isDone``, records who did it and persists the change.
+    ///
+    /// - Returns: `true` when CloudKit saved it. On failure the chore is left as it was.
     @discardableResult
     func toggle() async -> Bool {
-        guard let myUserRecordID = await CloudKitManager.shared.fetchMyHouseUser()?.recordID
+        guard !isUpdating else { return false }
+        isUpdating = true
+        defer { isUpdating = false }
+        
+        guard let myUserRecordID = await CloudKitManager.shared.currentHouseUser()?.recordID
         else { return false }
         
-        isDone.toggle()
+        let previousIsDone = isDone
+        let previousDoer = userThatHaveDoneReference
         
+        isDone.toggle()
         userThatHaveDoneReference = isDone
         ? CKRecord.Reference(recordID: myUserRecordID, action: .none)
         : nil
         
+        guard await CloudKitManager.shared.update(self) else {
+            isDone = previousIsDone
+            userThatHaveDoneReference = previousDoer
+            return false
+        }
         return true
     }
     
@@ -367,7 +384,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
         let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
         
-        self.checkListReference = await CheckItemModel.sync(from: choreDTO.checklist, parent: choreReference)
+        let previousChecklist = checkListReference ?? []
+        let checklistDrafts = choreDTO.hasChecklist ? choreDTO.checklist : []
+        self.checkListReference = await CheckItemModel.sync(from: checklistDrafts, parent: choreReference)
         
         if !targetAssignments.isEmpty {
             await updateRecurrentAssignments(

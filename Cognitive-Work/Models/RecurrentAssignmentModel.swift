@@ -21,6 +21,7 @@ class RecurrentAssignmentModel: CloudKitSyncable {
     
     var choreReference: CKRecord.Reference?
     
+    @ObservationIgnored
     private var isUpdating = false
 
     /// EventKit calendar item persistent identifier
@@ -74,6 +75,7 @@ class RecurrentAssignmentModel: CloudKitSyncable {
         self.day = day
         self.userReference = record["user"] as? CKRecord.Reference
         self.choreReference = record["chore"] as? CKRecord.Reference
+        self.userThatHaveDoneReference = record["userThatHaveDone"] as? CKRecord.Reference
         self.calendarEventIdentifier = record["calendarEventIdentifier"] as? String
     }
     
@@ -82,21 +84,36 @@ class RecurrentAssignmentModel: CloudKitSyncable {
         record["day"] = day
         record["user"] = userReference
         record["chore"] = choreReference
+        record["userThatHaveDone"] = userThatHaveDoneReference
         record["calendarEventIdentifier"] = calendarEventIdentifier
     }
     
+    /// Flips ``isCompleted``, records who did it and persists the change.
+    ///
+    /// - Returns: `true` when CloudKit saved it. On failure the occurrence is left as it was.
     @MainActor
     @discardableResult
     func toggle() async -> Bool {
-        guard let myUserRecordID = await CloudKitManager.shared.fetchMyHouseUser()?.recordID
+        guard !isUpdating else { return false }
+        isUpdating = true
+        defer { isUpdating = false }
+        
+        guard let myUserRecordID = await CloudKitManager.shared.currentHouseUser()?.recordID
         else { return false }
         
-        isCompleted.toggle()
+        let previousIsCompleted = isCompleted
+        let previousDoer = userThatHaveDoneReference
         
+        isCompleted.toggle()
         userThatHaveDoneReference = isCompleted
         ? CKRecord.Reference(recordID: myUserRecordID, action: .none)
         : nil
         
+        guard await CloudKitManager.shared.update(self) else {
+            isCompleted = previousIsCompleted
+            userThatHaveDoneReference = previousDoer
+            return false
+        }
         return true
     }
 }

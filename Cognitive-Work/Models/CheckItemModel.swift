@@ -97,7 +97,7 @@ class CheckItemModel: CloudKitSyncable, Identifiable {
                 let updatedCheckItem = CheckItemModel(name: trimmedName, isDone: draftItem.isDone)
                 updatedCheckItem.recordID = existingRecordID
 
-                guard await CloudKitManager.shared.update(updatedCheckItem) else { continue }
+                await CloudKitManager.shared.update(updatedCheckItem)
                 savedItemReferences.append(
                     CKRecord.Reference(recordID: existingRecordID, action: .none)
                 )
@@ -120,5 +120,19 @@ class CheckItemModel: CloudKitSyncable, Identifiable {
         }
 
         return savedItemReferences
+    }
+    
+    /// Deletes the checklist items that were in `previous` but are no longer in `current`.
+    ///
+    /// Best effort: if it fails, the items stay in CloudKit but no chore references them.
+    static func deleteRemoved(
+        from previous: [CKRecord.Reference],
+        keeping current: [CKRecord.Reference]
+    ) async {
+        let keptIDs = Set(current.map(\.recordID))
+        let removedIDs = previous.map(\.recordID).filter { !keptIDs.contains($0) }
+        guard let zoneID = removedIDs.first?.zoneID else { return }
+        
+        await CloudKitManager.shared.delete(recordIDs: removedIDs, zoneID: zoneID)
     }
 }

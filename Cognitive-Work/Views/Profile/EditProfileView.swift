@@ -94,12 +94,9 @@ struct EditProfileView: View {
                         .font(.system(size: 12))
                         .bold()
                         .foregroundColor(.white)
-                        .padding(10)
                 }
-                .glassEffect(
-                    .regular.interactive().tint(.blue),
-                    in: .circle
-                )
+                .tint(Color.blue)
+                .buttonStyle(.glassProminent)
                 .disabled(!viewModel.canSave)
             }
         }

@@ -592,40 +592,47 @@ class CarouselViewModel {
     }
     
     /// Toggles the chore's (or, for a recurring chore, this specific day's) completion state
-    /// and persists it, then recomputes ``visibleChores``, ``visibleOccurrences`` and
-    /// ``dashboard`` so the change shows up immediately — without this, the card would stay in
-    /// the carousel/list and the progress numbers would stay stale until the next full
-    /// CloudKit refetch.
+    /// and persists it
     @MainActor
     @discardableResult
     func toggle(chore: ChoreModel) async -> Bool {
-        let willBeDone = !chore.isDone   // decidido antes de qualquer await
-
-        async let toggled = chore.toggle()
-        async let scored = willBeDone
-        ? ScoreManager.shared.assignScoreForMyUser(chore: chore)
-        : ScoreManager.shared.removeScore(score: chore.score, for: chore.userThatHaveDone!)
-
+        let willBeDone = !chore.isDone
+        var doer: UserModel?
+        if !willBeDone {
+            doer = await chore.userThatHaveDone
+        }
+        
+        guard await chore.toggle() else { return false }
         refreshVisible()
-
-        let (toggledSuccessfully, scoredSuccessfully) = await (toggled, scored)
-        return toggledSuccessfully && scoredSuccessfully
+        
+        if willBeDone {
+            return await ScoreManager.shared.assignScoreForMyUser(chore: chore)
+        }
+        if let doer {
+            return await ScoreManager.shared.removeScore(chore: chore, for: doer)
+        }
+        return await ScoreManager.shared.removeScoreForMyUser(chore: chore)
     }
 
     @MainActor
     @discardableResult
     func toggle(assignment: RecurrentAssignmentModel) async -> Bool {
         let willBeDone = !assignment.isCompleted
-
-        async let toggled = assignment.toggle()
-        async let scored = willBeDone
-            ? ScoreManager.shared.assignScoreForMyUser(assignment: assignment)
-        : ScoreManager.shared.removeScoreForMyUser(assignment: assignment)
-
+        var doer: UserModel?
+        if !willBeDone {
+            doer = await assignment.userThatHaveDone
+        }
+        
+        guard await assignment.toggle() else { return false }
         refreshVisible()
-
-        let (toggledSuccessfully, scoredSuccessfully) = await (toggled, scored)
-        return toggledSuccessfully && scoredSuccessfully
+        
+        if willBeDone {
+            return await ScoreManager.shared.assignScoreForMyUser(assignment: assignment)
+        }
+        if let doer {
+            return await ScoreManager.shared.removeScore(assignment: assignment, for: doer)
+        }
+        return await ScoreManager.shared.removeScoreForMyUser(assignment: assignment)
     }
     
     // MARK: - Delete
