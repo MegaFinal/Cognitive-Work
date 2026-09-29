@@ -128,9 +128,13 @@ class HardwareViewModel {
 
     /// Sends the chart when this phone has pending changes or the device lost its screen.
     ///
-    /// The /status call doubles as an "am I at home?" check: away from the home network it
-    /// fails, the pending flag stays set and the next chance tries again.
+    /// Asks iOS for extra time, so a send started right before the user leaves the app
+    /// still finishes in the background.
+    @MainActor
     func refreshDeviceIfNeeded() async {
+        let backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "HarviRefresh")
+        defer { UIApplication.shared.endBackgroundTask(backgroundTask) }
+
         guard isPaired else { return }
 
         let hasPendingUpdate = UserDefaults.standard.bool(forKey: Self.pendingUpdateKey)
@@ -142,7 +146,7 @@ class HardwareViewModel {
             try await sendChartToESP32()
             UserDefaults.standard.set(false, forKey: Self.pendingUpdateKey)
         } catch {
-            // Colocar erro
+            print("Device refresh failed: \(error)")
         }
     }
     

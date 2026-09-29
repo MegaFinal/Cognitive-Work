@@ -213,85 +213,101 @@ private struct OverflowStrip: View {
     }
 }
 
-//#Preview {
-//    // MARK: - rooms
-//    var banheiro = RoomModel(name: "Banheiro", color: .purple)
-//    banheiro.recordID = CKRecord.ID(recordName: "preview-banheiro")
+
 //
-//    var cozinha = RoomModel(name: "Cozinha", color: .blue)
-//    cozinha.recordID = CKRecord.ID(recordName: "preview-cozinha")
+//#if DEBUG
 //
-//    var salaDeEstar = RoomModel(name: "Sala de estar", color: .green)
-//    salaDeEstar.recordID = CKRecord.ID(recordName: "preview-sala")
+//// MARK: - Dados de exemplo
 //
-//    var areaDeServico = RoomModel(name: "Área de serviço", color: .yellow)
-//    areaDeServico.recordID = CKRecord.ID(recordName: "preview-area")
+///// Os dados ficam numa função normal (e não dentro do `#Preview`) porque o corpo do
+///// `#Preview` é um result builder: `return`, `var` mutado, `func` locais e
+///// atribuições soltas (`x.recordID = ...`) quebram a compilação lá dentro.
+//@MainActor
+//private enum HardwareDailyChoresPreviewData {
 //
-//    var varanda = RoomModel(name: "Quarto", color: .orange)
-//    varanda.recordID = CKRecord.ID(recordName: "preview-varanda")
+//    static func makeViewModel() -> HardwareDailyChoresViewModel {
+//        // MARK: rooms
+//        func makeRoom(_ name: String, color: RoomColor, id: String) -> RoomModel {
+//            var room = RoomModel(name: name, symbol: "fish", color: color)
+//            room.recordID = CKRecord.ID(recordName: "preview-\(id)")
+//            return room
+//        }
 //
-//    // MARK: - users
-//    func makeUser(_ name: String) -> UserModel {
-//        let user = UserModel(name: name, tier: .tier1, ownerRecordName: "preview-\(name)")
-//        user.recordID = CKRecord.ID(recordName: "preview-user-\(name)")
-//        return user
-//    }
+//        let banheiro      = makeRoom("Banheiro",        color: .purple, id: "banheiro")
+//        let cozinha       = makeRoom("Cozinha",         color: .blue,   id: "cozinha")
+//        let salaDeEstar   = makeRoom("Sala de estar",   color: .green,  id: "sala")
+//        let areaDeServico = makeRoom("Área de serviço", color: .yellow, id: "area")
+//        let quarto        = makeRoom("Quarto",          color: .orange, id: "quarto")
 //
-//    let jones = makeUser("Jones")
-//    let isabela = makeUser("Isabela")
-//    let carol = makeUser("Carol")
-//    let anshu = makeUser("Anshu")
-//    let dayo = makeUser("Dayô")
+//        // MARK: users
+//        func makeUser(_ name: String) -> UserModel {
+//            let user = UserModel(name: name, tier: .tier1, ownerRecordName: "preview-\(name)")
+//            user.recordID = CKRecord.ID(recordName: "preview-user-\(name)")
+//            return user
+//        }
 //
-//    // MARK: - chores
-//    func makeChore(_ name: String, room: RoomModel, responsible: UserModel, duration: Double) -> ChoreModel {
-//        let chore = ChoreModel(
-//            name: name,
-//            description: "",
-//            dueDate: Date(),
-//            frequency: .daily,
-//            duration: duration,
-//            isPublic: true,
-//            priorityTag: .medium,
-//            currentResponsible: responsible.recordID.map { CKRecord.Reference(recordID: $0, action: .none) },
-//            roomReference: room.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+//        let jones   = makeUser("Jones")
+//        let isabela = makeUser("Isabela")
+//        let carol   = makeUser("Carol")
+//        let anshu   = makeUser("Anshu")
+//        let dayo    = makeUser("Dayô") // sem tarefas: mostra o "Sem tarefas por hoje"
+//
+//        // MARK: chores
+//        func makeChore(_ name: String, room: RoomModel, responsible: UserModel, duration: Double) -> ChoreModel {
+//            let chore = ChoreModel(
+//                name: name,
+//                description: "",
+//                dueDate: Date(),
+//                frequency: .daily,
+//                duration: duration,
+//                isPublic: true,
+//                priorityTag: .medium,
+//                currentResponsible: responsible.recordID.map { CKRecord.Reference(recordID: $0, action: .none) },
+//                roomReference: room.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+//            )
+//            chore.recordID = CKRecord.ID(recordName: "preview-chore-\(UUID().uuidString)")
+//            return chore
+//        }
+//
+//        let chores: [ChoreModel] = [
+//            // Jones
+//            makeChore("Lavar Box",               room: banheiro,      responsible: jones,   duration: 15),
+//            makeChore("Lavar louça do domingo",  room: cozinha,       responsible: jones,   duration: 20),
+//            makeChore("Regar as plantas",        room: quarto,        responsible: jones,   duration: 10),
+//
+//            // Isabela
+//            makeChore("Lavar roupas brancas",    room: areaDeServico, responsible: isabela, duration: 40),
+//            makeChore("Lavar chão",              room: banheiro,      responsible: isabela, duration: 15),
+//            makeChore("Tirar o lixo",            room: banheiro,      responsible: isabela, duration: 5),
+//
+//            // Carol
+//            makeChore("Lavar louça do jantar",   room: cozinha,       responsible: carol,   duration: 20),
+//            makeChore("Passar pano",             room: salaDeEstar,   responsible: carol,   duration: 15),
+//            makeChore("Dobrar as roupas",        room: areaDeServico, responsible: carol,   duration: 25),
+//
+//            // Anshu (5 tarefas: testa o limite de 3 cards + faixa "+2 tarefas")
+//            makeChore("Jogar água nas plantas",  room: quarto,        responsible: anshu,   duration: 5),
+//            makeChore("Tirar o lixo",            room: cozinha,       responsible: anshu,   duration: 5),
+//            makeChore("Cozinhar almoço",         room: cozinha,       responsible: anshu,   duration: 45),
+//            makeChore("Lavar panelas",           room: cozinha,       responsible: anshu,   duration: 20),
+//            makeChore("Organizar geladeira",     room: cozinha,       responsible: anshu,   duration: 15),
+//        ]
+//
+//        return HardwareDailyChoresViewModel(
+//            chores: chores,
+//            users: [jones, isabela, carol, anshu, dayo],
+//            rooms: [banheiro, cozinha, salaDeEstar, areaDeServico, quarto]
 //        )
-//        chore.recordID = CKRecord.ID(recordName: "preview-chore-\(UUID().uuidString)")
-//        return chore
 //    }
-//
-//    let chores = [
-//        // Jones
-//        makeChore("Lavar Box", room: banheiro, responsible: jones, duration: 15),
-//        makeChore("Lavar louça do domingo", room: cozinha, responsible: jones, duration: 20),
-//        makeChore("Regar as plantas", room: varanda, responsible: jones, duration: 10),
-//
-//        // Isabela
-//        makeChore("Lavar roupas brancas", room: areaDeServico, responsible: isabela, duration: 40),
-//        makeChore("Lavar chão", room: banheiro, responsible: isabela, duration: 15),
-//        makeChore("Tirar o lixo", room: banheiro, responsible: isabela, duration: 5),
-//
-//        // Carol
-//        makeChore("Lavar louça do jantar", room: cozinha, responsible: carol, duration: 20),
-//        makeChore("Passar pano", room: salaDeEstar, responsible: carol, duration: 15),
-//        makeChore("Dobrar as roupas", room: areaDeServico, responsible: carol, duration: 25),
-//
-//        // Anshu
-//        makeChore("Jogar água nas plantas", room: varanda, responsible: anshu, duration: 5),
-//        makeChore("Tirar o lixo", room: cozinha, responsible: anshu, duration: 5),
-//        makeChore("Cozinhar almoço", room: cozinha, responsible: anshu, duration: 45),
-//        makeChore("Cozinhar almoço", room: cozinha, responsible: anshu, duration: 45),
-//        makeChore("Cozinhar almoço", room: cozinha, responsible: anshu, duration: 45),
-//
-//        // Dayô
-////        makeChore("Passar pano", room: cozinha, responsible: dayo, duration: 15)
-//    ]
-//
-//    let viewModel = HardwareDailyChoresViewModel(
-//        chores: chores,
-//        users: [jones, isabela, carol, anshu, dayo],
-//        rooms: [banheiro, cozinha, salaDeEstar, areaDeServico, varanda]
-//    )
-//
-//    return HardwareDailyChoresView(viewModel: viewModel)
 //}
+//
+//// MARK: - Preview
+//
+//// A view usa GeometryReader, então precisa de um tamanho definido (senão colapsa).
+//// Ajuste width/height para a resolução real do seu e-paper.
+//#Preview("Painel (paisagem)", traits: .fixedLayout(width: 800, height: 480)) {
+//    HardwareDailyChoresView(viewModel: HardwareDailyChoresPreviewData.makeViewModel())
+//        .background(Color.white)
+//}
+//
+//#endif

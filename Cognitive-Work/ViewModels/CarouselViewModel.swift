@@ -348,7 +348,7 @@ class CarouselViewModel {
     /// > production — and flip ``HardwareDailyChoresViewModel/dayOffsetFromToday`` together with
     /// > it, since the e-paper dashboard has to show the same day the app does. The progress
     /// > cards (``DashboardModel``) read this too, so they follow automatically.
-    static let gridDayOffsetFromToday = 1
+    static let gridDayOffsetFromToday = 0
     
     /// The single day the grid layout renders, normalised to the start of that day.
     /// - Parameter reference: The day to count from. Defaults to now; injectable for tests.
