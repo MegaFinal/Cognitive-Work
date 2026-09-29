@@ -267,7 +267,7 @@ func occurrenceDays(
     while day <= lastDay {
         days.append(day)
         guard let next = calendar.date(byAdding: step, to: day) else { break }
-        day = next
+        day = calendar.startOfDay(for: next)
     }
     
     return days

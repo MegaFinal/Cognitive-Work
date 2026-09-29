@@ -1495,11 +1495,13 @@ class CarouselViewModel {
         return 0.25 + 0.75 * Double(count) / Double(peak)   // Days with tasks have at least 0.25 opacity
     }
     
-    //MARK: - Change frequency
-    
-    /// When editing a chore whose frequency changed, removes every today-onward occurrence
-    /// generated under the OLD frequency, then generates a fresh set for the NEW frequency
-    /// covering the rest of the current cycle. Past/completed occurrences are left untouched.
+    // MARK: - Change Frequency
+
+    /// Handles updating a chore's frequency during edit flow.
+    ///
+    /// Removes all remaining future occurrences from today onward under the OLD frequency,
+    /// and generates a fresh set under the NEW frequency bound strictly by the original engine cutoff (`cycleEnd`).
+    /// Historical/completed occurrences prior to today are left intact.
     @MainActor
     func handleFrequencyChange(
         for chore: ChoreModel,
@@ -1512,10 +1514,21 @@ class CarouselViewModel {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         
-        // Delete today-onward occurrences left over from the old frequency.
+        // Capture the original Engine cycle end date BEFORE deleting any records.
+        guard let targetCycleEnd = currentCycleEnd else {
+            if chore.frequency == .none {
+                chore.dueDate = pickedDate.map { calendar.startOfDay(for: $0) } ?? today
+                await CloudKitManager.shared.update(chore)
+            }
+            return
+        }
+        
+        let cycleEnd = calendar.startOfDay(for: targetCycleEnd)
+        
+        // Purge only future occurrences (from today onward) belonging to the old frequency.
         if oldFrequency != .none {
             let existing = await chore.dailyAssignments
-            let toDelete = existing.filter { $0.day >= today }
+            let toDelete = existing.filter { calendar.startOfDay(for: $0.day) >= today }
             
             if !toDelete.isEmpty {
                 let deleteIDs = toDelete.compactMap { $0.recordID }
@@ -1524,11 +1537,10 @@ class CarouselViewModel {
                 }
                 let deletedSet = Set(deleteIDs)
                 
-                // Remove deleted references from chore model
+                // Sync local in-memory state
                 chore.dailyAssignmentsReference = (chore.dailyAssignmentsReference ?? [])
                     .filter { !deletedSet.contains($0.recordID) }
                 
-                // Remove deleted items from ViewModel's in-memory dailyAssignments array
                 self.dailyAssignments.removeAll { assignment in
                     guard let id = assignment.recordID else { return false }
                     return deletedSet.contains(id)
@@ -1536,47 +1548,47 @@ class CarouselViewModel {
             }
         }
         
-        // If changing to one-off (.none)
+        // Handle switching to a non-recurring chore (.none)
         if chore.frequency == .none {
-            chore.dueDate = pickedDate ?? today
+            chore.dueDate = pickedDate.map { calendar.startOfDay(for: $0) } ?? today
             await CloudKitManager.shared.update(chore)
             return
         }
         
-        chore.dueDate = nil // Recurring chores use assignments, not dueDate
+        chore.dueDate = nil
+        guard let choreID = chore.recordID else { return }
         
-        guard let cycleEnd = currentCycleEnd, let choreID = chore.recordID else {
-            await CloudKitManager.shared.update(chore)
-            return
-        }
-        
-        // Determine start date according to target frequency rules:
-        // - If changing to .daily: always start from today
-        // - If changing to .weekly / .fortnightly / .monthly: start from pickedDate (or today if nil)
+        // Determine start date for the new frequency
         let start: Date
         if chore.frequency == .daily {
             start = today
         } else {
-            start = pickedDate ?? today
+            let candidate = pickedDate.map { calendar.startOfDay(for: $0) } ?? today
+            start = max(candidate, today)
         }
         
+        // Generate dates bounded strictly between `start` and `cycleEnd` with zero time component
         let days = occurrenceDays(for: chore.frequency, from: start, through: cycleEnd)
+        
         guard !days.isEmpty else {
             await CloudKitManager.shared.update(chore)
             return
         }
         
+        // Map each normalized day date to exactly ONE assignment, rotating across responsible users
         let rotation = responsibleUsers.compactMap { $0.recordID }
         let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
-        let assignments = days.enumerated().map { index, day -> RecurrentAssignmentModel in
+        
+        let newAssignments = days.enumerated().map { index, day -> RecurrentAssignmentModel in
             let userRef = rotation.isEmpty
                 ? nil
                 : CKRecord.Reference(recordID: rotation[index % rotation.count], action: .none)
             return RecurrentAssignmentModel(day: day, isCompleted: false, user: userRef, chore: choreRef)
         }
         
+        // Persist and apply new schedule results to CloudKit and local state
         await commitScheduleResults(
-            [ScheduleResult(chore: chore, newAssignments: assignments)],
+            [ScheduleResult(chore: chore, newAssignments: newAssignments)],
             users: responsibleUsers,
             houseZoneID: choreID.zoneID
         )
