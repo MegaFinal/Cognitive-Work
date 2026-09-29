@@ -62,6 +62,10 @@ struct CreateAndEditChoreView: View {
     @State private var isDeleting = false
     @State private var showDeleteConfirmation = false
     
+    /// Responsible users the chore already had when this screen opened.
+    /// Only users added on top of these earn points on save.
+    @State private var initialResponsibleIDs: Set<CKRecord.ID> = []
+    
     @Bindable var carouselViewModel: CarouselViewModel
     
     @Environment(\.dismiss) private var dismiss
@@ -202,6 +206,8 @@ struct CreateAndEditChoreView: View {
             } else {
                 selectedDate = originalModel.dueDate
             }
+            
+            initialResponsibleIDs = Set(choreDTO.responsibleUsers.compactMap(\.recordID))
         }
         .onChange(of: choreDTO.frequency) { _, _ in
             // The window changes with the frequency; drop a date that no longer fits.
@@ -445,13 +451,23 @@ struct CreateAndEditChoreView: View {
                 cycleEnd: cycleEnd,
                 pickedDate: selectedDate
             )
-            
-            //MARK: Gamificatoin score system
-            let score = choreDTO.hasFullDetails
+        }
+        
+        //MARK: Gamification score system
+        var score = 0
+        
+        if isNewChore {
+            score += choreDTO.hasFullDetails
             ? ScoreValues.choreAdded.points + ScoreValues.choreCreatedWithFullDetails.points
             : ScoreValues.choreAdded.points
-            async let assignSuccesfully = ScoreManager.shared.assignScoreForMyUser(score: score)
         }
+        
+        score += await responsibleAssignmentScore()
+        
+        if score > 0 {
+            await ScoreManager.shared.assignScoreForMyUser(score: score)
+        }
+        
         
         await applyPickedDateToOccurrence(isNewChore: isNewChore)
         
@@ -480,6 +496,24 @@ struct CreateAndEditChoreView: View {
         
         isSaving = false
         dismiss()
+    }
+    
+    /// Points for the responsible users added during this edit (users already assigned when
+    /// the screen opened don't count). Assigning yourself is worth more than assigning others.
+    @MainActor
+    private func responsibleAssignmentScore() async -> Int {
+        let addedUsers = choreDTO.responsibleUsers.filter { user in
+            guard let id = user.recordID else { return false }
+            return !initialResponsibleIDs.contains(id)
+        }
+        guard !addedUsers.isEmpty else { return 0 }
+        
+        let myOwnerRecordName = await CloudKitManager.shared.fetchMyHouseUser()?.ownerRecordName
+        
+        return addedUsers.reduce(0) { total, user in
+            let isSelf = user.ownerRecordName == myOwnerRecordName
+            return total + ScoreValues.responsibleAssigned(isSelf: isSelf).points
+        }
     }
     
     /// Writes the date picked in the calendar onto the recurring chore's assignment.
@@ -550,5 +584,6 @@ extension ChoreDTO {
         && self.frequency != .undefined
         && self.duration > 0
         && !self.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        && !self.responsibleUsers.isEmpty
     }
 }
