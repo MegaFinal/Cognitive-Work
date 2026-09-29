@@ -44,8 +44,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             
             // Something changed in the house: bring the device up to date if this phone is at home
             print("Silent push received")
-            HardwareViewModel.markPendingUpdate()
-            await HardwareViewModel().refreshDeviceIfNeeded()
+            HardwareViewModel.notifyDataChanged()
+            await HardwareViewModel.waitForPendingDelivery()
         }
         return .newData
     }

@@ -55,7 +55,7 @@ extension CloudKitManager {
             saved.recordID = recordID
             invalidateSessionCacheIfNeeded(for: T.self)
             
-            HardwareViewModel.notifyDataChanged()
+            await HardwareViewModel.notifyDataChanged()
             return saved
         } catch {
             errorMessage = "Failed to create \(T.recordType): \(error.localizedDescription)"
@@ -352,7 +352,7 @@ extension CloudKitManager {
             item.populate(record: record)
             _ = try await database.save(record)
             
-            HardwareViewModel.notifyDataChanged()
+            await HardwareViewModel.notifyDataChanged()
             return true
         } catch {
             errorMessage = "Failed to update \(T.recordType): \(error.localizedDescription)"
@@ -366,7 +366,7 @@ extension CloudKitManager {
         do {
             _ = try await database.save(record)
             
-            HardwareViewModel.notifyDataChanged()
+            await HardwareViewModel.notifyDataChanged()
             return true
         } catch {
             errorMessage = "Failed to update \(record.recordType): \(error.localizedDescription)"
@@ -394,7 +394,7 @@ extension CloudKitManager {
             _ = try await database.deleteRecord(withID: recordID)
             invalidateSessionCacheIfNeeded(for: T.self)
             
-            HardwareViewModel.notifyDataChanged()
+            await HardwareViewModel.notifyDataChanged()
             return true
         } catch {
             errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
@@ -409,7 +409,7 @@ extension CloudKitManager {
         do {
             _ = try await database.deleteRecord(withID: recordID)
             
-            HardwareViewModel.notifyDataChanged()
+            await HardwareViewModel.notifyDataChanged()
             return true
         } catch {
             errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
@@ -439,7 +439,7 @@ extension CloudKitManager {
         do {
             _ = try await database.modifyRecords(saving: [], deleting: recordIDs)
             
-            HardwareViewModel.notifyDataChanged()
+            await HardwareViewModel.notifyDataChanged()
             return true
         } catch {
             errorMessage = "Failed to delete records: \(error.localizedDescription)"
