@@ -222,13 +222,16 @@ final class CreateAndEditChoreViewModel {
     
     // MARK: - Form events
     
-    /// The calendar window changes with the frequency; drop a date that no longer fits.
+    /// The calendar window changes with the frequency; reset selection rule per target frequency.
     func frequencyDidChange() {
-        guard let date = selectedDate else { return }
-        let day = Calendar.current.startOfDay(for: date)
-        
-        if !dateWindow.contains(day) || day < earliestSelectableDay {
-            selectedDate = nil
+        if draft.frequency == .daily {
+            // Changing to .daily always starts from today
+            selectedDate = Calendar.current.startOfDay(for: now())
+        } else if let date = selectedDate {
+            let day = Calendar.current.startOfDay(for: date)
+            if !dateWindow.contains(day) || day < earliestSelectableDay {
+                selectedDate = nil
+            }
         }
     }
     
@@ -258,18 +261,24 @@ final class CreateAndEditChoreViewModel {
         
         let isNewChore = mode == .create
         let cycleEnd = carouselViewModel.currentCycleEnd
+        let previousFrequency = originalModel.frequency
+        let frequencyChanged = !isNewChore && previousFrequency != draft.frequency
+        
+        // When frequency changes, targetAssignments are outdated/deleted, so pass empty targetAssignments
+        let assignmentsToUpdate = frequencyChanged ? [] : targetAssignments
         
         do {
             try await originalModel.save(
                 from: draft,
                 oneOffDueDate: selectedDate,
-                targetAssignments: targetAssignments
+                targetAssignments: assignmentsToUpdate
             )
         } catch {
             alert = FormAlert(kind: .saveFailed, message: error.localizedDescription)
             return false
         }
         
+        // MARK: - Schedule Generation & Frequency Handling
         if isNewChore {
             await scheduleNewRecurringChore(
                 originalModel,
@@ -278,16 +287,25 @@ final class CreateAndEditChoreViewModel {
                 pickedDate: selectedDate
             )
             await awardCreationScore()
+        } else if frequencyChanged {
+            // Purge old occurrences and generate new series based on new frequency
+            await carouselViewModel.handleFrequencyChange(
+                for: originalModel,
+                from: previousFrequency,
+                responsibleUsers: responsibleUsersForScheduling,
+                pickedDate: selectedDate
+            )
+        } else {
+            await applyPickedDateToOccurrence(isNewChore: isNewChore)
         }
         
-        await applyPickedDateToOccurrence(isNewChore: isNewChore)
-        
-        let newOccurrenceIDs: Set<CKRecord.ID> = isNewChore
+        // MARK: - Local & Remote Sync
+        let newOccurrenceIDs: Set<CKRecord.ID> = (isNewChore || frequencyChanged)
         ? Set((originalModel.dailyAssignmentsReference ?? []).map(\.recordID))
         : []
         
         await carouselViewModel.refreshAfterChoreUpdate()
-        await syncCalendar(newOccurrenceIDs: newOccurrenceIDs)
+        await syncCalendar(newOccurrenceIDs: newOccurrenceIDs, frequencyChanged: frequencyChanged)
         carouselViewModel.refreshVisible()
         
         return true
@@ -314,7 +332,6 @@ final class CreateAndEditChoreViewModel {
             guard !calendar.isDate(target.day, inSameDayAs: picked) else { return }
             
             target.day = picked
-            
             await cloudKit.update(target)
             
         } else if isNewChore {
@@ -330,7 +347,7 @@ final class CreateAndEditChoreViewModel {
     }
     
     /// Mirrors the saved chore (or the occurrences it touched) into the user's calendar.
-    private func syncCalendar(newOccurrenceIDs: Set<CKRecord.ID>) async {
+    private func syncCalendar(newOccurrenceIDs: Set<CKRecord.ID>, frequencyChanged: Bool) async {
         let chore = originalModel
         
         guard chore.frequency != .none else {
@@ -341,7 +358,11 @@ final class CreateAndEditChoreViewModel {
         let freshAssignments = await cloudKit.fetchAll(RecurrentAssignmentModel.self)
         carouselViewModel.dailyAssignments = freshAssignments
         
-        let targetIDs = Set(targetAssignments.compactMap(\.recordID)).union(newOccurrenceIDs)
+        // When frequency changed, targetAssignments were wiped — use newOccurrenceIDs instead
+        let targetIDs = frequencyChanged
+        ? newOccurrenceIDs
+        : Set(targetAssignments.compactMap(\.recordID)).union(newOccurrenceIDs)
+        
         let updatedTargets = freshAssignments.filter { assignment in
             guard let id = assignment.recordID else { return false }
             return targetIDs.contains(id)
