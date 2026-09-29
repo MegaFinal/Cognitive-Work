@@ -384,7 +384,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
         let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
         
-        self.checkListReference = await CheckItemModel.sync(from: choreDTO.checklist, parent: choreReference)
+        let previousChecklist = checkListReference ?? []
+        let checklistDrafts = choreDTO.hasChecklist ? choreDTO.checklist : []
+        self.checkListReference = await CheckItemModel.sync(from: checklistDrafts, parent: choreReference)
         
         if !targetAssignments.isEmpty {
             await updateRecurrentAssignments(
