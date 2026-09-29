@@ -170,7 +170,7 @@ class HardwareViewModel {
 
         settleTask?.cancel()
         settleTask = Task {
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .nanoseconds(1))
             guard !Task.isCancelled else { return }
             startDelivery()
         }
