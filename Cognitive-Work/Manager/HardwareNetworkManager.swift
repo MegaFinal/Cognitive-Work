@@ -23,17 +23,17 @@ class HardwareNetworkManager {
     /// The device's IP. Typed by the user while the ESP32 is still an access point
     /// (usually 192.168.4.1), then replaced by the address it gets on the home network.
     var host: String = ""
-
+    
     private var session = URLSession.shared
     private var decoder = JSONDecoder()
-
+    
     /// Scheme prefix. Plain HTTP because the ESP32 has no certificate.
     private var base: String = "http://"
-
+    
     /// Pairing token received from /ask_code. Proves to the device that requests
     /// come from this app and not from another machine on the same network.
     private var hash: String = ""
-
+    
     private(set) var isConnected: Bool = false
     
     // MARK: - Hash Persistence
@@ -50,16 +50,14 @@ class HardwareNetworkManager {
         if let savedHost = localPersistence.string(forKey: StorageKey.host) {
             self.host = savedHost
         }
-        
-        print("host name: \(self.host)")
         if let savedHash = localPersistence.string(forKey: StorageKey.hash), !host.isEmpty {
             self.hash = savedHash
             self.isConnected = true
         }
     }
-
+    
     // MARK: - Provisioning
-
+    
     /// Sends the user's home WiFi credentials so the device can leave access point mode.
     ///
     /// After this call the ESP32 drops its own network and joins the one given here,
@@ -76,26 +74,26 @@ class HardwareNetworkManager {
         let route = "/save_wifi"
         let endpoint = base + self.accessPointIP + route
         let wifi = WifiCredentials(ssid: ssid, password: password)
-
+        
         guard let url = URL(string: endpoint) else {
             throw APIErrors.invalidURL
         }
-
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
+        
         // Encodes the credentials into the request body
         do {
-           let jsonData = try JSONEncoder().encode(wifi)
-           request.httpBody = jsonData
+            let jsonData = try JSONEncoder().encode(wifi)
+            request.httpBody = jsonData
         } catch {
             throw APIErrors.unableToEncode
         }
-
+        
         let (data, response) = try await session.data(for: request)
-
+        
         // The ESP32 answers 200 before actually connecting, since connecting
         // tears down the access point and this response would never arrive
         let answer = try validate(data: data, response: response)
@@ -104,12 +102,12 @@ class HardwareNetworkManager {
         guard let name = answer.name else { throw APIErrors.invalidData }
         self.host = name + ".local"
         localPersistence.set(host, forKey: StorageKey.host)
-
+        
         return self.host
     }
-
+    
     // MARK: - Pairing
-
+    
     /// Finds the device by its network name and stores its pairing hash.
     ///
     /// Retries a few times: right after provisioning the device may still be joining the network.
@@ -117,30 +115,50 @@ class HardwareNetworkManager {
         guard !host.isEmpty, let url = URL(string: base + host + "/ask_code") else {
             throw APIErrors.invalidURL
         }
-
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.httpBody = Data()
         request.timeoutInterval = 15
-
+        
         for attempt in 1...6 {
             do {
                 let (data, response) = try await session.data(for: request)
                 let answer = try validate(data: data, response: response)
-
+                
                 hash = answer.message
                 isConnected = true
                 localPersistence.set(hash, forKey: StorageKey.hash)
                 localPersistence.set(host, forKey: StorageKey.host)
                 return
-            } catch is URLError where attempt < 10 {
+            } catch is URLError where attempt < 6 {
                 try await Task.sleep(for: .seconds(3))
             }
         }
     }
-
+    
+    // MARK: - Status
+    
+    /// Asks the device whether its screen lost the chart (after a reboot or a reconnection).
+    ///
+    /// Also works as an "am I at home?" check: away from the home network it throws.
+    func deviceNeedsRefresh() async throws -> Bool {
+        guard !host.isEmpty, let url = URL(string: base + host + "/status") else {
+            throw APIErrors.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue(hash, forHTTPHeaderField: "X-Auth-Hash")
+        request.timeoutInterval = 15
+        
+        let (data, response) = try await session.data(for: request)
+        let answer = try validate(data: data, response: response)
+        return answer.needsRefresh ?? false
+    }
+    
     // MARK: - Sending content
-
+    
     /// Prints two lines of text on the e-paper: the first in black, the second in red.
     ///
     /// Unlike ``sendImageToDevice(imageData:)``, the hash goes inside the JSON body here
@@ -154,29 +172,29 @@ class HardwareNetworkManager {
     func printMessageOnDevice(messageOne: String, messageTwo: String) async throws {
         let route = "/send_text"
         let endpoint = self.base + self.host + route
-
+        
         // The hash is part of the payload, alongside the two lines
         let message = MessageToSend(hash: hash, messageOne: messageOne, messageTwo: messageTwo)
-
+        
         guard let url = URL(string: endpoint) else {
             throw APIErrors.invalidURL
         }
-
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
+        
         do {
-           let jsonData = try JSONEncoder().encode(message)
-           request.httpBody = jsonData
+            let jsonData = try JSONEncoder().encode(message)
+            request.httpBody = jsonData
         } catch {
             throw APIErrors.unableToEncode
         }
-
+        
         let (data, response) = try await session.data(for: request)
         try validate(data: data, response: response)
     }
-
+    
     /// Sends a 1 bit per pixel bitmap to be drawn on the e-paper.
     ///
     /// The body is base64 rather than raw binary: the ESP32's WebServer stores the request body
@@ -192,22 +210,31 @@ class HardwareNetworkManager {
     /// - Throws: ``APIErrors/invalidURL``, ``APIErrors/invalidResponse``, ``APIErrors/invalidData``.
     func sendImageToDevice(imageData: Data) async throws {
         guard imageData.count == 800 * 480 / 4 else { throw APIErrors.invalidData }
-
+        
         let endpoint = self.base + self.host + "/send_image"
         guard let url = URL(string: endpoint) else { throw APIErrors.invalidURL }
-
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
         request.setValue(self.hash, forHTTPHeaderField: "X-Auth-Hash")
         request.timeoutInterval = 60
-
-        let (data, response) = try await session.upload(for: request, from: imageData)
-        try validate(data: data, response: response)
+        
+        // The transfer can drop halfway on a weak signal: retry a couple of times before giving up
+        for attempt in 1...3 {
+            do {
+                let (data, response) = try await session.upload(for: request, from: imageData)
+                try validate(data: data, response: response)
+                return
+            } catch is URLError where attempt < 3 {
+                print("Image upload failed (attempt \(attempt)), retrying...")
+                try await Task.sleep(for: .seconds(2))
+            }
+        }
     }
     
     // MARK: - Reset
-
+    
     /// Asks the device to wipe its WiFi credentials and hash, then forgets the local pairing.
     ///
     /// The ESP32 answers before restarting and comes back in access point mode,
@@ -215,18 +242,18 @@ class HardwareNetworkManager {
     func resetDevice() async throws {
         let endpoint = base + host + "/reset"
         guard let url = URL(string: endpoint) else { throw APIErrors.invalidURL }
-
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(hash, forHTTPHeaderField: "X-Auth-Hash")
         request.httpBody = Data()
-
+        
         let (data, response) = try await session.data(for: request)
         try validate(data: data, response: response)
-
+        
         forgetDevice()
     }
-
+    
     /// Clears the pairing on this iPhone only. Also useful when the device was reset
     /// by its button and can no longer be reached.
     func forgetDevice() {
@@ -236,9 +263,9 @@ class HardwareNetworkManager {
         localPersistence.removeObject(forKey: StorageKey.hash)
         localPersistence.removeObject(forKey: StorageKey.host)
     }
-
+    
     // MARK: - Response handling
-
+    
     /// Validates the device's answer and decodes the standard envelope.
     ///
     /// A 401 means the hash no longer matches — usually because the ESP32 rebooted and
@@ -255,18 +282,18 @@ class HardwareNetworkManager {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIErrors.invalidResponse
         }
-
+        
         if httpResponse.statusCode == 401 {
             isConnected = false
             hash = ""
             localPersistence.removeObject(forKey: StorageKey.hash)
             throw APIErrors.invalidResponse
         }
-
+        
         guard httpResponse.statusCode == 200 else {
             throw APIErrors.invalidResponse
         }
-
+        
         do {
             return try decoder.decode(Esp32Answer.self, from: data)
         } catch {

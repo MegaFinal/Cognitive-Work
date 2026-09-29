@@ -650,6 +650,7 @@ class CloudKitManager {
         do {
             _ = try await database.modifyRecords(saving: records, deleting: [])
         
+            HardwareViewModel.notifyDataChanged()
             return true
         } catch {
             self.errorMessage = "Batch save failed: \(error.localizedDescription)"
@@ -687,6 +688,8 @@ class CloudKitManager {
                 guard !recordsToSave.isEmpty else { continue }
 
                 _ = try await database.modifyRecords(saving: recordsToSave, deleting: [])
+                
+                HardwareViewModel.notifyDataChanged()
             } catch {
                 errorMessage = "Batch update failed: \(error.localizedDescription)"
                 print("    batchUpdate FAILED (\(T.recordType)): \(error)")

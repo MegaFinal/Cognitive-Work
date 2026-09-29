@@ -310,6 +310,7 @@ private struct ProgressIndicatorCard: View {
                 .foregroundColor(.white)
         }
         .frame(width: width * 0.28, height: height * 0.088)
+        .frame(width: width * 0.28, height: height * 0.088)
         .background(color)
         .clipShape(RoundedRectangle(cornerRadius: 21))
         .shadow(color: .black.opacity(0.25), radius: 4.07717, x: 0, y: 1.23551)

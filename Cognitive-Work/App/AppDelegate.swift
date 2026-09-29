@@ -41,6 +41,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         if notification?.subscriptionID == "shared-changes" || notification?.subscriptionID == "private-changes" {
             NotificationCenter.default.post(name: .cloudKitDidChange, object: nil)
+            
+            // Something changed in the house: bring the device up to date if this phone is at home
+            print("Silent push received")
+            HardwareViewModel.markPendingUpdate()
+            await HardwareViewModel().refreshDeviceIfNeeded()
         }
         return .newData
     }
