@@ -80,10 +80,18 @@ struct ChoreCardListStyle: View {
                         .padding(.leading, 4)
                         .padding(.bottom, 8)
                         
-                        HStack(spacing: 6) {
+                        HStack(spacing: 8) {
                             // MARK: - Tags
                             CapsuleTag(
-                                tagName: chore.priorityTag.rawValue,
+                                tagName: chore.frequency.displayName,
+                                tagColor: chore.frequency.color,
+                                textColor: chore.frequency.textColor,
+                                horizontalPadding: 7.0,
+                                verticalPadding: 1.0
+                            )
+                            
+                            CapsuleTag(
+                                tagName: chore.priorityTag.displayName,
                                 tagColor: chore.priorityTag.color,
                                 horizontalPadding: 7.0,
                                 verticalPadding: 1.0

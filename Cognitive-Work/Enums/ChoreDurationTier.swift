@@ -11,7 +11,6 @@ import SwiftUI
 /// Abstract tier categorizing length constraints mapping expected completion difficulty.
 enum ChoreDurationTier: Int, CaseIterable, Hashable {
     case undefined = -1
-    case veryQuick = 0
     case quick = 1
     case moderate = 2
     case slow = 3
@@ -20,8 +19,6 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     /// Resolves an exact minute value into an abstracted layout representation.
     static func from(minutes: Double) -> ChoreDurationTier {
         switch minutes {
-        case ..<10:
-            return .veryQuick
         case ..<20:
             return .quick
         case 20..<60:
@@ -37,7 +34,6 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     var heightRatio: Double {
         switch self {
         case .undefined: return 0
-        case .veryQuick: return 0.1
         case .quick: return 0.3
         case .moderate: return 0.6
         case .slow: return 1.0
@@ -49,11 +45,10 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     var displayText: String {
         switch self {
         case .undefined: return "indefinido"
-        case .veryQuick: return "muito rápido"
-        case .quick: return "rápido"
-        case .moderate: return "moderado"
-        case .slow: return "demorado"
-        case .verySlow: return "muito demorado"
+        case .quick: return "curta"
+        case .moderate: return "regular"
+        case .slow: return "longa"
+        case .verySlow: return "extensa"
         }
     }
     
@@ -61,11 +56,10 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     var color: Color {
         switch self {
         case .undefined: return .gray
-        case .veryQuick: return .choreGreen
-        case .quick: return .choreBlue
-        case .moderate: return .choreYellow
-        case .slow: return .choreOrange
-        case .verySlow: return .red
+        case .quick: return .tagBlue
+        case .moderate: return .tagGreen
+        case .slow: return .tagOrange
+        case .verySlow: return .tagRed
         }
     }
 }

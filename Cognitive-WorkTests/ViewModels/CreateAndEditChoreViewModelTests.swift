@@ -169,7 +169,7 @@ struct CreateAndEditChoreViewModelTests {
         
         #expect(viewModel.draft.priorityTag == .low)
         #expect(viewModel.draft.frequency == Recurrence.none)
-        #expect(ChoreDurationTier.from(minutes: viewModel.draft.duration / 60) == .veryQuick)
+        #expect(ChoreDurationTier.from(minutes: viewModel.draft.duration / 60) == .quick)
     }
     
     @Test func longDurationIsNeverUndefined() {

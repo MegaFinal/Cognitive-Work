@@ -30,10 +30,20 @@ enum PriorityTag: String, CaseIterable, Hashable {
     var color: Color {
         switch self {
         case .undefined: return .gray
-        case .low: return .choreGreen
-        case .medium: return .choreYellow
-        case .high: return .choreOrange
-        case .urgent: return .red
+        case .low: return .tagBlue
+        case .medium: return .tagGreen
+        case .high: return .tagOrange
+        case .urgent: return .tagRed
+        }
+    }
+    
+    var displayName: String {
+        switch self {
+        case .low: return "baixa"
+        case .medium: return "média"
+        case .high: return "importante"
+        case .urgent: return "urgente"
+        case .undefined: return "indefinida"
         }
     }
     

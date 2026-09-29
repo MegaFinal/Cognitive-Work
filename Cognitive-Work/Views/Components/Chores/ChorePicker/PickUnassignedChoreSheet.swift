@@ -86,6 +86,7 @@ struct PickUnassignedChoreSheet: View {
                     Text("Frequência").font(.system(size: 15, weight: .semibold))
                     Spacer()
                     CapsuleTag(tagName: chore.frequency.displayName, tagColor: chore.frequency.color,
+                               textColor: chore.frequency.textColor,
                                horizontalPadding: 10, verticalPadding: 1.5)
                 }
                 
