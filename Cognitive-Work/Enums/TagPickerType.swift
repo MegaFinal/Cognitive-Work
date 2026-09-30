@@ -22,8 +22,7 @@ enum TagPickerType {
         case .frequency:
             return chore.frequency.displayName
         case .duration:
-            let minutes = chore.duration / 60
-            return ChoreDurationTier.from(minutes: minutes).displayText
+            return ChoreDurationTier.from(minutes: chore.duration).displayText
         }
     }
     
@@ -45,8 +44,7 @@ enum TagPickerType {
         case .frequency:
             return chore.frequency.color
         case .duration:
-            let minutes = chore.duration / 60
-            return ChoreDurationTier.from(minutes: minutes).color
+            return ChoreDurationTier.from(minutes: chore.duration).color
         }
     }
 }

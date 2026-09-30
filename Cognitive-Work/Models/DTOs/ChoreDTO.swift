@@ -100,7 +100,7 @@ final class ChoreDTO: Identifiable {
         self.name = ""
         self.description = ""
         self.frequency = .weekly
-        self.duration = 1800
+        self.duration = 30
         self.priorityTag = .medium
         self.isPublic = false
         self.symbolName = "toilet"

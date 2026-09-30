@@ -416,7 +416,7 @@ final class CreateAndEditChoreViewModel {
             draft.frequency = Recurrence.allCases.first { $0 != .undefined } ?? Recurrence.none
         }
         if draft.duration <= 0 {
-            draft.duration = 5 * 60
+            draft.duration = ChoreDurationTier.quick.minutes
         }
     }
     

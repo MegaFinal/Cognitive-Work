@@ -98,8 +98,8 @@ struct ChoreCardListStyle: View {
                             )
                             
                             CapsuleTag(
-                                tagName: ChoreDurationTier.from(minutes: chore.duration / 60).displayText,
-                                tagColor: ChoreDurationTier.from(minutes: chore.duration / 60).color,
+                                tagName: ChoreDurationTier.from(minutes: chore.duration).displayText,
+                                tagColor: ChoreDurationTier.from(minutes: chore.duration).color,
                                 horizontalPadding: 7.0,
                                 verticalPadding: 1.0
                             )
