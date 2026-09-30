@@ -101,6 +101,7 @@ final class CreateAndEditChoreViewModel {
         self.availableHouseUsers = Self.uniqueByOwner(availableHouseUsers)
         self.draft = ChoreDTO(from: originalModel, users: [], checklist: [], room: nil)
         Self.replaceUndefinedTags(in: draft)
+        fillFromMemory()
     }
     
     // MARK: - Derived state
@@ -190,24 +191,44 @@ final class CreateAndEditChoreViewModel {
         isLoaded = false
         draft = ChoreDTO(from: originalModel, users: [], checklist: [], room: nil)
         Self.replaceUndefinedTags(in: draft)
+        fillFromMemory()
         
-        availableRooms = await cloudKit.fetchAll(RoomModel.self)
-            .filter { $0.name != "Casa" }
-        currentHouseUser = await cloudKit.currentHouseUser()
-        draft.room = await originalModel.room
+        // CloudKit only for what the chores screen didn't have in memory.
+        if availableRooms.isEmpty {
+            availableRooms = await cloudKit.fetchAll(RoomModel.self)
+                .filter { $0.name != "Casa" }
+        }
+        if currentHouseUser == nil {
+            currentHouseUser = await cloudKit.currentHouseUser()
+            applyResponsibleUsers()
+        }
+        if draft.room == nil, originalModel.roomReference != nil {
+            draft.room = await originalModel.room
+        }
         
         let checklistModels = await originalModel.checkList
         draft.checklist = checklistModels.map(CheckItemDTO.init(from:))
         draft.hasChecklist = !draft.checklist.isEmpty
         
-        draft.responsibleUsers = persistedResponsibleUsers()
-        selectedDate = targetAssignments.first?.day ?? originalModel.dueDate
-        
-        if !draft.isPublic {
-            draft.responsibleUsers = currentHouseUserInList.map { [$0] } ?? []
-        }
-        
         isLoaded = true
+    }
+    
+    /// Fills the room, the rooms list, the current resident, the responsible users and the date
+    /// from what ``CarouselViewModel`` already holds, so they show up together with the rest of
+    /// the form instead of after a round of CloudKit requests.
+    private func fillFromMemory() {
+        availableRooms = carouselViewModel.roomModels.filter { $0.name != "Casa" }
+        currentHouseUser = carouselViewModel.dashboardUser
+        draft.room = carouselViewModel.getRoom(for: originalModel)
+        selectedDate = targetAssignments.first?.day ?? originalModel.dueDate
+        applyResponsibleUsers()
+    }
+    
+    /// The persisted responsible users, or only the current resident for a private chore.
+    private func applyResponsibleUsers() {
+        draft.responsibleUsers = draft.isPublic
+        ? persistedResponsibleUsers()
+        : (currentHouseUserInList.map { [$0] } ?? [])
     }
     
     /// The responsible users stored on the occurrence(s) being edited, or on the chore.
