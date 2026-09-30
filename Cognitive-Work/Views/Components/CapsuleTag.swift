@@ -16,6 +16,9 @@ struct CapsuleTag: View {
     /// Defines background aesthetics.
     var tagColor: Color
     
+    /// Color of the tag's text.
+    var textColor: Color = .white
+    
     /// External layout horizontal constraints.
     var horizontalPadding: Double
     
@@ -25,7 +28,7 @@ struct CapsuleTag: View {
     var body: some View {
         Text(tagName)
             .font(.system(size: 13))
-            .foregroundColor(.white)
+            .foregroundColor(textColor)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
             .background(tagColor)

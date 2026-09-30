@@ -120,7 +120,7 @@ struct ChoreDetailsCard: View {
             
             HStack(spacing: 12) {
                 CapsuleTag(
-                    tagName: chore.priorityTag.rawValue,
+                    tagName: chore.priorityTag.displayName,
                     tagColor: chore.priorityTag.color,
                     horizontalPadding: 10.0,
                     verticalPadding: 1.5
@@ -134,8 +134,9 @@ struct ChoreDetailsCard: View {
                 )
                 
                 CapsuleTag(
-                    tagName: chore.frequency.rawValue,
+                    tagName: chore.frequency.displayName,
                     tagColor: chore.frequency.color,
+                    textColor: chore.frequency.textColor,
                     horizontalPadding: 10.0,
                     verticalPadding: 1.5
                 )

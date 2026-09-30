@@ -29,7 +29,7 @@ struct ChoreTagPicker: View {
             case .priority:
                 Picker("Prioridade", selection: $chore.priorityTag) {
                     ForEach(PriorityTag.allCases.filter { $0 != .undefined }, id: \.self) { tag in
-                        ColorIconTagLabel(title: tag.rawValue.capitalized, color: tag.color)
+                        ColorIconTagLabel(title: tag.displayName, color: tag.color)
                             .tag(tag)
                     }
                 }
@@ -37,7 +37,7 @@ struct ChoreTagPicker: View {
             case .frequency:
                 Picker("Frequência", selection: $chore.frequency) {
                     ForEach(Recurrence.allCases.filter { $0 != .undefined }, id: \.self) { freq in
-                        ColorIconTagLabel(title: freq.rawValue.capitalized, color: freq.color)
+                        ColorIconTagLabel(title: freq.displayName, color: freq.color)
                             .tag(freq)
                     }
                 }
@@ -45,7 +45,7 @@ struct ChoreTagPicker: View {
             case .duration:
                 Picker("Duração", selection: durationTierBinding) {
                     ForEach(ChoreDurationTier.allCases.filter { $0 != .undefined }, id: \.self) { tier in
-                        ColorIconTagLabel(title: tier.displayText.capitalized, color: tier.color)
+                        ColorIconTagLabel(title: tier.displayText, color: tier.color)
                             .tag(tier)
                     }
                 }
@@ -55,6 +55,7 @@ struct ChoreTagPicker: View {
                 CapsuleTag(
                     tagName: type.labelName(for: chore, currentRoom: currentRoom),
                     tagColor: type.labelColor(for: chore, currentRoom: currentRoom),
+                    textColor: type.labelTextColor(for: chore),
                     horizontalPadding: 10.0,
                     verticalPadding: 1.5
                 )
@@ -82,7 +83,6 @@ struct ChoreTagPicker: View {
             },
             set: { newTier in
                 switch newTier {
-                case .veryQuick: chore.duration = 5 * 60
                 case .quick: chore.duration = 15 * 60
                 case .moderate: chore.duration = 30 * 60
                 case .slow: chore.duration = 60 * 60
