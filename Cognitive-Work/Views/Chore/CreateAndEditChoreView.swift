@@ -204,7 +204,9 @@ struct CreateAndEditChoreView: View {
                                 .foregroundColor(.black)
                                 .imageScale(.small)
                         }
+                        .fixedSize()
                     }
+                    .id(viewModel.draft.room?.recordID)
                 }
             }
             .frame(width: width * 0.65)

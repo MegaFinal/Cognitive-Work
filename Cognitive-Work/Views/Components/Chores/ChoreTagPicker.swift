@@ -64,7 +64,9 @@ struct ChoreTagPicker: View {
                     .foregroundColor(.black)
                     .imageScale(.small)
             }
+            .fixedSize()
         }
+        .id(type.labelName(for: chore, currentRoom: currentRoom))
         .onChange(of: currentRoom) { _, newRoom in
             if let recordID = newRoom?.recordID {
                 chore.roomReference = CKRecord.Reference(recordID: recordID, action: .none)
