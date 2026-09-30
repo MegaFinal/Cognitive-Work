@@ -142,6 +142,7 @@ struct ChoresView: View {
                         dismissFocusedCard()
                     }
             )
+            .tabBarVisibilityRoot()
         }
         .sheet(item: $carouselVM.itemAwaitingDate) { item in
             PickUnassignedChoreSheet(item: item, carouselViewModel: carouselVM)

@@ -23,6 +23,9 @@ struct ContentView: View {
     @State var shareMetadata: CKShare.Metadata? = nil
     @State private var isSwitchingHouse = false
     
+    /// Shared by every tab so pushed screens can hide the tab bar and animate it back.
+    @State private var tabBarVisibility = TabBarVisibilityController()
+    
     @AppStorage("didOnboard") private var didOnboard: Bool = true
 
     // MARK: - Body
@@ -47,6 +50,7 @@ struct ContentView: View {
                 Label("Perfil", systemImage: "person.fill")
             }
         }
+        .environment(tabBarVisibility)
         .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { cloudMetadata in
             showEnviteAcceptAlert = true
             self.shareMetadata = cloudMetadata.object as? CKShare.Metadata

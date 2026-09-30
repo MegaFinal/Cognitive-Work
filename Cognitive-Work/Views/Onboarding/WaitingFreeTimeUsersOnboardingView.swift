@@ -70,10 +70,9 @@ struct WaitUsersFreeTimeOnboardingView: View {
             
             if !isFromSettings {
                 OnboardingProgressButton(
-                    width: 50,
+                    width: 150,
                     height: 50,
-                    text: "chevron.forward",
-                    isSystemImage: true
+                    text: "Iniciar divisão"
                 ) {
                     viewModel.goToNextView()
                 }
@@ -165,7 +164,6 @@ struct WaitUsersFreeTimeOnboardingView: View {
 }
 
 #Preview {
-    
     @Previewable @State var mockViewModel = OnboardingViewModel()
     
     WaitUsersFreeTimeOnboardingView(

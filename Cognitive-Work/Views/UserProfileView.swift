@@ -66,6 +66,7 @@ struct UserProfileView: View {
                     )
                 }
             }
+            .tabBarVisibilityRoot()
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -145,7 +146,6 @@ private struct SettingsButtonsSection: View {
         VStack(alignment: .leading, spacing: 30) {
             NavigationLink {
                 GeneralProfileSettingsView(viewModel: viewModelUser)
-                    .toolbar(.hidden, for: .tabBar)
             } label: {
                 HStack {
                     Text("Configurações Gerais")
@@ -158,7 +158,6 @@ private struct SettingsButtonsSection: View {
             
             NavigationLink {
                 HouseSettingsView(viewModel: viewModelHouse)
-                    .toolbar(.hidden, for: .tabBar)
             } label: {
                 HStack {
                     Text("Ajustes da Casa")
