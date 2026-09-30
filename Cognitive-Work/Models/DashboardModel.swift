@@ -25,7 +25,8 @@ class DashboardModel: Identifiable {
     /// The number of pending chores
     var toDo: Int = 0
 
-    /// (e.g. `"1h30"`).
+    /// Time still needed for today's pending chores (e.g. `"1h30"`). Goes down as chores are
+    /// marked done and back up when they're undone.
     var totalTimeFormatted: String = "0h00"
 
     /// The fraction, from `0.0` to `1.0`, of today's chores that are marked as done
@@ -69,11 +70,13 @@ class DashboardModel: Identifiable {
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
                 return refs.contains { myAssignmentsToday[$0.recordID] != nil }
             } else {
-                guard let responsibleID = chore.currentResponsibleReference?.recordID,
-                      let dueDate = chore.dueDate,
+                guard let dueDate = chore.dueDate,
                       calendar.isDate(dueDate, inSameDayAs: today)
                 else { return false }
-                return responsibleID == targetUserID
+                
+                let isCurrentResponsible = chore.currentResponsibleReference?.recordID == targetUserID
+                let isInRotation = (chore.allResponsibleUsersReference ?? []).contains { $0.recordID == targetUserID }
+                return isCurrentResponsible || isInRotation
             }
         }
         self.todayChores = filtered
@@ -103,11 +106,12 @@ class DashboardModel: Identifiable {
 
         guard !todayChores.isEmpty else {
             self.totalTimeFormatted = "0h00"
+            self.completionPercentage = 0
             self.completionPercentageString = "0%"
             return
         }
 
-        let totalMinutes = todayChores.reduce(into: 0.0) { total, chore in
+        let totalMinutes = toDoList.reduce(into: 0.0) { total, chore in
             total += chore.duration
         }
 

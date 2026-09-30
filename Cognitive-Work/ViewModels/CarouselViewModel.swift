@@ -500,6 +500,7 @@ class CarouselViewModel {
         }
         
         await RoomModel.migrateStoredColorsIfNeeded(rooms)
+        await ChoreModel.migrateDurationsToMinutesIfNeeded(chores)
     }
     
     /// Refreshes the chores and recurrent assignments after a chore or its responsible user has been modified.

@@ -96,7 +96,7 @@ struct SelectFreeTimeOnboardingView: View {
             }
             .padding(.horizontal, width * 0.0865)
             .navigationBarBackButtonHidden(!isFromSettings)
-            .toolbar(.hidden, for: .tabBar)
+            .hidesTabBar()
 
         }
         .alert("Não deu para salvar seus horários", isPresented: Binding(

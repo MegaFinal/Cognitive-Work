@@ -21,7 +21,7 @@ struct CreateAndEditChoreViewModelTests {
             name: "Lavar a louça",
             description: "Secar e guardar",
             frequency: .weekly,
-            duration: 1800,
+            duration: 30,
             isPublic: true,
             priorityTag: .medium
         )
@@ -169,7 +169,7 @@ struct CreateAndEditChoreViewModelTests {
         
         #expect(viewModel.draft.priorityTag == .low)
         #expect(viewModel.draft.frequency == Recurrence.none)
-        #expect(ChoreDurationTier.from(minutes: viewModel.draft.duration / 60) == .quick)
+        #expect(ChoreDurationTier.from(minutes: viewModel.draft.duration) == .quick)
     }
     
     @Test func longDurationIsNeverUndefined() {

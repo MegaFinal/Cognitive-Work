@@ -162,6 +162,7 @@ struct ChoresView: View {
                         dismissFocusedCard()
                     }
             )
+            .tabBarVisibilityRoot()
         }
         .task {
             await carouselVM.fetchAllData()

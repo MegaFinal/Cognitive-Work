@@ -30,6 +30,17 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         }
     }
 
+    /// The duration, in minutes, a chore gets when this tier is picked in the form.
+    var minutes: Double {
+        switch self {
+        case .undefined: return 0
+        case .quick: return 15
+        case .moderate: return 30
+        case .slow: return 60
+        case .verySlow: return 120
+        }
+    }
+
     /// Derives proportion scaling specific to a visual representation logic sequence.
     var heightRatio: Double {
         switch self {

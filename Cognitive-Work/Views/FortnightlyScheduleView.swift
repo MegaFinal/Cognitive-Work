@@ -6,39 +6,61 @@
 //
 
 import SwiftUI
+import CloudKit
 
 // Main schedule view: display `WaitingAlgorithmView` while loading, and `FortnightlyView` when running.
 struct FortnightlyScheduleView: View {
-    @State private var scheduleViewModel = ScheduleViewModel()
+    @State private var scheduleViewModel: ScheduleViewModel
     @State private var showInfoPopUp = false
     
     let shouldGenerate: Bool
     let action: () -> Void
+    
+    /// - Parameter scheduleViewModel: Pre-filled data (e.g. for previews). `nil` loads from CloudKit.
+    init(
+        shouldGenerate: Bool,
+        scheduleViewModel: ScheduleViewModel? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.shouldGenerate = shouldGenerate
+        self.action = action
+        self._scheduleViewModel = State(initialValue: scheduleViewModel ?? ScheduleViewModel())
+    }
+    
     var body: some View {
         Group {
             if scheduleViewModel.isLoading {
                 WaitingAlgorithmView()
             } else {
-                FortnightlyView(users: scheduleViewModel.users, chores: scheduleViewModel.chores)
-                    .overlay(alignment: .topTrailing) {
-                        OnboardingProgressButton(width: 50.0, height: 50.0, text: "xmark", isSystemImage: true) {
-                            action()
-                        }
-                        .padding(10)
+                FortnightlyView(
+                    users: scheduleViewModel.users,
+                    chores: scheduleViewModel.chores,
+                    assignments: scheduleViewModel.assignments,
+                    rooms: scheduleViewModel.rooms
+                )
+                .overlay(alignment: .topTrailing) {
+                    OnboardingProgressButton(width: 40.0, height: 40.0, text: "xmark", isSystemImage: true) {
+                        action()
                     }
-                    .disabled(showInfoPopUp)
-                    .onAppear {
-                        showInfoPopUp = true
-                    }
+                    .padding(.top, 20)
+                    .padding(.trailing, 30)
+                }
+                .disabled(showInfoPopUp)
+                .onAppear {
+                    showInfoPopUp = true
+                }
             }
         }
+        .padding(.top, 40)
+        .padding(.vertical)
+        .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay { infoPopUpOverlay }
         .task {
             await scheduleViewModel.loadSchedule(shouldGenerate: shouldGenerate)
         }
     }
-
+    
     @ViewBuilder
     private var infoPopUpOverlay: some View {
         if showInfoPopUp {
@@ -61,7 +83,114 @@ struct FortnightlyScheduleView: View {
 }
 
 #Preview {
-    FortnightlyScheduleView(shouldGenerate: true) {
+    FortnightlyScheduleView(shouldGenerate: false, scheduleViewModel: .preview) {
         print("Action")
+    }
+}
+
+private extension ScheduleViewModel {
+    
+    /// Three residents, four rooms and a fortnight of chores, all in memory.
+    static var preview: ScheduleViewModel {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+        let house = CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview-house"), action: .none)
+        
+        func reference(_ recordName: String) -> CKRecord.Reference {
+            CKRecord.Reference(recordID: CKRecord.ID(recordName: recordName), action: .none)
+        }
+        
+        let users = ["Ana", "Bruno", "Carla"].map { name in
+            UserModel(
+                name: name,
+                tier: .tier1,
+                house: house,
+                recordID: CKRecord.ID(recordName: "preview-user-\(name)"),
+                ownerRecordName: "preview-owner-\(name)"
+            )
+        }
+        let userReferences = users.compactMap { $0.recordID.map { CKRecord.Reference(recordID: $0, action: .none) } }
+        
+        func room(_ name: String, symbol: String, color: RoomColor) -> RoomModel {
+            var room = RoomModel(name: name, symbol: symbol, house: house, color: color)
+            room.recordID = CKRecord.ID(recordName: "preview-room-\(name)")
+            return room
+        }
+        let kitchen = room("Cozinha", symbol: "fork.knife", color: .orange)
+        let bathroom = room("Banheiro", symbol: "toilet", color: .blue)
+        let livingRoom = room("Sala", symbol: "sofa", color: .green)
+        let laundry = room("Lavanderia", symbol: "washer", color: .purple)
+        
+        var assignments: [RecurrentAssignmentModel] = []
+        
+        /// A recurring chore with one occurrence every `step` days of the fortnight, rotating
+        /// between the residents.
+        func recurringChore(
+            _ name: String,
+            room: RoomModel,
+            minutes: Double,
+            frequency: Recurrence,
+            step: Int,
+            firstDay: Int = 0,
+            priority: PriorityTag = .medium
+        ) -> ChoreModel {
+            let choreRecordName = "preview-chore-\(name)"
+            let chore = ChoreModel(
+                name: name,
+                description: "",
+                frequency: frequency,
+                duration: minutes,
+                isPublic: true,
+                priorityTag: priority,
+                roomReference: room.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+            )
+            chore.recordID = CKRecord.ID(recordName: choreRecordName)
+            
+            var occurrenceReferences: [CKRecord.Reference] = []
+            for (index, dayOffset) in stride(from: firstDay, to: 14, by: step).enumerated() {
+                let day = calendar.date(byAdding: .day, value: dayOffset, to: tomorrow) ?? tomorrow
+                let assignment = RecurrentAssignmentModel(
+                    day: day,
+                    user: userReferences[index % userReferences.count],
+                    chore: reference(choreRecordName)
+                )
+                let assignmentRecordName = "\(choreRecordName)-\(dayOffset)"
+                assignment.recordID = CKRecord.ID(recordName: assignmentRecordName)
+                assignments.append(assignment)
+                occurrenceReferences.append(reference(assignmentRecordName))
+            }
+            chore.dailyAssignmentsReference = occurrenceReferences
+            return chore
+        }
+        
+        let oneOffChore = ChoreModel(
+            name: "Trocar lâmpada",
+            description: "",
+            dueDate: calendar.date(byAdding: .day, value: 4, to: tomorrow),
+            frequency: .none,
+            duration: 15,
+            isPublic: true,
+            priorityTag: .high,
+            currentResponsible: userReferences.last,
+            roomReference: livingRoom.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+        )
+        oneOffChore.recordID = CKRecord.ID(recordName: "preview-chore-lampada")
+        
+        let chores = [
+            recurringChore("Lavar a louça", room: kitchen, minutes: 15, frequency: .daily, step: 1, priority: .high),
+            recurringChore("Limpar o banheiro", room: bathroom, minutes: 60, frequency: .weekly, step: 7, firstDay: 1),
+            recurringChore("Lavar roupa", room: laundry, minutes: 30, frequency: .weekly, step: 7, firstDay: 2),
+            recurringChore("Aspirar a sala", room: livingRoom, minutes: 30, frequency: .weekly, step: 7, firstDay: 4, priority: .low),
+            recurringChore("Faxina geral", room: livingRoom, minutes: 120, frequency: .fortnightly, step: 14, firstDay: 5, priority: .urgent),
+            oneOffChore
+        ]
+        
+        return ScheduleViewModel(
+            users: users,
+            chores: chores,
+            assignments: assignments,
+            rooms: [kitchen, bathroom, livingRoom, laundry]
+        )
     }
 }

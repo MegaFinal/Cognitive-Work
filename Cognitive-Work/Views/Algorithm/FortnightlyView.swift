@@ -12,10 +12,13 @@ struct FortnightlyView: View {
     let users: [UserModel]
     let chores: [ChoreModel]
     
+    /// Assignments and rooms already in memory. When both are given nothing is fetched.
+    var assignments: [RecurrentAssignmentModel]? = nil
+    var rooms: [RoomModel]? = nil
+    
     @State private var viewModel = FortnightlyViewModel()
     @State private var selectedEntry: DailyUsageEntry?
     @State private var selectedUser: UserModel?
-    
     
     let description: String = """
         Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível.
@@ -46,8 +49,8 @@ struct FortnightlyView: View {
             Spacer()
         }
         .navigationBarBackButtonHidden()
-        .frame(width: width * 0.85)
         .padding(.top, 30)
+        
     }
     
     private var chart: some View {
@@ -82,7 +85,11 @@ struct FortnightlyView: View {
             }
         }
         .task {
-            await viewModel.setup(users: users, chores: chores)
+            if let assignments, let rooms {
+                await viewModel.setup(users: users, chores: chores, assignments: assignments, rooms: rooms)
+            } else {
+                await viewModel.setup(users: users, chores: chores)
+            }
             selectInitialEntry()
         }
     }

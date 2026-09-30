@@ -89,6 +89,11 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     @ObservationIgnored
     private var isUpdating = false
     
+    /// Set when the record still stores ``duration`` in seconds; see
+    /// ``migrateDurationsToMinutesIfNeeded(_:)``.
+    @ObservationIgnored
+    private(set) var needsDurationMigration = false
+    
     var checkList: [CheckItemModel] {
         get async {
             if let checkListReference {
@@ -177,7 +182,12 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.dueDate = record["dueDate"] as? Date
         self.frequency = frequency
         self.shouldBeIncluded = (record["shouldBeIncluded"] as? Int).map { $0 != 0 }
-        self.duration = duration
+        if Self.isLegacySecondsDuration(duration) {
+            self.duration = duration / 60
+            self.needsDurationMigration = true
+        } else {
+            self.duration = duration
+        }
         self.isPublic = isPublic
         self.isLate = isLate
         self.weight = weight
@@ -586,6 +596,25 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         CalendarManager.shared.removeEvent(identifier: calendarEventIdentifier, title: name, date: dueDate)
         
         return true
+    }
+    
+    // MARK: - Duration migration
+    
+    /// Whether `duration` is a value the edit screen used to save in seconds (15 * 60, 30 * 60…)
+    /// instead of minutes.
+    static func isLegacySecondsDuration(_ duration: Double) -> Bool {
+        duration >= 300 && duration.truncatingRemainder(dividingBy: 60) == 0
+    }
+    
+    /// Rewrites, in minutes, the `duration` of chores whose record still stores seconds.
+    static func migrateDurationsToMinutesIfNeeded(_ chores: [ChoreModel]) async {
+        for chore in chores where chore.needsDurationMigration {
+            guard let record = await CloudKitManager.shared.fetchRecord(for: chore) else { continue }
+            record["duration"] = chore.duration
+            if await CloudKitManager.shared.update(record: record) {
+                chore.needsDurationMigration = false
+            }
+        }
     }
 }
 

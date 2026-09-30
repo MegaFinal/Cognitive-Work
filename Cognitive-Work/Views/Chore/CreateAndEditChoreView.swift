@@ -115,7 +115,7 @@ struct CreateAndEditChoreView: View {
         .onChange(of: viewModel.draft.frequency) { _, _ in
             viewModel.frequencyDidChange()
         }
-        .toolbar(.hidden, for: .tabBar)
+        .hidesTabBar()
         .dismissKeyboardOnTap()
         .alert("Excluir Tarefa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
@@ -204,7 +204,9 @@ struct CreateAndEditChoreView: View {
                                 .foregroundColor(.black)
                                 .imageScale(.small)
                         }
+                        .fixedSize()
                     }
+                    .id(viewModel.draft.room?.recordID)
                 }
             }
             .frame(width: width * 0.65)

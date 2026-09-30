@@ -71,7 +71,7 @@ struct ChoreCardListStyle: View {
                 
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 10) {
-                        HStack(spacing: -5) {
+                        HStack(spacing: -10) {
                             ForEach(occurrenceResponsibleUsers, id: \.recordID) { user in
                                 UserProfilePictureTag(user: user, widthMultiplier: 0.07)
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
@@ -98,8 +98,8 @@ struct ChoreCardListStyle: View {
                             )
                             
                             CapsuleTag(
-                                tagName: ChoreDurationTier.from(minutes: chore.duration / 60).displayText,
-                                tagColor: ChoreDurationTier.from(minutes: chore.duration / 60).color,
+                                tagName: ChoreDurationTier.from(minutes: chore.duration).displayText,
+                                tagColor: ChoreDurationTier.from(minutes: chore.duration).color,
                                 horizontalPadding: 7.0,
                                 verticalPadding: 1.0
                             )

@@ -277,12 +277,12 @@ extension CloudKitManager {
         let query = CKQuery(recordType: T.recordType, predicate: predicate)
         
         do {
-            let (results, _) = try await privateDB.records(
+            return try await allRecords(
                 matching: query,
-                inZoneWith: houseZoneID,
+                in: privateDB,
+                zoneID: houseZoneID,
                 desiredKeys: desiredKeys.resolve(for: T.self)
-            )
-            return results.compactMap { try? $0.1.get() }.compactMap(T.init(record:))
+            ).compactMap(T.init(record:))
         } catch {
             errorMessage = "Failed to fetch \(T.recordType): \(error.localizedDescription)"
             return []
@@ -303,12 +303,12 @@ extension CloudKitManager {
                 for zone in zones {
                     group.addTask {
                         let query = CKQuery(recordType: T.recordType, predicate: predicate)
-                        let (results, _) = try await self.sharedDB.records(
+                        return try await self.allRecords(
                             matching: query,
-                            inZoneWith: zone.zoneID,
+                            in: self.sharedDB,
+                            zoneID: zone.zoneID,
                             desiredKeys: desiredKeys.resolve(for: T.self)
-                        )
-                        return results.compactMap { try? $0.1.get() }.compactMap(T.init(record:))
+                        ).compactMap(T.init(record:))
                     }
                 }
                 var all: [T] = []
@@ -319,6 +319,30 @@ extension CloudKitManager {
             errorMessage = "Failed to fetch shared \(T.recordType): \(error.localizedDescription)"
             return []
         }
+    }
+    
+    /// Runs `query` in one zone and follows the cursor until every page has been read.
+    private func allRecords(
+        matching query: CKQuery,
+        in database: CKDatabase,
+        zoneID: CKRecordZone.ID,
+        desiredKeys: [CKRecord.FieldKey]?
+    ) async throws -> [CKRecord] {
+        let firstPage = try await database.records(
+            matching: query,
+            inZoneWith: zoneID,
+            desiredKeys: desiredKeys
+        )
+        var records = firstPage.matchResults.compactMap { try? $0.1.get() }
+        var cursor = firstPage.queryCursor
+        
+        while let nextPage = cursor {
+            let page = try await database.records(continuingMatchFrom: nextPage, desiredKeys: desiredKeys)
+            records.append(contentsOf: page.matchResults.compactMap { try? $0.1.get() })
+            cursor = page.queryCursor
+        }
+        
+        return records
     }
     
     /// Clears the session cache when the record type that was just written is one the cache
