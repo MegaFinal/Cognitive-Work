@@ -13,7 +13,7 @@ extension Date {
     
     static var capitalizedFirstLettersOfWeekdays: [String] {
         var calendar = Calendar.current
-        calendar.locale = Locale(identifier: "pt_BR")
+//        calendar.locale = Locale(identifier: "pt_BR")
         // Adjusted for the different weekday starts
         var weekdays = calendar.shortWeekdaySymbols
         if firstDayOfWeek > 1 {
