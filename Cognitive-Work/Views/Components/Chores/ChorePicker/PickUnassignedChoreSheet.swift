@@ -136,7 +136,7 @@ struct PickUnassignedChoreCard: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(roomName)
                 .font(.system(size: 15))
-                .foregroundStyle(.gray)
+                .foregroundStyle(.black)
             
             Text(chore.name)
                 .font(.system(size: 22, weight: .bold))
