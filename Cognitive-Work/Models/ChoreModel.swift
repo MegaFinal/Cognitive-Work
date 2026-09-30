@@ -601,16 +601,12 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     // MARK: - Duration migration
     
     /// Whether `duration` is a value the edit screen used to save in seconds (15 * 60, 30 * 60…)
-    /// instead of minutes. No chore takes 5 hours, so a whole number of minutes from 300 up can
-    /// only be seconds.
+    /// instead of minutes.
     static func isLegacySecondsDuration(_ duration: Double) -> Bool {
         duration >= 300 && duration.truncatingRemainder(dividingBy: 60) == 0
     }
     
     /// Rewrites, in minutes, the `duration` of chores whose record still stores seconds.
-    ///
-    /// Only that field is touched, so nothing else on the record changes. Chores are already
-    /// converted in memory when decoded; this makes the fix permanent for every device.
     static func migrateDurationsToMinutesIfNeeded(_ chores: [ChoreModel]) async {
         for chore in chores where chore.needsDurationMigration {
             guard let record = await CloudKitManager.shared.fetchRecord(for: chore) else { continue }
