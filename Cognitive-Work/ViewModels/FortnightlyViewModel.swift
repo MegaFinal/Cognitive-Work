@@ -69,6 +69,19 @@ class FortnightlyViewModel {
         await finishSetup()
     }
     
+    /// Configures the view model with data already in memory, without touching CloudKit.
+    func setup(
+        users: [UserModel],
+        chores: [ChoreModel],
+        assignments: [RecurrentAssignmentModel],
+        rooms: [RoomModel]
+    ) async {
+        self.users = users
+        self.chores = chores
+        
+        await apply(assignments: assignments, rooms: rooms)
+    }
+    
     /// Fetches all users, chores, and daily assignments directly from CloudKit,
     /// and initializes the fortnightly time frame.
     func setupWithFetch() async {
@@ -89,6 +102,11 @@ class FortnightlyViewModel {
         async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
         
         let (assignments, rooms) = await (fetchAssignments, fetchRooms)
+        await apply(assignments: assignments, rooms: rooms)
+    }
+    
+    /// Stores the assignments and rooms, sets the cycle's start date and builds the chart entries.
+    private func apply(assignments: [RecurrentAssignmentModel], rooms: [RoomModel]) async {
         recurrentAssignments = assignments
         roomModels = rooms
         
