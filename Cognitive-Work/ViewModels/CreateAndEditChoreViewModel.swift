@@ -214,8 +214,7 @@ final class CreateAndEditChoreViewModel {
     }
     
     /// Fills the room, the rooms list, the current resident, the responsible users and the date
-    /// from what ``CarouselViewModel`` already holds, so they show up together with the rest of
-    /// the form instead of after a round of CloudKit requests.
+    /// from what ``CarouselViewModel`` already holds
     private func fillFromMemory() {
         availableRooms = carouselViewModel.roomModels.filter { $0.name != "Casa" }
         currentHouseUser = carouselViewModel.dashboardUser
