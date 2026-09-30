@@ -287,6 +287,10 @@ struct CreateAndEditChoreView: View {
                 Text("Escolha um cômodo para confirmar a tarefa.")
                     .font(.system(size: 13))
                     .foregroundColor(.red)
+            } else if viewModel.showsMissingDateWarning {
+                Text("Escolha uma data para confirmar a tarefa.")
+                    .font(.system(size: 13))
+                    .foregroundColor(.red)
             }
             
             HStack {

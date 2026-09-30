@@ -117,12 +117,20 @@ final class CreateAndEditChoreViewModel {
         draft.room != nil
     }
     
+    var hasDate: Bool {
+        mode == .edit || draft.frequency == .daily || selectedDate != nil
+    }
+    
     var canConfirm: Bool {
-        isLoaded && hasValidName && hasRoom && !isSaving && !isDeleting
+        isLoaded && hasValidName && hasRoom && hasDate && !isSaving && !isDeleting
     }
     
     var showsMissingRoomWarning: Bool {
         isLoaded && hasValidName && !hasRoom
+    }
+    
+    var showsMissingDateWarning: Bool {
+        isLoaded && hasValidName && hasRoom && !hasDate
     }
     
     var showsDateSection: Bool {
@@ -270,7 +278,7 @@ final class CreateAndEditChoreViewModel {
         do {
             try await originalModel.save(
                 from: draft,
-                oneOffDueDate: selectedDate,
+                pickedDate: selectedDate,
                 targetAssignments: assignmentsToUpdate
             )
         } catch {

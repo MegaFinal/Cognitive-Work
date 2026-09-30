@@ -243,4 +243,45 @@ struct CreateAndEditChoreViewModelTests {
         draft.description = "   "
         #expect(!draft.hasFullDetails)
     }
+    
+    // MARK: - Date
+    
+    @Test func newChoreNeedsADate() {
+        let viewModel = makeViewModel()
+        viewModel.draft.frequency = .weekly
+        viewModel.selectedDate = nil
+        
+        #expect(!viewModel.hasDate)
+        #expect(!viewModel.canConfirm)
+    }
+    
+    @Test func dailyChoreCountsAsDated() {
+        let viewModel = makeViewModel()
+        viewModel.draft.frequency = .daily
+        viewModel.selectedDate = nil
+        
+        #expect(viewModel.hasDate)
+    }
+    
+    @Test func editingDoesNotRequireADate() {
+        let viewModel = makeViewModel(chore: makeChore(recordName: "chore"))
+        viewModel.selectedDate = nil
+        
+        #expect(viewModel.hasDate)
+    }
+    
+    @Test func savingANewChoreWithoutDateIsRefused() async {
+        let chore = makeChore()
+        let draft = ChoreDTO(from: chore, users: [], checklist: [])
+        draft.roomReference = CKRecord.Reference(recordID: CKRecord.ID(recordName: "room"), action: .none)
+        
+        do {
+            try await chore.save(from: draft)
+            Issue.record("save should have thrown")
+        } catch ChoreSaveError.missingDate {
+        } catch {
+            Issue.record("unexpected error: \(error)")
+        }
+        #expect(chore.recordID == nil)
+    }
 }

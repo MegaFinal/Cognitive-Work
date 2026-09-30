@@ -314,18 +314,22 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     ///
     /// - Parameters:
     ///   - choreDTO: The edited values collected by the create/edit screen.
-    ///   - oneOffDueDate: The date picked in the form. Only applied when the chore is a one-off
-    ///     (`.none` frequency), exactly like before.
+    ///   - pickedDate: The date picked in the form. Required to create a chore (except a daily one,
+    ///     which starts today), and stored as `dueDate` when the chore is a one-off.
     ///   - targetAssignments: Optional recurrent assignment instances to update if this is an
     ///     occurrence of a recurring chore.
     /// - Throws: ``ChoreSaveError`` describing why nothing (or not everything) was saved.
     func save(
         from choreDTO: ChoreDTO,
-        oneOffDueDate: Date? = nil,
+        pickedDate: Date? = nil,
         targetAssignments: [RecurrentAssignmentModel] = []
     ) async throws {
         guard let roomReference = choreDTO.roomReference else {
             throw ChoreSaveError.missingRoom
+        }
+        
+        if recordID == nil && choreDTO.frequency != .daily && pickedDate == nil {
+            throw ChoreSaveError.missingDate
         }
         
         guard let room = await CloudKitManager.shared.fetchRecordsByRecordReference(
@@ -365,7 +369,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         applyEditableFields(from: choreDTO, responsibleUsers: responsibleUsers)
         currentResponsibleReference = newCurrentResponsibleReference
         if choreDTO.frequency == .none {
-            dueDate = oneOffDueDate
+            dueDate = pickedDate
         }
         
         if recordID == nil {
@@ -437,7 +441,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
-    /// The fields ``save(from:oneOffDueDate:targetAssignments:)`` may change, captured so a
+    /// The fields ``save(from:pickedDate:targetAssignments:)`` may change, captured so a
     /// failed save can put the chore back exactly as it was.
     private struct EditableSnapshot {
         let name: String
@@ -587,9 +591,10 @@ class ChoreModel: CloudKitSyncable, Identifiable {
 
 // MARK: - Save errors
 
-/// Why ``ChoreModel/save(from:oneOffDueDate:targetAssignments:)`` did not save the chore.
+/// Why ``ChoreModel/save(from:pickedDate:targetAssignments:)`` did not save the chore.
 enum ChoreSaveError: LocalizedError {
     case missingRoom
+    case missingDate
     case missingHouse
     case missingCurrentUser
     case cloudKit(String?)
@@ -598,6 +603,8 @@ enum ChoreSaveError: LocalizedError {
         switch self {
         case .missingRoom:
             return "Escolha um cômodo para a tarefa."
+        case .missingDate:
+            return "Escolha uma data para a tarefa."
         case .missingHouse:
             return "Não foi possível identificar a casa deste cômodo."
         case .missingCurrentUser:
