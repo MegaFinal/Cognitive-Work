@@ -16,6 +16,9 @@ struct HouseSettingsView: View {
     @State private var isDeletingHouse = false
     @State private var deleteErrorMessage: String?
     
+    /// Admin-only rows used to pop in after an unannounced CloudKit round trip.
+    @State private var isCheckingAdmin = true
+    
     @AppStorage("didOnboard") private var didOnboard: Bool = true
     
     var body: some View {
@@ -33,6 +36,11 @@ struct HouseSettingsView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal)
+            
+            if isCheckingAdmin {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+            }
             
             // MARK: - Reset chores assignments
             if viewModel.isUserAdmin {
@@ -77,7 +85,7 @@ struct HouseSettingsView: View {
                     if success {
                         didOnboard = false
                     } else {
-                        deleteErrorMessage = "Não foi possível excluir a casa. Verifique sua conexão e tente novamente."
+                        deleteErrorMessage = L10n.tr("Não foi possível excluir a casa. Verifique sua conexão e tente novamente.")
                         isDeletingHouse = false
                     }
                 }
@@ -88,6 +96,19 @@ struct HouseSettingsView: View {
         .blockingOperation(isPresented: $isDeletingHouse, message: "Excluindo sua casa...")
         .task {
             await viewModel.checkAdminStatus()
+            isCheckingAdmin = false
+        }
+        // `deleteErrorMessage` was set on failure but never presented.
+        .alert(
+            "Não foi possível excluir",
+            isPresented: Binding(
+                get: { deleteErrorMessage != nil },
+                set: { if !$0 { deleteErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deleteErrorMessage ?? "")
         }
         .alert("Deseja reiniciar a divisão de tarefas?", isPresented: $showChoreResetConfirmation) {
             Button("Cancelar", role: .cancel) {}

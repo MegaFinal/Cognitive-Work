@@ -282,14 +282,23 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["calendarEventIdentifier"] = calendarEventIdentifier
     }
     
-    func postpone(byDays days: Int) async {
-        let currentDate = self.dueDate ?? Date()
+    /// Moves a one-off chore's ``dueDate`` by `days`.
+    ///
+    /// - Returns: `true` when CloudKit saved it. On failure the date is put back.
+    @discardableResult
+    func postpone(byDays days: Int) async -> Bool {
+        let calendar = Calendar.current
+        let previousDueDate = dueDate
+        let currentDate = calendar.startOfDay(for: dueDate ?? Date())
         
-        if let newDate = Calendar.current.date(byAdding: .day, value: days, to: currentDate) {
-            self.dueDate = newDate
-            
-            await CloudKitManager.shared.update(self)
+        guard let newDate = calendar.date(byAdding: .day, value: days, to: currentDate) else { return false }
+        dueDate = newDate
+        
+        guard await CloudKitManager.shared.update(self) else {
+            dueDate = previousDueDate
+            return false
         }
+        return true
     }
     
     /// Flips ``isDone``, records who did it and persists the change.
@@ -399,7 +408,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
         
         let previousChecklist = checkListReference ?? []
-        let checklistDrafts = choreDTO.hasChecklist ? choreDTO.checklist : []
+        let checklistDrafts = choreDTO.hasChecklist
+            ? choreDTO.checklist.filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            : []
         self.checkListReference = await CheckItemModel.sync(from: checklistDrafts, parent: choreReference)
         
         if !targetAssignments.isEmpty {
@@ -631,15 +642,15 @@ enum ChoreSaveError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingRoom:
-            return "Escolha um cômodo para a tarefa."
+            return L10n.tr("Escolha um cômodo para a tarefa.")
         case .missingDate:
-            return "Escolha uma data para a tarefa."
+            return L10n.tr("Escolha uma data para a tarefa.")
         case .missingHouse:
-            return "Não foi possível identificar a casa deste cômodo."
+            return L10n.tr("Não foi possível identificar a casa deste cômodo.")
         case .missingCurrentUser:
-            return "Não foi possível identificar seu perfil para salvar a tarefa privada."
+            return L10n.tr("Não foi possível identificar seu perfil para salvar a tarefa privada.")
         case .cloudKit(let message):
-            return message ?? "Não foi possível salvar a tarefa. Tente novamente."
+            return message ?? L10n.tr("Não foi possível salvar a tarefa. Tente novamente.")
         }
     }
 }

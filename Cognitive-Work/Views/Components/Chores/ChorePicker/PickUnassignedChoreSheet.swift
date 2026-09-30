@@ -56,7 +56,7 @@ struct PickUnassignedChoreSheet: View {
         return carouselViewModel.cycleWindow ?? window
     }
     
-    private var ruleText: String {
+    private var ruleText: LocalizedStringKey {
         switch chore.frequency {
         case .daily:
             "Você ficará responsável por todos os dias do período."

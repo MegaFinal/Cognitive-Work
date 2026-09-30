@@ -133,7 +133,7 @@ struct SelectRoomsOnboardingView: View {
     /// Opens the editor for a room type, selecting it too: setting how many rooms of a type
     /// the house has
     private func startEditing(_ room: RoomDTO) {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        HapticsManager.impact(.medium)
         
         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             if !room.isSelected {
@@ -248,7 +248,7 @@ private struct OnboardingRoomCard: View {
                 .padding(.bottom, 20)
                 .foregroundColor(isSelected ? .white : .black)
             
-            Text(text)
+            Text(L10n.tr(text))
                 .fontWeight(.medium)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, 20)
@@ -278,7 +278,7 @@ private struct RoomQuantityEditor: View {
     @FocusState private var focusedInstance: UUID?
     
     private let maxQuantity = 10
-    private let maxNameLength = 16
+    private let maxNameLength = TextLimits.roomName
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {

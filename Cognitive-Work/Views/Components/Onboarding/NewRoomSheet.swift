@@ -40,6 +40,8 @@ struct NewRoomSheet: View {
                 
                 VStack {
                     TextField("Nome do Cômodo", text: $text)
+                        .characterLimit(TextLimits.roomName, text: $text)
+                        .submitLabel(.done)
                         .frame(width: width * 0.75)
                         .font(.system(size: 34))
                         .bold()
@@ -75,14 +77,11 @@ struct NewRoomSheet: View {
                     }
                 }
                 
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        viewModel.addCustomRoom(name: text, color: selectedColor)
+                ToolbarItem(placement: .confirmationAction) {
+                    ConfirmToolbarButton(isDisabled: text.trimmingCharacters(in: .whitespaces).isEmpty) {
+                        viewModel.addCustomRoom(name: text.trimmingCharacters(in: .whitespaces), color: selectedColor)
                         dismiss()
-                    } label: {
-                        Image(systemName: "checkmark")
                     }
-                    .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .dismissKeyboardOnTap()

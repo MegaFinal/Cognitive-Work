@@ -9,8 +9,8 @@ import SwiftUI
 
 /// A full-width title-and-description header used atop onboarding screens
 struct OnboardingHeader: View {
-    var title: String
-    var description: String
+    var title: LocalizedStringKey
+    var description: LocalizedStringKey
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {

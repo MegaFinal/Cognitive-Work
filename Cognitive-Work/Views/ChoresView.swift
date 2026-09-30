@@ -92,8 +92,6 @@ struct ChoresView: View {
                     }
                     .zIndex(2)
                 } else if let occurrence = carouselVM.focusedOccurrence {
-                    let _ = print("occurrence:", occurrence.assignment?.recordID?.recordName ?? "NIL",
-                                  "chore:", occurrence.chore.name)
                     VStack {
                         Spacer()
                         CarouselCardFrame(
@@ -188,31 +186,34 @@ struct ChoresView: View {
             
             Spacer()
             
-            HStack (spacing: 4) {
-                Button {
-                    toggleLayout()
-                } label: {
-                    Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
-                        .font(.system(size: 22))
-                        .foregroundColor(.black)
-                        .padding(8)
-                }
-                
-                if carouselVM.layoutMode == .list {
-                    Menu {
-                        FilterOptionsMenu(viewModel: carouselVM)
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .font(.system(size: 22))
-                            .foregroundColor(.black)
-                            .padding(8)
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) {
+                    if carouselVM.layoutMode == .list {
+                        Menu {
+                            FilterOptionsMenu(viewModel: carouselVM)
+                        } label: {
+                            Image(systemName: carouselVM.isFilterOn
+                                  ? "line.3.horizontal.decrease.circle.fill"
+                                  : "line.3.horizontal.decrease")
+                                .font(.system(size: 20))
+                                .foregroundColor(.black)
+                                .glassCircle()
+                        }
+                        .accessibilityLabel(Text("Filtros"))
+                        .transition(.scale.combined(with: .opacity))
                     }
+                    
+                    Button {
+                        toggleLayout()
+                    } label: {
+                        Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
+                            .font(.system(size: 20))
+                            .foregroundColor(.black)
+                            .glassCircle()
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .glassEffect(
-                .regular.interactive(),
-                in: .capsule
-            )
             .padding(.top, 20)
             .padding(.trailing, 30)
         }
@@ -228,17 +229,21 @@ struct ChoresView: View {
             ProgressIndicatorCard(
                 title: "Tempo médio",
                 data: dashboard?.totalTimeFormatted ?? "0h00",
-                color: cardColor
+                color: cardColor,
+                isLoading: isLoadingDashboard
             )
             ProgressIndicatorCard(
                 title: "A fazer",
-                data: "\(dashboard?.toDo ?? 0) tarefas",
-                color: cardColor
+                data: L10n.tr("%lld tarefas", dashboard?.toDo ?? 0),
+                color: cardColor,
+                isLoading: isLoadingDashboard
             )
             ProgressIndicatorCard(
                 title: "Concluído",
-                data: dashboard?.completionPercentageString ?? "0%",
-                color: cardColor
+                data: (dashboard?.completionPercentage ?? 0)
+                    .formatted(.percent.precision(.fractionLength(0)).locale(L10n.locale)),
+                color: cardColor,
+                isLoading: isLoadingDashboard
             )
         }
         .padding(.horizontal, 30)
@@ -277,6 +282,11 @@ struct ChoresView: View {
     private var dashboard: DashboardModel? {
         carouselVM.dashboard
     }
+    
+    /// The progress cards show a spinner instead of "0" while the first fetch is in flight.
+    private var isLoadingDashboard: Bool {
+        carouselVM.isLoading && dashboard == nil
+    }
 }
 
 // MARK: - Private subviews
@@ -284,14 +294,17 @@ struct ChoresView: View {
 /// Renders statistics paired with a title tag.
 private struct ProgressIndicatorCard: View {
     
-    /// Short label indicating the metric meaning.
-    var title: String
+    /// Short label indicating the metric meaning (a localization key).
+    var title: LocalizedStringKey
     
     /// Formatted data result (e.g., "1h 30m").
     var data: String
     
     /// Visual thematic backdrop color applying depth over UI layouts.
     var color: Color = .gray
+    
+    /// Shows a spinner in place of ``data`` while the statistics are being fetched.
+    var isLoading: Bool = false
     
     
     var body: some View {
@@ -304,13 +317,20 @@ private struct ProgressIndicatorCard: View {
             
             Spacer()
             
-            Text(data)
-                .font(.system(size: 15))
-                .fontWeight(.bold)
-                .padding(.bottom, 25)
-                .foregroundColor(.white)
+            Group {
+                if isLoading {
+                    ProgressView()
+                        .tint(.white)
+                        .controlSize(.small)
+                } else {
+                    Text(data)
+                        .font(.system(size: 15))
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                }
+            }
+            .padding(.bottom, 25)
         }
-        .frame(width: width * 0.28, height: height * 0.088)
         .frame(width: width * 0.28, height: height * 0.088)
         .background(color)
         .clipShape(RoundedRectangle(cornerRadius: 21))

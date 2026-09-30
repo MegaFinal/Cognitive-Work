@@ -35,6 +35,27 @@ struct SelectFreeTimeOnboardingView: View {
     ]
     @State var showAllert: Bool = false
     
+    /// At least one day needs free time before saving.
+    private var canSave: Bool {
+        weekOrder.contains(where: { $0.freeTime != .none })
+    }
+    
+    // MARK: - Actions
+    
+    /// Persists the week and advances (onboarding) or goes back (settings).
+    private func save() async {
+        viewModel.isLoading = true
+        defer { viewModel.isLoading = false }
+        
+        guard await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) else { return }
+        HapticsManager.notify(.success)
+        if isFromSettings {
+            dismiss()
+        } else {
+            viewModel.goToNextView()
+        }
+    }
+    
     // MARK: - Body
     
     var body: some View {
@@ -73,32 +94,31 @@ struct SelectFreeTimeOnboardingView: View {
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
                 }
                 
-                OnboardingProgressButton(
-                    width: 50.0,
-                    height: 50.0,
-                    text: isFromSettings ? "checkmark" : "chevron.forward",
-                    isSystemImage: true,
-                    isLoading: viewModel.isLoading,
-                    isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })
-                ) {
-                    viewModel.isLoading = true
-                    if await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) {
-                        if isFromSettings {
-                            dismiss()
-                        } else {
-                            viewModel.goToNextView()
-                        }
+                if !isFromSettings {
+                    OnboardingProgressButton(
+                        width: 50.0,
+                        height: 50.0,
+                        text: "chevron.forward",
+                        isSystemImage: true,
+                        isLoading: viewModel.isLoading,
+                        isDisabled: !canSave
+                    ) {
+                        await save()
                     }
-                    viewModel.isLoading = false
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                } else {
+                    Spacer()
                 }
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
             .padding(.horizontal, width * 0.0865)
-            .navigationBarBackButtonHidden(!isFromSettings)
+            .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
             .hidesTabBar()
 
         }
+        .modifier(SettingsConfirmToolbar(isEnabled: isFromSettings, isLoading: viewModel.isLoading, isDisabled: !canSave) {
+            Task { await save() }
+        })
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -121,6 +141,22 @@ struct SelectFreeTimeOnboardingView: View {
 }
 
 // MARK: - Private subviews
+
+/// Adds the standard top-right confirmation only when the screen is opened from settings.
+private struct SettingsConfirmToolbar: ViewModifier {
+    let isEnabled: Bool
+    let isLoading: Bool
+    let isDisabled: Bool
+    let action: () -> Void
+    
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.confirmToolbar(isLoading: isLoading, isDisabled: isDisabled, action: action)
+        } else {
+            content
+        }
+    }
+}
 
 /// A single onboarding row that lets the user define how much free time is
 /// available on a given day of the week.
@@ -178,7 +214,7 @@ private struct OnboardingCustomSliderComponent: View {
     
     var body: some View {
         HStack(spacing: horizontalSpacing) {
-            Text(dayOfWeek.nameAbbreviation)
+            Text(LocalizedStringKey(dayOfWeek.nameAbbreviation))
                 .font(.system(size: Layout.abbreviationFontSize))
                 .fontWeight(.medium)
                 .frame(width: abbreviationWidth, alignment: .leading)
@@ -210,11 +246,11 @@ private struct OnboardingCustomSliderComponent: View {
     /// label of the currently selected free time.
     private var caption: some View {
         HStack {
-            Text(dayOfWeek.name)
+            Text(LocalizedStringKey(dayOfWeek.name.trimmingCharacters(in: .whitespaces)))
                 .font(.system(size: Layout.captionFontSize))
                 .fontWeight(.medium)
             
-            Text(dayOfWeek.freeTime.rawValue)
+            Text(dayOfWeek.freeTime.displayName)
                 .font(.system(size: Layout.captionFontSize))
                 .fontWeight(.light)
             

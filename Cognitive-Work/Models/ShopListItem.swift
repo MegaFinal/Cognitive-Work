@@ -186,9 +186,16 @@ class ShopListItem: CloudKitSyncable, Identifiable {
     }
 
     /// Flips ``isBought`` and persists the change
-    func toggle() async {
+    @discardableResult
+    func toggle() async -> Bool {
         isBought.toggle()
-        await CloudKitManager.shared.update(self)
+        // Optimistic update, rolled back if CloudKit rejects it (it used to stay flipped on
+        // screen even though the change was never saved).
+        guard await CloudKitManager.shared.update(self) else {
+            isBought.toggle()
+            return false
+        }
+        return true
     }
 
     /// Marks the item bought by `user`, recording both ``isBought`` and ``buyerUserReference``

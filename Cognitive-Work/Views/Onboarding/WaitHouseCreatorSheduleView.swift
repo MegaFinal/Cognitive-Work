@@ -19,9 +19,10 @@ struct WaitHouseCreatorSheduleView: View {
 
     private let pollingInterval: Duration = .seconds(5)
     
-    let description1: String = "Estamos apenas esperando que o criador da casa gere a divisão das tarefas."
-    let description2: String = "Isso acontecerá de forma automática assim que todos os membros entrarem na casa e definirem seus horários de tempo livre."
-    let description3: String = "Enviaremos uma notificação quando a divisão estiver pronta."
+    // `LocalizedStringKey` (not `String`) so `Text` translates them.
+    let description1: LocalizedStringKey = "Estamos apenas esperando que o criador da casa gere a divisão das tarefas."
+    let description2: LocalizedStringKey = "Isso acontecerá de forma automática assim que todos os membros entrarem na casa e definirem seus horários de tempo livre."
+    let description3: LocalizedStringKey = "Enviaremos uma notificação quando a divisão estiver pronta."
     
     var body: some View {
         GeometryReader { geometry in
@@ -36,6 +37,8 @@ struct WaitHouseCreatorSheduleView: View {
                     .font(.system(size: 34))
                     .bold()
                     .multilineTextAlignment(.center)
+                
+                ProgressView()
                 
                 VStack(alignment: .leading, spacing: 15) {
                     Text(description1)

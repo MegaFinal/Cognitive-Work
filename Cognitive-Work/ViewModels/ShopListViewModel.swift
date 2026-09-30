@@ -76,12 +76,12 @@ final class ShopListViewModel {
         currentUser = current
 
         guard let house else {
-            errorMessage = "Casa não encontrada."
+            errorMessage = L10n.tr("Casa não encontrada.")
             return
         }
 
         guard let existingList = await house.shopList else {
-            errorMessage = "Essa casa ainda não tem uma lista de compras."
+            errorMessage = L10n.tr("Essa casa ainda não tem uma lista de compras.")
             return
         }
 
@@ -220,7 +220,7 @@ final class ShopListViewModel {
         addedBy: UserModel?
     ) async -> Bool {
         guard let list else {
-            errorMessage = "Lista de compras ainda não carregada."
+            errorMessage = L10n.tr("Lista de compras ainda não carregada.")
             return false
         }
 
@@ -240,7 +240,7 @@ final class ShopListViewModel {
         )
 
         guard let created = await list.addItem(draft) else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao adicionar item."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao adicionar item.")
             return false
         }
 
@@ -267,7 +267,7 @@ final class ShopListViewModel {
             unitMeasurement: unitMeasurement,
             relatedUsers: relatedUsers
         ) else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao editar item."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao editar item.")
             return false
         }
         return true
@@ -289,7 +289,7 @@ final class ShopListViewModel {
         guard let list else { return false }
 
         guard await list.removeItem(item) else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao remover item."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao remover item.")
             return false
         }
 

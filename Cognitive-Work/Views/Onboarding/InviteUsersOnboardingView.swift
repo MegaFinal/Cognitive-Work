@@ -20,10 +20,9 @@ struct InviteUsersOnboardingView: View {
     @Binding var viewModel: OnboardingViewModel
     
     @State private var houseShare: CKShare? = nil
-    @State private var showSheet = false
-    @State private var resolvendoShare = false
+    @State private var resolvendoShare = true
+    @State private var didFailToPrepareInvite = false
     @State private var shareURL: URL? = nil
-    @State private var isLoading = true
     @State private var houseUsers: [UserModel] = []
     
     var isFromSettings: Bool
@@ -58,33 +57,7 @@ struct InviteUsersOnboardingView: View {
                 .foregroundStyle(.gray)
             
             HStack {
-                if resolvendoShare {
-                    ProgressView("Preparando chaves de acesso...")
-                        .frame(width: width * 0.55)
-                } else {
-                    if shareURL != nil {
-                        ShareLink(item: shareURL!){
-                            Text("Compartilhar Convite")
-                                .font(.system(size: 17))
-                                .frame(width: width * 0.5, height: height * 0.065, alignment: .center)
-                                .foregroundColor(.white)
-                                .background {
-                                    Capsule()
-                                        .foregroundColor(.blue)
-                                        .glassEffect()
-                                }
-                        }
-                    }
-                    else {
-                        Button {
-                        } label: {
-                            ProgressView().tint(.white)
-                        }
-                        .frame(width: width * 0.5, height: height * 0.065, alignment: .center)
-                        .foregroundColor(.white)
-                        .background(Capsule().foregroundStyle(.gray))
-                    }
-                }
+                inviteButton
                 
                 if !isFromSettings {
                     OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
@@ -103,29 +76,81 @@ struct InviteUsersOnboardingView: View {
             }
         }
         .task(id: viewModel.currentHouse?.recordID) {
-            guard let house = viewModel.currentHouse else { return }
-            
-            resolvendoShare = true
-            
-            async let resolvedShare = CloudKitManager.shared.resolveShare(for: house)
-            async let users = viewModel.fetchHouseUsers()
-            
-            if let share = await resolvedShare {
-                houseShare = share
-                do {
-                    let url = try await CloudKitManager.shared.generateShareLink(share: share)
-                    self.shareURL = url
-                } catch {
-                    print("Erro ao gerar link: \(error.localizedDescription)")
-                }
-            }
-            
-            houseUsers = await users
-            resolvendoShare = false
+            await prepareInvite()
         }
     }
     
+    // MARK: - Actions
+    
+    /// Resolves the house's CKShare and its link.
+    private func prepareInvite() async {
+        resolvendoShare = true
+        didFailToPrepareInvite = false
+        defer { resolvendoShare = false }
+        
+        var house = viewModel.currentHouse
+        if house == nil {
+            house = await CloudKitManager.shared.currentHouse()
+        }
+        guard let house else {
+            didFailToPrepareInvite = true
+            return
+        }
+        
+        async let resolvedShare = CloudKitManager.shared.resolveShare(for: house)
+        async let users = viewModel.fetchHouseUsers()
+        
+        if let share = await resolvedShare {
+            houseShare = share
+            do {
+                shareURL = try await CloudKitManager.shared.generateShareLink(share: share)
+            } catch {
+                print("Erro ao gerar link: \(error.localizedDescription)")
+            }
+        }
+        
+        houseUsers = await users
+        didFailToPrepareInvite = shareURL == nil
+    }
+    
     // MARK: - Subviews
+    
+    @ViewBuilder
+    private var inviteButton: some View {
+        if let shareURL, !resolvendoShare {
+            ShareLink(item: shareURL) {
+                inviteCapsule(color: .blue) {
+                    Text("Compartilhar Convite")
+                }
+            }
+        } else if didFailToPrepareInvite && !resolvendoShare {
+            Button {
+                Task { await prepareInvite() }
+            } label: {
+                inviteCapsule(color: .blue) {
+                    Label("Tentar novamente", systemImage: "arrow.clockwise")
+                }
+            }
+        } else {
+            inviteCapsule(color: .gray) {
+                ProgressView()
+                    .tint(.white)
+            }
+            .accessibilityLabel(Text("Preparando convite"))
+        }
+    }
+    
+    private func inviteCapsule<Content: View>(color: Color, @ViewBuilder label: () -> Content) -> some View {
+        label()
+            .font(.system(size: 17))
+            .frame(width: width * 0.5, height: height * 0.065, alignment: .center)
+            .foregroundColor(.white)
+            .background {
+                Capsule()
+                    .foregroundColor(color)
+                    .glassEffect()
+            }
+    }
     private var joinedUsers: some View {
         HStack(spacing: 20) {
             ForEach(houseUsers) { user in

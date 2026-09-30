@@ -32,6 +32,15 @@ struct ChoreDetailsCard: View {
     
     @State private var checkList: [CheckItemModel] = []
     
+    /// `true` while the checklist items are fetched the first time the card is flipped.
+    @State private var isLoadingChecklist = false
+    
+    /// Which postpone action is being saved, to show its spinner and block double taps.
+    @State private var postponingDays: Int?
+    
+    /// Shown when the new date couldn't be saved.
+    @State private var didFailToPostpone = false
+    
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
@@ -66,7 +75,6 @@ struct ChoreDetailsCard: View {
     
     
     var body: some View {
-        let _ = print("details:", chore.name, recurrentAssignment?.recordID?.recordName ?? "NIL")
         ZStack {
             VStack(spacing: 0) {
                 header
@@ -91,9 +99,16 @@ struct ChoreDetailsCard: View {
             actionBar
         }
         .task(id: isShowingBack) {
-            if isShowingBack && checkList.isEmpty {
+            if isShowingBack && checkList.isEmpty && !(chore.checkListReference ?? []).isEmpty {
+                isLoadingChecklist = true
                 checkList = await chore.checkList
+                isLoadingChecklist = false
             }
+        }
+        .alert("Não foi possível adiar", isPresented: $didFailToPostpone) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Verifique sua conexão e tente novamente.")
         }
         .frame(width: width * 0.88, height: height * 0.599)
         .background(.white)
@@ -161,7 +176,7 @@ struct ChoreDetailsCard: View {
                     Spacer()
                     
                     CapsuleTag(
-                        tagName: room?.name ?? "Unnamed room",
+                        tagName: room?.name ?? L10n.tr("Sem cômodo"),
                         tagColor: room?.color.uiColor ?? .gray,
                         horizontalPadding: 10.0,
                         verticalPadding: 1.5
@@ -173,11 +188,15 @@ struct ChoreDetailsCard: View {
                         .font(.system(size: 15))
                         .fontWeight(.semibold)
                     Spacer()
-                    Text(occurrenceDate?.formatted(date: .numeric, time: .omitted) ?? "Sem data definida")
+                    Text(occurrenceDate?.formatted(.dateTime.day().month(.twoDigits).year().locale(L10n.locale)) ?? L10n.tr("Sem data definida"))
                         .font(.system(size: 12))
                 }
                 
                 VStack(alignment: .leading, spacing: 5) {
+                    if isLoadingChecklist {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    }
                     ForEach($checkList, id: \.id) { $item in
                         ChecklistItemButton(item: $item)
                     }
@@ -192,14 +211,11 @@ struct ChoreDetailsCard: View {
     private var postponeButtons: some View {
         HStack {
             Button {
-                Task {
-                    await chore.postpone(byDays: 7)
-                }
+                postpone(byDays: 7)
             } label: {
-                Text("Adiar 1 semana")
-                    .font(.system(size: 13))
-                    .foregroundColor(.black)
+                postponeLabel("Adiar 1 semana", days: 7)
             }
+            .disabled(postponingDays != nil)
             .padding(.horizontal, 25)
             .padding(.vertical, 10)
             .background(.gray.opacity(0.15))
@@ -208,14 +224,11 @@ struct ChoreDetailsCard: View {
             Spacer()
             
             Button {
-                Task {
-                    await chore.postpone(byDays: 1)
-                }
+                postpone(byDays: 1)
             } label: {
-                Text("Adiar 1 dia")
-                    .font(.system(size: 13))
-                    .foregroundColor(.black)
+                postponeLabel("Adiar 1 dia", days: 1)
             }
+            .disabled(postponingDays != nil)
             .padding(.horizontal, 32)
             .padding(.vertical, 10)
             .background(.gray.opacity(0.15))
@@ -223,6 +236,48 @@ struct ChoreDetailsCard: View {
         }
         .padding(.top, 10)
         .frame(width: width * 0.72)
+    }
+    
+    /// The postpone text, swapped for a spinner (keeping its size) while that action saves.
+    private func postponeLabel(_ title: LocalizedStringKey, days: Int) -> some View {
+        Text(title)
+            .font(.system(size: 13))
+            .foregroundColor(.black)
+            .opacity(postponingDays == days ? 0 : 1)
+            .overlay {
+                if postponingDays == days {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+    }
+    
+    /// Saves the new date and refreshes the carousel so the card reflects it (the change used
+    /// to be saved silently, with the card left untouched until the next full reload).
+    private func postpone(byDays days: Int) {
+        postponingDays = days
+        Task {
+            let success = await carouselViewModel.postpone(
+                chore: chore,
+                assignment: recurrentAssignment ?? targetAssignments.first,
+                byDays: days
+            )
+            postponingDays = nil
+            
+            guard success else {
+                HapticsManager.notify(.error)
+                didFailToPostpone = true
+                return
+            }
+            
+            HapticsManager.notify(.success)
+            // The occurrence moved to another day: close the card so it leaves today's list.
+            if carouselViewModel.layoutMode == .grid {
+                carouselViewModel.clearFocus()
+            } else {
+                carouselViewModel.clearFocusedDetails()
+            }
+        }
     }
     
     /// Floating top bar with dismiss, responsible avatars and the edit shortcut.
@@ -233,10 +288,10 @@ struct ChoreDetailsCard: View {
             } label: {
                 Image(systemName: "xmark")
                     .foregroundColor(.black)
+                    .glassCircle()
             }
-            .padding(12)
-            .clipShape(Circle())
-            .glassEffect()
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Fechar"))
             
             Spacer()
             
@@ -256,11 +311,10 @@ struct ChoreDetailsCard: View {
             } label: {
                 Image(systemName: "pencil")
                     .foregroundColor(.white)
+                    .glassCircle(tint: .blue)
             }
-            .padding(12)
-            .background(.blue)
-            .clipShape(Circle())
-            .glassEffect()
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Editar Tarefa"))
         }
         .padding(.horizontal)
         .padding(.top)
@@ -280,6 +334,7 @@ private struct ChecklistItemButton: View {
     
     var body: some View {
         Button {
+            HapticsManager.selection()
             Task {
                 await item.toggle()
             }

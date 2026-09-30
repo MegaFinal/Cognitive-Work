@@ -20,9 +20,7 @@ struct FortnightlyView: View {
     @State private var selectedEntry: DailyUsageEntry?
     @State private var selectedUser: UserModel?
     
-    let description: String = """
-        Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível.
-        """
+    let description: LocalizedStringKey = "Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível."
     
     var body: some View {
         VStack {

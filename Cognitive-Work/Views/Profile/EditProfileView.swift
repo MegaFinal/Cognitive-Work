@@ -36,8 +36,13 @@ struct EditProfileView: View {
                             .shadow(color: .black.opacity(0.25), radius: 7.26429, x: 0, y: 5.38095)
                     }
                 }
+                // `clipShape` only clips the drawing; without this the picker still reacted to
+                // taps on the square corners around the circle.
+                .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .contentShape(Circle())
+            .disabled(viewModel.isSaving)
             
             // MARK: - Name Textfield
             HStack {
@@ -52,6 +57,9 @@ struct EditProfileView: View {
                 .frame(width: width * 0.8)
                 .multilineTextAlignment(.center)
                 .bold()
+                .characterLimit(TextLimits.userName, text: $viewModel.editedName)
+                .submitLabel(.done)
+                .disabled(viewModel.isSaving)
                 Spacer()
             }
             
@@ -82,22 +90,10 @@ struct EditProfileView: View {
                 dismiss()
             }
         }
-        .toolbar {
-            // MARK: - Save Button
-            ToolbarItem(placement: .confirmationAction) {
-                Button {
-                    Task {
-                        await viewModel.saveChanges()
-                    }
-                } label: {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12))
-                        .bold()
-                        .foregroundColor(.white)
-                }
-                .tint(Color.blue)
-                .buttonStyle(.glassProminent)
-                .disabled(!viewModel.canSave)
+        // MARK: - Save Button
+        .confirmToolbar(isLoading: viewModel.isSaving, isDisabled: !viewModel.canSave) {
+            Task {
+                await viewModel.saveChanges()
             }
         }
         .hidesTabBar()
@@ -120,7 +116,7 @@ struct EditProfileView: View {
 
 /// A small confirmation pill shown briefly over ``EditProfileView`` after a successful save.
 private struct SuccessToast: View {
-    let text: String
+    let text: LocalizedStringKey
 
     var body: some View {
         Label(text, systemImage: "checkmark.circle.fill")

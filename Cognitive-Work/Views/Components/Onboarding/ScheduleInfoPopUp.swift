@@ -25,13 +25,10 @@ struct ScheduleInfoPopUp: View {
                     Image(systemName: "xmark")
                         .foregroundColor(.black)
                         .fontWeight(.medium)
-                        .padding(12)
-                        .buttonStyle(.plain)
-                        .glassEffect(
-                            .regular.interactive(),
-                            in: .capsule
-                        )
+                        .glassCircle()
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Fechar"))
             }
             .padding(.top, 5)
             

@@ -55,11 +55,11 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     /// Localized structural string.
     var displayText: String {
         switch self {
-        case .undefined: return "indefinido"
-        case .quick: return "curta"
-        case .moderate: return "regular"
-        case .slow: return "longa"
-        case .verySlow: return "extensa"
+        case .undefined: return L10n.tr("indefinido")
+        case .quick: return L10n.tr("curta")
+        case .moderate: return L10n.tr("regular")
+        case .slow: return L10n.tr("longa")
+        case .verySlow: return L10n.tr("extensa")
         }
     }
     

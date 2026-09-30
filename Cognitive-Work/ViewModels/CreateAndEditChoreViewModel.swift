@@ -36,8 +36,8 @@ final class CreateAndEditChoreViewModel {
         
         var title: String {
             switch kind {
-            case .saveFailed: return "Não foi possível salvar"
-            case .deleteFailed: return "Não foi possível excluir"
+            case .saveFailed: return L10n.tr("Não foi possível salvar")
+            case .deleteFailed: return L10n.tr("Não foi possível excluir")
             }
         }
     }
@@ -144,8 +144,8 @@ final class CreateAndEditChoreViewModel {
     
     var visibilityDescription: String {
         draft.isPublic
-        ? "Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores."
-        : "Tarefa privada: só aparece para você e é atribuída somente a você."
+        ? L10n.tr("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
+        : L10n.tr("Tarefa privada: só aparece para você e é atribuída somente a você.")
     }
     
     var selectableResponsibleUsers: [UserModel] {
@@ -417,7 +417,7 @@ final class CreateAndEditChoreViewModel {
         if !success {
             alert = FormAlert(
                 kind: .deleteFailed,
-                message: carouselViewModel.errorMessage ?? "Não foi possível excluir a tarefa."
+                message: carouselViewModel.errorMessage ?? L10n.tr("Não foi possível excluir a tarefa.")
             )
             carouselViewModel.errorMessage = nil
         }

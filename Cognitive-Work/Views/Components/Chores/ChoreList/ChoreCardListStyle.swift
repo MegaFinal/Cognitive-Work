@@ -112,7 +112,7 @@ struct ChoreCardListStyle: View {
                     VStack {
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(room?.name ?? "Room not found")
+                                Text(room?.name ?? L10n.tr("Sem cômodo"))
                                     .font(.system(size: 12))
                                 
                                 Text(chore.name)
@@ -125,8 +125,7 @@ struct ChoreCardListStyle: View {
                             
                             // MARK: Completion button
                             Button {
-                                let generator = UINotificationFeedbackGenerator()
-                                generator.notificationOccurred(isOccurrenceDone ? .warning : .success)
+                                HapticsManager.notify(isOccurrenceDone ? .warning : .success)
                                 
                                 Task {
                                     recurrentAssignment == nil

@@ -25,6 +25,9 @@ struct WaitUsersFreeTimeOnboardingView: View {
     
     @State private var refreshGeneration: Int = 0
     
+    /// `false` until the first fetch returns;
+    @State private var hasLoadedUsers = false
+    
     private let pollingInterval: Duration = .seconds(5)
     
     
@@ -51,6 +54,11 @@ struct WaitUsersFreeTimeOnboardingView: View {
             
             Spacer()
             
+            if !hasLoadedUsers {
+                ProgressView()
+                    .controlSize(.large)
+            }
+            
             if !completedUsers.isEmpty {
                 completedUsersView
             }
@@ -72,7 +80,8 @@ struct WaitUsersFreeTimeOnboardingView: View {
                 OnboardingProgressButton(
                     width: 150,
                     height: 50,
-                    text: "Iniciar divisão"
+                    text: "Iniciar divisão",
+                    isDisabled: !hasLoadedUsers
                 ) {
                     viewModel.goToNextView()
                 }
@@ -160,6 +169,7 @@ struct WaitUsersFreeTimeOnboardingView: View {
         houseUsers = fetchedUsers
         completedUsers = completed
         pendingUsers = pending
+        hasLoadedUsers = true
     }
 }
 

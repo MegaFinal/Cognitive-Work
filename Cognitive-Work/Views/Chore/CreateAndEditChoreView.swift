@@ -26,6 +26,8 @@ struct CreateAndEditChoreView: View {
     @State private var viewModel: CreateAndEditChoreViewModel
     
     @State private var showDeleteConfirmation = false
+            
+    @AppStorage(HapticsManager.microInteractionsKey) private var areMicroInteractionsEnabled = true
     
     @Environment(\.dismiss) private var dismiss
     
@@ -34,6 +36,9 @@ struct CreateAndEditChoreView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 25) {
                 header
+                
+                // MARK: - Validation warnings
+                validationWarning
                 
                 // MARK: - Pickers
                 VStack(spacing: 10) {
@@ -72,7 +77,7 @@ struct CreateAndEditChoreView: View {
                     TextField("Descrição da Tarefa", text: $viewModel.draft.description, axis: .vertical)
                         .font(.system(size: 17))
                         .foregroundColor(.gray)
-                        .characterLimit(250, text: $viewModel.draft.description)
+                        .characterLimit(TextLimits.choreDescription, text: $viewModel.draft.description)
                 }
                 
                 // MARK: - Checklist
@@ -95,9 +100,6 @@ struct CreateAndEditChoreView: View {
                 
                 Spacer()
                 
-                // MARK: - Confirmation Button
-                confirmButton
-                
                 // MARK: - Delete Button
                 if viewModel.showsDeleteButton {
                     deleteButton
@@ -105,6 +107,24 @@ struct CreateAndEditChoreView: View {
             }
             .padding(.vertical)
             .frame(width: width * 0.9)
+            // `load()` rebuilds the draft, so anything typed before it finishes would be lost.
+            .disabled(!viewModel.isLoaded)
+            .opacity(viewModel.isLoaded ? 1 : 0.5)
+        }
+        .overlay {
+            if !viewModel.isLoaded {
+                ProgressView()
+                    .controlSize(.large)
+            }
+        }
+        .navigationBarBackButtonHidden(viewModel.isSaving || viewModel.isDeleting)
+        .confirmToolbar(isLoading: viewModel.isSaving, isDisabled: !viewModel.canConfirm) {
+            Task {
+                if await viewModel.confirm() {
+                    HapticsManager.notify(.success)
+                    dismiss()
+                }
+            }
         }
         .task {
             await viewModel.load()
@@ -171,7 +191,8 @@ struct CreateAndEditChoreView: View {
                     )
                     .font(.system(size: 28))
                     .bold()
-                    .characterLimit(18, text: $viewModel.draft.name)
+                    .characterLimit(TextLimits.choreName, text: $viewModel.draft.name)
+                    .submitLabel(.done)
                     
                     Capsule()
                         .frame(height: height * 0.0015)
@@ -194,7 +215,7 @@ struct CreateAndEditChoreView: View {
                     label: {
                         HStack {
                             CapsuleTag(
-                                tagName: viewModel.draft.room?.name.capitalized ?? "Sem Cômodo",
+                                tagName: viewModel.draft.room?.name.capitalized ?? L10n.tr("Sem Cômodo"),
                                 tagColor: viewModel.draft.room?.color.uiColor ?? .gray,
                                 horizontalPadding: 10.0,
                                 verticalPadding: 1.5
@@ -282,48 +303,20 @@ struct CreateAndEditChoreView: View {
         }
     }
     
-    /// Bottom-anchored confirmation button, featuring an embedded loading state.
-    private var confirmButton: some View {
-        VStack(spacing: 8) {
-            if viewModel.showsMissingRoomWarning {
-                Text("Escolha um cômodo para confirmar a tarefa.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.red)
-            } else if viewModel.showsMissingDateWarning {
-                Text("Escolha uma data para confirmar a tarefa.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.red)
-            }
-            
-            HStack {
-                Spacer()
-                
-                Button {
-                    Task {
-                        if await viewModel.confirm() {
-                            dismiss()
-                        }
-                    }
-                } label: {
-                    Group {
-                        if viewModel.isSaving {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Confirmar")
-                                .foregroundColor(.white)
-                                .fontWeight(.bold)
-                        }
-                    }
-                    .frame(width: width * 0.8, height: height * 0.06)
-                    .background(Color.blue)
-                    .clipShape(Capsule())
-                }
-                .disabled(!viewModel.canConfirm)
-                .opacity(viewModel.canConfirm || viewModel.isSaving ? 1 : 0.5)
-                
-                Spacer()
-            }
+    /// Explains why the (top-right) confirm button is disabled. Shown near the top so it is
+    /// visible without scrolling, now that the button is no longer at the bottom of the form.
+    @ViewBuilder
+    private var validationWarning: some View {
+        if viewModel.showsMissingRoomWarning {
+            Text("Escolha um cômodo para confirmar a tarefa.")
+                .font(.system(size: 13))
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        } else if viewModel.showsMissingDateWarning {
+            Text("Escolha uma data para confirmar a tarefa.")
+                .font(.system(size: 13))
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
     

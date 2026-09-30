@@ -58,17 +58,28 @@ class DashboardModel: Identifiable {
         // Keyed by assignment recordID (not just a Set) so `isDoneToday(_:)` below can read
         // back each assignment's own `isCompleted`, not just whether it exists.
         var myAssignmentsToday: [CKRecord.ID: RecurrentAssignmentModel] = [:]
+        var allAssignmentsToday: [CKRecord.ID: RecurrentAssignmentModel] = [:]
         for assignment in assignments {
             guard let assignmentID = assignment.recordID,
-                  assignment.userReference?.recordID == targetUserID,
                   calendar.isDate(assignment.day, inSameDayAs: today)
             else { continue }
-            myAssignmentsToday[assignmentID] = assignment
+            allAssignmentsToday[assignmentID] = assignment
+            if assignment.userReference?.recordID == targetUserID {
+                myAssignmentsToday[assignmentID] = assignment
+            }
+        }
+        
+        /// Responsible for the chore even when the rotation gave today to someone else — the
+        /// carousel shows these too, so the progress cards must count them as well.
+        func isResponsible(_ chore: ChoreModel) -> Bool {
+            chore.currentResponsibleReference?.recordID == targetUserID
+            || (chore.allResponsibleUsersReference ?? []).contains { $0.recordID == targetUserID }
         }
 
         let filtered = chores.filter { chore in
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                return refs.contains { myAssignmentsToday[$0.recordID] != nil }
+                if refs.contains(where: { myAssignmentsToday[$0.recordID] != nil }) { return true }
+                return isResponsible(chore) && refs.contains { allAssignmentsToday[$0.recordID] != nil }
             } else {
                 guard let dueDate = chore.dueDate,
                       calendar.isDate(dueDate, inSameDayAs: today)
@@ -85,7 +96,12 @@ class DashboardModel: Identifiable {
             guard let refs = chore.dailyAssignmentsReference, !refs.isEmpty else {
                 return chore.isDone
             }
-            let todaysAssignments = refs.compactMap { myAssignmentsToday[$0.recordID] }
+            // My own occurrence when it's my turn; otherwise the day's occurrence(s) of a chore
+            // I'm responsible for.
+            var todaysAssignments = refs.compactMap { myAssignmentsToday[$0.recordID] }
+            if todaysAssignments.isEmpty {
+                todaysAssignments = refs.compactMap { allAssignmentsToday[$0.recordID] }
+            }
             guard !todaysAssignments.isEmpty else { return chore.isDone }
             return todaysAssignments.allSatisfy { $0.isCompleted }
         }
@@ -122,6 +138,8 @@ class DashboardModel: Identifiable {
         let completedChoresCount = todayChores.filter { isDoneToday($0) }.count
 
         self.completionPercentage = Double(completedChoresCount) / Double(todayChores.count)
-        self.completionPercentageString = "\(Int(completionPercentage * 100))%"
+        self.completionPercentageString = completionPercentage.formatted(
+            .percent.precision(.fractionLength(0)).locale(L10n.locale)
+        )
     }
 }

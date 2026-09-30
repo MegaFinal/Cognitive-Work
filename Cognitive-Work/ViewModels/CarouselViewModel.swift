@@ -56,6 +56,11 @@ class CarouselViewModel {
     @ObservationIgnored
     private var nextDateByChore: [CKRecord.ID: Date] = [:]
     
+    /// Every in-house record of the signed-in person (matched by `ownerRecordName`, like
+    /// ``choresVisible(_:to:among:)``). Empty while the user isn't resolved yet.
+    @ObservationIgnored
+    private var viewerRecordIDs: Set<CKRecord.ID> = []
+    
     // MARK: - UI & Layout State
     
     var layoutMode: CardLayoutMode = .grid
@@ -299,6 +304,13 @@ class CarouselViewModel {
     
     /// Rebuilds ``assignmentsByID``, ``futureAssignmentsByChore`` and ``nextDateByChore``.
     private func rebuildIndexes() {
+        if let viewer = dashboardUser {
+            let sameOwner = userModels.filter { $0.ownerRecordName == viewer.ownerRecordName }
+            viewerRecordIDs = Set((sameOwner + [viewer]).compactMap(\.recordID))
+        } else {
+            viewerRecordIDs = []
+        }
+        
         assignmentsByID = Dictionary(
             dailyAssignments.compactMap { assignment in
                 assignment.recordID.map { ($0, assignment) }
@@ -366,17 +378,42 @@ class CarouselViewModel {
     ///
     /// - Parameter chore: The chore to test.
     /// - Returns: `true` when the chore has open work on ``gridTargetDay(from:)``.
+    ///
+    /// 3. *the grid is personal ("Suas Tarefas")* — it shows the viewer's own work for that day:
+    ///    the occurrences assigned to them **and** every chore they are responsible for, even on
+    ///    days the rotation gave the occurrence to someone else. Before, responsibility was
+    ///    ignored, so a responsible user off the current rotation never saw the chore.
     private func isVisibleInGrid(_ chore: ChoreModel) -> Bool {
         guard !chore.isDone else { return false }
         
         let targetDay = Self.gridTargetDay()
         
         if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-            return getAssignments(for: chore, on: targetDay).contains { !$0.isCompleted }
+            let openOccurrences = getAssignments(for: chore, on: targetDay).filter { !$0.isCompleted }
+            guard !openOccurrences.isEmpty else { return false }
+            // Viewer not resolved yet (e.g. offline): keep showing the day's chores.
+            guard !viewerRecordIDs.isEmpty else { return true }
+            
+            let isMyTurn = openOccurrences.contains { assignment in
+                assignment.userReference.map { viewerRecordIDs.contains($0.recordID) } ?? false
+            }
+            return isMyTurn || isViewerResponsible(for: chore)
         }
         
-        guard let dueDate = chore.dueDate else { return false }
-        return Calendar.current.isDate(dueDate, inSameDayAs: targetDay)
+        guard let dueDate = chore.dueDate,
+              Calendar.current.isDate(dueDate, inSameDayAs: targetDay) else { return false }
+        guard !viewerRecordIDs.isEmpty else { return true }
+        return isViewerResponsible(for: chore)
+    }
+    
+    /// Whether the viewer is in the chore's responsible list (or its current responsible),
+    /// regardless of whose turn it is in the rotation.
+    func isViewerResponsible(for chore: ChoreModel) -> Bool {
+        var responsibleIDs = Set((chore.allResponsibleUsersReference ?? []).map(\.recordID))
+        if let current = chore.currentResponsibleReference {
+            responsibleIDs.insert(current.recordID)
+        }
+        return !responsibleIDs.isDisjoint(with: viewerRecordIDs)
     }
     
     /// Rebuilds and caches the list of visible chores based on active filters and sorting rules.
@@ -555,8 +592,24 @@ class CarouselViewModel {
     /// ``isVisibleInGrid(_:)`` (what actually decides whether the card is still shown) checks
     /// tomorrow. Completing the card toggled the wrong day's assignment, so the one gating
     /// visibility never changed and the card stayed in the carousel after being marked done.
+    ///
+    /// Ordered so `.first` is the right card for the viewer: their own open occurrence first,
+    /// then any open one (a responsible user off the rotation), then completed ones.
     func getAssignmentsForActiveContext(for chore: ChoreModel) -> [RecurrentAssignmentModel] {
-        getAssignments(for: chore, on: Self.gridTargetDay())
+        let viewerIDs = viewerRecordIDs
+        func rank(_ assignment: RecurrentAssignmentModel) -> Int {
+            let isMine = assignment.userReference.map { viewerIDs.contains($0.recordID) } ?? false
+            switch (isMine, assignment.isCompleted) {
+            case (true, false): return 0
+            case (false, false): return 1
+            case (true, true): return 2
+            case (false, true): return 3
+            }
+        }
+        return getAssignments(for: chore, on: Self.gridTargetDay())
+            .enumerated()
+            .sorted { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }
+            .map(\.element)
     }
     
     // MARK: - Synchronous Data Helpers
@@ -636,6 +689,36 @@ class CarouselViewModel {
         return await ScoreManager.shared.removeScoreForMyUser(assignment: assignment)
     }
     
+    // MARK: - Postpone
+    
+    /// "Adiar": moves the occurrence being shown `days` forward.
+    ///
+    /// Before, the details card called `ChoreModel.postpone`, which only changes `dueDate` —
+    /// ignored by recurring chores, whose days live in their assignments — and then re-fetched
+    /// everything from CloudKit, whose queries can still return the old record right after a
+    /// save. Now the right record is moved (the occurrence for recurring chores, the chore for
+    /// one-offs) and the lists are rebuilt from memory.
+    ///
+    /// - Parameters:
+    ///   - assignment: The occurrence shown by the card, if already known.
+    /// - Returns: `true` when the new date was saved.
+    @MainActor
+    func postpone(chore: ChoreModel, assignment: RecurrentAssignmentModel?, byDays days: Int) async -> Bool {
+        let isRecurring = !(chore.dailyAssignmentsReference ?? []).isEmpty
+        
+        if isRecurring {
+            guard let occurrence = assignment ?? getAssignmentsForActiveContext(for: chore).first,
+                  await occurrence.postpone(byDays: days) else { return false }
+            refreshVisible()
+            await syncSingleAssignmentToCalendar(for: occurrence, chore: chore)
+        } else {
+            guard await chore.postpone(byDays: days) else { return false }
+            refreshVisible()
+            await syncSingleChoreToCalendar(chore)
+        }
+        return true
+    }
+    
     // MARK: - Delete
     
     /// What ``removeOccurrenceLocally(chore:targetOccurrences:)`` took out of the in-memory
@@ -706,7 +789,7 @@ class CarouselViewModel {
             dailyAssignments.append(contentsOf: snapshot.assignments)
             refreshVisible()
             
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Não foi possível excluir a tarefa."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Não foi possível excluir a tarefa.")
             return false
         }
         

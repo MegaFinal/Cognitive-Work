@@ -42,11 +42,13 @@ struct WifiCredentialsView: View {
                             TextField("", text: $viewModel.userWifiName)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
+                                .characterLimit(TextLimits.wifiName, text: $viewModel.userWifiName)
                         }
                         LabeledInput(title: "Senha do Wi-Fi") {
                             SecureField("", text: $viewModel.userWifiPassord)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
+                                .characterLimit(TextLimits.wifiPassword, text: $viewModel.userWifiPassord)
                         }
                     }
                 }
@@ -60,14 +62,12 @@ struct WifiCredentialsView: View {
                     Button(role: .close) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    if viewModel.isSending {
-                        ProgressView()
-                    } else {
-                        Button("Continuar", systemImage: "chevron.right") {
-                            Task { await viewModel.sendWifiCredentials() }
-                        }
-                        .buttonStyle(.glassProminent)
-                        .disabled(!canSubmit)
+                    ConfirmToolbarButton(
+                        systemImage: "chevron.right",
+                        isLoading: viewModel.isSending,
+                        isDisabled: !canSubmit
+                    ) {
+                        Task { await viewModel.sendWifiCredentials() }
                     }
                 }
             }
@@ -81,7 +81,7 @@ struct WifiCredentialsView: View {
 }
 
 struct LabeledInput<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     @ViewBuilder var content: () -> Content
     
     var body: some View {
