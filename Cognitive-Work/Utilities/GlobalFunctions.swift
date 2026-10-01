@@ -649,3 +649,51 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
     }()
     _ = await (choresDone, usersDone)
 }
+
+
+// MARK: - Reset Before Re-Division
+
+/// Clears every today-onward, not-yet-completed assignment and due date before a fresh
+/// division runs, so the engine starts clean instead of layering new assignments on top of
+/// the old ones. Completed occurrences are left untouched — they're history, not something
+/// to reschedule.
+///
+/// - Parameter chores: Every chore currently loaded.
+@MainActor
+func resetUpcomingSchedule(for chores: [ChoreModel]) async {
+    let calendar = Calendar.current
+    let today = calendar.startOfDay(for: Date())
+    
+    var recordsToDelete: [CKRecord.ID] = []
+    var zoneID: CKRecordZone.ID?
+    var choresToUpdate: [ChoreModel] = []
+    
+    for chore in chores where !chore.isDone {
+        if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+            let existing = await chore.dailyAssignments
+            let toRemove = existing.filter { $0.day >= today && !$0.isCompleted }
+            
+            guard !toRemove.isEmpty else { continue }
+            
+            let removeIDs = toRemove.compactMap { $0.recordID }
+            if zoneID == nil { zoneID = removeIDs.first?.zoneID }
+            recordsToDelete.append(contentsOf: removeIDs)
+            
+            let removedSet = Set(removeIDs)
+            chore.dailyAssignmentsReference = refs.filter { !removedSet.contains($0.recordID) }
+            choresToUpdate.append(chore)
+        }
+        else if chore.frequency == .none, chore.dueDate != nil {
+            chore.dueDate = nil
+            choresToUpdate.append(chore)
+        }
+    }
+    
+    if !recordsToDelete.isEmpty, let zoneID {
+        await CloudKitManager.shared.delete(recordIDs: recordsToDelete, zoneID: zoneID)
+    }
+    
+    if !choresToUpdate.isEmpty {
+        await CloudKitManager.shared.batchUpdate(choresToUpdate)
+    }
+}
