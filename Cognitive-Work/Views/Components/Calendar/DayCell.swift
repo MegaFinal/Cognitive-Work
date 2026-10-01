@@ -17,15 +17,14 @@ struct DayCell: View {
     var body: some View {
         Button(action: action) {
             Text(day.formatted(.dateTime.day()))
-                .font(.title3)
-                .fontWeight(isSelected ? .bold : .regular)
+                .font(.system(size: 15))
                 .frame(maxWidth: .infinity, minHeight: 40)
                 .foregroundStyle(foreground)
                 .background(
-                    RoundedRectangle(cornerRadius: 10)
+                    Circle()
                         .fill(background)
                 )
-                .contentShape(RoundedRectangle(cornerRadius: 10)) // 没有底色时，整格也能点
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .disabled(!isSelectable)
@@ -37,7 +36,7 @@ struct DayCell: View {
     }
 
     private var background: Color {
-        if isSelected { return .blue }
+        if isSelected { return .black }
         guard isSelectable else { return .clear }
         return Color.choreYellow.opacity(opacity)
     }

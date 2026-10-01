@@ -1387,6 +1387,8 @@ class CarouselViewModel {
         return [WeeklyPickSlot(date: nil, existingAssignment: nil, isDateEditable: true)]
     }
     
+    // MARK: - Unassigned Item Pick Controls
+    
     /// Tapping an item in the list: items requiring a date selection present a confirmation page.
     @MainActor
     func requestPick(_ item: UnassignedItem) {
@@ -1401,9 +1403,40 @@ class CarouselViewModel {
 
         if needsSheet {
             dismissUnassignedList()
-            itemAwaitingDate = item
+            // 🌟 复用已有的焦点动画，直接将 item 传给 itemAwaitingDate
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                itemAwaitingDate = item
+            }
         } else {
             Task { await pickForMyself(item) }
+        }
+    }
+
+    
+    @MainActor
+    func dismissPickCard() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            itemAwaitingDate = nil
+        }
+    }
+    
+    // MARK: - Unassigned List Popover Controls
+        
+        
+    /// Whether the "unassigned chores" popup is currently visible.
+    var isShowingUnassignedList: Bool = false
+    
+    @MainActor
+    func toggleUnassignedList() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            isShowingUnassignedList.toggle()
+        }
+    }
+    
+    @MainActor
+    func dismissUnassignedList() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            isShowingUnassignedList = false
         }
     }
     
@@ -1507,21 +1540,6 @@ class CarouselViewModel {
         
         await refreshAfterChoreUpdate()
         return true
-    }
-    
-    /// Whether the "unassigned chores" popup is currently visible.
-    var isShowingUnassignedList: Bool = false
-    
-    func toggleUnassignedList() {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            isShowingUnassignedList.toggle()
-        }
-    }
-    
-    func dismissUnassignedList() {
-        withAnimation(.easeOut(duration: 0.2)) {
-            isShowingUnassignedList = false
-        }
     }
     
     // MARK: - Custom Calendar

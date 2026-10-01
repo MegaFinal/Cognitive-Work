@@ -132,6 +132,26 @@ struct ChoresView: View {
                     .zIndex(2100)
                     .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .bottomTrailing)))
                 }
+                
+                // MARK: - Pick Unassigned Chore Card Overlay
+                if let item = carouselVM.itemAwaitingDate {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .ignoresSafeArea()
+                        .zIndex(2999)
+                        .onTapGesture {
+                            carouselVM.dismissPickCard()
+                        }
+                    
+                    VStack {
+                        Spacer()
+                        PickUnassignedChoreCard(item: item, carouselViewModel: carouselVM)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .zIndex(3000)
+                    .transition(.scale)
+                }
             }
             .background(
                 Color(.white)
@@ -141,9 +161,6 @@ struct ChoresView: View {
                     }
             )
             .tabBarVisibilityRoot()
-        }
-        .sheet(item: $carouselVM.itemAwaitingDate) { item in
-            PickUnassignedChoreSheet(item: item, carouselViewModel: carouselVM)
         }
         .task {
             await carouselVM.fetchAllData()

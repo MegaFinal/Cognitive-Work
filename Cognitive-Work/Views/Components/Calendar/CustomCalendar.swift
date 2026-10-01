@@ -12,7 +12,6 @@ struct CustomCalendar: View {
     let window: Range<Date>
     let opacityForDay: (Date) -> Double
     var highlightedDays: [Date] = []
-    var showsSelectionLabel: Bool = true
     var earliestSelectable: Date? = nil   // days before this are shown grey and can't be tapped
     
     /// Computed (not stored) so it follows a language change without recreating the view.
@@ -21,13 +20,18 @@ struct CustomCalendar: View {
     private let calendar = Calendar.current
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 8) {
             header
+                .padding(5)
             weekdayRow
             dayGrid
-            if showsSelectionLabel { selectedDateLabel }
         }
-        .padding()
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .foregroundStyle(Color.gray.opacity(0.08))
+        )
     }
     
     // MARK: - Data
@@ -85,8 +89,7 @@ struct CustomCalendar: View {
     
     private var header: some View {
         Text(headerTitle)
-            .font(.title3)
-            .fontWeight(.semibold)
+            .font(.system(size: 16))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
     }
@@ -95,9 +98,9 @@ struct CustomCalendar: View {
         HStack {
             ForEach(daysOfWeek.indices, id: \.self) { index in
                 Text(daysOfWeek[index])
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 15))
                     .frame(maxWidth: .infinity)
-                    .foregroundStyle(.black.opacity(0.4))
+                    .foregroundStyle(.black.opacity(0.3))
             }
         }
     }
@@ -117,8 +120,7 @@ struct CustomCalendar: View {
             }
         }
     }
-    
-    
+        
     private var selectedDateLabel: some View {
         if let selectedDate {
             Text(selectedDate.formatted(
