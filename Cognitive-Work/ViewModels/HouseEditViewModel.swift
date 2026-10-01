@@ -39,7 +39,8 @@ final class HouseEditViewModel {
     /// Fetches a house first only when this view model wasn't handed one at init —
     /// otherwise the injected house would be silently replaced by whatever
     /// ``fetchHouse()`` happens to find.
-    func checkAdminStatus() async {
+    @discardableResult
+    func checkAdminStatus() async -> Bool {
         if house == nil {
             await fetchHouse()
         }
@@ -47,10 +48,11 @@ final class HouseEditViewModel {
         guard let house
         else {
             isUserAdmin = false
-            return
+            return false
         }
 
         isUserAdmin = await house.isAdmin() == true
+        return true
     }
 
     // MARK: - Fetch
@@ -78,13 +80,13 @@ final class HouseEditViewModel {
     func deleteHouse() async -> Bool {
         guard let house else {
             errorMessage = "Failed to retrieve house"
-            print(errorMessage)
+            print(errorMessage as Any)
             return false
         }
 
         guard await house.isAdmin() == true else {
             errorMessage = "Failed to delete due to unauthorized credentials"
-            print(errorMessage)
+            print(errorMessage as Any)
             return false
         }
 
@@ -93,8 +95,8 @@ final class HouseEditViewModel {
 
         guard await house.deleteAllChildren() else {
             errorMessage = "Failed to delete house children"
-            print(errorMessage)
-            print(CloudKitManager.shared.errorMessage)
+            print(errorMessage as Any)
+            print(CloudKitManager.shared.errorMessage as Any)
             return false
         }
         
@@ -107,5 +109,19 @@ final class HouseEditViewModel {
         self.house = nil
         errorMessage = nil
         return true
+    }
+    
+    func getOutOfTheHouse() async {
+        guard let house else {
+            errorMessage = "Failed to retrieve house"
+            print(errorMessage as Any)
+            return
+        }
+        
+        guard await CloudKitManager.shared.delete(house) else {
+            errorMessage = CloudKitManager.shared.errorMessage
+            print(errorMessage as Any)
+            return
+        }
     }
 }
