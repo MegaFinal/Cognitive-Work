@@ -27,12 +27,16 @@ struct ChoresViewButtonsSection: View {
                 carouselViewModel.toggleUnassignedList()
             } label: {
                 Image(systemName: "hand.tap")
-                    .font(.system(size: 28))
+                    .font(.system(size: 32))
+                    .padding(17)
                     .foregroundColor(.black)
-                    .glassCircle(diameter: GlassCircleSize.floating)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Text("Tarefas para pegar"))
+            .glassEffect(
+                .regular.interactive(),
+                in: .circle
+            )
             
             
             Button {
@@ -41,10 +45,14 @@ struct ChoresViewButtonsSection: View {
                 Image(systemName: "plus")
                     .font(.system(size: 28))
                     .foregroundColor(.white)
-                    .glassCircle(diameter: GlassCircleSize.floating, tint: .black)
+                    .padding(20)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Text("Nova tarefa"))
+            .glassEffect(
+                .regular.interactive().tint(.black),
+                in: .circle
+            )
         }
         .padding(.horizontal, 30)
         .padding(.bottom)

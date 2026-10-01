@@ -62,12 +62,14 @@ struct WifiCredentialsView: View {
                     Button(role: .close) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    ConfirmToolbarButton(
-                        systemImage: "chevron.right",
-                        isLoading: viewModel.isSending,
-                        isDisabled: !canSubmit
-                    ) {
-                        Task { await viewModel.sendWifiCredentials() }
+                    if viewModel.isSending {
+                        ProgressView()
+                    } else {
+                        Button("Continuar", systemImage: "chevron.right") {
+                            Task { await viewModel.sendWifiCredentials() }
+                        }
+                        .buttonStyle(.glassProminent)
+                        .disabled(!canSubmit)
                     }
                 }
             }

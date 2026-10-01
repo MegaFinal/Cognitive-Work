@@ -90,10 +90,22 @@ struct EditProfileView: View {
                 dismiss()
             }
         }
-        // MARK: - Save Button
-        .confirmToolbar(isLoading: viewModel.isSaving, isDisabled: !viewModel.canSave) {
-            Task {
-                await viewModel.saveChanges()
+        .toolbar {
+            // MARK: - Save Button
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    Task {
+                        await viewModel.saveChanges()
+                    }
+                } label: {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12))
+                        .bold()
+                        .foregroundColor(.white)
+                }
+                .tint(Color.blue)
+                .buttonStyle(.glassProminent)
+                .disabled(!viewModel.canSave)
             }
         }
         .hidesTabBar()

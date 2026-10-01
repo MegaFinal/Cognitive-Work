@@ -38,7 +38,7 @@ struct FortnightlyView: View {
             }
             .padding(.bottom, 30)
             .foregroundColor(.secondary)
-            .frame(width: width * 0.8)
+            .frame(width: width * 0.888)
             
             ScrollView(showsIndicators: false) {
                 chart

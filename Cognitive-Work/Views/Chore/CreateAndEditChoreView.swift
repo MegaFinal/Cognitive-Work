@@ -109,6 +109,7 @@ struct CreateAndEditChoreView: View {
             .disabled(!viewModel.isLoaded)
             .opacity(viewModel.isLoaded ? 1 : 0.5)
         }
+        .hidesTabBar()
         .overlay {
             if !viewModel.isLoaded {
                 ProgressView()
@@ -116,11 +117,28 @@ struct CreateAndEditChoreView: View {
             }
         }
         .navigationBarBackButtonHidden(viewModel.isSaving || viewModel.isDeleting)
-        .confirmToolbar(isLoading: viewModel.isSaving, isDisabled: !viewModel.canConfirm) {
-            Task {
-                if await viewModel.confirm() {
-                    HapticsManager.notify(.success)
-                    dismiss()
+        .toolbar {
+            // MARK: - Confirmation Button
+            ToolbarItem(placement: .confirmationAction) {
+                if viewModel.isSaving {
+                    ProgressView()
+                } else {
+                    Button {
+                        Task {
+                            if await viewModel.confirm() {
+                                HapticsManager.notify(.success)
+                                dismiss()
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12))
+                            .bold()
+                            .foregroundColor(.white)
+                    }
+                    .tint(.blue)
+                    .buttonStyle(.glassProminent)
+                    .disabled(!viewModel.canConfirm)
                 }
             }
         }
@@ -302,7 +320,7 @@ struct CreateAndEditChoreView: View {
     }
     
     /// Explains why the (top-right) confirm button is disabled. Shown near the top so it is
-    /// visible without scrolling, now that the button is no longer at the bottom of the form.
+    /// visible without scrolling.
     @ViewBuilder
     private var validationWarning: some View {
         if viewModel.showsMissingRoomWarning {
@@ -356,5 +374,34 @@ struct CreateAndEditChoreView: View {
                     .renderingMode(.original)
             }
         }
+    }
+}
+
+#Preview("Edição") {
+    let house = CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview-house"), action: .none)
+    let user = UserModel(
+        name: "Ana",
+        tier: .tier1,
+        house: house,
+        recordID: CKRecord.ID(recordName: "preview-user-Ana"),
+        ownerRecordName: "preview-owner-Ana"
+    )
+    let chore = ChoreModel(
+        name: "Lavar a louça",
+        description: "Pratos, copos e panelas.",
+        dueDate: Calendar.current.date(byAdding: .day, value: 2, to: Date()),
+        frequency: .weekly,
+        duration: 30,
+        isPublic: true,
+        priorityTag: .high
+    )
+    chore.recordID = CKRecord.ID(recordName: "preview-chore")
+    
+    return NavigationStack {
+        CreateAndEditChoreView(
+            originalModel: chore,
+            availableHouseUsers: [user],
+            carouselViewModel: CarouselViewModel()
+        )
     }
 }

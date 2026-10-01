@@ -85,16 +85,26 @@ struct ChoreDetailsCard: View {
                     // Daily chores can't be postponed: tomorrow already has its own occurrence.
                     if chore.frequency != .daily {
                         postponeButtons
+                        
+                        SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
+                            Task {
+                                recurrentAssignment == nil
+                                ? await carouselViewModel.toggle(chore: chore)
+                                : await carouselViewModel.toggle(assignment: recurrentAssignment!)
+                            }
+                        }, color: room?.color.uiColor ?? .gray)
+                        .padding(.horizontal, 30)
+                    } else {
+                        SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
+                            Task {
+                                recurrentAssignment == nil
+                                ? await carouselViewModel.toggle(chore: chore)
+                                : await carouselViewModel.toggle(assignment: recurrentAssignment!)
+                            }
+                        }, color: room?.color.uiColor ?? .gray)
+                        .padding(.horizontal, 30)
+                        .padding(.top, height * 0.06)
                     }
-                    
-                    SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
-                        Task {
-                            recurrentAssignment == nil
-                            ? await carouselViewModel.toggle(chore: chore)
-                            : await carouselViewModel.toggle(assignment: recurrentAssignment!)
-                        }
-                    }, color: room?.color.uiColor ?? .gray)
-                    .padding(.horizontal, 30)
                 }
             }
             .padding(.top, 8)
@@ -210,6 +220,9 @@ struct ChoreDetailsCard: View {
         .padding(.top)
     }
     
+    /// Shorter English labels need less horizontal padding.
+    private var isEnglish: Bool { LanguageManager.shared.current == .english }
+    
     /// Quick actions to delay the chore's deadline directly from the details card.
     private var postponeButtons: some View {
         HStack {
@@ -219,7 +232,7 @@ struct ChoreDetailsCard: View {
                 postponeLabel("Adiar 1 semana", days: 7)
             }
             .disabled(postponingDays != nil)
-            .padding(.horizontal, 25)
+            .padding(.horizontal, isEnglish ? 18 : 25)
             .padding(.vertical, 10)
             .background(.gray.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 22))
@@ -232,7 +245,7 @@ struct ChoreDetailsCard: View {
                 postponeLabel("Adiar 1 dia", days: 1)
             }
             .disabled(postponingDays != nil)
-            .padding(.horizontal, 32)
+            .padding(.horizontal, isEnglish ? 18 : 32)
             .padding(.vertical, 10)
             .background(.gray.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 22))
@@ -291,10 +304,10 @@ struct ChoreDetailsCard: View {
             } label: {
                 Image(systemName: "xmark")
                     .foregroundColor(.black)
-                    .glassCircle()
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Fechar"))
+            .padding(12)
+            .clipShape(Circle())
+            .glassEffect()
             
             Spacer()
             
@@ -314,10 +327,11 @@ struct ChoreDetailsCard: View {
             } label: {
                 Image(systemName: "pencil")
                     .foregroundColor(.white)
-                    .glassCircle(tint: .blue)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Editar Tarefa"))
+            .padding(12)
+            .background(.blue)
+            .clipShape(Circle())
+            .glassEffect()
         }
         .padding(.horizontal)
         .padding(.top)
@@ -371,7 +385,7 @@ private struct ChecklistItemButton: View {
         let chore = ChoreModel(
             name: "Lavar a louça",
             description: "Lavar tudo que estiver na pia, secar e guardar nos armários.",
-            frequency: .daily,
+            frequency: .weekly,
             duration: 1200,
             isPublic: true,
             priorityTag: .medium,

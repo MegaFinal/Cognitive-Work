@@ -99,11 +99,14 @@ struct ShopListView: View {
                 }
             } label: {
                 Image(systemName: "line.3.horizontal.decrease")
-                    .font(.system(size: 20))
+                    .font(.system(size: 22))
                     .foregroundColor(.black)
-                    .glassCircle()
+                    .padding(8)
             }
-            .accessibilityLabel(Text("Ordenar por"))
+            .glassEffect(
+                .regular.interactive(),
+                in: .capsule
+            )
             .padding(.top, 20)
             .padding(.trailing, 30)
         }
@@ -157,15 +160,15 @@ struct ShopListView: View {
             isPresentingAddItem = true
         } label: {
             Image(systemName: "plus")
-                .font(.system(size: 28))
+                .font(.system(size: 24, weight: .semibold))
                 .foregroundColor(.white)
-                .glassCircle(diameter: GlassCircleSize.floating, tint: .black)
+                .frame(width: 56, height: 56)
+                .background(Color.blue)
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text("Novo item"))
         .disabled(viewModel.list == nil)
-        .padding(.horizontal, 30)
-        .padding(.bottom)
+        .padding(24)
     }
 
     // MARK: - Sorting
@@ -371,6 +374,8 @@ private struct ShopListItemFormView: View {
                         }
 
                         Spacer()
+
+                        confirmButton(width: geometry.size.width)
                     }
                     .padding(.vertical)
                     .frame(width: geometry.size.width * 0.9)
@@ -384,12 +389,6 @@ private struct ShopListItemFormView: View {
                     Button("Cancelar") { dismiss() }
                         .disabled(isSaving)
                 }
-            }
-            .confirmToolbar(
-                isLoading: isSaving,
-                isDisabled: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ) {
-                Task { await save() }
             }
             .disabled(isSaving)
         }
@@ -408,6 +407,31 @@ private struct ShopListItemFormView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(saveErrorMessage ?? "")
+        }
+    }
+
+    private func confirmButton(width: CGFloat) -> some View {
+        HStack {
+            Spacer()
+            Button {
+                Task { await save() }
+            } label: {
+                Group {
+                    if isSaving {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Text("Confirmar")
+                            .foregroundColor(.white)
+                            .fontWeight(.bold)
+                    }
+                }
+                .frame(width: width * 0.8, height: 50)
+                .background(Color.blue)
+                .clipShape(Capsule())
+            }
+            .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+            Spacer()
         }
     }
 

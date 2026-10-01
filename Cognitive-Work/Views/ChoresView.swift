@@ -186,34 +186,33 @@ struct ChoresView: View {
             
             Spacer()
             
-            GlassEffectContainer(spacing: 8) {
-                HStack(spacing: 8) {
-                    if carouselVM.layoutMode == .list {
-                        Menu {
-                            FilterOptionsMenu(viewModel: carouselVM)
-                        } label: {
-                            Image(systemName: carouselVM.isFilterOn
-                                  ? "line.3.horizontal.decrease.circle.fill"
-                                  : "line.3.horizontal.decrease")
-                                .font(.system(size: 20))
-                                .foregroundColor(.black)
-                                .glassCircle()
-                        }
-                        .accessibilityLabel(Text("Filtros"))
-                        .transition(.scale.combined(with: .opacity))
-                    }
-                    
-                    Button {
-                        toggleLayout()
+            HStack (spacing: 4) {
+                Button {
+                    toggleLayout()
+                } label: {
+                    Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(8)
+                }
+                
+                if carouselVM.layoutMode == .list {
+                    Menu {
+                        FilterOptionsMenu(viewModel: carouselVM)
                     } label: {
-                        Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
-                            .font(.system(size: 20))
+                        Image(systemName: carouselVM.isFilterOn
+                              ? "line.3.horizontal.decrease.circle.fill"
+                              : "line.3.horizontal.decrease")
+                            .font(.system(size: 22))
                             .foregroundColor(.black)
-                            .glassCircle()
+                            .padding(12)
                     }
-                    .buttonStyle(.plain)
                 }
             }
+            .glassEffect(
+                .regular.interactive(),
+                in: .capsule
+            )
             .padding(.top, 20)
             .padding(.trailing, 30)
         }

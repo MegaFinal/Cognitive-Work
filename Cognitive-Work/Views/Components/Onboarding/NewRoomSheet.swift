@@ -77,11 +77,14 @@ struct NewRoomSheet: View {
                     }
                 }
                 
-                ToolbarItem(placement: .confirmationAction) {
-                    ConfirmToolbarButton(isDisabled: text.trimmingCharacters(in: .whitespaces).isEmpty) {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
                         viewModel.addCustomRoom(name: text.trimmingCharacters(in: .whitespaces), color: selectedColor)
                         dismiss()
+                    } label: {
+                        Image(systemName: "checkmark")
                     }
+                    .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .dismissKeyboardOnTap()

@@ -94,31 +94,33 @@ struct SelectFreeTimeOnboardingView: View {
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
                 }
                 
-                if !isFromSettings {
-                    OnboardingProgressButton(
-                        width: 50.0,
-                        height: 50.0,
-                        text: "chevron.forward",
-                        isSystemImage: true,
-                        isLoading: viewModel.isLoading,
-                        isDisabled: !canSave
-                    ) {
-                        await save()
-                    }
-                    .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                } else {
-                    Spacer()
-                }
+                Spacer()
             }
             .padding(.horizontal, width * 0.0865)
             .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
             .hidesTabBar()
 
         }
-        .modifier(SettingsConfirmToolbar(isEnabled: isFromSettings, isLoading: viewModel.isLoading, isDisabled: !canSave) {
-            Task { await save() }
-        })
+        // MARK: - Confirmation Button
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if viewModel.isLoading {
+                    ProgressView()
+                } else {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        Image(systemName: isFromSettings ? "checkmark" : "chevron.forward")
+                            .font(.system(size: 12))
+                            .bold()
+                            .foregroundColor(.white)
+                    }
+                    .tint(.blue)
+                    .buttonStyle(.glassProminent)
+                    .disabled(!canSave)
+                }
+            }
+        }
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -141,22 +143,6 @@ struct SelectFreeTimeOnboardingView: View {
 }
 
 // MARK: - Private subviews
-
-/// Adds the standard top-right confirmation only when the screen is opened from settings.
-private struct SettingsConfirmToolbar: ViewModifier {
-    let isEnabled: Bool
-    let isLoading: Bool
-    let isDisabled: Bool
-    let action: () -> Void
-    
-    func body(content: Content) -> some View {
-        if isEnabled {
-            content.confirmToolbar(isLoading: isLoading, isDisabled: isDisabled, action: action)
-        } else {
-            content
-        }
-    }
-}
 
 /// A single onboarding row that lets the user define how much free time is
 /// available on a given day of the week.
@@ -262,5 +248,7 @@ private struct OnboardingCustomSliderComponent: View {
 
 #Preview {
     @Previewable @State var viewModel = OnboardingViewModel()
-    SelectFreeTimeOnboardingView(viewModel: $viewModel)
+    NavigationStack {
+        SelectFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: true)
+    }
 }
