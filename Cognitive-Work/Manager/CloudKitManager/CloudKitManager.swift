@@ -88,6 +88,17 @@ class CloudKitManager {
         sharedDB = container.sharedCloudDatabase
     }
     
+    
+    private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
+        guard let origem = asset.fileURL else { return nil }
+        
+        let destino = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        
+        try FileManager.default.copyItem(at: origem, to: destino)
+        return CKAsset(fileURL: destino)
+    }
+    
     // MARK: - Zone Management
     
     /// Creates the custom house zone if it does not already exist.
@@ -494,6 +505,46 @@ class CloudKitManager {
         return accepted
     }
     
+    private func addMyselfToCurrentHouse() async -> Bool {
+        var found: HouseModel?
+        for _ in 0..<3 where found == nil {
+            found = try? await fetchFirst(HouseModel.self)
+            if found == nil { try? await Task.sleep(for: .seconds(1)) }
+        }
+        
+        guard let house = found,
+              let houseID = house.recordID,
+              let profile = await fetchMyUser(),
+              let profileID = profile.recordID,
+              let ownerName = await fetchCurrentUserRecordID()?.recordName
+        else { return false }
+        
+        guard let userPFP = profile.profilePicture,
+              let profilePictureDuplicate = try? duplicateCKAsset(userPFP)
+        else { return false }
+        
+        let member = UserModel(
+            name: profile.name,
+            profilePicture: profilePictureDuplicate,
+            tier: profile.tier,
+            coins: profile.coins,
+            points: profile.points,
+            house: CKRecord.Reference(recordID: houseID, action: .none),
+            couponLimit: profile.couponLimit,
+            ownerRecordName: ownerName
+        )
+        
+        guard let saved = await create(
+            member,
+            id: houseUserRecordID(for: profileID, inHouseZone: houseID.zoneID),
+            parent: house.reference(action: .none)
+        ) else { return false }
+        
+        await house.appendUsers([saved])
+        clearPendingJoin(ifMatching: houseID.zoneID)
+        return true
+    }
+    
     @discardableResult
     func leaveCurrentHouse() async throws -> Bool {
         guard let house = try? await fetchFirst(HouseModel.self),
@@ -519,6 +570,7 @@ class CloudKitManager {
         do {
             guard try await leaveCurrentHouse() else { return false }
             return await acceptShare(metadata: metadata)
+            return await addMyselfToCurrentHouse()
         }
         catch {
             print("\(String(describing: errorMessage))")
