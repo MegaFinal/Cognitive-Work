@@ -197,6 +197,13 @@ struct ChoresView: View {
                         .padding(8)
                 }
                 
+                NavigationLink(destination: NotificationsView()) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(8)
+                }
+                
                 if carouselVM.layoutMode == .list {
                     Menu {
                         FilterOptionsMenu(viewModel: carouselVM)

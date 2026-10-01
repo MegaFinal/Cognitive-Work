@@ -134,7 +134,7 @@ class CarouselViewModel {
     private(set) var visibleOccurrences: [ChoreOccurrence] = []
     
     /// How many future occurrences of the same chore the list shows.
-    private let occurrencesPerChore = 20
+    private let occurrencesPerChore = 15
     
     /// Rebuilds the flattened list of occurrences from the currently visible chores.
     ///
