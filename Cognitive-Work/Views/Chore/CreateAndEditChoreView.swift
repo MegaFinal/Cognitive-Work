@@ -223,7 +223,7 @@ struct CreateAndEditChoreView: View {
                     Menu {
                         Picker("Cômodo", selection: $viewModel.draft.room) {
                             ForEach(viewModel.availableRooms, id: \.self) { room in
-                                ColorIconTagLabel(title: room.name.capitalized, color: room.color.uiColor)
+                                ColorIconTagLabel(title: room.name.localizedDefault.capitalized(with: L10n.locale), color: room.color.uiColor)
                                     .tag(RoomModel?(room))
                             }
                         }
@@ -231,7 +231,7 @@ struct CreateAndEditChoreView: View {
                     label: {
                         HStack {
                             CapsuleTag(
-                                tagName: viewModel.draft.room?.name.capitalized ?? L10n.tr("Sem Cômodo"),
+                                tagName: viewModel.draft.room?.name.localizedDefault.capitalized(with: L10n.locale) ?? L10n.tr("Sem Cômodo"),
                                 tagColor: viewModel.draft.room?.color.uiColor ?? .gray,
                                 horizontalPadding: 10.0,
                                 verticalPadding: 1.5

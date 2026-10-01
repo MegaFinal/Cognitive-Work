@@ -140,7 +140,7 @@ struct ChoreDetailsCard: View {
                 .frame(width: width * 0.19, height: height * 0.09)
                 .fontWeight(.thin)
             
-            Text(chore.name)
+            Text(chore.name.localizedDefault)
                 .font(.system(size: 25))
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
@@ -177,7 +177,7 @@ struct ChoreDetailsCard: View {
     private var info: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(chore.description)
+                Text(chore.description.localizedDefault)
                     .font(.system(size: 14))
                     .frame(width: width * 0.75, alignment: .leading)
                 
@@ -189,7 +189,7 @@ struct ChoreDetailsCard: View {
                     Spacer()
                     
                     CapsuleTag(
-                        tagName: room?.name ?? L10n.tr("Sem cômodo"),
+                        tagName: room?.name.localizedDefault ?? L10n.tr("Sem cômodo"),
                         tagColor: room?.color.uiColor ?? .gray,
                         horizontalPadding: 10.0,
                         verticalPadding: 1.5
@@ -361,7 +361,7 @@ private struct ChecklistItemButton: View {
                     .foregroundColor(item.isDone ? .black : .gray)
                     .font(.system(size: 17, weight: .semibold))
                 
-                Text(item.name)
+                Text(item.name.localizedDefault)
                     .strikethrough(item.isDone, color: .gray)
                     .foregroundColor(item.isDone ? .gray : .black)
                     .font(.system(size: 13))
