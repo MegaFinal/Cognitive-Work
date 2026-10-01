@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RetroView: View {
-    @State var isExpanded: Bool = false
+    @State var isExpanded: Bool = true
     @State var isRetroDone: Bool = false
     @State var page = 0
     var body: some View {
@@ -127,6 +127,25 @@ private struct RetroPercentageOfDoneView: View {
 
     var body: some View {
         ZStack {
+            Color(.chorePurple)
+                .overlay{
+                    Circle()
+                        .padding(.bottom, height * 0.127)
+                        .frame(width: height * 2, height: height * 2)
+                        .ignoresSafeArea()
+//                        .foregroundStyle(.white)
+                }
+                .ignoresSafeArea()
+
+            VStack{
+                Fechadura()
+                    .aspectRatio(width * 0.8 / height * 1.5, contentMode: .fit)
+                    .padding(.top, height * 0.24)
+                    .foregroundStyle(.white)
+                
+            }
+                
+
             VStack {
                 Spacer ()
                 
@@ -178,6 +197,8 @@ private struct RetroPercentageOfDoneView: View {
                 .glassEffectTransition(.identity)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
     }
 }
 
@@ -434,6 +455,30 @@ struct RetroNewChoresDivision: View {
         .padding(16)
     }
 }
+
+struct Fechadura: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+
+        let centro = CGPoint(x: rect.minX + w * 0.5013, y: rect.minY + h * 0.2562)
+        let raio = w * 0.4734
+
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + w * 0.2944, y: rect.minY + h * 0.4876)) // junção esquerda
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))                        // base esquerda
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))                        // base direita
+        path.addLine(to: CGPoint(x: rect.minX + w * 0.7132, y: rect.minY + h * 0.4876)) // junção direita
+        path.addArc(center: centro,
+                    radius: raio,
+                    startAngle: .degrees(63.6),
+                    endAngle: .degrees(115.8),
+                    clockwise: true)
+        path.closeSubpath()
+        return path
+    }
+}
+
 
 #Preview {
     RetroView()
