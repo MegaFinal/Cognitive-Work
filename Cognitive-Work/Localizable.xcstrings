@@ -1907,76 +1907,6 @@
         }
       }
     },
-    "Sair da Casa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave Home"
-          }
-        }
-      }
-    },
-    "Sair da Casa?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave Home?"
-          }
-        }
-      }
-    },
-    "Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You'll no longer see this home's chores. The other residents stay in it, and you can rejoin with a new invite."
-          }
-        }
-      }
-    },
-    "Saindo da casa..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leaving your home..."
-          }
-        }
-      }
-    },
-    "Sair" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave"
-          }
-        }
-      }
-    },
-    "Não foi possível sair da casa. Verifique sua conexão e tente novamente." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't leave the home. Check your connection and try again."
-          }
-        }
-      }
-    },
-    "Não foi possível sair" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't leave"
-          }
-        }
-      }
-    },
     "Excluir Casa" : {
       "localizations" : {
         "en" : {
@@ -2944,6 +2874,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't identify your profile to save the private chore."
+          }
+        }
+      }
+    },
+    "Não foi possível sair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave"
+          }
+        }
+      }
+    },
+    "Não foi possível sair da casa. Verifique sua conexão e tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave the home. Check your connection and try again."
           }
         }
       }
@@ -4071,6 +4022,47 @@
         }
       }
     },
+    "Saindo da casa..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leaving your home..."
+          }
+        }
+      }
+    },
+    "Sair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave"
+          }
+        }
+      }
+    },
+    "Sair da Casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Home"
+          }
+        }
+      }
+    },
+    "Sair da Casa?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Home?"
+          }
+        }
+      }
+    },
     "Sala de Estar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4924,6 +4916,19 @@
       }
     },
     "você consegue!" : {
+
+    },
+    "Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll no longer see this home's chores. The other residents stay in it, and you can rejoin with a new invite."
+          }
+        }
+      }
+    },
+    "Você é o administrador desta casa. Ao apagar seu perfil, a casa também será apagada para todos os moradores, junto com as tarefas. Essa ação não pode ser desfeita." : {
 
     },
     "Você ficará responsável por todos os dias do período." : {

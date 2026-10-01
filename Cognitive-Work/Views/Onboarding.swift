@@ -30,7 +30,9 @@ struct Onboarding: View {
                     ProgressView()
                         .controlSize(.large)
                 } else {
-                    stepView(for: viewModel.stateMachine)
+                    NavigationStack {
+                        stepView(for: viewModel.stateMachine)
+                    }
                 }
             }
                 .onChange(of: viewModel.isOnboardingSkipped) {
@@ -51,10 +53,6 @@ struct Onboarding: View {
         }
         .blockingWhileUnlinkingOrphanedHouse()
         .task {
-            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
-            await CloudKitManager.shared.deleteAllRecords()
-            viewModel.stateMachine.resetProgress()
-            #endif
             await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {
