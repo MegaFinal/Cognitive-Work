@@ -14,8 +14,18 @@ struct DashboardView: View {
         NavigationStack {
             VStack(spacing: 15) {
                 header
+                
+                HStack {
+                    DoughnutChart(viewModel: $viewModel)
+                    //Componente do porquinho
+                }
+                
                 Spacer()
             }
+        }
+        .task {
+            await viewModel.load()
+            viewModel.loadCompletionRing()
         }
     }
     

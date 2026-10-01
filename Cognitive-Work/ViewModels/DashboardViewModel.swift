@@ -40,7 +40,6 @@ class DashboardViewModel {
 
     /// Monday of the selected week. The chart always goes from Monday to Sunday.
     var periodStart: Date = DashboardViewModel.mondayOfWeek(containing: .now)
-    
     var periodFinish: Date = DashboardViewModel.mondayOfWeek(containing: Calendar.current.date(byAdding: .day, value: 13, to: .now) ?? Date())
 
     /// Monday of the week that contains `date` (weeks run Monday → Sunday).
