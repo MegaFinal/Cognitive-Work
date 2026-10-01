@@ -14,6 +14,9 @@ struct HouseSettingsView: View {
     @State private var showDeleteConfirmation = false
     
     @State private var isDeletingHouse = false
+    @State private var showLeaveConfirmation = false
+    @State private var isLeavingHouse = false
+    @State private var leaveErrorMessage: String?
     @State private var deleteErrorMessage: String?
     
     /// Admin-only rows used to pop in after an unannounced CloudKit round trip.
@@ -69,6 +72,16 @@ struct HouseSettingsView: View {
                         .fontWeight(.semibold)
                 }
                 .foregroundColor(.red)
+            } else if !isCheckingAdmin {
+                // MARK: - Leave house button
+                // Only the admin can delete the house; every other member can just leave it.
+                Button {
+                    showLeaveConfirmation = true
+                } label: {
+                    Text("Sair da Casa")
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(.red)
             }
         }
         .padding(.top)
@@ -93,6 +106,34 @@ struct HouseSettingsView: View {
         } message: {
             Text("Esta ação é permanente. Todos os dados desta casa serão apagados do iCloud.")
         }
+        .alert("Sair da Casa?", isPresented: $showLeaveConfirmation) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Sair", role: .destructive) {
+                isLeavingHouse = true
+                Task {
+                    if await viewModel.leaveHouse() {
+                        didOnboard = false
+                    } else {
+                        leaveErrorMessage = L10n.tr("Não foi possível sair da casa. Verifique sua conexão e tente novamente.")
+                        isLeavingHouse = false
+                    }
+                }
+            }
+        } message: {
+            Text("Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite.")
+        }
+        .alert(
+            "Não foi possível sair",
+            isPresented: Binding(
+                get: { leaveErrorMessage != nil },
+                set: { if !$0 { leaveErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(leaveErrorMessage ?? "")
+        }
+        .blockingOperation(isPresented: $isLeavingHouse, message: "Saindo da casa...")
         .blockingOperation(isPresented: $isDeletingHouse, message: "Excluindo sua casa...")
         .task {
             await viewModel.checkAdminStatus()

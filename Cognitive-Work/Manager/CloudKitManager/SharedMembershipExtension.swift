@@ -245,6 +245,10 @@ extension CloudKitManager {
         
         let houses = records.filter { $0.recordType == HouseModel.recordType }
         
+        // Gives the leaving member's pending chores back to the house before the member record
+        // disappears, so the other residents can pick them up from the unassigned list.
+        await releaseAssignments(of: myUserIDs, in: records)
+        
         if !myUserIDs.isEmpty {
             var housesToSave: [CKRecord] = []
             for house in houses {
@@ -413,6 +417,70 @@ extension CloudKitManager {
     }
     
     /// Deletes records, treating ones that are already gone as success.
+    /// Unassigns every pending chore of the given members, so they show up as "tarefas para
+    /// pegar" for the people who stay.
+    ///
+    /// Without this the leaving member's records kept pointing at a user that no longer exists:
+    /// the occurrences and one-off chores stayed assigned to nobody-in-particular, never showed
+    /// in the unassigned list, and nobody could take them over.
+    ///
+    /// - Recurring occurrences not yet completed lose their `user` (and the calendar event id,
+    ///   which belonged to the leaving member's device). Completed ones keep it, as history.
+    /// - One-off chores not yet done drop the member from `currentResponsible` and
+    ///   `allResponsibleUsers`; once nobody is left they count as unassigned.
+    private func releaseAssignments(of userIDs: Set<CKRecord.ID>, in records: [CKRecord]) async {
+        guard !userIDs.isEmpty else { return }
+        
+        var toSave: [CKRecord] = []
+        
+        for record in records {
+            switch record.recordType {
+            case RecurrentAssignmentModel.recordType:
+                guard record["isCompleted"] as? Bool == false,
+                      let user = record["user"] as? CKRecord.Reference,
+                      userIDs.contains(user.recordID)
+                else { continue }
+                record["user"] = nil
+                record["calendarEventIdentifier"] = nil
+                toSave.append(record)
+                
+            case ChoreModel.recordType:
+                guard record["isDone"] as? Bool == false else { continue }
+                
+                var changed = false
+                if let current = record["currentResponsible"] as? CKRecord.Reference,
+                   userIDs.contains(current.recordID) {
+                    record["currentResponsible"] = nil
+                    changed = true
+                }
+                if let all = record["allResponsibleUsers"] as? [CKRecord.Reference] {
+                    let kept = all.filter { !userIDs.contains($0.recordID) }
+                    if kept.count != all.count {
+                        record["allResponsibleUsers"] = kept
+                        changed = true
+                    }
+                }
+                if changed {
+                    record["calendarEventIdentifier"] = nil
+                    toSave.append(record)
+                }
+                
+            default:
+                continue
+            }
+        }
+        
+        guard !toSave.isEmpty else { return }
+        
+        // Best effort: failing here must not stop the member from leaving.
+        _ = try? await sharedDB.modifyRecords(
+            saving: toSave,
+            deleting: [],
+            savePolicy: .changedKeys,
+            atomically: false
+        )
+    }
+    
     private func deleteRecordsIgnoringMissing(_ recordIDs: [CKRecord.ID], in database: CKDatabase) async throws {
         guard !recordIDs.isEmpty else { return }
         

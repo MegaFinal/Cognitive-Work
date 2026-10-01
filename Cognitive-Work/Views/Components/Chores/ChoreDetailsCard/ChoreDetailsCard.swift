@@ -328,8 +328,9 @@ struct ChoreDetailsCard: View {
                 Image(systemName: "pencil")
                     .foregroundColor(.white)
             }
+            .disabled(isOccurrenceDone)
             .padding(12)
-            .background(.blue)
+            .background(isOccurrenceDone ? Color.gray : Color.blue)
             .clipShape(Circle())
             .glassEffect()
         }
