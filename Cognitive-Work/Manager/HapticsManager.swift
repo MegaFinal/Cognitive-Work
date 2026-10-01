@@ -18,15 +18,8 @@ enum HapticsManager {
     /// `@AppStorage` key of the "Haptics" switch. Defaults to on.
     static let storageKey = "hapticsEnabled"
 
-    /// `@AppStorage` key of the "Microinterações" switch. Defaults to on.
-    static let microInteractionsKey = "microInteractionsEnabled"
-
     static var isEnabled: Bool {
         UserDefaults.standard.object(forKey: storageKey) as? Bool ?? true
-    }
-
-    static var areMicroInteractionsEnabled: Bool {
-        UserDefaults.standard.object(forKey: microInteractionsKey) as? Bool ?? true
     }
 
     static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium, intensity: CGFloat = 1.0) {

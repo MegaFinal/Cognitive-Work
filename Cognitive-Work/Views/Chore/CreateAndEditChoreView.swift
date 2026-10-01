@@ -26,8 +26,6 @@ struct CreateAndEditChoreView: View {
     @State private var viewModel: CreateAndEditChoreViewModel
     
     @State private var showDeleteConfirmation = false
-            
-    @AppStorage(HapticsManager.microInteractionsKey) private var areMicroInteractionsEnabled = true
     
     @Environment(\.dismiss) private var dismiss
     

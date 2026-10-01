@@ -15,7 +15,6 @@ struct GeneralProfileSettingsView: View {
     /// Persisted and read by ``HapticsManager`` on every vibration, so the switch applies in
     /// real time. (It used to be a local `@State` that nothing read, reset on every visit.)
     @AppStorage(HapticsManager.storageKey) private var areHapticsEnabled = true
-    @AppStorage(HapticsManager.microInteractionsKey) private var areInteractionsEnabled = true
     
     @State private var showDeleteConfirmation = false
 
@@ -85,23 +84,6 @@ struct GeneralProfileSettingsView: View {
                 }
                 
                 Text("Vibrações ao concluir uma tarefa e em outras interações.")
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-            }
-            
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Microinterações")
-                    
-                    Spacer()
-                    
-                    Toggle("", isOn: $areInteractionsEnabled)
-                        .toggleStyle(.switch)
-                        .padding(.trailing, 7)
-                        .frame(width: width * 0.37)
-                }
-                
-                Text("Pequenos efeitos e animações que servem como um retorno visual.")
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
             }

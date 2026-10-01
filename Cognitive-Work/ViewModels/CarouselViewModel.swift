@@ -704,6 +704,10 @@ class CarouselViewModel {
     /// - Returns: `true` when the new date was saved.
     @MainActor
     func postpone(chore: ChoreModel, assignment: RecurrentAssignmentModel?, byDays days: Int) async -> Bool {
+        // Daily chores already have an occurrence every day; postponing would only stack two
+        // occurrences on the same day.
+        guard chore.frequency != .daily else { return false }
+        
         let isRecurring = !(chore.dailyAssignmentsReference ?? []).isEmpty
         
         if isRecurring {

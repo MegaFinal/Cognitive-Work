@@ -82,7 +82,10 @@ struct ChoreDetailsCard: View {
                 info
                 
                 VStack {
-                    postponeButtons
+                    // Daily chores can't be postponed: tomorrow already has its own occurrence.
+                    if chore.frequency != .daily {
+                        postponeButtons
+                    }
                     
                     SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
                         Task {
