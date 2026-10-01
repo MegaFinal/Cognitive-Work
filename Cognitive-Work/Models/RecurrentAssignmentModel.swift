@@ -91,6 +91,26 @@ class RecurrentAssignmentModel: CloudKitSyncable {
     /// Flips ``isCompleted``, records who did it and persists the change.
     ///
     /// - Returns: `true` when CloudKit saved it. On failure the occurrence is left as it was.
+    /// Moves this single occurrence `days` forward. Recurring chores are scheduled through
+    /// their occurrences, so this — not the chore's `dueDate` — is what "Adiar" has to change.
+    ///
+    /// - Returns: `true` when CloudKit saved it. On failure the day is put back.
+    @MainActor
+    @discardableResult
+    func postpone(byDays days: Int) async -> Bool {
+        let calendar = Calendar.current
+        let previousDay = day
+        
+        guard let newDay = calendar.date(byAdding: .day, value: days, to: calendar.startOfDay(for: day)) else { return false }
+        day = newDay
+        
+        guard await CloudKitManager.shared.update(self) else {
+            day = previousDay
+            return false
+        }
+        return true
+    }
+    
     @MainActor
     @discardableResult
     func toggle() async -> Bool {

@@ -101,17 +101,17 @@ class HardwareViewModel {
 
         var title: String {
             switch self {
-            case .success: "Pareamento completo!"
-            case .failureWiFi: "Falha na conexão"
-            case .failureParing: "Falha no pareamento"
+            case .success: L10n.tr("Pareamento completo!")
+            case .failureWiFi: L10n.tr("Falha na conexão")
+            case .failureParing: L10n.tr("Falha no pareamento")
             }
         }
 
         var message: String {
             switch self {
-            case .success: "Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvi!"
-            case .failureWiFi: "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente."
-            case .failureParing: "Certifique-se que o Harvi está conectado no WiFi e tente novamente."
+            case .success: L10n.tr("Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvi!")
+            case .failureWiFi: L10n.tr("Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente.")
+            case .failureParing: L10n.tr("Certifique-se que o Harvi está conectado no WiFi e tente novamente.")
             }
         }
     }
@@ -278,7 +278,7 @@ class HardwareViewModel {
         house = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
 
         guard let houseRecordID = house?.recordID else {
-            errorMessage = "Casa não encontrada."
+            errorMessage = L10n.tr("Casa não encontrada.")
             return false
         }
 
@@ -290,7 +290,7 @@ class HardwareViewModel {
             zoneID: houseRecordID.zoneID,
             parent: houseReference
         ) else {
-            errorMessage = "Erro ao criar nome do host (Harvi)."
+            errorMessage = L10n.tr("Erro ao criar nome do host (Harvi).")
             return false
         }
 

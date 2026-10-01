@@ -40,6 +40,8 @@ struct CreateProfileOnboardingView: View {
                 .foregroundColor(.primary)
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
+                .characterLimit(TextLimits.userName, text: $viewModel.userName)
+                .submitLabel(.done)
             
             OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty) {
                 Task {

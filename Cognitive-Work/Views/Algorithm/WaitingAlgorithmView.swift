@@ -8,15 +8,11 @@
 import SwiftUI
 
 struct WaitingAlgorithmView: View {
-    let description1: String = """
-        Estamos ponderando, sorteando e 
-    dividindo as tarefas entre os moradores 
-    """
+    // Were multi-line literals whose indentation leaked into the UI (leading spaces and
+    // trailing blanks in centered text) and made unstable localization keys.
+    let description1: LocalizedStringKey = "Estamos ponderando, sorteando e dividindo as tarefas entre os moradores"
     
-    let description2: String =  """
-        Enviaremos uma notificação 
-    quando a divisão estiver pronta
-    """
+    let description2: LocalizedStringKey = "Enviaremos uma notificação quando a divisão estiver pronta"
     
     
     
@@ -34,8 +30,10 @@ struct WaitingAlgorithmView: View {
             VStack(alignment: .center, spacing: 5){
                 Text(description1)
                     .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
                 Text(description2)
                     .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -26,8 +26,12 @@ struct EditableProfileImage: View {
                 ZStack(alignment: .bottomTrailing) {
                     profileImage
                 }
+                .frame(width: 285, height: 285)
+                .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .frame(width: 285, height: 285)
+            .contentShape(Circle())
         }
         else {
             profileImage
@@ -42,6 +46,7 @@ struct EditableProfileImage: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 285, height: 285)
+                    .clipped()
                     .background(Color(.systemBackground))
             } else {
                 Circle()

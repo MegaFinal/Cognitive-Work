@@ -11,18 +11,24 @@ struct GeneralProfileSettingsView: View {
     @Bindable var viewModel: UserProfileViewModel
     
     @State private var isNotificationsEnabled = false
-    @State private var areHapticsEnabled = false
-    @State private var areInteractionsEnabled = false
-    @State private var selectedLanguage = "Português"
+    
+    /// Persisted and read by ``HapticsManager`` on every vibration, so the switch applies in
+    /// real time. (It used to be a local `@State` that nothing read, reset on every visit.)
+    @AppStorage(HapticsManager.storageKey) private var areHapticsEnabled = true
     
     @State private var showDeleteConfirmation = false
 
     @State private var isDeletingAccount = false
     @AppStorage("didOnboard") private var didOnboard: Bool = true
     
-    // MARK: - Debug State
+    private let languageManager = LanguageManager.shared
     
-    let supportedLanguages = ["Português", "Inglês"]
+    private var languageSelection: Binding<AppLanguage> {
+        Binding(
+            get: { languageManager.current },
+            set: { languageManager.setLanguage($0) }
+        )
+    }
     
     
     var body: some View {
@@ -43,18 +49,20 @@ struct GeneralProfileSettingsView: View {
                 
                 Spacer()
                 
-                Text("\(selectedLanguage)")
-                    .foregroundColor(.secondary)
-                
                 Menu {
-                    Picker("Idioma", selection: $selectedLanguage) {
-                        ForEach(supportedLanguages, id: \.self) { language in
-                            Text(language)
+                    Picker("Idioma", selection: languageSelection) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(verbatim: language.nativeName)
                                 .tag(language)
                         }
                     }
                 } label: {
-                    Image(systemName: "chevron.right")
+                    HStack {
+                        Text(verbatim: languageManager.current.nativeName)
+                            .foregroundColor(.secondary)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .imageScale(.small)
+                    }
                 }
                 .foregroundColor(.black)
             }
@@ -69,26 +77,13 @@ struct GeneralProfileSettingsView: View {
                         .toggleStyle(.switch)
                         .padding(.trailing, 7)
                         .frame(width: width * 0.37)
+                        .onChange(of: areHapticsEnabled) { _, isOn in
+                            // Immediate confirmation that vibrations are back on.
+                            if isOn { HapticsManager.impact(.medium) }
+                        }
                 }
                 
-                Text("Vibrações ao concluir uma tarefa.")
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-            }
-            
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Microinterações")
-                    
-                    Spacer()
-                    
-                    Toggle("", isOn: $areInteractionsEnabled)
-                        .toggleStyle(.switch)
-                        .padding(.trailing, 7)
-                        .frame(width: width * 0.37)
-                }
-                
-                Text("Pequenos efeitos e animações que servem como um retorno visual.")
+                Text("Vibrações ao concluir uma tarefa e em outras interações.")
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
             }
@@ -100,10 +95,16 @@ struct GeneralProfileSettingsView: View {
                      
                     Spacer()
                      
+                    if viewModel.isSyncingCalendar {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    
                     Toggle("", isOn: $viewModel.isCalendarSyncEnabled)
                         .toggleStyle(.switch)
                         .padding(.trailing, 7)
                         .frame(width: width * 0.37)
+                        .disabled(viewModel.isSyncingCalendar)
                 }
                  
                 Text("Adicionar automaticamente as suas tarefas ao calendário da Apple (Pipa).")

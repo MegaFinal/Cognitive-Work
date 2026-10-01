@@ -89,8 +89,14 @@ struct ChoreListLayout: View {
         }
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
         .overlay {
-            if !viewModel.isLoading && viewModel.visibleOccurrences.isEmpty {
-                emptyState
+            if viewModel.visibleOccurrences.isEmpty {
+                if viewModel.isLoading {
+                    // Nothing was shown at all while the first fetch ran.
+                    ProgressView("Carregando tarefas")
+                        .controlSize(.large)
+                } else {
+                    emptyState
+                }
             }
         }
     }
@@ -352,7 +358,7 @@ private struct SwipeToDeleteRow<Content: View>: View {
                 let pastFullSwipe = -offset > fullSwipeDistance
                 if pastFullSwipe != isPastFullSwipe {
                     isPastFullSwipe = pastFullSwipe
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    HapticsManager.impact(.medium)
                 }
             },
             onEnded: { translation, velocity, wasCancelled in
@@ -378,7 +384,7 @@ private struct SwipeToDeleteRow<Content: View>: View {
     /// Slides the card off screen, then deletes it.
     private func dismissAndDelete() {
         guard !isDeleting else { return }
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        HapticsManager.notify(.warning)
         
         withAnimation(style.animation) {
             isDeleting = true
@@ -448,7 +454,7 @@ private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
 
 /// One day's section in the list layout.
 private struct DayGroup: Identifiable {
-    private static let locale = Locale(identifier: "pt_BR")
+    private static var locale: Locale { L10n.locale }
     
     /// The day, at its start; `nil` for occurrences with no date.
     let day: Date?
@@ -459,11 +465,11 @@ private struct DayGroup: Identifiable {
     /// "Hoje", "Amanhã", or the weekday's name ("Sexta-feira"). Past days never get a
     /// group — `CarouselViewModel` leaves them out of the list.
     var title: String {
-        guard let day else { return "Sem data" }
+        guard let day else { return L10n.tr("Sem data") }
         
         let calendar = Calendar.current
-        if calendar.isDateInToday(day) { return "Hoje" }
-        if calendar.isDateInTomorrow(day) { return "Amanhã" }
+        if calendar.isDateInToday(day) { return L10n.tr("Hoje") }
+        if calendar.isDateInTomorrow(day) { return L10n.tr("Amanhã") }
         
         let weekday = day.formatted(.dateTime.weekday(.wide).locale(Self.locale))
         return weekday.prefix(1).uppercased() + weekday.dropFirst()
@@ -471,6 +477,7 @@ private struct DayGroup: Identifiable {
     
     /// "25/09", or `nil` for the undated group.
     var dateText: String? {
+        // Day/month order follows the language: "25/09" in Portuguese, "09/25" in English.
         day?.formatted(.dateTime.day(.twoDigits).month(.twoDigits).locale(Self.locale))
     }
 }

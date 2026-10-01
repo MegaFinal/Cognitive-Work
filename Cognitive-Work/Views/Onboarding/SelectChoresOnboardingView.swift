@@ -136,7 +136,7 @@ private struct SelectChoreListItem: View {
                  isExpanded.toggle()
              } label: {
                  HStack {
-                     Text(room.name)
+                     Text(L10n.tr(room.name))
                          .font(.system(size: 24))
                          .bold()
                          .padding(.bottom, height * 0.018)
@@ -176,7 +176,7 @@ private struct SelectChoreListItem: View {
                                .background(.clear)
                                .frame(width: 15, height: 15)
                                .padding(.trailing, 8)
-                           Text(chore.name)
+                           Text(L10n.tr(chore.name))
                             
                            Spacer()
                        }

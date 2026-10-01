@@ -60,11 +60,11 @@ private struct FortnightlyDayUserBar: View {
     
     private let maxBarHeight: Double = 100
     
-    private var dateFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "EEE"
-        return formatter
+    /// Short weekday ("Seg" / "Mon") in the app's language.
+    private func weekdayText(for day: Date) -> String {
+        day.formatted(.dateTime.weekday(.abbreviated).locale(L10n.locale))
+            .replacingOccurrences(of: ".", with: "")
+            .capitalized(with: L10n.locale)
     }
     
     /// Two soft rings around the selected bar, in the bar's own color. 
@@ -84,8 +84,7 @@ private struct FortnightlyDayUserBar: View {
     var body: some View {
         VStack(spacing: 6) {
             Spacer(minLength: 0)
-            let formattedDay = dateFormatter.string(from: day).replacingOccurrences(of: ".", with: "")
-            Text(formattedDay.capitalized)
+            Text(weekdayText(for: day))
                 .font(.system(size: 16.35))
                 .fontWeight(.medium)
             

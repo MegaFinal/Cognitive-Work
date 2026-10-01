@@ -7,13 +7,12 @@
 
 import Foundation
 
-
 extension Date {
     static var firstDayOfWeek = Calendar.current.firstWeekday
     
     static var capitalizedFirstLettersOfWeekdays: [String] {
         var calendar = Calendar.current
-//        calendar.locale = Locale(identifier: "pt_BR")
+        calendar.locale = L10n.locale
         // Adjusted for the different weekday starts
         var weekdays = calendar.shortWeekdaySymbols
         if firstDayOfWeek > 1 {

@@ -35,6 +35,27 @@ struct SelectFreeTimeOnboardingView: View {
     ]
     @State var showAllert: Bool = false
     
+    /// At least one day needs free time before saving.
+    private var canSave: Bool {
+        weekOrder.contains(where: { $0.freeTime != .none })
+    }
+    
+    // MARK: - Actions
+    
+    /// Persists the week and advances (onboarding) or goes back (settings).
+    private func save() async {
+        viewModel.isLoading = true
+        defer { viewModel.isLoading = false }
+        
+        guard await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) else { return }
+        HapticsManager.notify(.success)
+        if isFromSettings {
+            dismiss()
+        } else {
+            viewModel.goToNextView()
+        }
+    }
+    
     // MARK: - Body
     
     var body: some View {
@@ -73,31 +94,32 @@ struct SelectFreeTimeOnboardingView: View {
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
                 }
                 
-                OnboardingProgressButton(
-                    width: 50.0,
-                    height: 50.0,
-                    text: isFromSettings ? "checkmark" : "chevron.forward",
-                    isSystemImage: true,
-                    isLoading: viewModel.isLoading,
-                    isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })
-                ) {
-                    viewModel.isLoading = true
-                    if await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) {
-                        if isFromSettings {
-                            dismiss()
-                        } else {
-                            viewModel.goToNextView()
-                        }
-                    }
-                    viewModel.isLoading = false
-                }
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                Spacer()
             }
             .padding(.horizontal, width * 0.0865)
-            .navigationBarBackButtonHidden(!isFromSettings)
+            .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
             .hidesTabBar()
 
+        }
+        // MARK: - Confirmation Button
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if viewModel.isLoading {
+                    ProgressView()
+                } else {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        Image(systemName: isFromSettings ? "checkmark" : "chevron.forward")
+                            .font(.system(size: 12))
+                            .bold()
+                            .foregroundColor(.white)
+                    }
+                    .tint(.blue)
+                    .buttonStyle(.glassProminent)
+                    .disabled(!canSave)
+                }
+            }
         }
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -178,7 +200,7 @@ private struct OnboardingCustomSliderComponent: View {
     
     var body: some View {
         HStack(spacing: horizontalSpacing) {
-            Text(dayOfWeek.nameAbbreviation)
+            Text(LocalizedStringKey(dayOfWeek.nameAbbreviation))
                 .font(.system(size: Layout.abbreviationFontSize))
                 .fontWeight(.medium)
                 .frame(width: abbreviationWidth, alignment: .leading)
@@ -210,11 +232,11 @@ private struct OnboardingCustomSliderComponent: View {
     /// label of the currently selected free time.
     private var caption: some View {
         HStack {
-            Text(dayOfWeek.name)
+            Text(LocalizedStringKey(dayOfWeek.name.trimmingCharacters(in: .whitespaces)))
                 .font(.system(size: Layout.captionFontSize))
                 .fontWeight(.medium)
             
-            Text(dayOfWeek.freeTime.rawValue)
+            Text(dayOfWeek.freeTime.displayName)
                 .font(.system(size: Layout.captionFontSize))
                 .fontWeight(.light)
             
@@ -226,5 +248,7 @@ private struct OnboardingCustomSliderComponent: View {
 
 #Preview {
     @Previewable @State var viewModel = OnboardingViewModel()
-    SelectFreeTimeOnboardingView(viewModel: $viewModel)
+    NavigationStack {
+        SelectFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: true)
+    }
 }

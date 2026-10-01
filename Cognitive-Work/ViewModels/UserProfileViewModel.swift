@@ -37,32 +37,48 @@ final class UserProfileViewModel {
     /// The state is persisted in `UserDefaults`.
     var isCalendarSyncEnabled: Bool = UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled") {
         didSet {
+            guard oldValue != isCalendarSyncEnabled else { return }
             UserDefaults.standard.set(isCalendarSyncEnabled, forKey: "isCalendarSyncEnabled")
             
-            // Handle permission and sync/cleanup logic asynchronously
-            Task {
-                if isCalendarSyncEnabled {
-                    let granted = await CalendarManager.shared.requestAccess()
-                    if granted {
-                        // Permission granted: perform full synchronization
-                        await syncMyAllChoresToCalendar()
-                    } else {
-                        // Permission denied: revert the switch to false
-                        await MainActor.run {
-                            self.isCalendarSyncEnabled = false
-                        }
-                    }
-                    
-                    //MARK: Gamification Cognitiev Scores
-                    async let scoredSuccessully = ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.appleCalendarLinked.points)
-                } else {
-                    // Switch turned off: remove all synchronized events from the calendar
-                    await removeAllMyAssignmentsFromCalendar()
-                    
-                    //MARK: Gamification Cognitiev Scores
-                    async let scoredSuccessully = ScoreManager.shared.removeScoreForMyUser(score: ScoreValues.appleCalendarLinked.points)
-                }
+            // A revert caused by a denied permission must not run the "turned off" branch
+            // (which used to remove points that were never granted).
+            if isRevertingCalendarSync {
+                isRevertingCalendarSync = false
+                return
             }
+            
+            let enabled = isCalendarSyncEnabled
+            Task { await handleCalendarSyncChange(enabled: enabled) }
+        }
+    }
+    
+    /// `true` while the calendar is being synchronized or cleaned up, so the settings screen can
+    /// show progress next to the switch.
+    private(set) var isSyncingCalendar = false
+    
+    /// Set right before the switch is programmatically reverted after a denied permission.
+    @ObservationIgnored
+    private var isRevertingCalendarSync = false
+    
+    /// Requests access and syncs (or cleans up) the calendar, then awards/removes the points.
+    ///
+    /// Before, the points were requested with an unawaited `async let`, which Swift cancels
+    /// when the scope ends, and they were awarded even when the permission was denied.
+    private func handleCalendarSyncChange(enabled: Bool) async {
+        isSyncingCalendar = true
+        defer { isSyncingCalendar = false }
+        
+        if enabled {
+            guard await CalendarManager.shared.requestAccess() else {
+                isRevertingCalendarSync = true
+                isCalendarSyncEnabled = false
+                return
+            }
+            await syncMyAllChoresToCalendar()
+            _ = await ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.appleCalendarLinked.points)
+        } else {
+            await removeAllMyAssignmentsFromCalendar()
+            _ = await ScoreManager.shared.removeScoreForMyUser(score: ScoreValues.appleCalendarLinked.points)
         }
     }
     
@@ -171,11 +187,18 @@ final class UserProfileViewModel {
     /// its absence is not an error (see ``loadUser()``), it just means there is no house yet.
     func saveChanges() async {
         guard let privateUser else {
-            errorMessage = "Perfil não carregado. Tente novamente."
+            errorMessage = L10n.tr("Perfil não carregado. Tente novamente.")
             return
         }
         
         isSaving = true
+        
+        // Snapshot so a failed save doesn't leave the unsaved name/photo on screen.
+        let previousPrivateName = privateUser.name
+        let previousPrivatePicture = privateUser.profilePicture
+        let previousHouseName = user?.name
+        let previousHousePicture = user?.profilePicture
+        
         privateUser.name = editedName
         
         if let editedProfilePicture {
@@ -197,7 +220,15 @@ final class UserProfileViewModel {
                 isEditing = false
                 didSaveSuccessfully = true
             } else {
-                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+                if !privateSuccess {
+                    privateUser.name = previousPrivateName
+                    privateUser.profilePicture = previousPrivatePicture
+                }
+                if !houseSuccess, let previousHouseName {
+                    user.name = previousHouseName
+                    user.profilePicture = previousHousePicture
+                }
+                errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro desconhecido.")
             }
         } else {
             let success = await CloudKitManager.shared.update(privateUser)
@@ -205,7 +236,9 @@ final class UserProfileViewModel {
                 isEditing = false
                 didSaveSuccessfully = true
             } else {
-                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro desconhecido."
+                privateUser.name = previousPrivateName
+                privateUser.profilePicture = previousPrivatePicture
+                errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro desconhecido.")
             }
         }
         
@@ -221,7 +254,7 @@ final class UserProfileViewModel {
         defer { isSaving = false }
         
         guard await CloudKitManager.shared.deleteCurrentAccount() else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Não foi possível excluir o perfil. Tente novamente."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Não foi possível excluir o perfil. Tente novamente.")
             return
         }
         

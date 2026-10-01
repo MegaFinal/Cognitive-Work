@@ -17,6 +17,11 @@ struct ExistingIPView: View {
 
     @State private var errorMessage: String?
     @State private var showResetConfirmation = false
+    
+    /// In-flight states: both actions talk to the device over the network and took several
+    /// seconds with no feedback, inviting repeated taps.
+    @State private var isSendingImage = false
+    @State private var isResetting = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -24,32 +29,48 @@ struct ExistingIPView: View {
                 .frame(width: 100, height: 100)
 
             Button {
+                isSendingImage = true
                 Task {
                     do {
                         try await viewModelHardware.prepareImageForESP32(view: avatarForDevice)
+                        HapticsManager.notify(.success)
                     } catch {
                         errorMessage = error.localizedDescription
                     }
+                    isSendingImage = false
                 }
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 20)
                         .frame(width: 150, height: 44)
                         .foregroundStyle(.orange)
-                    Text("Enviar imagem")
-                        .foregroundStyle(.white)
-                        .padding()
+                    if isSendingImage {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Text("Enviar imagem")
+                            .foregroundStyle(.white)
+                            .padding()
+                    }
                 }
             }
+            .disabled(isSendingImage || isResetting)
 
             Button("Desconectar este celular") {
                 viewModelHardware.disconnectThisPhone()
                 dismiss()
             }
 
-            Button("Resetar o Harvi", role: .destructive) {
+            Button(role: .destructive) {
                 showResetConfirmation = true
+            } label: {
+                if isResetting {
+                    ProgressView()
+                } else {
+                    Text("Resetar o Harvi")
+                }
             }
+            .disabled(isSendingImage || isResetting)
         }
         .confirmationDialog(
             "Resetar o Harvi?",
@@ -57,13 +78,15 @@ struct ExistingIPView: View {
             titleVisibility: .visible
         ) {
             Button("Resetar", role: .destructive) {
+                isResetting = true
                 Task {
                     do {
                         try await viewModelHardware.resetHardware()
                         dismiss()
                     } catch {
-                        errorMessage = "Não foi possível falar com o Harvi. Segure o botão BOOT por 5 segundos para resetar direto no dispositivo."
+                        errorMessage = L10n.tr("Não foi possível falar com o Harvi. Segure o botão BOOT por 5 segundos para resetar direto no dispositivo.")
                     }
+                    isResetting = false
                 }
             }
         } message: {
@@ -75,7 +98,7 @@ struct ExistingIPView: View {
         )) {
             Button("OK") { errorMessage = nil }
         } message: {
-            Text(errorMessage ?? "Ocorreu um erro.")
+            Text(errorMessage ?? L10n.tr("Ocorreu um erro."))
         }
     }
 

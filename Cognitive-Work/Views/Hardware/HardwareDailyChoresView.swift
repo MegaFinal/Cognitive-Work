@@ -177,7 +177,7 @@ private struct DailyChoreCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(room?.name ?? "Sem cômodo")
+            Text(room?.name ?? L10n.tr("Sem cômodo"))
                 .font(.caption)
                 .fontWeight(.medium)
 
@@ -202,7 +202,7 @@ private struct OverflowStrip: View {
     var count: Int
 
     var body: some View {
-        Text("+\(count) \(count == 1 ? "tarefa" : "tarefas")")
+        Text(verbatim: "+" + L10n.tr("%lld tarefas", count))
             .font(.caption)
             .fontWeight(.semibold)
             .foregroundColor(.secondary)

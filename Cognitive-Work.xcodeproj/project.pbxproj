@@ -200,11 +200,12 @@
 				};
 			};
 			buildConfigurationList = 910DAADE3026477D00F899C0 /* Build configuration list for PBXProject "Cognitive-Work" */;
-			developmentRegion = en;
+			developmentRegion = "pt-BR";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				"pt-BR",
 			);
 			mainGroup = 910DAADA3026477D00F899C0;
 			minimizedProjectReferenceProxies = 1;

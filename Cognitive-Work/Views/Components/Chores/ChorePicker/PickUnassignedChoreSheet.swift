@@ -54,6 +54,21 @@ struct PickUnassignedChoreCard: View {
         return carouselViewModel.cycleWindow ?? window
     }
     
+    private var ruleText: LocalizedStringKey {
+        switch chore.frequency {
+        case .daily:
+            "Você ficará responsável por todos os dias do período."
+        case .weekly:
+            "Escolha a data desta tarefa dentro da semana. Dias que já passaram não podem ser escolhidos."
+        case .fortnightly:
+            "Escolha um dia dentro do período. Dias que já passaram não podem ser escolhidos."
+        case .monthly:
+            "Escolha um dia. Como você pegou esta tarefa neste ciclo, ela não será atribuída no próximo."
+        default:
+            "Escolha o dia da tarefa."
+        }
+    }
+    
     private var includedDates: [Date] {
         slots.compactMap { $0.included ? $0.date : nil }
     }

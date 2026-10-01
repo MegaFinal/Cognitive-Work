@@ -67,16 +67,13 @@ class HardwareDailyChoresViewModel {
     /// Every room referenced by the target day's chores, for the color legend.
     private(set) var roomsInUse: [RoomModel] = []
 
-    private let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "EEEE, d 'de' MMMM."
-        return formatter
-    }()
-
-    /// The rendered day, formatted for the header.
+    /// The rendered day, formatted for the header in the app's language
+    /// ("quinta-feira, 1 de outubro" / "Thursday, October 1").
     var targetDateFormatted: String {
-        dateFormatter.string(from: Self.targetDay())
+        let formatter = DateFormatter()
+        formatter.locale = L10n.locale
+        formatter.setLocalizedDateFormatFromTemplate("EEEEdMMMM")
+        return formatter.string(from: Self.targetDay())
     }
 
     // MARK: - Initialization

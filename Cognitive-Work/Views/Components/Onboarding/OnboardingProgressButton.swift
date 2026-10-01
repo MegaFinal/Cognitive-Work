@@ -45,7 +45,7 @@ struct OnboardingProgressButton: View {
                         Image(systemName: text)
                             .font(.system(size: resolvedHeight * 0.4))
                     } else {
-                        Text(text)
+                        Text(LocalizedStringKey(text))
                     }
                 }
             }

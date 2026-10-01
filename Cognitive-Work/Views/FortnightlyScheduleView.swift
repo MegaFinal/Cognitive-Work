@@ -38,19 +38,28 @@ struct FortnightlyScheduleView: View {
                     assignments: scheduleViewModel.assignments,
                     rooms: scheduleViewModel.rooms
                 )
-                .overlay(alignment: .topTrailing) {
-                    OnboardingProgressButton(width: 40.0, height: 40.0, text: "xmark", isSystemImage: true) {
-                        action()
-                    }
-                    .padding(.top, 20)
-                    .padding(.trailing, 30)
-                }
                 .disabled(showInfoPopUp)
                 .onAppear {
                     showInfoPopUp = true
                 }
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    action()
+                } label: {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12))
+                        .bold()
+                        .foregroundColor(.white)
+                }
+                .tint(.blue)
+                .buttonStyle(.glassProminent)
+                .disabled(scheduleViewModel.isLoading || showInfoPopUp)
+            }
+        }
+        .hidesTabBar()
         .padding(.top, 40)
         .padding(.vertical)
         .ignoresSafeArea()
@@ -83,8 +92,10 @@ struct FortnightlyScheduleView: View {
 }
 
 #Preview {
-    FortnightlyScheduleView(shouldGenerate: false, scheduleViewModel: .preview) {
-        print("Action")
+    NavigationStack {
+        FortnightlyScheduleView(shouldGenerate: false, scheduleViewModel: .preview) {
+            print("Action")
+        }
     }
 }
 

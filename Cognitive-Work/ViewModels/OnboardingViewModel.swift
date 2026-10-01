@@ -85,10 +85,10 @@ class OnboardingViewModel {
                 self.stateMachine.user = savedUser
                 CloudKitManager.shared.setCurrentUser(savedUser)
             } else {
-                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar usuário."
+                errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao criar usuário.")
             }
         } else {
-            errorMessage = "Não foi possível acessar sua conta do iCloud. Verifique se você está conectado e tente novamente."
+            errorMessage = L10n.tr("Não foi possível acessar sua conta do iCloud. Verifique se você está conectado e tente novamente.")
         }
         isLoading = false
     }
@@ -113,7 +113,7 @@ class OnboardingViewModel {
         }
         
         guard let user = currentUser, let userRecordID = user.recordID else {
-            errorMessage = "Seu perfil ainda não foi salvo. Volte e crie o perfil antes de criar a casa."
+            errorMessage = L10n.tr("Seu perfil ainda não foi salvo. Volte e crie o perfil antes de criar a casa.")
             return
         }
          
@@ -189,7 +189,7 @@ class OnboardingViewModel {
              
             try? await CloudKitManager.shared.createSharedSubscription()
         } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar a casa."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao criar a casa.")
         }
     }
     
@@ -275,10 +275,10 @@ class OnboardingViewModel {
             if successAppend {
                 self.currentHouse = house
             } else {
-                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao atrelar cômodos."
+                errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao atrelar cômodos.")
             }
         } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao salvar cômodos."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao salvar cômodos.")
         }
         
         isLoading = false
@@ -368,7 +368,7 @@ class OnboardingViewModel {
         if !recordsToCreate.isEmpty {
             let success = await CloudKitManager.shared.batchSave(records: recordsToCreate, zoneID: zoneID)
             if !success {
-                errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao criar tarefas padrão."
+                errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao criar tarefas padrão.")
             }
         }
         
@@ -412,7 +412,7 @@ class OnboardingViewModel {
         
         guard let user = currentUser,
               await user.setAvailableTimes(availableTimes) else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Não foi possível salvar seus horários. Tente novamente."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Não foi possível salvar seus horários. Tente novamente.")
             return false
         }
         return true
@@ -470,7 +470,7 @@ class OnboardingViewModel {
         guard let house = currentHouse, let houseRecordID = house.recordID,
               let profile = currentUser, let profileRecordID = profile.recordID
         else {
-            errorMessage = "Não foi possível encontrar a casa do convite. Tente abrir o link novamente."
+            errorMessage = L10n.tr("Não foi possível encontrar a casa do convite. Tente abrir o link novamente.")
             isLoading = false
             return false
         }
@@ -522,7 +522,7 @@ class OnboardingViewModel {
             CloudKitManager.shared.clearPendingJoin(ifMatching: houseRecordID.zoneID)
             return true
         } else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? "Erro ao entrar na casa."
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao entrar na casa.")
             return false
         }
     }

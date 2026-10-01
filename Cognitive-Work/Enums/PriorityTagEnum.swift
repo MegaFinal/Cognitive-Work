@@ -39,11 +39,11 @@ enum PriorityTag: String, CaseIterable, Hashable {
     
     var displayName: String {
         switch self {
-        case .low: return "baixa"
-        case .medium: return "média"
-        case .high: return "importante"
-        case .urgent: return "urgente"
-        case .undefined: return "indefinida"
+        case .low: return L10n.tr("baixa")
+        case .medium: return L10n.tr("média")
+        case .high: return L10n.tr("importante")
+        case .urgent: return L10n.tr("urgente")
+        case .undefined: return L10n.tr("indefinida")
         }
     }
     

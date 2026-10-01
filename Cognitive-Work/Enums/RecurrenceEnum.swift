@@ -58,12 +58,12 @@ enum Recurrence: String, CaseIterable, Hashable {
     
     var displayName: String {
         switch self {
-        case .none: return "única"
-        case .daily: return "diária"
-        case .weekly: return "semanal"
-        case .fortnightly: return "quinzenal"
-        case .monthly: return "mensal"
-        case .undefined: return "indefinida"
+        case .none: return L10n.tr("única")
+        case .daily: return L10n.tr("diária")
+        case .weekly: return L10n.tr("semanal")
+        case .fortnightly: return L10n.tr("quinzenal")
+        case .monthly: return L10n.tr("mensal")
+        case .undefined: return L10n.tr("indefinida")
         }
     }
 }

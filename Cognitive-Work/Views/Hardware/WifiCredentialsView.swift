@@ -42,11 +42,13 @@ struct WifiCredentialsView: View {
                             TextField("", text: $viewModel.userWifiName)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
+                                .characterLimit(TextLimits.wifiName, text: $viewModel.userWifiName)
                         }
                         LabeledInput(title: "Senha do Wi-Fi") {
                             SecureField("", text: $viewModel.userWifiPassord)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
+                                .characterLimit(TextLimits.wifiPassword, text: $viewModel.userWifiPassord)
                         }
                     }
                 }
@@ -81,7 +83,7 @@ struct WifiCredentialsView: View {
 }
 
 struct LabeledInput<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     @ViewBuilder var content: () -> Content
     
     var body: some View {

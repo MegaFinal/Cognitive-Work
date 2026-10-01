@@ -47,9 +47,6 @@ struct UserProfileView: View {
                 Spacer()
             }
             .ignoresSafeArea()
-            .task {
-                await viewModelUser.loadUser()
-            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     NavigationLink {
@@ -57,13 +54,9 @@ struct UserProfileView: View {
                     } label: {
                         Image(systemName: "pencil")
                             .foregroundColor(.black)
-                            .contentShape(Circle())
                     }
-                    .buttonStyle(.plain)
-                    .glassEffect(
-                        .regular.interactive(),
-                        in: .circle
-                    )
+                    .accessibilityLabel(Text("Editar Perfil"))
+                    .disabled(viewModelUser.user == nil)
                 }
             }
             .tabBarVisibilityRoot()
@@ -121,13 +114,18 @@ struct UserProfileView: View {
                         .clipShape(Circle())
                 }
                 
-                Text(viewModelUser.user?.name ?? "")
-                    .font(.system(size: 22))
-                    .bold()
-                
-                Text(viewModelUser.user?.tier.rawValue ?? "Ranking")
-                    .font(.system(size: 20))
-                    .fontWeight(.light)
+                if viewModelUser.isLoading && viewModelUser.user == nil {
+                    ProgressView()
+                        .frame(height: 50)
+                } else {
+                    Text(viewModelUser.user?.name ?? "")
+                        .font(.system(size: 22))
+                        .bold()
+                    
+                    Text(viewModelUser.user?.tier.displayName ?? L10n.tr("Ranking"))
+                        .font(.system(size: 20))
+                        .fontWeight(.light)
+                }
             }
             .padding(.top, (height * 0.25) - (width * 0.25))
         }

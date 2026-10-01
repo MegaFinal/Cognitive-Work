@@ -42,10 +42,7 @@ struct ContentView: View {
                     Label("Compras", systemImage: "basket")
                 }
             
-            NavigationStack {
-                UserProfileView()
-                    .navigationTitle("Perfil")
-            }
+            UserProfileView()
             .tabItem {
                 Label("Perfil", systemImage: "person.fill")
             }
@@ -68,10 +65,13 @@ struct ContentView: View {
         } message: {
             Text("Se você aceitar, você sairá da sua casa atual todos os seus dados serão perdidos")
         }
-        .alert("Ops", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Ops", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
-            Text(viewModel.errorMessage ?? "Deu algum erro.")
+            Text(viewModel.errorMessage ?? L10n.tr("Deu algum erro."))
         }
         .blockingOperation(isPresented: $isSwitchingHouse, message: "Trocando de casa...")
         .blockingWhileUnlinkingOrphanedHouse()

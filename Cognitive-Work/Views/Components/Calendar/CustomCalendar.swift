@@ -14,7 +14,8 @@ struct CustomCalendar: View {
     var highlightedDays: [Date] = []
     var earliestSelectable: Date? = nil   // days before this are shown grey and can't be tapped
     
-    private let daysOfWeek = Date.capitalizedFirstLettersOfWeekdays
+    /// Computed (not stored) so it follows a language change without recreating the view.
+    private var daysOfWeek: [String] { Date.capitalizedFirstLettersOfWeekdays }
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
     private let calendar = Calendar.current
     
@@ -80,8 +81,8 @@ struct CustomCalendar: View {
     }
     
     private func monthName(_ date: Date) -> String {
-        date.formatted(.dateTime.month(.wide).locale(Locale(identifier: "pt_BR")))
-            .capitalized
+        date.formatted(.dateTime.month(.wide).locale(L10n.locale))
+            .capitalized(with: L10n.locale)
     }
     
     // MARK: - Subviews
@@ -117,6 +118,24 @@ struct CustomCalendar: View {
                     action: { select(day) }
                 )
             }
+        }
+    }
+        
+    private var selectedDateLabel: some View {
+        if let selectedDate {
+            Text(selectedDate.formatted(
+                .dateTime
+                    .weekday(.wide).day().month(.wide).year()
+                    .locale(L10n.locale))
+            )
+            .font(.system(size: 15, weight: .semibold))
+            .frame(maxWidth: .infinity, alignment: .center)
+        } else {
+            Text("Nenhuma data selecionada")
+                .font(.system(size: 15))
+                .italic()
+                .foregroundStyle(.gray)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
     }
     
