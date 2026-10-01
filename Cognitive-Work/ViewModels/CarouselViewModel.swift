@@ -141,6 +141,15 @@ class CarouselViewModel {
     /// How many future occurrences of the same chore the list shows.
     private let occurrencesPerChore = 20
     
+    /// Everyone responsible for a one-off chore: its current responsible plus its responsible list.
+    private func responsibleUserIDs(of chore: ChoreModel) -> Set<CKRecord.ID> {
+        var ids = Set((chore.allResponsibleUsersReference ?? []).map(\.recordID))
+        if let current = chore.currentResponsibleReference {
+            ids.insert(current.recordID)
+        }
+        return ids
+    }
+    
     /// Rebuilds the flattened list of occurrences from the currently visible chores.
     ///
     /// Recurring chores contribute one row per future assignment (capped by
@@ -164,9 +173,12 @@ class CarouselViewModel {
                 
                 // One-off chore: filtered by its own responsible and done state
                 if isFilterOn {
+                    // A one-off chore made in the form only has `allResponsibleUsers` (its
+                    // `currentResponsible` stays empty until someone picks it up), so match
+                    // against both. Reading only `currentResponsible` let it slip through
+                    // every user filter, even for users who aren't responsible for it.
                     if !selectedUserIDs.isEmpty,
-                       let responsibleID = chore.currentResponsibleReference?.recordID,
-                       !selectedUserIDs.contains(responsibleID) { continue }
+                       selectedUserIDs.isDisjoint(with: responsibleUserIDs(of: chore)) { continue }
                     
                     if let state = filterChoices.state, chore.isDone != state { continue }
                 }

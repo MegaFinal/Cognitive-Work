@@ -677,8 +677,10 @@ class CloudKitManager {
                 let fetchResults = try await database.records(for: recordIDs)
 
                 var recordsToSave: [CKRecord] = []
+                var savedIDs: Set<CKRecord.ID> = []
                 for item in group {
                     guard let recordID = item.recordID,
+                          savedIDs.insert(recordID).inserted,
                           let result = fetchResults[recordID],
                           case .success(let record) = result else { continue }
                     item.populate(record: record)

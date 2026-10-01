@@ -37,10 +37,10 @@ struct ChoreCard: View {
     
     private var title: some View {
         VStack {
-            Text(room?.name ?? L10n.tr("Cômodo"))
+            Text(room?.name.localizedDefault ?? L10n.tr("Cômodo"))
                 .fontWeight(.regular)
                 .font(.system(size: 17, weight: .semibold))
-            Text(chore.name)
+            Text(chore.name.localizedDefault)
                 .bold()
                 .font(.system(size: 28))
         }

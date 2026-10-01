@@ -23,7 +23,7 @@ struct PickUnassignedChoreCard: View {
     private var isWeekly: Bool { chore.frequency == .weekly }
     
     private var roomName: String {
-        carouselViewModel.getRoom(for: chore)?.name ?? "Sem cômodo"
+        carouselViewModel.getRoom(for: chore)?.name.localizedDefault ?? L10n.tr("Sem cômodo")
     }
     
     private var roomColor: Color {
@@ -153,7 +153,7 @@ struct PickUnassignedChoreCard: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.black)
             
-            Text(chore.name)
+            Text(chore.name.localizedDefault)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.black)
             

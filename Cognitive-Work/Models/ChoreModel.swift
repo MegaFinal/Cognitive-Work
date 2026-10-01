@@ -386,6 +386,15 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         let snapshot = EditableSnapshot(of: self)
         
         applyEditableFields(from: choreDTO, responsibleUsers: responsibleUsers)
+        
+        if choreDTO.isPublic, choreDTO.frequency == .none {
+            let selectedIDs = Set(responsibleUsers.compactMap { $0.recordID })
+            if let current = newCurrentResponsibleReference?.recordID, !selectedIDs.contains(current) {
+                newCurrentResponsibleReference = responsibleUsers.first?.recordID.map {
+                    CKRecord.Reference(recordID: $0, action: .none)
+                }
+            }
+        }
         currentResponsibleReference = newCurrentResponsibleReference
         if choreDTO.frequency == .none {
             dueDate = pickedDate
@@ -540,6 +549,12 @@ class ChoreModel: CloudKitSyncable, Identifiable {
                 let slot = freeSlots.removeFirst()
                 slot.userReference = CKRecord.Reference(recordID: userID, action: .none)
                 modelsToUpdate.append(slot)
+            }
+
+            var seenIDs: Set<CKRecord.ID> = []
+            modelsToUpdate = modelsToUpdate.filter { model in
+                guard let id = model.recordID else { return true }
+                return seenIDs.insert(id).inserted
             }
             
             // Batch update the modified assignment models in CloudKit

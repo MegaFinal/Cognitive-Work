@@ -25,6 +25,9 @@ final class HouseEditViewModel {
     /// switching the other's indicator off when it finishes first.
     private(set) var isDeleting = false
 
+    /// True while the member is leaving the house.
+    private(set) var isLeaving = false
+
     private(set) var errorMessage: String?
     var isUserAdmin: Bool = false
 
@@ -70,6 +73,33 @@ final class HouseEditViewModel {
 
         house = fetchedHouse
         errorMessage = nil
+    }
+
+    // MARK: - Leave
+
+    /// Removes the signed-in member from the house (a non-admin can't delete it). The house and
+    /// its data stay intact for the other residents.
+    ///
+    /// ``CloudKitManager/leaveCurrentHouse()`` removes the member's own record before leaving the
+    /// share, so no ghost member stays in the house, and refuses the owner.
+    @discardableResult
+    func leaveHouse() async -> Bool {
+        guard !isUserAdmin else {
+            errorMessage = "The house admin can't leave the house"
+            return false
+        }
+
+        isLeaving = true
+        defer { isLeaving = false }
+
+        guard (try? await CloudKitManager.shared.leaveCurrentHouse()) == true else {
+            errorMessage = CloudKitManager.shared.errorMessage
+            return false
+        }
+
+        house = nil
+        errorMessage = nil
+        return true
     }
 
     // MARK: - Delete
