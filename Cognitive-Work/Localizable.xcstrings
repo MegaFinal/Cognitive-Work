@@ -1973,6 +1973,26 @@
         }
       }
     },
+    "O que a casa divide?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What does the house share?"
+          }
+        }
+      }
+    },
+    "Marque **apenas** as tarefas que vão para a escala de todos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark **only** the chores that go on everyone's schedule."
+          }
+        }
+      }
+    },
     "Excluir Casa" : {
       "localizations" : {
         "en" : {
