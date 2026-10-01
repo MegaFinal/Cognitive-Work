@@ -4,6 +4,12 @@
     "" : {
 
     },
+    "%@" : {
+
+    },
+    "%@%%" : {
+
+    },
     "%lld" : {
 
     },
@@ -90,7 +96,6 @@
       }
     },
     "%lld tarefas" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "variations" : {
@@ -130,6 +135,9 @@
         }
       }
     },
+    "0 dias" : {
+
+    },
     "1h" : {
 
     },
@@ -137,6 +145,9 @@
 
     },
     "3h" : {
+
+    },
+    "4 pontos" : {
 
     },
     "4h" : {
@@ -156,7 +167,13 @@
     "5h" : {
 
     },
+    "6 cômodos" : {
+
+    },
     "30’" : {
+
+    },
+    "A cozinha foi onde você mais trabalhou." : {
 
     },
     "A fazer" : {
@@ -260,6 +277,9 @@
           }
         }
       }
+    },
+    "adquiridos por ter notado algo na casa" : {
+
     },
     "Adubar plantas" : {
       "extractionState" : "stale",
@@ -570,6 +590,9 @@
         }
       }
     },
+    "Cada coisa que você reparou conta!" : {
+
+    },
     "Cada morador precisa preencher seus horários de tempo livre antes da divisão das tarefas." : {
       "localizations" : {
         "en" : {
@@ -694,6 +717,9 @@
         }
       }
     },
+    "Clique no botão abaixo para dividir as tarefas entre todos os moradores da casa automaticamente" : {
+
+    },
     "Colocar adubo nos canteiros e nos vasos." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -715,6 +741,9 @@
           }
         }
       }
+    },
+    "Comece a nova divisão de tarefas da casa!" : {
+
     },
     "Cômodo" : {
       "localizations" : {
@@ -755,6 +784,9 @@
           }
         }
       }
+    },
+    "Concluir" : {
+
     },
     "Conectar com meu Hardware" : {
       "localizations" : {
@@ -977,6 +1009,9 @@
         }
       }
     },
+    "Dá para começar ainda hoje!" : {
+
+    },
     "Data" : {
       "localizations" : {
         "en" : {
@@ -1194,6 +1229,12 @@
         }
       }
     },
+    "Dividir mais tarde" : {
+
+    },
+    "Divisão automática de tarefas" : {
+
+    },
     "Dobrar as peças limpas e distribuir nos armários." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1280,6 +1321,7 @@
       }
     },
     "Editar Tarefa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1773,6 +1815,9 @@
         }
       }
     },
+    "Esta escolha será apenas para a divisão de tarefas atual" : {
+
+    },
     "Estamos apenas esperando que o criador da casa gere a divisão das tarefas." : {
       "localizations" : {
         "en" : {
@@ -1962,6 +2007,7 @@
       }
     },
     "Fechar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2622,6 +2668,7 @@
       }
     },
     "Microinterações" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2725,6 +2772,9 @@
           }
         }
       }
+    },
+    "Não foi possível adiar" : {
+
     },
     "Não foi possível encontrar a casa do convite. Tente abrir o link novamente." : {
       "extractionState" : "stale",
@@ -3072,6 +3122,7 @@
       }
     },
     "Nova tarefa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3494,6 +3545,7 @@
       }
     },
     "Pequenos efeitos e animações que servem como um retorno visual." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3596,6 +3648,9 @@
         }
       }
     },
+    "Pular para a nova divisão" : {
+
+    },
     "Qua" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3606,6 +3661,9 @@
           }
         }
       }
+    },
+    "Quando você deseja realizar esta tarefa?" : {
+
     },
     "Quantidade" : {
       "localizations" : {
@@ -3981,6 +4039,9 @@
         }
       }
     },
+    "seguidos sem atrasar nenhuma tarefa" : {
+
+    },
     "Segunda - Feira" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3991,6 +4052,9 @@
           }
         }
       }
+    },
+    "Selecionar dia" : {
+
     },
     "Selecione as tarefas" : {
       "localizations" : {
@@ -4213,6 +4277,9 @@
           }
         }
       }
+    },
+    "Sua retrospectiva chegou!" : {
+
     },
     "Suas Tarefas" : {
       "localizations" : {
@@ -4659,6 +4726,9 @@
         }
       }
     },
+    "Vamos tentar de novo na próxima" : {
+
+    },
     "Varanda" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4747,6 +4817,12 @@
         }
       }
     },
+    "Veja como você se saiu durante os últimos 15 dias" : {
+
+    },
+    "ver depois" : {
+
+    },
     "Ver minha escala" : {
       "localizations" : {
         "en" : {
@@ -4757,6 +4833,12 @@
         }
       }
     },
+    "Ver minha retrospectiva" : {
+
+    },
+    "Verifique sua conexão e tente novamente." : {
+
+    },
     "Vibrações ao concluir uma tarefa e em outras interações." : {
       "localizations" : {
         "en" : {
@@ -4766,6 +4848,9 @@
           }
         }
       }
+    },
+    "você consegue!" : {
+
     },
     "Você ficará responsável por todos os dias do período." : {
       "localizations" : {
@@ -4786,6 +4871,9 @@
           }
         }
       }
+    },
+    "Você realizou 0 de 20 \n tarefas da sua escala" : {
+
     },
     "Voltar" : {
       "localizations" : {

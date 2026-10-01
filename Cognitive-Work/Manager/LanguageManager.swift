@@ -100,3 +100,29 @@ enum L10n {
     /// Locale to use in every `formatted(...)`/`DateFormatter` call.
     static var locale: Locale { LanguageManager.shared.locale }
 }
+
+// MARK: - Default content
+
+extension String {
+    /// Translates text that comes from the app's default catalog (room names, suggested chore
+    /// names and descriptions) into the current language.
+    ///
+    /// Defaults are saved once, in Portuguese (the source language), so they never change when
+    /// the user switches language. Translating them when they are *displayed* keeps the stored
+    /// data untouched and makes the change immediate. Text with no translation (anything the
+    /// user typed) is returned as is, and numbered rooms such as "Quarto 2" translate their base
+    /// name and keep the number ("Bedroom 2").
+    var localizedDefault: String {
+        let translated = L10n.tr(self)
+        if translated != self { return translated }
+        
+        // "Quarto 2" -> "Bedroom 2"
+        guard let space = lastIndex(of: " "),
+              Int(self[index(after: space)...]) != nil
+        else { return self }
+        
+        let base = String(self[..<space])
+        let translatedBase = L10n.tr(base)
+        return translatedBase == base ? self : "\(translatedBase)\(self[space...])"
+    }
+}
