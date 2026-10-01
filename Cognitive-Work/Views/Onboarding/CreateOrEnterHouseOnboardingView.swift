@@ -17,6 +17,9 @@ struct CreateOrEnterHouseOnboardingView: View {
     /// The shared onboarding view model, read from the environment
     @Binding var viewModel: OnboardingViewModel
     
+    @State private var isCreatingHouse = false
+    
+    private var isBusy: Bool { isCreatingHouse || viewModel.isJoiningHouse || viewModel.isLoading }
 
     // MARK: - Body
     //
@@ -38,14 +41,20 @@ struct CreateOrEnterHouseOnboardingView: View {
                     viewModel.goToNextView()
                 } label: {
                     VStack (spacing: 40){
-                        Image(systemName: "figure.walk.arrival")
-                            .resizable()
-                            .frame(width: width * 0.22, height: height * 0.11)
-                        
-                        VStack {
-                            Text("Entrar")
-                                .bold()
-                            Text("em uma casa")
+                        if viewModel.isJoiningHouse {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.blue)
+                        } else {
+                            Image(systemName: "figure.walk.arrival")
+                                .resizable()
+                                .frame(width: width * 0.22, height: height * 0.11)
+                            
+                            VStack {
+                                Text("Entrar")
+                                    .bold()
+                                Text("em uma casa")
+                            }
                         }
                     }
                     .foregroundColor(.blue)
@@ -56,22 +65,22 @@ struct CreateOrEnterHouseOnboardingView: View {
                             .shadow(color: .black.opacity(0.25), radius: 5.95, x: 0, y: 4)
                       )
                 }
-                .disabled(viewModel.isLoading)
+                .disabled(isBusy)
                 
                 Button {
                     Task {
-                        viewModel.isLoading = true
+                        isCreatingHouse = true
+                        defer { isCreatingHouse = false }
                         await viewModel.createHouseAndLinkUser()
                          
                         if viewModel.currentHouse != nil {
                             viewModel.stateMachine.flow = .houseCreator
                             viewModel.goToNextView()
                         }
-                        viewModel.isLoading = false
                     }
                 } label: {
                     VStack (spacing: 40){
-                        if viewModel.isLoading {
+                        if isCreatingHouse {
                             ProgressView()
                                 .scaleEffect(1.5)
                               .tint(.white)
@@ -95,7 +104,7 @@ struct CreateOrEnterHouseOnboardingView: View {
                             .shadow(color: .black.opacity(0.25), radius: 5.95, x: 0, y: 4)
                     )
                 }
-                .disabled(viewModel.isLoading)
+                .disabled(isBusy)
             }
             Spacer()
         }

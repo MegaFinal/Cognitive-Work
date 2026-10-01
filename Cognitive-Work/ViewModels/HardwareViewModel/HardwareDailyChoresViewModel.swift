@@ -186,13 +186,15 @@ class HardwareDailyChoresViewModel {
         }
 
         guard let dueDate = chore.dueDate,
-              calendar.isDate(dueDate, inSameDayAs: day),
-              let responsibleID = chore.currentResponsibleReference?.recordID
+              calendar.isDate(dueDate, inSameDayAs: day)
         else {
             return []
         }
 
-        return [responsibleID]
+        var seen: Set<CKRecord.ID> = []
+        let candidates = [chore.currentResponsibleReference].compactMap { $0 }
+            + (chore.allResponsibleUsersReference ?? [])
+        return candidates.map(\.recordID).filter { seen.insert($0).inserted }
     }
 
     // MARK: - Helpers

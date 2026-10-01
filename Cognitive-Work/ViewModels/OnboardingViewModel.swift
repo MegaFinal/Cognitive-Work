@@ -56,7 +56,9 @@ class OnboardingViewModel {
     
     var isScheduleReady: Bool = false
 
-    private var isJoiningHouse = false
+    /// True while the invited user is being added to the house. Separate from ``isLoading`` so
+    /// the screen can tell "joining" from "creating" a house.
+    private(set) var isJoiningHouse = false
     
     private var isCheckingSchedule = false
     
