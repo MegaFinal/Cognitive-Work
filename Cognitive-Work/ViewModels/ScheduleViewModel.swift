@@ -55,6 +55,7 @@ final class ScheduleViewModel {
         guard !isPreloaded else { return }
         isLoading = true
         await setup()
+        await resetUpcomingSchedule(for: chores)
         await TaskSchedulerEngine.schedule(chores: chores, users: users)
         isLoading = false
     }
@@ -65,6 +66,8 @@ final class ScheduleViewModel {
 
         if shouldGenerate {
             await setup()
+
+            await resetUpcomingSchedule(for: chores)
 
             await TaskSchedulerEngine.schedule(
                 chores: chores,
