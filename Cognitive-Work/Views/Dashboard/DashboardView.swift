@@ -20,10 +20,9 @@ struct DashboardView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         
-                        HStack {
+                        HStack(spacing: 16) {
                             DoughnutChart(viewModel: $viewModel)
-                            
-                            // TODO: - Componente do porquinho
+                            PointsComponent(points: viewModel.myCognitiveLoad)
                         }
                         
                         // MARK: - House cognitive division
@@ -39,7 +38,6 @@ struct DashboardView: View {
                 }
             }
         }
-        //        .navigationTitle("Seu progresso" )
         .task {
             await viewModel.load()
             viewModel.loadCompletionRing()
@@ -55,7 +53,7 @@ struct DashboardView: View {
             
             DateDivisionComponent(viewModel: $viewModel)
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

@@ -23,13 +23,17 @@ struct DoughnutChart: View {
     
     var slices: [Slice] {
         let done = Slice(size: viewModel.completedToday, color: .choreBlue)
-        let all = Slice(size: viewModel.totalToday - viewModel.completedToday, color: Color.gray.opacity(0.2))
+        let all = Slice(size: viewModel.totalToday - viewModel.completedToday, color: Color.gray.opacity(0.15))
         
         return [done, all]
     }
     
     var body: some View {
         ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .foregroundStyle(Color(.systemGray6).opacity(0.5))
+                .frame(width: width * 0.437, height: height * 0.21)
+            
             VStack(spacing: 8) {
                 Text("Hoje")
                     .font(.system(size: 17))
@@ -55,9 +59,6 @@ struct DoughnutChart: View {
                     .font(.system(size: 15))
                 
             }
-            RoundedRectangle(cornerRadius: 20)
-                .foregroundStyle(Color.gray.opacity(0.2))
-                .frame(width: width * 0.437, height: height * 0.21)
         }
     }
 }
