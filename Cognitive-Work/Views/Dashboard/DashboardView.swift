@@ -12,21 +12,34 @@ struct DashboardView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 15) {
+            
+            VStack(spacing: 16) {
+                
                 header
                 
-                HStack {
-                    DoughnutChart(viewModel: $viewModel)
-                    //Componente do porquinho
+                ScrollView {
+                    VStack(spacing: 16) {
+                        
+                        HStack {
+                            DoughnutChart(viewModel: $viewModel)
+                            
+                            // TODO: - Componente do porquinho
+                        }
+                        
+                        // MARK: - House cognitive division
+                        BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
+                        
+                        // TODO: - Current Division
+                        
+                        
+                        // MARK: - Unassigned chore
+                        // This will be replaced when the pending chores section is finalized.
+                        BarPercentageComponent(viewModel: viewModel, isUnassignedChores: true)
+                    }
                 }
-                
-                Spacer()
-                
-                BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
-                
-                BarPercentageComponent(viewModel: viewModel, isUnassignedChores: true)
             }
         }
+        //        .navigationTitle("Seu progresso" )
         .task {
             await viewModel.load()
             viewModel.loadCompletionRing()
