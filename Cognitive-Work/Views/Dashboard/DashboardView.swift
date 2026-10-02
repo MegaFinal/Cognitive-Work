@@ -15,6 +15,10 @@ struct DashboardView: View {
             VStack(spacing: 15) {
                 header
                 Spacer()
+                
+                BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
+                
+                BarPercentageComponent(viewModel: viewModel, isUnassignedChores: true)
             }
         }
     }
