@@ -13,6 +13,8 @@ struct CustomCalendar: View {
     let opacityForDay: (Date) -> Double
     var highlightedDays: [Date] = []
     var earliestSelectable: Date? = nil   // days before this are shown grey and can't be tapped
+    var selectableDays: Set<Date>? = nil
+    var onTapDay: ((Date) -> Void)? = nil
     
     /// Computed (not stored) so it follows a language change without recreating the view.
     private var daysOfWeek: [String] { Date.capitalizedFirstLettersOfWeekdays }
@@ -108,14 +110,26 @@ struct CustomCalendar: View {
     private var dayGrid: some View {
         LazyVGrid(columns: columns, spacing: 10) {
             ForEach(gridDays, id: \.self) { day in
-                let selectable = window.contains(day.startOfDay)
-                    && day.startOfDay >= (earliestSelectable ?? .distantPast)
+                let normalizedDay = day.startOfDay
+                let today = Calendar.current.startOfDay(for: Date())
+                let inWindow = window.contains(normalizedDay) && normalizedDay >= (earliestSelectable ?? today)
+                let isAllowedBySlots = selectableDays?.contains(normalizedDay) ?? true
+                let selectable = inWindow && isAllowedBySlots
+                let highlighted = selectable && (isSelected(normalizedDay) || isHighlighted(normalizedDay))
+                
                 DayCell(
                     day: day,
                     opacity: selectable ? opacityForDay(day) : 0,
                     isSelectable: selectable,
-                    isSelected: isSelected(day) || isHighlighted(day),
-                    action: { select(day) }
+                    isSelected: highlighted,
+                    action: {
+                        guard selectable else { return }
+                        if let onTapDay {
+                            onTapDay(normalizedDay)
+                        } else {
+                            select(normalizedDay)
+                        }
+                    }
                 )
             }
         }

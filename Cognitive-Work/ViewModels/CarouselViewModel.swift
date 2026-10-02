@@ -1208,24 +1208,36 @@ class CarouselViewModel {
         
         for chore in cardModels where !chore.isDone {
             if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                // Recurring chore: look for occurrences that are today or in the future
-                // and still have no one assigned.
                 let openSlots = refs.compactMap { assignmentsByID[$0.recordID] }.filter { assignment in
                     assignment.userReference == nil && assignment.day >= today
                 }
+                guard !openSlots.isEmpty else { continue }
                 
-                for assignment in openSlots {
+                if chore.frequency == .daily {
+                    // Daily: collapse every open day into a single row. The row stays
+                    // visible as long as at least one day is still unclaimed.
+                    let earliest = openSlots.min { $0.day < $1.day }!
                     items.append(
                         UnassignedItem(
-                            id: assignment.recordID?.recordName ?? UUID().uuidString,
+                            id: chore.recordID?.recordName ?? UUID().uuidString,
                             chore: chore,
-                            choreType: .recurring(assignment: assignment),
-                            displayDate: assignment.day
+                            choreType: .recurring(assignment: earliest),
+                            displayDate: earliest.day
                         )
                     )
+                } else {
+                    for assignment in openSlots {
+                        items.append(
+                            UnassignedItem(
+                                id: assignment.recordID?.recordName ?? UUID().uuidString,
+                                chore: chore,
+                                choreType: .recurring(assignment: assignment),
+                                displayDate: assignment.day
+                            )
+                        )
+                    }
                 }
             } else {
-                // One-off chore: unassigned when it has no one in its rotation.
                 let hasResponsible = chore.currentResponsibleReference != nil
                 || !(chore.allResponsibleUsersReference?.isEmpty ?? true)
                 
@@ -1242,10 +1254,14 @@ class CarouselViewModel {
             }
         }
         
-        // Sort items in ascending order by displayDate, placing items with nil dates at the end
         unassignedItems = items.sorted {
             ($0.displayDate ?? .distantFuture) < ($1.displayDate ?? .distantFuture)
         }
+    }
+    
+    /// Every still-open (unclaimed, upcoming) occurrence of a chore, sorted by day.
+    func openAssignments(for chore: ChoreModel) -> [RecurrentAssignmentModel] {
+        futureAssignments(for: chore).filter { $0.userReference == nil }
     }
     
     /// Assigns the current user to an unassigned chore or occurrence, then refreshes local caches.
@@ -1373,19 +1389,12 @@ class CarouselViewModel {
     /// Calculates which slots should initially be displayed based on the item and its frequency when the confirmation page opens.
     func initialPickSlots(for item: UnassignedItem) -> [WeeklyPickSlot] {
         let chore = item.chore
-        let calendar = Calendar.current
-        let window = pickerWindow
-         
-        // Daily: One slot per day within the window, all locked, checked by default
+        
         if chore.frequency == .daily {
-            var days: [Date] = []
-            var day = window.lowerBound
-            while day < window.upperBound {
-                days.append(day)
-                guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
-                day = next
+            let openSlots = openAssignments(for: chore)
+            return openSlots.map {
+                WeeklyPickSlot(date: $0.day, existingAssignment: $0, isDateEditable: false, included: false)
             }
-            return days.map { WeeklyPickSlot(date: $0, existingAssignment: nil, isDateEditable: false) }
         }
          
         if case .recurring(let assignment) = item.choreType {
@@ -1408,14 +1417,13 @@ class CarouselViewModel {
 
         if case .recurring = item.choreType {
             switch item.chore.frequency {
-            case .weekly, .fortnightly, .monthly: needsSheet = true
+            case .weekly, .fortnightly, .monthly, .daily: needsSheet = true
             default: break
             }
         }
 
         if needsSheet {
             dismissUnassignedList()
-            // 🌟 复用已有的焦点动画，直接将 item 传给 itemAwaitingDate
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                 itemAwaitingDate = item
             }

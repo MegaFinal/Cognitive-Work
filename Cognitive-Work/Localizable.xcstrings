@@ -1579,6 +1579,7 @@
       }
     },
     "Escolha a data desta tarefa dentro da semana. Dias que já passaram não podem ser escolhidos." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1589,6 +1590,7 @@
       }
     },
     "Escolha o dia da tarefa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1630,6 +1632,7 @@
       }
     },
     "Escolha um dia dentro do período. Dias que já passaram não podem ser escolhidos." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1640,6 +1643,7 @@
       }
     },
     "Escolha um dia. Como você pegou esta tarefa neste ciclo, ela não será atribuída no próximo." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3638,6 +3642,9 @@
         }
       }
     },
+    "Pegar todas as tarefas diárias" : {
+
+    },
     "Pendente" : {
       "localizations" : {
         "en" : {
@@ -5022,6 +5029,7 @@
 
     },
     "Você ficará responsável por todos os dias do período." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
