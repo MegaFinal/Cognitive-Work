@@ -15,9 +15,9 @@ struct DashboardView: View {
             VStack(spacing: 15) {
                 header
                 
-                HStack {
+                HStack(spacing: 16) {
                     DoughnutChart(viewModel: $viewModel)
-                    //Componente do porquinho
+                    PointsComponent(points: viewModel.myCognitiveLoad)
                 }
                 
                 Spacer()
@@ -38,7 +38,7 @@ struct DashboardView: View {
             
             DateDivisionComponent(viewModel: $viewModel)
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
