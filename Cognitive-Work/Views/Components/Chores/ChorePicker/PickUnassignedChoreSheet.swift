@@ -37,21 +37,29 @@ struct PickUnassignedChoreCard: View {
     
     private var effectiveWindow: Range<Date> {
         let calendar = Calendar.current
+        let cycle = carouselViewModel.cycleWindow ?? window
         
         if isWeekly {
             let base = originalDay
             ?? slots.first(where: { $0.date != nil })?.date
             ?? window.lowerBound
+            
             let startOfWeek = calendar.date(
                 from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: base)
             ) ?? base
+            
             if let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek) {
-                return startOfWeek..<endOfWeek
+                let clampedStart = max(startOfWeek, cycle.lowerBound)
+                let clampedEnd = min(endOfWeek, cycle.upperBound)
+                
+                if clampedStart < clampedEnd {
+                    return clampedStart..<clampedEnd
+                }
             }
         }
         
         if isDaily { return window }
-        return carouselViewModel.cycleWindow ?? window
+        return cycle
     }
     
     private var includedDates: [Date] {
@@ -238,12 +246,16 @@ struct PickUnassignedChoreCard: View {
             Task {
                 isSaving = true
                 didFail = false
+                
                 let success = await carouselViewModel.confirmPick(item, slots: slots)
-                isSaving = false
+                
                 if success {
-                    _ = await ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.unassignedChorePicked.points)
+                    _ = await ScoreManager.shared.assignScoreForMyUser(
+                        score: ScoreValues.unassignedChorePicked.points
+                    )
                     carouselViewModel.dismissPickCard()
                 } else {
+                    isSaving = false
                     didFail = true
                 }
             }
