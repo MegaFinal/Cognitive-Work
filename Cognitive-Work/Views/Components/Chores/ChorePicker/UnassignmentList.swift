@@ -57,7 +57,7 @@ struct UnassignmentList: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.chore.name)
+                    Text(item.chore.name.localizedDefault)
                         .font(.system(size: 15))
                         .foregroundStyle(.black)
                         .fontWeight(.semibold)

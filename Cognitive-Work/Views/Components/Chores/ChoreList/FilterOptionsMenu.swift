@@ -68,7 +68,7 @@ struct FilterOptionsMenu: View {
                 FilterMenuRow(
                     systemImage: "person.2",
                     title: "Usuários",
-                    subtitle: summary(viewModel.filterChoices.users.map { $0.name.capitalized })
+                    subtitle: summary(viewModel.filterChoices.users.map { $0.name.localizedDefault.capitalized(with: L10n.locale) })
                 )
             }
 
@@ -89,14 +89,14 @@ struct FilterOptionsMenu: View {
             Menu {
                 ForEach(filterableRooms, id: \.self) { room in
                     Toggle(isOn: roomBinding(room)) {
-                        Text(room.name.capitalized)
+                        Text(room.name.localizedDefault.capitalized(with: L10n.locale))
                     }
                 }
             } label: {
                 FilterMenuRow(
                     systemImage: "house",
                     title: "Cômodo",
-                    subtitle: summary(viewModel.filterChoices.rooms.map { $0.name.capitalized })
+                    subtitle: summary(viewModel.filterChoices.rooms.map { $0.name.localizedDefault.capitalized(with: L10n.locale) })
                 )
             }
 

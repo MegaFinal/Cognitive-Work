@@ -54,6 +54,9 @@
         }
       }
     },
+    "%lld pontos" : {
+
+    },
     "%lld selecionados" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -364,6 +367,9 @@
           }
         }
       }
+    },
+    "Ao apagar seu perfil, você também sairá da casa e perderá o acesso às tarefas e ao histórico. A casa continuará existindo para os outros moradores. Essa ação não pode ser desfeita." : {
+
     },
     "Ao clicar em \"Reiniciar\" a divisão de tarefas atual será excluída." : {
       "localizations" : {
@@ -706,6 +712,9 @@
           }
         }
       }
+    },
+    "Chores" : {
+
     },
     "Clique nas tarefas para saber mais." : {
       "localizations" : {
@@ -1232,7 +1241,16 @@
     "Dividir mais tarde" : {
 
     },
+    "Divisão atual" : {
+
+    },
     "Divisão automática de tarefas" : {
+
+    },
+    "Divisão da casa" : {
+
+    },
+    "do esforço mental da casa esta semana foi seu" : {
 
     },
     "Dobrar as peças limpas e distribuir nos armários." : {
@@ -1566,6 +1584,7 @@
       }
     },
     "Escolha **apenas** as tarefas que serão divididas de maneira igual entre todos os moradores" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1576,6 +1595,7 @@
       }
     },
     "Escolha a data desta tarefa dentro da semana. Dias que já passaram não podem ser escolhidos." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1586,6 +1606,7 @@
       }
     },
     "Escolha o dia da tarefa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1627,6 +1648,7 @@
       }
     },
     "Escolha um dia dentro do período. Dias que já passaram não podem ser escolhidos." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1637,6 +1659,7 @@
       }
     },
     "Escolha um dia. Como você pegou esta tarefa neste ciclo, ela não será atribuída no próximo." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1806,6 +1829,7 @@
       }
     },
     "Esta ação é permanente. Todos os seus dados serão apagados do iCloud." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2125,7 +2149,6 @@
       }
     },
     "Hoje" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2134,6 +2157,9 @@
           }
         }
       }
+    },
+    "ideal %@" : {
+
     },
     "Idioma" : {
       "localizations" : {
@@ -2635,6 +2661,16 @@
         }
       }
     },
+    "Marque **apenas** as tarefas que vão para a escala de todos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark **only** the chores that go on everyone's schedule."
+          }
+        }
+      }
+    },
     "Mas antes, precisamos saber um pouco mais sobre a rotina na casa..." : {
       "localizations" : {
         "en" : {
@@ -2870,6 +2906,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't identify your profile to save the private chore."
+          }
+        }
+      }
+    },
+    "Não foi possível sair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave"
+          }
+        }
+      }
+    },
+    "Não foi possível sair da casa. Verifique sua conexão e tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave the home. Check your connection and try again."
           }
         }
       }
@@ -3205,6 +3262,22 @@
         }
       }
     },
+    "O que a casa divide?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What does the house share?"
+          }
+        }
+      }
+    },
+    "O trabalho de notar, lembrar e distribuir tarefas também faz parte da organização da casa" : {
+
+    },
+    "O trabalho de notar, lembrar, decidir e acompanhar é tão importante quanto realizar uma tarefa" : {
+
+    },
     "Ocorreu um erro." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3523,6 +3596,9 @@
         }
       }
     },
+    "Pegar todas as tarefas diárias" : {
+
+    },
     "Pendente" : {
       "localizations" : {
         "en" : {
@@ -3637,6 +3713,9 @@
           }
         }
       }
+    },
+    "Progresso" : {
+
     },
     "Pular esta etapa" : {
       "localizations" : {
@@ -3997,6 +4076,47 @@
         }
       }
     },
+    "Saindo da casa..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leaving your home..."
+          }
+        }
+      }
+    },
+    "Sair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave"
+          }
+        }
+      }
+    },
+    "Sair da Casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Home"
+          }
+        }
+      }
+    },
+    "Sair da Casa?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Home?"
+          }
+        }
+      }
+    },
     "Sala de Estar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4057,6 +4177,7 @@
 
     },
     "Selecione as tarefas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4226,6 +4347,9 @@
         }
       }
     },
+    "Seu progresso" : {
+
+    },
     "Sex" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4351,6 +4475,9 @@
           }
         }
       }
+    },
+    "Tarefas sem dono" : {
+
     },
     "Tempo médio" : {
       "localizations" : {
@@ -4852,7 +4979,21 @@
     "você consegue!" : {
 
     },
+    "Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll no longer see this home's chores. The other residents stay in it, and you can rejoin with a new invite."
+          }
+        }
+      }
+    },
+    "Você é o administrador desta casa. Ao apagar seu perfil, a casa também será apagada para todos os moradores, junto com as tarefas. Essa ação não pode ser desfeita." : {
+
+    },
     "Você ficará responsável por todos os dias do período." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

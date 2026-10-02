@@ -9,6 +9,7 @@ import SwiftUI
 
 struct GeneralProfileSettingsView: View {
     @Bindable var viewModel: UserProfileViewModel
+    @Bindable var houseViewModel: HouseEditViewModel
     
     @State private var isNotificationsEnabled = false
     
@@ -17,6 +18,7 @@ struct GeneralProfileSettingsView: View {
     @AppStorage(HapticsManager.storageKey) private var areHapticsEnabled = true
     
     @State private var showDeleteConfirmation = false
+    @State private var showAdminDeleteConfirmation = false
 
     @State private var isDeletingAccount = false
     @AppStorage("didOnboard") private var didOnboard: Bool = true
@@ -116,7 +118,14 @@ struct GeneralProfileSettingsView: View {
             
             // MARK: - Delete account button
             Button {
-                showDeleteConfirmation = true
+                Task {
+                    let isAdmin = await houseViewModel.checkAdminStatus()
+                    if isAdmin {
+                        showAdminDeleteConfirmation = true
+                    } else {
+                        showDeleteConfirmation = true
+                    }
+                }
             } label: {
                 Text("Excluir Perfil")
                     .fontWeight(.semibold)
@@ -137,6 +146,7 @@ struct GeneralProfileSettingsView: View {
                 isDeletingAccount = true
                 Task {
                     await viewModel.deleteAccount()
+                    await houseViewModel.getOutOfTheHouse()
                     if viewModel.errorMessage == nil {
                         didOnboard = false
                     } else {
@@ -145,7 +155,25 @@ struct GeneralProfileSettingsView: View {
                 }
             }
         } message: {
-            Text("Esta ação é permanente. Todos os seus dados serão apagados do iCloud.")
+            Text("Ao apagar seu perfil, você também sairá da casa e perderá o acesso às tarefas e ao histórico. A casa continuará existindo para os outros moradores. Essa ação não pode ser desfeita.")
+        }
+        
+        .alert("Excluir Perfil?", isPresented: $showAdminDeleteConfirmation) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Excluir", role: .destructive) {
+                isDeletingAccount = true
+                Task {
+                    await viewModel.deleteAccount()
+                    await houseViewModel.deleteHouse()
+                    if viewModel.errorMessage == nil {
+                        didOnboard = false
+                    } else {
+                        isDeletingAccount = false
+                    }
+                }
+            }
+        } message: {
+            Text("Você é o administrador desta casa. Ao apagar seu perfil, a casa também será apagada para todos os moradores, junto com as tarefas. Essa ação não pode ser desfeita.")
         }
         // MARK: - Blocking loading screen
         .blockingOperation(isPresented: $isDeletingAccount, message: "Excluindo seu perfil...")
@@ -159,8 +187,9 @@ struct GeneralProfileSettingsView: View {
         ownerRecordName: "preview-owner"
     )
     let mockViewModel = UserProfileViewModel(user: mockUser)
+    let mockHouseViewModel = HouseEditViewModel()
 
-    return NavigationStack {
-        GeneralProfileSettingsView(viewModel: mockViewModel)
+    NavigationStack {
+        GeneralProfileSettingsView(viewModel: mockViewModel, houseViewModel: mockHouseViewModel)
     }
 }

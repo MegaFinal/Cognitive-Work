@@ -86,7 +86,7 @@ struct HardwareDailyChoresView: View {
                     Circle()
                         .fill(room.color.uiColor)
                         .frame(width: 10, height: 10)
-                    Text(room.name)
+                    Text(room.name.localizedDefault)
                         .font(.footnote)
                 }
             }
@@ -177,11 +177,11 @@ private struct DailyChoreCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(room?.name ?? L10n.tr("Sem cômodo"))
+            Text(room?.name.localizedDefault ?? L10n.tr("Sem cômodo"))
                 .font(.caption)
                 .fontWeight(.medium)
 
-            Text(chore.name)
+            Text(chore.name.localizedDefault)
                 .font(.headline)
                 .fontWeight(.bold)
                 .lineLimit(2)

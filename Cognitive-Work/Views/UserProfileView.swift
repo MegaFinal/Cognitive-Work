@@ -143,7 +143,7 @@ private struct SettingsButtonsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
             NavigationLink {
-                GeneralProfileSettingsView(viewModel: viewModelUser)
+                GeneralProfileSettingsView(viewModel: viewModelUser, houseViewModel: viewModelHouse)
             } label: {
                 HStack {
                     Text("Configurações Gerais")

@@ -112,10 +112,10 @@ struct ChoreCardListStyle: View {
                     VStack {
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(room?.name ?? L10n.tr("Sem cômodo"))
+                                Text(room?.name.localizedDefault ?? L10n.tr("Sem cômodo"))
                                     .font(.system(size: 12))
                                 
-                                Text(chore.name)
+                                Text(chore.name.localizedDefault)
                                     .font(.system(size: 22))
                                     .bold()
                             }

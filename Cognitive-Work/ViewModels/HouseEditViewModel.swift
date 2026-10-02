@@ -25,6 +25,9 @@ final class HouseEditViewModel {
     /// switching the other's indicator off when it finishes first.
     private(set) var isDeleting = false
 
+    /// True while the member is leaving the house.
+    private(set) var isLeaving = false
+
     private(set) var errorMessage: String?
     var isUserAdmin: Bool = false
 
@@ -39,7 +42,8 @@ final class HouseEditViewModel {
     /// Fetches a house first only when this view model wasn't handed one at init —
     /// otherwise the injected house would be silently replaced by whatever
     /// ``fetchHouse()`` happens to find.
-    func checkAdminStatus() async {
+    @discardableResult
+    func checkAdminStatus() async -> Bool {
         if house == nil {
             await fetchHouse()
         }
@@ -47,10 +51,11 @@ final class HouseEditViewModel {
         guard let house
         else {
             isUserAdmin = false
-            return
+            return false
         }
 
         isUserAdmin = await house.isAdmin() == true
+        return true
     }
 
     // MARK: - Fetch
@@ -70,6 +75,33 @@ final class HouseEditViewModel {
         errorMessage = nil
     }
 
+    // MARK: - Leave
+
+    /// Removes the signed-in member from the house (a non-admin can't delete it). The house and
+    /// its data stay intact for the other residents.
+    ///
+    /// ``CloudKitManager/leaveCurrentHouse()`` removes the member's own record before leaving the
+    /// share, so no ghost member stays in the house, and refuses the owner.
+    @discardableResult
+    func leaveHouse() async -> Bool {
+        guard !isUserAdmin else {
+            errorMessage = "The house admin can't leave the house"
+            return false
+        }
+
+        isLeaving = true
+        defer { isLeaving = false }
+
+        guard (try? await CloudKitManager.shared.leaveCurrentHouse()) == true else {
+            errorMessage = CloudKitManager.shared.errorMessage
+            return false
+        }
+
+        house = nil
+        errorMessage = nil
+        return true
+    }
+
     // MARK: - Delete
 
     /// Deletes the loaded house. Refuses — without ever calling CloudKit — unless the
@@ -78,13 +110,13 @@ final class HouseEditViewModel {
     func deleteHouse() async -> Bool {
         guard let house else {
             errorMessage = "Failed to retrieve house"
-            print(errorMessage)
+            print(errorMessage as Any)
             return false
         }
 
         guard await house.isAdmin() == true else {
             errorMessage = "Failed to delete due to unauthorized credentials"
-            print(errorMessage)
+            print(errorMessage as Any)
             return false
         }
 
@@ -93,8 +125,8 @@ final class HouseEditViewModel {
 
         guard await house.deleteAllChildren() else {
             errorMessage = "Failed to delete house children"
-            print(errorMessage)
-            print(CloudKitManager.shared.errorMessage)
+            print(errorMessage as Any)
+            print(CloudKitManager.shared.errorMessage as Any)
             return false
         }
         
@@ -107,5 +139,19 @@ final class HouseEditViewModel {
         self.house = nil
         errorMessage = nil
         return true
+    }
+    
+    func getOutOfTheHouse() async {
+        guard let house else {
+            errorMessage = "Failed to retrieve house"
+            print(errorMessage as Any)
+            return
+        }
+        
+        guard await CloudKitManager.shared.delete(house) else {
+            errorMessage = CloudKitManager.shared.errorMessage
+            print(errorMessage as Any)
+            return
+        }
     }
 }
