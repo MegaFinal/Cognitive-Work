@@ -365,6 +365,9 @@
         }
       }
     },
+    "Ao apagar seu perfil, você também sairá da casa e perderá o acesso às tarefas e ao histórico. A casa continuará existindo para os outros moradores. Essa ação não pode ser desfeita." : {
+
+    },
     "Ao clicar em \"Reiniciar\" a divisão de tarefas atual será excluída." : {
       "localizations" : {
         "en" : {
@@ -1806,6 +1809,7 @@
       }
     },
     "Esta ação é permanente. Todos os seus dados serão apagados do iCloud." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2964,6 +2968,27 @@
         }
       }
     },
+    "Não foi possível sair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave"
+          }
+        }
+      }
+    },
+    "Não foi possível sair da casa. Verifique sua conexão e tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave the home. Check your connection and try again."
+          }
+        }
+      }
+    },
     "Não foi possível salvar" : {
       "localizations" : {
         "en" : {
@@ -4087,6 +4112,47 @@
         }
       }
     },
+    "Saindo da casa..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leaving your home..."
+          }
+        }
+      }
+    },
+    "Sair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave"
+          }
+        }
+      }
+    },
+    "Sair da Casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Home"
+          }
+        }
+      }
+    },
+    "Sair da Casa?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Home?"
+          }
+        }
+      }
+    },
     "Sala de Estar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4940,6 +5006,19 @@
       }
     },
     "você consegue!" : {
+
+    },
+    "Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll no longer see this home's chores. The other residents stay in it, and you can rejoin with a new invite."
+          }
+        }
+      }
+    },
+    "Você é o administrador desta casa. Ao apagar seu perfil, a casa também será apagada para todos os moradores, junto com as tarefas. Essa ação não pode ser desfeita." : {
 
     },
     "Você ficará responsável por todos os dias do período." : {
