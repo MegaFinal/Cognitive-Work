@@ -14,12 +14,22 @@ struct DashboardView: View {
         NavigationStack {
             VStack(spacing: 15) {
                 header
+                
+                HStack {
+                    DoughnutChart(viewModel: $viewModel)
+                    //Componente do porquinho
+                }
+                
                 Spacer()
                 
                 BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
                 
                 BarPercentageComponent(viewModel: viewModel, isUnassignedChores: true)
             }
+        }
+        .task {
+            await viewModel.load()
+            viewModel.loadCompletionRing()
         }
     }
     
