@@ -1907,6 +1907,96 @@
         }
       }
     },
+    "Sair da Casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Home"
+          }
+        }
+      }
+    },
+    "Sair da Casa?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave Home?"
+          }
+        }
+      }
+    },
+    "Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll no longer see this home's chores. The other residents stay in it, and you can rejoin with a new invite."
+          }
+        }
+      }
+    },
+    "Saindo da casa..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leaving your home..."
+          }
+        }
+      }
+    },
+    "Sair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave"
+          }
+        }
+      }
+    },
+    "Não foi possível sair da casa. Verifique sua conexão e tente novamente." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave the home. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "Não foi possível sair" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave"
+          }
+        }
+      }
+    },
+    "O que a casa divide?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What does the house share?"
+          }
+        }
+      }
+    },
+    "Marque **apenas** as tarefas que vão para a escala de todos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark **only** the chores that go on everyone's schedule."
+          }
+        }
+      }
+    },
     "Excluir Casa" : {
       "localizations" : {
         "en" : {
