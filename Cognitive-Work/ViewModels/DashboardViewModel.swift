@@ -179,11 +179,13 @@ class DashboardViewModel {
         guard let userID = user?.recordID else { return }
         let calendar = Calendar.current
         let days = (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: periodStart) }
-        
-        // The user's assignments, by recordID
+
+        // The user's assignments, by recordID (checking multi-user references)
         let myAssignments = Dictionary(
             assignments
-                .filter { $0.userReference?.recordID == userID }
+                .filter { assignment in
+                    (assignment.userReferences ?? []).contains { $0.recordID == userID }
+                }
                 .compactMap { a in a.recordID.map { ($0, a) } },
             uniquingKeysWith: { first, _ in first }
         )

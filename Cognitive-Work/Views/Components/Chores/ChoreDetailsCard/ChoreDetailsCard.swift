@@ -15,6 +15,7 @@ import CloudKit
 /// postponement actions, and a completion swipe toggle.
 struct ChoreDetailsCard: View {
     @Bindable var chore: ChoreModel
+    
     /// The specific occurrence this card represents, when opened from the list
     /// layout. `nil` in the grid, where the card stands for the chore as a whole.
     var recurrentAssignment: RecurrentAssignmentModel?
@@ -50,29 +51,41 @@ struct ChoreDetailsCard: View {
         return carouselViewModel.getAssignments(for: chore, on: nextDate)
     }
     
+    /// Collects all responsible users for this chore and occurrence to display in the header action bar.
+    ///
+    /// Prioritizes individual occurrence's multi-user assignment list (`userReferences`),
+    /// falling back to the chore's global rotation list (`allResponsibleUsersReference`).
     var occurrenceResponsibleUsers: [UserModel] {
-        guard chore.dailyAssignmentsReference?.isEmpty == false else {
-            guard let refs = chore.allResponsibleUsersReference else { return [] }
-            
-            let ids = Set(refs.compactMap { $0.recordID })
-            
-            return carouselViewModel.userModels.filter { user in
-                guard let id = user.recordID else { return false }
-                return ids.contains(id)
+        if let target = targetAssignments.first {
+            if let refs = target.userReferences {
+                let targetIDs = Set(refs.map(\.recordID))
+                guard !targetIDs.isEmpty else { return [] }
+                
+                return carouselViewModel.userModels.filter { user in
+                    guard let userID = user.recordID else { return false }
+                    return targetIDs.contains(userID)
+                }
             }
         }
-
-        let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+        
+        var targetIDs = Set<CKRecord.ID>()
+        if let refs = chore.allResponsibleUsersReference, !refs.isEmpty {
+            targetIDs.formUnion(refs.map(\.recordID))
+        } else if let currentID = chore.currentResponsibleReference?.recordID {
+            targetIDs.insert(currentID)
+        }
+        
+        guard !targetIDs.isEmpty else { return [] }
+        
         return carouselViewModel.userModels.filter { user in
-            guard let id = user.recordID else { return false }
-            return userIDs.contains(id)
+            guard let userID = user.recordID else { return false }
+            return targetIDs.contains(userID)
         }
     }
     
     var isOccurrenceDone: Bool {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
-    
     
     var body: some View {
         ZStack {
@@ -173,7 +186,7 @@ struct ChoreDetailsCard: View {
         .foregroundColor(.black)
     }
     
-    /// The central information scroll view: description, room tag and the interactive checklist.
+    /// The central information scroll view: description, room tag, and the interactive checklist.
     private var info: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
@@ -210,7 +223,7 @@ struct ChoreDetailsCard: View {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                     }
-                    ForEach($checkList, id: \.id) { $item in
+                    ForEach($checkList, id: \.id) {$item in
                         ChecklistItemButton(item: $item)
                     }
                 }
@@ -268,8 +281,7 @@ struct ChoreDetailsCard: View {
             }
     }
     
-    /// Saves the new date and refreshes the carousel so the card reflects it (the change used
-    /// to be saved silently, with the card left untouched until the next full reload).
+    /// Saves the new date and refreshes the carousel so the card reflects it.
     private func postpone(byDays days: Int) {
         postponingDays = days
         Task {
@@ -296,7 +308,7 @@ struct ChoreDetailsCard: View {
         }
     }
     
-    /// Floating top bar with dismiss, responsible avatars and the edit shortcut.
+    /// Floating top bar with dismiss button, responsible user avatars, and the edit shortcut.
     private var actionBar: some View {
         HStack {
             Button {
@@ -311,6 +323,7 @@ struct ChoreDetailsCard: View {
             
             Spacer()
             
+            // Renders single avatar view if only 1 responsible user is assigned, or avatar list view when >= 2
             if occurrenceResponsibleUsers.count == 1 {
                 UserProfilePictureTag(user: occurrenceResponsibleUsers.first, widthMultiplier: 0.08)
             } else {

@@ -175,11 +175,14 @@ class HardwareDailyChoresViewModel {
             for ref in refs {
                 guard let assignment = assignmentsByID[ref.recordID],
                       calendar.isDate(assignment.day, inSameDayAs: day),
-                      let userID = assignment.userReference?.recordID,
-                      seen.insert(userID).inserted
-                else { continue }
+                      let userRefs = assignment.userReferences else { continue }
 
-                responsibleIDs.append(userID)
+                for userRef in userRefs {
+                    let userID = userRef.recordID
+                    if seen.insert(userID).inserted {
+                        responsibleIDs.append(userID)
+                    }
+                }
             }
 
             return responsibleIDs

@@ -35,12 +35,12 @@ final class CurrentScheduleViewModel {
     
     /// Entries assigned to ``currentUser``, ordered by day.
     var myEntries: [DailyUsageEntry] {
-        guard let myID = currentUser?.recordID else { return [] }
+        // Compared by record name so a different zone ID can't make the match fail
+        guard let myName = currentUser?.recordID?.recordName else { return [] }
         return houseViewModel.usageEntries
-            .filter { $0.userID == myID }
+            .filter { $0.userID.recordName == myName }
             .sorted { $0.day < $1.day }
     }
-    
     /// First day of the fortnightly cycle.
     var startDate: Date { houseViewModel.startDate }
     

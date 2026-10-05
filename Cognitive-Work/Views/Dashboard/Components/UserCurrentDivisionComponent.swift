@@ -138,7 +138,7 @@ private extension UserCurrentDivisionComponent {
                 let day = calendar.date(byAdding: .day, value: dayOffset, to: tomorrow) ?? tomorrow
                 let assignment = RecurrentAssignmentModel(
                     day: day,
-                    user: userReferences[index % userReferences.count],
+                    users: [userReferences[index % userReferences.count]],  
                     chore: reference(choreRecordName)
                 )
                 let assignmentRecordName = "\(choreRecordName)-\(dayOffset)"

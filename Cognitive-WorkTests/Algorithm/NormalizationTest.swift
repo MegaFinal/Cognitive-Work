@@ -15,7 +15,7 @@ struct NormalizationTest {
     
     // MARK: - Teste Normalization Logic
         @Test func normalizationFunctionTests() async {
-            // min = 0, max = 10，value = 5，result 0.5
+            // min = 0, max = 10, value = 5, result 0.5
             let normalResult = TaskSchedulerEngine.normalization(value: 5.0, min: 0.0, max: 10.0)
             #expect(normalResult == 0.5)
             
@@ -44,7 +44,6 @@ struct NormalizationTest {
             let minWeight = TaskSchedulerEngine.normalizedWeight(chore: chore)
             #expect(minWeight == 0.0) // 0.0 * 0.7 + 0.0 * 0.3 = 0.0
             
-            // 测试最高优先级和最长持续时间的组合
             chore.priorityTag = .urgent // priorityNormalized = 1.0
             chore.duration = 8 * 60     // timeNormalized = 1.0
             
