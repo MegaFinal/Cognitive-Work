@@ -8,38 +8,58 @@
 import SwiftUI
 
 struct WaitingAlgorithmView: View {
-    // Were multi-line literals whose indentation leaked into the UI (leading spaces and
-    // trailing blanks in centered text) and made unstable localization keys.
-    let description1: LocalizedStringKey = "Estamos ponderando, sorteando e dividindo as tarefas entre os moradores"
-    
-    let description2: LocalizedStringKey = "Enviaremos uma notificação quando a divisão estiver pronta"
-    
-    
+    private let columns = ChoreDTO.colunasMock
+    @State private var isRotating = 0.0
     
     var body: some View {
-        VStack(alignment: .center, spacing: 20) {
-            Image(systemName: "circle.bottomrighthalf.pattern.checkered")
-                .resizable()
-                .scaledToFit()
-                .frame(width: width * 0.4)
-                .padding(.bottom)
-            Text("Levantando escalas...")
-                .font(.system(size: 34))
-                .bold()
-            
-            VStack(alignment: .center, spacing: 5){
-                Text(description1)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                Text(description2)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
+        ZStack {
+            HStack(alignment: .top, spacing: 16) {
+                ForEach(columns.indices, id: \.self) { index in
+                    InfinityRow(
+                        cards: columns[index],
+                        movesUp: index.isMultiple(of: 1),
+                        speed: 0,
+                        phase: Double(index) * 130
+                    )
+                    .frame(width: 110)
+                }
             }
+            .frame(width: width, height: height, alignment: .top)
+            .clipped()
+            .opacity(0.6)
+            
+            VStack(spacing: 30) {
+                Image("loadingIcon")
+                    .rotationEffect(.degrees(isRotating))
+                    .onAppear {
+                        withAnimation(.linear(duration: 1)
+                            .speed(0.1).repeatForever(autoreverses: false)) {
+                                isRotating = 360.0
+                            }
+                    }
+                
+                Text("Levantando escalas")
+                    .font(.system(size: 32))
+                    .bold()
+                
+                VStack(spacing: 15) {
+                    Text("Estamos ponderando, sorteando e dividindo as tarefas entre os moradores")
+                    Text("Enviaremos uma notificação quando a divisão estiver pronta")
+                }
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            }
+            .frame(width: width * 0.8)
+            .padding(.horizontal, 16)
+            .padding(.top, 36)
+            .padding(.bottom, 24)
+            .background(
+                RoundedRectangle(cornerRadius: 32)
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 3.2, x: 0, y: 4)
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 30)
-        .navigationBarBackButtonHidden()
-
+        .ignoresSafeArea()
     }
 }
 

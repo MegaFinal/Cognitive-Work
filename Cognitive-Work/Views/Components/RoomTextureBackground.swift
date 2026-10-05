@@ -16,7 +16,7 @@ struct RoomTextureBackground: View {
     let zoom: CGFloat
     
     /// The texture is always drawn at this opacity, over the room's color.
-    static let textureOpacity: Double = 0.2
+    var textureOpacity: Double = 0.2
     
     /// Higher means bigger, fewer shapes.
     static let textureZoom: CGFloat = 2.5
@@ -25,6 +25,13 @@ struct RoomTextureBackground: View {
         self.color = color
         self.pattern = pattern
         self.zoom = zoom
+    }
+    
+    init(color: RoomColor, pattern: RoomTexturePattern, zoom: CGFloat = textureZoom, textureOpacity: Double) {
+        self.color = color
+        self.pattern = pattern
+        self.zoom = zoom
+        self.textureOpacity = textureOpacity
     }
     
     init(room: RoomModel, zoom: CGFloat = textureZoom) {
@@ -38,7 +45,7 @@ struct RoomTextureBackground: View {
                     .resizable()
                     .scaledToFill()
                     .scaleEffect(zoom)
-                    .opacity(Self.textureOpacity)
+                    .opacity(textureOpacity)
                     .allowsHitTesting(false)
             }
             .clipped()

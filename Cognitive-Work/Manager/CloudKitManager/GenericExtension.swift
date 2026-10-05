@@ -183,7 +183,7 @@ extension CloudKitManager {
         if let house {
             resolvedHouse = house
         } else {
-            resolvedHouse = await currentHouse()
+            resolvedHouse = try? await currentHouse()
         }
         
         guard let houseID = resolvedHouse?.recordID else { return [] }

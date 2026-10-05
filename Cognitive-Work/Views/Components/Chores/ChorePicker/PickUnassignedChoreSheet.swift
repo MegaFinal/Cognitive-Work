@@ -37,36 +37,29 @@ struct PickUnassignedChoreCard: View {
     
     private var effectiveWindow: Range<Date> {
         let calendar = Calendar.current
+        let cycle = carouselViewModel.cycleWindow ?? window
         
         if isWeekly {
             let base = originalDay
             ?? slots.first(where: { $0.date != nil })?.date
             ?? window.lowerBound
+            
             let startOfWeek = calendar.date(
                 from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: base)
             ) ?? base
+            
             if let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek) {
-                return startOfWeek..<endOfWeek
+                let clampedStart = max(startOfWeek, cycle.lowerBound)
+                let clampedEnd = min(endOfWeek, cycle.upperBound)
+                
+                if clampedStart < clampedEnd {
+                    return clampedStart..<clampedEnd
+                }
             }
         }
         
         if isDaily { return window }
-        return carouselViewModel.cycleWindow ?? window
-    }
-    
-    private var ruleText: LocalizedStringKey {
-        switch chore.frequency {
-        case .daily:
-            "Você ficará responsável por todos os dias do período."
-        case .weekly:
-            "Escolha a data desta tarefa dentro da semana. Dias que já passaram não podem ser escolhidos."
-        case .fortnightly:
-            "Escolha um dia dentro do período. Dias que já passaram não podem ser escolhidos."
-        case .monthly:
-            "Escolha um dia. Como você pegou esta tarefa neste ciclo, ela não será atribuída no próximo."
-        default:
-            "Escolha o dia da tarefa."
-        }
+        return cycle
     }
     
     private var includedDates: [Date] {
@@ -86,14 +79,25 @@ struct PickUnassignedChoreCard: View {
                     
                     calendarText
                     
+                    if isDaily {
+                        Toggle(isOn: allDailyIncluded) {
+                            Text("Pegar todas as tarefas diárias")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.black)
+                        }
+                        .toggleStyle(.switch)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    
                     CustomCalendar(
-                        selectedDate: activeDateBinding,
+                        selectedDate: isDaily ? Binding<Date?>.constant(nil) : activeDateBinding,
                         window: effectiveWindow,
-                        opacityForDay: { carouselViewModel.loadOpacity(on: $0, in: window) },
+                        opacityForDay: { date in carouselViewModel.loadOpacity(on: date, in: window) },
                         highlightedDays: includedDates,
-                        earliestSelectable: Calendar.current.startOfDay(for: Date())
+                        selectableDays: isDaily ? Set(slots.compactMap { $0.date }) : nil,
+                        onTapDay: isDaily ? { day in toggleDailySlot(day) } : nil
                     )
-                    .allowsHitTesting(!isDaily)
                     
                     if didFail {
                         Text("Não foi possível salvar. Tente novamente.")
@@ -127,6 +131,24 @@ struct PickUnassignedChoreCard: View {
                 slots[activeSlot].included = newValue != nil
             }
         )
+    }
+    
+    /// Drives, and reflects, whether every open daily slot is selected.
+    private var allDailyIncluded: Binding<Bool> {
+        Binding(
+            get: { !slots.isEmpty && slots.allSatisfy { $0.included } },
+            set: { newValue in
+                for index in slots.indices { slots[index].included = newValue }
+            }
+        )
+    }
+    
+    private func toggleDailySlot(_ day: Date) {
+        let calendar = Calendar.current
+        guard let index = slots.firstIndex(where: {
+            $0.date.map { calendar.isDate($0, inSameDayAs: day) } ?? false
+        }) else { return }
+        slots[index].included.toggle()
     }
     
     // MARK: - Subviews
@@ -224,12 +246,16 @@ struct PickUnassignedChoreCard: View {
             Task {
                 isSaving = true
                 didFail = false
+                
                 let success = await carouselViewModel.confirmPick(item, slots: slots)
-                isSaving = false
+                
                 if success {
-                    _ = await ScoreManager.shared.assignScoreForMyUser(score: ScoreValues.unassignedChorePicked.points)
+                    _ = await ScoreManager.shared.assignScoreForMyUser(
+                        score: ScoreValues.unassignedChorePicked.points
+                    )
                     carouselViewModel.dismissPickCard()
                 } else {
+                    isSaving = false
                     didFail = true
                 }
             }

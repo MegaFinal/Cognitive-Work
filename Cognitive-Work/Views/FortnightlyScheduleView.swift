@@ -27,6 +27,12 @@ struct FortnightlyScheduleView: View {
         self._scheduleViewModel = State(initialValue: scheduleViewModel ?? ScheduleViewModel())
     }
     
+    /// `true` while `WaitingAlgorithmView` or the info pop-up is on screen: the navigation bar
+    /// shows nothing (no confirm, no back) so the user can't leave or confirm mid-way.
+    private var hidesNavigationBarItems: Bool {
+        scheduleViewModel.isLoading || showInfoPopUp
+    }
+    
     var body: some View {
         Group {
             if scheduleViewModel.isLoading {
@@ -45,20 +51,24 @@ struct FortnightlyScheduleView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button {
-                    action()
-                } label: {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12))
-                        .bold()
-                        .foregroundColor(.white)
+            // Not just disabled: while the division is generated or the info pop-up is up,
+            // the bar must stay empty.
+            if !hidesNavigationBarItems {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        action()
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12))
+                            .bold()
+                            .foregroundColor(.white)
+                    }
+                    .tint(.blue)
+                    .buttonStyle(.glassProminent)
                 }
-                .tint(.blue)
-                .buttonStyle(.glassProminent)
-                .disabled(scheduleViewModel.isLoading || showInfoPopUp)
             }
         }
+        .navigationBarBackButtonHidden(hidesNavigationBarItems)
         .hidesTabBar()
         .padding(.top, 40)
         .padding(.vertical)
@@ -163,7 +173,7 @@ private extension ScheduleViewModel {
                 let day = calendar.date(byAdding: .day, value: dayOffset, to: tomorrow) ?? tomorrow
                 let assignment = RecurrentAssignmentModel(
                     day: day,
-                    user: userReferences[index % userReferences.count],
+                    users: [userReferences[index % userReferences.count]],
                     chore: reference(choreRecordName)
                 )
                 let assignmentRecordName = "\(choreRecordName)-\(dayOffset)"

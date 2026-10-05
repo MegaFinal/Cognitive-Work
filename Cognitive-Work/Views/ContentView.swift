@@ -13,23 +13,17 @@ import CloudKit
 /// Hosts the main tab bar and handles share invitations that arrive while the
 /// user already belongs to a house.
 struct ContentView: View {
-
+    
     // MARK: - Properties
-    @State var viewModel: ContentViewModel = ContentViewModel()
-    /// Whether the "already in a house" warning is being presented.
-    @State var showEnviteAcceptAlert: Bool = false
-
-    /// Metadata of the invitation that triggered the warning.
-    @State var shareMetadata: CKShare.Metadata? = nil
-    @State private var isSwitchingHouse = false
+    @State private var viewModel: ContentViewModel = ContentViewModel()
     
     /// Shared by every tab so pushed screens can hide the tab bar and animate it back.
     @State private var tabBarVisibility = TabBarVisibilityController()
     
-    @AppStorage("didOnboard") private var didOnboard: Bool = true
-
+    @Environment(\.scenePhase) private var scenePhase
+    
     // MARK: - Body
-
+    
     var body: some View {
         TabView {
             ChoresView()
@@ -43,23 +37,23 @@ struct ContentView: View {
 //                }
             
             UserProfileView()
-            .tabItem {
-                Label("Perfil", systemImage: "person.fill")
-            }
+                .tabItem {
+                    Label("Perfil", systemImage: "person.fill")
+                }
         }
         .environment(tabBarVisibility)
         .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { cloudMetadata in
-            showEnviteAcceptAlert = true
-            self.shareMetadata = cloudMetadata.object as? CKShare.Metadata
+            viewModel.showInviteAcceptAlert = true
+            viewModel.shareMetadata = cloudMetadata.object as? CKShare.Metadata
         }
-        .alert("Não é possivel estar em duas casas ao mesmo tempo", isPresented: $showEnviteAcceptAlert) {
+        .alert("Não é possivel estar em duas casas ao mesmo tempo", isPresented: $viewModel.showInviteAcceptAlert) {
             Button("Trocar de casa",role: .destructive) {
-                isSwitchingHouse = true
+                viewModel.isSwitchingHouse = true
                 Task {
-                    if let shareMetadata {
-                        await viewModel.switchHouse(to: shareMetadata)
+                    if let sm = viewModel.shareMetadata {
+                        await viewModel.switchHouse(to: sm)
                     }
-                    isSwitchingHouse = false
+                    viewModel.isSwitchingHouse = false
                 }
             }
         } message: {
@@ -73,24 +67,29 @@ struct ContentView: View {
         } message: {
             Text(viewModel.errorMessage ?? L10n.tr("Deu algum erro."))
         }
-        .blockingOperation(isPresented: $isSwitchingHouse, message: "Trocando de casa...")
-        .blockingWhileUnlinkingOrphanedHouse()
-        .task {
-            await leaveOrphanedHouses()
-        }
-    }
-    
-    // MARK: - Orphaned houses
-    
-    /// Leaves any house this iCloud account is still attached to without a member record
-    private func leaveOrphanedHouses() async {
-        let removed = await CloudKitManager.shared.pruneOrphanedSharedMemberships()
-        guard removed > 0 else { return }
         
-        if await CloudKitManager.shared.currentHouse(forceRefresh: true) == nil {
-            didOnboard = false
-        } else {
-            NotificationCenter.default.post(name: .cloudKitDidChange, object: nil)
+        .alert("A casa que você pertencia foi deletada.", isPresented: $viewModel.userHasNoHouse) {
+            Button("Ok", role: .confirm) {
+                viewModel.accountWithoutHouseReturnToOnboarding()
+            }
+        } message: {
+            Text("Você será redirecionado ao início do aplicativo.")
+        }
+        
+        .blockingOperation(isPresented: $viewModel.isSwitchingHouse, message: "Trocando de casa...")
+        .blockingWhileUnlinkingOrphanedHouse()
+        
+        .task {
+            await viewModel.leaveOrphanedHouses()
+            await viewModel.fetchHouse()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            Task { await viewModel.fetchHouse() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await viewModel.fetchHouse() }
+            }
         }
     }
 }

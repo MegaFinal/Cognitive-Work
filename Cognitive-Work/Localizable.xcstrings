@@ -174,6 +174,7 @@
 
     },
     "A casa já foi criada por outro morador" : {
+    "A casa que você pertencia foi deletada." : {
 
     },
     "A cozinha foi onde você mais trabalhou." : {
@@ -499,6 +500,7 @@
       }
     },
     "Assim que todos os moradores preencherem enviaremos uma notificação avisando que a escala de tarefas foi dividida de uma forma justa por todos da casa!\n" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -769,6 +771,9 @@
     "Comece a nova divisão de tarefas da casa!" : {
 
     },
+    "Como administrador, você deverá selecionar as tarefas que serão divididas entre todos" : {
+
+    },
     "Cômodo" : {
       "localizations" : {
         "en" : {
@@ -993,6 +998,7 @@
       }
     },
     "Criamos um formulário curto, com duração de cerca de 5 minutos, você precisa apenas nos dizer mais serão as tarefas que serão divididas por todos da casa e qual sua carga horária por semana, o resto é com a gente!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1014,6 +1020,7 @@
       }
     },
     "Criar divisão de tarefas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1632,6 +1639,7 @@
       }
     },
     "Escolha a data desta tarefa dentro da semana. Dias que já passaram não podem ser escolhidos." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1642,6 +1650,7 @@
       }
     },
     "Escolha o dia da tarefa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1683,6 +1692,7 @@
       }
     },
     "Escolha um dia dentro do período. Dias que já passaram não podem ser escolhidos." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1693,6 +1703,7 @@
       }
     },
     "Escolha um dia. Como você pegou esta tarefa neste ciclo, ela não será atribuída no próximo." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2194,6 +2205,9 @@
         }
       }
     },
+    "Hora de começar a divisão de tarefas" : {
+
+    },
     "Idioma" : {
       "localizations" : {
         "en" : {
@@ -2389,7 +2403,11 @@
         }
       }
     },
+    "Levantando escalas" : {
+
+    },
     "Levantando escalas..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3331,6 +3349,9 @@
         }
       }
     },
+    "Ok" : {
+
+    },
     "OK" : {
       "localizations" : {
         "en" : {
@@ -3525,6 +3546,7 @@
       }
     },
     "Para que possamos ajudar no seu dia a dia em sua casa precisamos saber um pouco mais sobre ela!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3645,6 +3667,7 @@
 
     },
     "Pedir o convite por mensagem" : {
+    "Pegar todas as tarefas diárias" : {
 
     },
     "Pendente" : {
@@ -5049,6 +5072,7 @@
 
     },
     "Você ficará responsável por todos os dias do período." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5073,6 +5097,7 @@
 
     },
     "Você será o administrador" : {
+    "Você será redirecionado ao início do aplicativo." : {
 
     },
     "Voltar" : {

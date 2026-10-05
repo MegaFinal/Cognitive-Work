@@ -69,7 +69,7 @@ class CloudKitManager {
     
     /// In-flight house lookup, so concurrent callers share one request instead of racing.
     @ObservationIgnored
-    private var houseLookup: Task<HouseModel?, Never>?
+    private var houseLookup: Task<HouseModel?, Error>?
     
     /// In-flight in-house profile lookup, deduplicated the same way.
     @ObservationIgnored
@@ -129,24 +129,27 @@ class CloudKitManager {
     
     /// The house this device belongs to, resolved once per session.
     /// - Parameter forceRefresh: Pass `true` to bypass the cache and re-resolve.
-    func currentHouse(forceRefresh: Bool = false) async -> HouseModel? {
-        if forceRefresh {
-            cachedHouse = nil
-            houseLookup?.cancel()
-            houseLookup = nil
-        }
-        
+    func currentHouse(forceRefresh: Bool = false) async throws -> HouseModel? {
+        if forceRefresh { cachedHouse = nil }
+
         if let cachedHouse { return cachedHouse }
-        if let houseLookup { return await houseLookup.value }
-        
-        let lookup = Task<HouseModel?, Never> { [weak self] in
+        // A fetch already in flight is fresh enough — share it instead of cancelling it.
+        if let houseLookup { return try await houseLookup.value }
+
+        let lookup = Task<HouseModel?, Error> { [weak self] in
             guard let self else { return nil }
-            return try? await self.fetchFirst(HouseModel.self)
+            do {
+                return try await self.fetchFirst(HouseModel.self)
+            } catch let error as CloudKitErrors<String> {
+                // `fetchFirst` signals "no record" by throwing — for us that just means "no house".
+                if case .notFound = error { return nil }
+                throw error
+            }
         }
         houseLookup = lookup
-        
-        let house = await lookup.value
-        houseLookup = nil
+        defer { houseLookup = nil }
+
+        let house = try await lookup.value
         cachedHouse = house
         return house
     }
@@ -357,7 +360,7 @@ class CloudKitManager {
     ///   deleted, or the copy predates this naming convention.
     func fetchMyHouseUser() async -> UserModel? {
         guard let privateRecordID = await fetchMyUser()?.recordID,
-              let houseZoneID = await currentHouse()?.recordID?.zoneID
+              let houseZoneID = try? await currentHouse()?.recordID?.zoneID
         else {
             return nil
         }
