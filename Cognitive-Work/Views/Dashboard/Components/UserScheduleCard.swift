@@ -176,10 +176,12 @@ private struct MyScheduleDayColumn: View {
                 arrowEdge: .bottom
             ) {
                 if let resolvedChore {
-                    ChoreCard(chore: resolvedChore, user: user, room: resolvedRoom)
+//                    ChoreCard(chore: resolvedChore, user: user, room: resolvedRoom)
+                    ChorePopOverComponent(chore: resolvedChore, user: user, room: resolvedRoom)
                         .padding()
                         // Keeps a real popover on iPhone instead of a sheet.
-                        .presentationCompactAdaptation(.popover)
+                        .presentationCompactAdaptation(.none)
+                        .presentationBackground(.white)
                 }
             }
     }
@@ -210,13 +212,12 @@ private struct RoomTexturedShape<S: Shape>: View {
     /// The room that provides the color and texture.
     let room: RoomModel?
     
-    /// Enlargement of the texture, forwarded to ``RoomTextureBackground``.
     /// Higher values draw bigger, fewer shapes.
     var zoom: CGFloat = RoomTextureBackground.textureZoom
     
     var body: some View {
         if let room {
-            RoomTextureBackground(room: room, zoom: zoom)
+            RoomTextureBackground(room: room, zoom: self.zoom)
                 .clipShape(shape)
         } else {
             shape.fill(.gray)
