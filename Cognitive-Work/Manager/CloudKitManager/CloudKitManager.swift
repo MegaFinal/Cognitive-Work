@@ -696,11 +696,25 @@ class CloudKitManager {
     ///
     /// - Important: If the operation fails, the error message is stored in **`self.errorMessage`**.
     @discardableResult
-    func batchSave(records: [CKRecord], zoneID: CKRecordZone.ID) async -> Bool {
+    func batchSave(
+        records: [CKRecord],
+        zoneID: CKRecordZone.ID,
+        savePolicy: CKModifyRecordsOperation.RecordSavePolicy = .ifServerRecordUnchanged
+    ) async -> Bool {
         let isPrivate = zoneID.ownerName == CKCurrentUserDefaultName
         let database = isPrivate ? privateDB : sharedDB
         do {
-            _ = try await database.modifyRecords(saving: records, deleting: [])
+            let (saveResults, _) = try await database.modifyRecords(
+                saving: records,
+                deleting: [],
+                savePolicy: savePolicy,
+                atomically: true
+            )
+            // `modifyRecords` only throws for whole-request failures; per-record errors
+            // (e.g. serverRecordChanged) come back in the results and used to be ignored.
+            for (_, result) in saveResults {
+                if case .failure(let error) = result { throw error }
+            }
         
             await HardwareViewModel.notifyDataChanged()
             return true

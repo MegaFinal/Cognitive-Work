@@ -37,6 +37,8 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     private let pollingInterval: Duration = .seconds(5)
     
     
+    /// `true` when opened from the house settings ("Adicionar moradores"). There is no flow to
+    /// advance there, so the onboarding-only controls ("Continuar" and its hint) are hidden.
     var isFromSettings: Bool
     
     // MARK: - Body
@@ -73,7 +75,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
             }
             
             if !completedUsers.isEmpty {
-                Text("Usuarios prontos")
+                Text("Moradores prontos")
                 .font(.subheadline)
                 .fontWeight(.thin)
                 completedUsersView
@@ -86,28 +88,33 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         }
         .overlay(alignment: .bottomTrailing) {
             VStack {
-                Text("Certifique-se de que todos os moradores estão dentro do app antes de continuar")
-                    .frame(width: width * 0.8)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.gray)
+                if !isFromSettings {
+                    Text("Certifique-se de que todos os moradores estão dentro do app antes de continuar")
+                        .frame(width: width * 0.8)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.gray)
+                }
             
                 HStack {
                     inviteButton
                         .frame(alignment: .center)
                     
-                    Button("Continuar", systemImage: "chevron.right") {
-                        Task { viewModel.goToNextView() }
+                    // Settings has no next step: the throwaway view model there has no flow.
+                    if !isFromSettings {
+                        Button("Continuar", systemImage: "chevron.right") {
+                            Task { viewModel.goToNextView() }
+                        }
+                        .bold()
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.glassProminent)
+                        .buttonBorderShape(.circle)
+                        .controlSize(.large)
+                        .disabled(!pendingUsers.isEmpty)
                     }
-                    .bold()
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.glassProminent)
-                    .buttonBorderShape(.circle)
-                    .controlSize(.large)
-                    .disabled(!pendingUsers.isEmpty)
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.bottom, height * 0.073)
-                .padding(.trailing, width * 0.021)
+                .frame(maxWidth: .infinity, alignment: isFromSettings ? .center : .trailing)
+                .padding(.bottom, isFromSettings ? 0 : height * 0.073)
+                .padding(.trailing, isFromSettings ? 0 : width * 0.021)
             }
         }
         .frame(width: width * 0.84)
@@ -115,7 +122,15 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         .task(id: viewModel.currentHouse?.recordID) {
             await prepareInvite()
         }
-        .task {
+        // Keyed by the house: in settings `currentHouse` is only assigned in `onAppear`, so the
+        // first run could start without it. A new id restarts the loop with the right house.
+        .task(id: viewModel.currentHouse?.recordID) {
+            // Retries the owner's own free time if saving it right after creating the house
+            // failed; otherwise the owner shows up as pending and "Continuar" never unlocks.
+            // Onboarding only: in settings there's nothing pending to flush.
+            if !isFromSettings {
+                await viewModel.flushPendingFreeTimeIfNeeded()
+            }
             await updateUsers()
             
             while !Task.isCancelled {
@@ -134,6 +149,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                 await updateUsers()
             }
         }
+        .hidesTabBar()
     }
     
     

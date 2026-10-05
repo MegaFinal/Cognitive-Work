@@ -52,7 +52,7 @@ struct SelectFreeTimeOnboardingView: View {
         if isFromSettings {
             dismiss()
         } else {
-            viewModel.goToNextView()
+            viewModel.advanceAfterFreeTime()
         }
     }
     
@@ -116,7 +116,15 @@ struct SelectFreeTimeOnboardingView: View {
             Text(viewModel.errorMessage ?? "")
         }
         .task {
-            guard isFromSettings else { return }
+            guard isFromSettings else {
+                // Restores a choice already made in onboarding (kept until the house exists).
+                if let pending = viewModel.pendingFreeTimeMinutes {
+                    for (index, minutes) in pending.enumerated() where weekOrder.indices.contains(index) {
+                        weekOrder[index].freeTime = FreeTimeEnum(minutes: minutes)
+                    }
+                }
+                return
+            }
             
             viewModel.isLoading = true
             let saved = await viewModel.fetchCurrentFreeTime()

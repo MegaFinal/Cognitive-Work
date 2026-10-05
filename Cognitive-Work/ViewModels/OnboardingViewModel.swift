@@ -60,6 +60,10 @@ class OnboardingViewModel {
     /// the screen can tell "joining" from "creating" a house.
     private(set) var isJoiningHouse = false
     
+    /// True from the moment an invite link is opened until the house is joined (or it fails).
+    /// Covers the share acceptance, which runs *before* ``joinHouse()`` and takes a few seconds.
+    var isAcceptingInvite = false
+    
     private var isCheckingSchedule = false
     
     var isRestoringSession: Bool = true
@@ -160,7 +164,9 @@ class OnboardingViewModel {
             points: user.points,
             badges: user.badgesReference,
             tasks: user.choresReference,
-            availableTime: user.availableTimeReference,
+            // Free time is no longer copied from the private profile: those records live outside
+            // the house hierarchy. It is written straight to this copy by
+            // `flushPendingFreeTimeIfNeeded()` below.
             house: houseCascadeRef,
             coupons: user.couponsReference,
             couponLimit: user.couponLimit,
@@ -175,9 +181,13 @@ class OnboardingViewModel {
         userCopy.populate(record: userCopyRecord)
         userCopyRecord.parent = houseCascadeRef
          
+        // `.allKeys`: the in-house copy has a deterministic recordID (profile name + "-house").
+        // If an earlier house was deleted, or creation is retried, that record already exists
+        // and the default policy rejected the whole batch with serverRecordChanged.
         let success = await CloudKitManager.shared.batchSave(
             records: [houseRecord, userCopyRecord, shopListRecord],
-            zoneID: zoneID
+            zoneID: zoneID,
+            savePolicy: .allKeys
         )
          
         if success {
@@ -189,6 +199,9 @@ class OnboardingViewModel {
             self.currentUser = savedUserCopy
             self.stateMachine.user = savedUserCopy
              
+            // Free time is now picked before the house exists; persist it on the in-house copy.
+            await flushPendingFreeTimeIfNeeded()
+            
             try? await CloudKitManager.shared.createSharedSubscription()
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao criar a casa.")
@@ -226,8 +239,12 @@ class OnboardingViewModel {
     /// - Requires ``currentHouse`` to already be set.
     @MainActor
     func saveSelectedRooms() async {
+        errorMessage = nil
         guard let house = currentHouse,
-              let zoneID = house.recordID?.zoneID else { return }
+              let zoneID = house.recordID?.zoneID else {
+            errorMessage = L10n.tr("Não foi possível encontrar sua casa. Tente novamente.")
+            return
+        }
         isLoading = true
         
         let selectedDrafts = availableRooms.filter { $0.isSelected && !$0.isAddButton }
@@ -290,9 +307,39 @@ class OnboardingViewModel {
     ///
     /// Used to display the members who have already joined while the house owner
     /// waits on the invite screen.
+    ///
+    /// The query alone missed people who had just joined: CloudKit query indexes lag behind
+    /// writes. So the result is merged with the house record's `users` list (re-read fresh by
+    /// ID, which is immediately consistent — ``joinHouse()`` appends to it) and with this
+    /// device's own in-house record.
     @MainActor
     func fetchHouseUsers() async -> [UserModel] {
-        await CloudKitManager.shared.fetchHouseUsers(of: currentHouse)
+        guard let houseID = currentHouse?.recordID else {
+            return await CloudKitManager.shared.fetchHouseUsers(of: currentHouse)
+        }
+        
+        async let queried = CloudKitManager.shared.fetchHouseUsers(of: currentHouse)
+        async let freshHouse = CloudKitManager.shared.fetchRecordsByRecordReference(
+            for: HouseModel.self,
+            recordReferences: [CKRecord.Reference(recordID: houseID, action: .none)]
+        )?.first
+        
+        var users = await queried
+        var candidates: [UserModel] = []
+        if let house = await freshHouse {
+            candidates += await house.users
+        }
+        if let me = currentUser, CloudKitManager.shared.isHouseUser(me) {
+            candidates.append(me)
+        }
+        
+        for candidate in candidates
+        where candidate.houseReference?.recordID == houseID
+            && !users.contains(where: { $0.recordID == candidate.recordID || $0.ownerRecordName == candidate.ownerRecordName }) {
+            users.append(candidate)
+        }
+        
+        return users.sorted { ($0.recordID?.recordName ?? "") < ($1.recordID?.recordName ?? "") }
     }
     
     @MainActor
@@ -311,6 +358,7 @@ class OnboardingViewModel {
     /// be duplicated once per person who selects it.
     func createDefaultChores() async {
         isLoading = true
+        errorMessage = nil
         
         guard let rooms = currentHouse?.room,
               let houseRecordID = currentHouse?.recordID else {
@@ -387,36 +435,131 @@ class OnboardingViewModel {
     
     func finishOnboarding() {
         isOnboardingSkipped = true
+        pendingFreeTimeMinutes = nil
         stateMachine.resetProgress()
     }
     
+    /// Moves an invited user (``NavigationFlowsOnboarding/invitedWithProfile``) past the
+    /// "join a house" steps once the house has been joined.
+    ///
+    /// Idempotent on purpose: the join can be detected by both the `.didAcceptShare`
+    /// notification and ``WaitAcceptLinkOnboardingView``'s own check, and a plain
+    /// ``goToNextView()`` from each would skip ``OnboardingNavigationSteps/waitAdminScheduling``.
+    /// It also covers the share being accepted *before* free time was chosen.
+    func advanceAfterJoiningHouse() {
+        let steps = stateMachine.steps
+        guard let target = steps.firstIndex(of: .waitAdminScheduling) else {
+            goToNextView()
+            return
+        }
+        
+        if let freeTimeIndex = steps.firstIndex(of: .chooseFreeTime),
+           stateMachine.index <= freeTimeIndex,
+           pendingFreeTimeMinutes == nil {
+            stateMachine.jumpToStep(index: freeTimeIndex)
+            return
+        }
+        
+        if stateMachine.index < target {
+            stateMachine.jumpToStep(index: target)
+        }
+    }
+    
+    /// Leaves the free-time step. A user who already joined a house through an invite skips
+    /// the create/enter/wait-link steps instead of being sent back to them.
+    func advanceAfterFreeTime() {
+        if stateMachine.flow == .invitedWithProfile,
+           let user = currentUser, CloudKitManager.shared.isHouseUser(user) {
+            advanceAfterJoiningHouse()
+        } else {
+            goToNextView()
+        }
+    }
+    
+    // MARK: - Pending free time
+    
+    private static let pendingFreeTimeKey = "onboarding.pendingFreeTime"
+    
+    /// Free time chosen before the user belongs to a house (minutes per day, Monday first).
+    ///
+    /// The free-time step now comes *before* creating/joining a house, but free time must live
+    /// on the in-house user record (the one housemates and the scheduler read). It's kept here
+    /// — persisted so a relaunch doesn't lose it — until ``flushPendingFreeTimeIfNeeded()``
+    /// can write it.
+    var pendingFreeTimeMinutes: [Int]? {
+        get { UserDefaults.standard.array(forKey: Self.pendingFreeTimeKey) as? [Int] }
+        set {
+            if let newValue {
+                UserDefaults.standard.set(newValue, forKey: Self.pendingFreeTimeKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Self.pendingFreeTimeKey)
+            }
+        }
+    }
+    
+    private static func availableTimes(from minutes: [Int]) -> [AvailableTimeModel] {
+        minutes.map { AvailableTimeModel(capacityMinutes: $0, day: Date()) }
+    }
+    
+    /// The user's in-house record, or `nil` while they don't belong to a house yet.
+    @MainActor
+    private func resolveHouseUser() async -> UserModel? {
+        if let user = currentUser, CloudKitManager.shared.isHouseUser(user) {
+            return user
+        }
+        guard currentHouse != nil,
+              let houseUser = await CloudKitManager.shared.fetchMyHouseUser() else { return nil }
+        currentUser = houseUser
+        stateMachine.user = houseUser
+        return houseUser
+    }
+    
+    /// Writes ``pendingFreeTimeMinutes`` to the in-house user once it exists.
+    ///
+    /// - Returns: `true` when nothing is pending or the save succeeded.
+    @MainActor
+    @discardableResult
+    func flushPendingFreeTimeIfNeeded() async -> Bool {
+        guard let minutes = pendingFreeTimeMinutes else { return true }
+        guard let houseUser = await resolveHouseUser(),
+              await houseUser.setAvailableTimes(Self.availableTimes(from: minutes)) else {
+            return false
+        }
+        pendingFreeTimeMinutes = nil
+        return true
+    }
+    
     /// Saves the free time chosen during onboarding on the current user's in-house record.
+    ///
+    /// When the user doesn't belong to a house yet (free time now comes before creating or
+    /// joining one), the choice is kept in ``pendingFreeTimeMinutes`` and written later by
+    /// ``flushPendingFreeTimeIfNeeded()``. Saving it on the private profile instead left the
+    /// records outside the house, so housemates and the scheduler never saw them.
     @MainActor
     @discardableResult
     func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async -> Bool {
         isLoading = true
+        errorMessage = nil
         defer { isLoading = false }
         
-        let availableTimes = daysOfWeekDTO.map { dayOfWeek in
-            AvailableTimeModel(
-                capacityMinutes: Int((dayOfWeek.freeTime.timeInHours * 60).rounded()),
-                day: Date()
-            )
-        }
+        let minutes = daysOfWeekDTO.map { Int(($0.freeTime.timeInHours * 60).rounded()) }
         
         await reloadSessionIfNeeded()
         
-        if let user = currentUser, !CloudKitManager.shared.isHouseUser(user),
-           let houseUser = await CloudKitManager.shared.fetchMyHouseUser() {
-            currentUser = houseUser
-            stateMachine.user = houseUser
+        guard let houseUser = await resolveHouseUser() else {
+            guard currentUser != nil else {
+                errorMessage = L10n.tr("Não foi possível salvar seus horários. Tente novamente.")
+                return false
+            }
+            pendingFreeTimeMinutes = minutes
+            return true
         }
         
-        guard let user = currentUser,
-              await user.setAvailableTimes(availableTimes) else {
+        guard await houseUser.setAvailableTimes(Self.availableTimes(from: minutes)) else {
             errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Não foi possível salvar seus horários. Tente novamente.")
             return false
         }
+        pendingFreeTimeMinutes = nil
         return true
     }
     
@@ -522,6 +665,8 @@ class OnboardingViewModel {
             self.currentUser = savedUser
             self.stateMachine.user = savedUser
             CloudKitManager.shared.clearPendingJoin(ifMatching: houseRecordID.zoneID)
+            // Free time picked before joining was never copied to the house record.
+            await flushPendingFreeTimeIfNeeded()
             return true
         } else {
             errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao entrar na casa.")
@@ -560,6 +705,7 @@ class OnboardingViewModel {
     func restoreProgressIfNeeded() async {
         guard stateMachine.index > 0 else { return }
         await reloadSessionIfNeeded()
+        await flushPendingFreeTimeIfNeeded()
     }
     
     /// Loads ``currentUser`` and ``currentHouse`` (and mirrors them into ``stateMachine``)
@@ -612,13 +758,40 @@ class OnboardingViewModel {
         goToNextView()
     }
     
+    // MARK: - Pending join
+    
+    /// `true` when the current house is someone else's (reached through an accepted invite) but
+    /// this profile still has no member record in it.
+    @MainActor
+    func needsToJoinCurrentHouse() async -> Bool {
+        guard let zoneID = currentHouse?.recordID?.zoneID,
+              zoneID.ownerName != CKCurrentUserDefaultName,
+              let user = currentUser, !CloudKitManager.shared.isHouseUser(user)
+        else { return false }
+        return await CloudKitManager.shared.fetchMyHouseUser() == nil
+    }
+    
+    /// Creates the missing member record for an invite that was accepted but never joined, and
+    /// moves the flow past the join steps.
+    @MainActor
+    func completePendingJoinIfNeeded() async {
+        guard await needsToJoinCurrentHouse() else { return }
+        
+        // The user has a profile, so this is the "with profile" path regardless of what a race
+        // may have set (`.invitedWithoutProfile` when `currentUser` wasn't loaded yet).
+        stateMachine.flow = .invitedWithProfile
+        if await joinHouse() {
+            advanceAfterJoiningHouse()
+        }
+    }
+    
     // MARK: - Auto Login / Initial Validation
     
     /// Checks if the current iCloud user already possesses an account within the application.
     ///
     /// - If only the profile exists: resets the state machine flow to `.notDefined` and jumps
-    ///   directly to the home creation/entry step (`.createOrEnterHome`), bypassing welcome and
-    ///   profile creation. The flow is corrected to `.houseCreator`/`.invitedWithProfile` once the
+    ///   to the free-time step (`.chooseFreeTime`) — or straight to `.createOrEnterHome` when free
+    ///   time is already pending — bypassing welcome and profile creation. The flow is corrected to `.houseCreator`/`.invitedWithProfile` once the
     ///   user picks "Criar" or "Entrar" on that screen.
     @MainActor
     func checkExistingAccount() async {
@@ -646,6 +819,9 @@ class OnboardingViewModel {
         if hasOnboardingInProgress {
             if let user { currentUser = user; stateMachine.user = user }
             if let house { currentHouse = house; stateMachine.house = house }
+            // An invite accepted while the app was starting may have left the flow without the
+            // member record (e.g. `.didAcceptShare` arrived before `currentUser` was loaded).
+            await completePendingJoinIfNeeded()
             return
         }
         
@@ -656,10 +832,22 @@ class OnboardingViewModel {
             if let existingHouse = house {
                 self.currentHouse = existingHouse
                 self.stateMachine.house = existingHouse
-                self.finishOnboarding()
+                
+                // When the app is opened through an invite link, the share is accepted in
+                // parallel with this check, so the invited house is already visible here even
+                // though `joinHouse()` never ran. Finishing onboarding at this point dropped the
+                // user into the app without their public (in-house) record.
+                if await needsToJoinCurrentHouse() {
+                    await completePendingJoinIfNeeded()
+                } else {
+                    self.finishOnboarding()
+                }
             } else {
                 stateMachine.flow = .notDefined
-                if let targetIndex = stateMachine.steps.firstIndex(of: .createOrEnterHome) {
+                // Free time now comes before the house; skipping it left the member without
+                // availability (and the owner stuck waiting for them).
+                let target: OnboardingNavigationSteps = pendingFreeTimeMinutes == nil ? .chooseFreeTime : .createOrEnterHome
+                if let targetIndex = stateMachine.steps.firstIndex(of: target) {
                     stateMachine.jumpToStep(index: targetIndex)
                 }
             }

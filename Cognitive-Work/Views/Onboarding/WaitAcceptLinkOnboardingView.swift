@@ -19,6 +19,12 @@ struct WaitAcceptLinkOnboardingView: View {
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
+    /// The invite is being accepted or the house joined. Navigation is locked meanwhile, so the
+    /// user can't leave halfway through and end up without a member record.
+    private var isEnteringHouse: Bool {
+        viewModel.isAcceptingInvite || viewModel.isJoiningHouse
+    }
+    
     // MARK: - Body
     
     var body: some View {
@@ -35,13 +41,26 @@ struct WaitAcceptLinkOnboardingView: View {
                 
                 
                 
-                ShareLink(item: "eai amigo, cade meu link 🤨🤨") {
-                    Label("Pedir o convite por mensagem", systemImage: "square.and.arrow.up")
-                        .fontWeight(.semibold)
+                if isEnteringHouse {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .controlSize(.large)
+                            .tint(.chorePurple)
+                        Text("Entrando na casa...")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.chorePurple)
+                    }
+                    .transition(.opacity)
+                } else {
+                    ShareLink(item: "eai amigo, cade meu link 🤨🤨") {
+                        Label("Pedir o convite por mensagem", systemImage: "square.and.arrow.up")
+                            .fontWeight(.semibold)
+                    }
+                    .controlSize(.large)
+                    .buttonStyle(.glassProminent)
+                    .tint(.blue)
+                    .transition(.opacity)
                 }
-                .controlSize(.large)
-                .buttonStyle(.glassProminent)
-                .tint(.blue)
                 
                 
             }
@@ -53,6 +72,7 @@ struct WaitAcceptLinkOnboardingView: View {
                     .opacity(0.2)
             }
             .padding(.horizontal, 10)
+            .animation(.easeInOut(duration: 0.2), value: isEnteringHouse)
             .navigationBarBackButtonHidden()
             .task {
                 // Covers the case where the invite was already accepted while the app was closed.
@@ -68,15 +88,17 @@ struct WaitAcceptLinkOnboardingView: View {
                 
                 viewModel.stateMachine.flow = .invitedWithProfile
                 guard await viewModel.joinHouse() else { return }
-                viewModel.goToNextView()
+                viewModel.advanceAfterJoiningHouse()
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
+                        guard !isEnteringHouse else { return }
                         viewModel.goToPreviousView()
                     } label: {
                         Image(systemName: "chevron.left")
                     }
+                    .disabled(isEnteringHouse)
                 }
             }
         }

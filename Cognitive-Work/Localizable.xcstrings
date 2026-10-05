@@ -1385,6 +1385,9 @@
         }
       }
     },
+    "Entrando na casa..." : {
+
+    },
     "Entrar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2778,6 +2781,9 @@
         }
       }
     },
+    "Moradores prontos" : {
+
+    },
     "Na casa %@" : {
 
     },
@@ -2811,6 +2817,12 @@
           }
         }
       }
+    },
+    "Não deu para salvar as tarefas" : {
+
+    },
+    "Não deu para salvar os cômodos" : {
+
     },
     "Não deu para salvar seus horários" : {
       "localizations" : {
@@ -4876,9 +4888,6 @@
           }
         }
       }
-    },
-    "Usuarios prontos" : {
-
     },
     "Vale por 15 dias" : {
       "localizations" : {

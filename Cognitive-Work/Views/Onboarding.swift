@@ -38,12 +38,37 @@ struct Onboarding: View {
                 .onChange(of: viewModel.isOnboardingSkipped) {
                     didOnboard = true
                 }
+                .onReceive(NotificationCenter.default.publisher(for: .willAcceptShare)) { _ in
+                    guard viewModel.stateMachine.flow != .houseCreator else { return }
+                    viewModel.isAcceptingInvite = true
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .shareAcceptFailed)) { _ in
+                    viewModel.isAcceptingInvite = false
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { _ in
+                    viewModel.isAcceptingInvite = false
+                }
                 .onReceive(NotificationCenter.default.publisher(for: .didAcceptShare)) { _ in
                     Task {
+                        defer { viewModel.isAcceptingInvite = false }
+                        
+                        // A house creator mid-flow must not be switched to an invited flow:
+                        // the same index means a different step there.
+                        guard viewModel.stateMachine.flow != .houseCreator else { return }
+                        viewModel.isAcceptingInvite = true
+                        
+                        // On a cold launch through the invite link this can fire before
+                        // `checkExistingAccount()` loaded the profile. Treating that as "no
+                        // profile" sent the user down `.invitedWithoutProfile` past the
+                        // profile step, so `joinHouse()` never ran and no public user was created.
+                        if viewModel.currentUser == nil {
+                            await viewModel.fetchCurrentUser()
+                        }
+                        
                         if viewModel.currentUser != nil {
                             viewModel.stateMachine.flow = .invitedWithProfile
                             if await viewModel.joinHouse() {
-                                viewModel.goToNextView()
+                                viewModel.advanceAfterJoiningHouse()
                             }
                         } else {
                             viewModel.stateMachine.flow = .invitedWithoutProfile

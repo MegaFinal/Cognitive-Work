@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// The step where the user chooses whether to join an existing house
 /// or create a new one
@@ -19,7 +20,10 @@ struct CreateOrEnterHouseOnboardingView: View {
     
     @State private var isCreatingHouse = false
     
-    private var isBusy: Bool { isCreatingHouse || viewModel.isJoiningHouse || viewModel.isLoading }
+    /// An invite is being accepted or the house joined (shown on the "Entrar" card).
+    private var isEnteringHouse: Bool { viewModel.isAcceptingInvite || viewModel.isJoiningHouse }
+    
+    private var isBusy: Bool { isCreatingHouse || isEnteringHouse || viewModel.isLoading }
     
     // MARK: - Body
     //
@@ -29,7 +33,7 @@ struct CreateOrEnterHouseOnboardingView: View {
     var body: some View {
         VStack(alignment: .center) {
             OnboardingHeader(
-                title: "Bem vindo, \(viewModel.currentUser?.name ?? "error no name")!",
+                title: "Bem vindo, \(viewModel.currentUser?.name ?? viewModel.userName)!",
                 description: "Sua casa já está no Pipa?"
             )
             
@@ -57,7 +61,7 @@ struct CreateOrEnterHouseOnboardingView: View {
                         Image("HousePlus")
                             .resizable()
                             .frame(width: width * 0.297, height: height * 0.13)
-                        
+            
                         VStack(alignment: .leading) {
                             Text("Criar uma casa")
                                 .bold()
@@ -77,8 +81,12 @@ struct CreateOrEnterHouseOnboardingView: View {
                 Color(.chorePurple)
                 Image("purple.clouds")
                     .opacity(0.15)
+                    .allowsHitTesting(false)
             }
             .clipShape(.rect(cornerRadius: 24))
+            // `clipShape` only clips drawing, not hit testing: the texture (~566×753 pt, not
+            // resizable) kept an invisible touch area far outside the card.
+            .contentShape(.rect(cornerRadius: 24))
             .disabled(isBusy)
             
             Button {
@@ -86,27 +94,31 @@ struct CreateOrEnterHouseOnboardingView: View {
                 viewModel.goToNextView()
             } label: {
                 VStack{
-                    if viewModel.isJoiningHouse {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .tint(.blue)
-                    } else {
-                        Image("TocToc")
-                            .resizable()
-                            .frame(width: width * 0.414, height: height * 0.123)
-                            .padding(.bottom, height * 0.018)
-                        
-                        VStack(alignment: .leading) {
-                            Text("Entrar em uma casa")
-                                .bold()
-                                .font(.title2)
-                            Text("A casa já foi criada por outro morador")
-                                .font(.subheadline)
+                    // While an invite is accepted, only the icon becomes a spinner (same frame,
+                    // so the card doesn't jump).
+                    Group {
+                        if isEnteringHouse {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.chorePurple)
+                        } else {
+                            Image("TocToc")
+                                .resizable()
                         }
-                        .foregroundStyle(.chorePurple)
-                        .padding(.horizontal, width * 0.04)
-                        .frame(minWidth: width * 0.854, alignment: .leading)
                     }
+                    .frame(width: width * 0.414, height: height * 0.123)
+                    .padding(.bottom, height * 0.018)
+                    
+                    VStack(alignment: .leading) {
+                        Text("Entrar em uma casa")
+                            .bold()
+                            .font(.title2)
+                        Text("A casa já foi criada por outro morador")
+                            .font(.subheadline)
+                    }
+                    .foregroundStyle(.chorePurple)
+                    .padding(.horizontal, width * 0.04)
+                    .frame(minWidth: width * 0.854, alignment: .leading)
                 }
                 .frame(width: width * 0.854, height: height * 0.255)
             }
@@ -114,8 +126,12 @@ struct CreateOrEnterHouseOnboardingView: View {
                 Color(.lowOpacityPink)
                 Image("purple.worms")
                     .opacity(0.15)
+                    .allowsHitTesting(false)
             }
             .clipShape(.rect(cornerRadius: 24))
+            // Same as above: this card's oversized texture was covering "Criar uma casa" and
+            // swallowing its taps (it's later in the VStack, so it sits on top).
+            .contentShape(.rect(cornerRadius: 24))
             .disabled(isBusy)
             
             Spacer()

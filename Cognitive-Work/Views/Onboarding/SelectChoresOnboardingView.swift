@@ -95,7 +95,8 @@ struct SelectChoresOnboardingView: View {
                 viewModel.isLoading = true
                 await viewModel.createDefaultChores()
                 
-                if !viewModel.isLoading {
+                // `isLoading` is always false here, even on failure; check the error instead.
+                if viewModel.errorMessage == nil {
                     viewModel.goToNextView()
                 }
                 viewModel.isLoading = false
@@ -118,6 +119,14 @@ struct SelectChoresOnboardingView: View {
         }
         .task(id: selectedRoomID) {
             loadChoresIfNeeded(for: selectedRoom)
+        }
+        .alert("Não deu para salvar as tarefas", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
     
