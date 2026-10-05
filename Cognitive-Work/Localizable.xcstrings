@@ -136,22 +136,64 @@
       }
     },
     "0 dias" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0 days"
+          }
+        }
+      }
     },
     "1h" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1h"
+          }
+        }
+      }
     },
     "2h" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2h"
+          }
+        }
+      }
     },
     "3h" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3h"
+          }
+        }
+      }
     },
     "4 pontos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4 points"
+          }
+        }
+      }
     },
     "4h" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4h"
+          }
+        }
+      }
     },
     "5 horas ou mais" : {
       "extractionState" : "stale",
@@ -165,20 +207,64 @@
       }
     },
     "5h" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5h"
+          }
+        }
+      }
     },
     "6 cômodos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 rooms"
+          }
+        }
+      }
     },
     "30’" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30’"
+          }
+        }
+      }
     },
     "A casa já foi criada por outro morador" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The home was already created by another housemate"
+          }
+        }
+      }
+    },
     "A casa que você pertencia foi deletada." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The home you belonged to was deleted."
+          }
+        }
+      }
     },
     "A cozinha foi onde você mais trabalhou." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The kitchen was where you worked the most."
+          }
+        }
+      }
     },
     "A fazer" : {
       "localizations" : {
@@ -285,10 +371,24 @@
       }
     },
     "Adicione seus roomies!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add your roomies!"
+          }
+        }
+      }
     },
     "adquiridos por ter notado algo na casa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "earned for noticing something around the home"
+          }
+        }
+      }
     },
     "Adubar plantas" : {
       "extractionState" : "stale",
@@ -376,7 +476,14 @@
       }
     },
     "Ao apagar seu perfil, você também sairá da casa e perderá o acesso às tarefas e ao histórico. A casa continuará existindo para os outros moradores. Essa ação não pode ser desfeita." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting your profile will also remove you from the home, and you'll lose access to its chores and history. The home will keep existing for the other housemates. This can't be undone."
+          }
+        }
+      }
     },
     "Ao clicar em \"Reiniciar\" a divisão de tarefas atual será excluída." : {
       "localizations" : {
@@ -433,7 +540,14 @@
       }
     },
     "Arraste em cada dia para definir seu tempo livre para as tarefas da casa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag on each day to set your free time for household chores"
+          }
+        }
+      }
     },
     "Arrumar cama" : {
       "extractionState" : "stale",
@@ -610,10 +724,24 @@
       }
     },
     "Bem vindo, %@!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome, %@!"
+          }
+        }
+      }
     },
     "Cada coisa que você reparou conta!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything you noticed counts!"
+          }
+        }
+      }
     },
     "Cada morador precisa preencher seus horários de tempo livre antes da divisão das tarefas." : {
       "extractionState" : "stale",
@@ -699,7 +827,14 @@
       }
     },
     "Certifique-se de que todos os moradores estão dentro do app antes de continuar" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make sure all housemates are in the app before continuing"
+          }
+        }
+      }
     },
     "Certifique-se que o Harvi está conectado no WiFi e tente novamente." : {
       "extractionState" : "stale",
@@ -744,7 +879,14 @@
       }
     },
     "Clique no botão abaixo para dividir as tarefas entre todos os moradores da casa automaticamente" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the button below to automatically split the chores among everyone in the home"
+          }
+        }
+      }
     },
     "Colocar adubo nos canteiros e nos vasos." : {
       "extractionState" : "stale",
@@ -769,10 +911,24 @@
       }
     },
     "Comece a nova divisão de tarefas da casa!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start the home's new chore split!"
+          }
+        }
+      }
     },
     "Como administrador, você deverá selecionar as tarefas que serão divididas entre todos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As the admin, you'll choose the chores that will be split among everyone"
+          }
+        }
+      }
     },
     "Cômodo" : {
       "localizations" : {
@@ -815,7 +971,14 @@
       }
     },
     "Concluir" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish"
+          }
+        }
+      }
     },
     "Conectar com meu Hardware" : {
       "localizations" : {
@@ -1031,10 +1194,24 @@
       }
     },
     "Criar uma casa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a home"
+          }
+        }
+      }
     },
     "Cuidar da casa também é lembrar e perceber o que falta. O Pipa organiza as tarefas e reconhece o trabalho de todos." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taking care of a home is also remembering and noticing what's missing. Pipa organizes the chores and recognizes everyone's work."
+          }
+        }
+      }
     },
     "curta" : {
       "extractionState" : "stale",
@@ -1048,7 +1225,14 @@
       }
     },
     "Dá para começar ainda hoje!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can start today!"
+          }
+        }
+      }
     },
     "Data" : {
       "localizations" : {
@@ -1185,7 +1369,14 @@
       }
     },
     "deslize para continuar!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "swipe to continue!"
+          }
+        }
+      }
     },
     "Despensa" : {
       "extractionState" : "stale",
@@ -1274,13 +1465,34 @@
       }
     },
     "Dividir a casa vai além da faxina" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sharing a home goes beyond cleaning"
+          }
+        }
+      }
     },
     "Dividir mais tarde" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Split later"
+          }
+        }
+      }
     },
     "Divisão automática de tarefas" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic chore split"
+          }
+        }
+      }
     },
     "Dobrar as peças limpas e distribuir nos armários." : {
       "extractionState" : "stale",
@@ -1379,7 +1591,14 @@
       }
     },
     "Em configuração" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setting up"
+          }
+        }
+      }
     },
     "em uma casa" : {
       "extractionState" : "stale",
@@ -1393,7 +1612,14 @@
       }
     },
     "Entrando na casa..." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Joining the home..."
+          }
+        }
+      }
     },
     "Entrar" : {
       "extractionState" : "stale",
@@ -1407,7 +1633,14 @@
       }
     },
     "Entrar em uma casa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join a home"
+          }
+        }
+      }
     },
     "Enviar imagem" : {
       "localizations" : {
@@ -1451,7 +1684,14 @@
       }
     },
     "Envie o convite para quem mora com você" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send the invite to the people you live with"
+          }
+        }
+      }
     },
     "Erro ao adicionar item." : {
       "extractionState" : "stale",
@@ -1886,7 +2126,14 @@
       }
     },
     "Esta escolha será apenas para a divisão de tarefas atual" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This choice only applies to the current chore split"
+          }
+        }
+      }
     },
     "Estamos apenas esperando que o criador da casa gere a divisão das tarefas." : {
       "localizations" : {
@@ -2206,7 +2453,14 @@
       }
     },
     "Hora de começar a divisão de tarefas" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time to start the chore split"
+          }
+        }
+      }
     },
     "Idioma" : {
       "localizations" : {
@@ -2404,7 +2658,14 @@
       }
     },
     "Levantando escalas" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Building schedules"
+          }
+        }
+      }
     },
     "Levantando escalas..." : {
       "extractionState" : "stale",
@@ -2800,10 +3061,24 @@
       }
     },
     "Moradores prontos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Housemates ready"
+          }
+        }
+      }
     },
     "Na casa %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the home %@"
+          }
+        }
+      }
     },
     "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente." : {
       "extractionState" : "stale",
@@ -2837,10 +3112,24 @@
       }
     },
     "Não deu para salvar as tarefas" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the chores"
+          }
+        }
+      }
     },
     "Não deu para salvar os cômodos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the rooms"
+          }
+        }
+      }
     },
     "Não deu para salvar seus horários" : {
       "localizations" : {
@@ -2874,7 +3163,14 @@
       }
     },
     "Não foi possível adiar" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't postpone"
+          }
+        }
+      }
     },
     "Não foi possível encontrar a casa do convite. Tente abrir o link novamente." : {
       "extractionState" : "stale",
@@ -3350,7 +3646,14 @@
       }
     },
     "Ok" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
     },
     "OK" : {
       "localizations" : {
@@ -3664,11 +3967,34 @@
       }
     },
     "Peça o convite para o administrador da casa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask the home's admin for the invite"
+          }
+        }
+      }
     },
     "Pedir o convite por mensagem" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask for the invite by message"
+          }
+        }
+      }
+    },
     "Pegar todas as tarefas diárias" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take all daily chores"
+          }
+        }
+      }
     },
     "Pendente" : {
       "localizations" : {
@@ -3744,7 +4070,14 @@
       }
     },
     "Pipa. Para aqueles que notam." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pipa. For those who notice."
+          }
+        }
+      }
     },
     "Podar plantas" : {
       "extractionState" : "stale",
@@ -3799,7 +4132,14 @@
       }
     },
     "Pular para a nova divisão" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip to the new split"
+          }
+        }
+      }
     },
     "Qua" : {
       "extractionState" : "stale",
@@ -3813,10 +4153,24 @@
       }
     },
     "Quando receber o link, é só tocar nele para entrar na casa!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you get the link, just tap it to join the home!"
+          }
+        }
+      }
     },
     "Quando você deseja realizar esta tarefa?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When do you want to do this chore?"
+          }
+        }
+      }
     },
     "Quantidade" : {
       "localizations" : {
@@ -3829,7 +4183,14 @@
       }
     },
     "Quanto tempo você tem para a casa?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How much time do you have for the home?"
+          }
+        }
+      }
     },
     "Quarta - Feira" : {
       "extractionState" : "stale",
@@ -3854,7 +4215,14 @@
       }
     },
     "Quem é você na casa?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who are you in the home?"
+          }
+        }
+      }
     },
     "Quem vai consumir/pagar" : {
       "localizations" : {
@@ -4240,7 +4608,14 @@
       }
     },
     "seguidos sem atrasar nenhuma tarefa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in a row without any late chores"
+          }
+        }
+      }
     },
     "Segunda - Feira" : {
       "extractionState" : "stale",
@@ -4254,7 +4629,14 @@
       }
     },
     "Selecionar dia" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select day"
+          }
+        }
+      }
     },
     "Selecione as tarefas" : {
       "extractionState" : "stale",
@@ -4471,7 +4853,14 @@
       }
     },
     "Sua casa já está no Pipa?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is your home already on Pipa?"
+          }
+        }
+      }
     },
     "Sua escala está \npronta!" : {
       "localizations" : {
@@ -4484,7 +4873,14 @@
       }
     },
     "Sua retrospectiva chegou!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recap is here!"
+          }
+        }
+      }
     },
     "Suas Tarefas" : {
       "localizations" : {
@@ -4933,7 +5329,14 @@
       }
     },
     "Vamos tentar de novo na próxima" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let's try again next time"
+          }
+        }
+      }
     },
     "Varanda" : {
       "extractionState" : "stale",
@@ -5024,10 +5427,24 @@
       }
     },
     "Veja como você se saiu durante os últimos 15 dias" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See how you did over the last 15 days"
+          }
+        }
+      }
     },
     "ver depois" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "see later"
+          }
+        }
+      }
     },
     "Ver minha escala" : {
       "localizations" : {
@@ -5040,10 +5457,24 @@
       }
     },
     "Ver minha retrospectiva" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See my recap"
+          }
+        }
+      }
     },
     "Verifique sua conexão e tente novamente." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your connection and try again."
+          }
+        }
+      }
     },
     "Vibrações ao concluir uma tarefa e em outras interações." : {
       "localizations" : {
@@ -5056,7 +5487,14 @@
       }
     },
     "você consegue!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "you've got this!"
+          }
+        }
+      }
     },
     "Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite." : {
       "localizations" : {
@@ -5069,7 +5507,14 @@
       }
     },
     "Você é o administrador desta casa. Ao apagar seu perfil, a casa também será apagada para todos os moradores, junto com as tarefas. Essa ação não pode ser desfeita." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're this home's admin. Deleting your profile will also delete the home for all housemates, along with its chores. This can't be undone."
+          }
+        }
+      }
     },
     "Você ficará responsável por todos os dias do período." : {
       "extractionState" : "stale",
@@ -5094,11 +5539,34 @@
       }
     },
     "Você realizou 0 de 20 \n tarefas da sua escala" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You completed 0 of 20 \n chores on your schedule"
+          }
+        }
+      }
     },
     "Você será o administrador" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll be the admin"
+          }
+        }
+      }
+    },
     "Você será redirecionado ao início do aplicativo." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You'll be taken back to the start of the app."
+          }
+        }
+      }
     },
     "Voltar" : {
       "localizations" : {
