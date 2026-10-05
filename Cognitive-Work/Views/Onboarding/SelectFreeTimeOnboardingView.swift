@@ -59,57 +59,53 @@ struct SelectFreeTimeOnboardingView: View {
     // MARK: - Body
     
     var body: some View {
-            VStack(alignment: .leading) {
-                Text("Quanto tempo você tem para a casa?")
-                    .bold()
-                    .font(.system(size: 32))
-                    .foregroundStyle(.titleGray)
-                    .padding(.bottom, 5)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                Text("Arraste em cada dia para definir seu tempo livre para as tarefas da casa")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.subTitleGray)
-                
-                HStack(spacing: width * 0.086) {
-                    Spacer()
-                    Text("30’")
-                    Text("1h")
-                    Text("2h")
-                    Text("3h")
-                    Text("4h")
-                    Text("5h")
-                }
+        VStack(alignment: .leading) {
+            Text("Quanto tempo você tem para a casa?")
+                .bold()
+                .font(.system(size: 32))
+                .foregroundStyle(.titleGray)
+                .padding(.bottom, 5)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, height * 0.02)
+            
+            Text("Arraste em cada dia para definir seu tempo livre para as tarefas da casa")
                 .font(.system(size: 16))
-                .fontWeight(.medium)
-                .padding(.trailing, 10)
-                .padding(.top, height * 0.005)
-                
-                ForEach($weekOrder, id: \.name) { $day in
-                    OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
-                }
-                
+                .foregroundStyle(.subTitleGray)
+            
+            HStack(spacing: width * 0.086) {
                 Spacer()
+                Text("30’")
+                Text("1h")
+                Text("2h")
+                Text("3h")
+                Text("4h")
+                Text("5h")
             }
-            .padding(.horizontal, width * 0.0565)
-            .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
-            .hidesTabBar()
-
+            .font(.system(size: 16))
+            .fontWeight(.medium)
+            .padding(.trailing, 10)
+            .padding(.top, height * 0.005)
+            
+            ForEach($weekOrder, id: \.name) { $day in
+                OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, width * 0.0565)
+        .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
+        .hidesTabBar()
+        
         
         // MARK: - Confirmation Button
         .overlay(alignment: .bottomTrailing) {
-            Button("Continuar", systemImage: "chevron.right") {
-                Task { save }
+            OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: "chevron.right", isSystemImage: true, isLoading: viewModel.isLoading, isDisabled: !canSave) {
+                Task {
+                    await save()
+                }
             }
-            .bold()
-            .labelStyle(.iconOnly)
-            .buttonStyle(.glassProminent)
-            .buttonBorderShape(.circle)
-            .controlSize(.large)
             .padding(.bottom, height * 0.073)
             .padding(.trailing, width * 0.061)
-            .disabled(!canSave)
-
         }
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -195,7 +191,7 @@ private struct OnboardingCustomSliderComponent: View {
                 .fontWeight(.medium)
                 .frame(width: abbreviationWidth, alignment: .leading)
             
-            VStack {
+            VStack(spacing: 0) {
                 FreeTimeSlider(rating: $selectedFreeTimeLevel, isLoading: $isLoading)
                 
                 caption

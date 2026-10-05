@@ -76,39 +76,37 @@ class OnboardingStateMachine {
             return [
                 .welcome,
                 .createProfile,
+                .chooseFreeTime,
                 .createOrEnterHome,
                 .chooseRooms,
                 .chooseChores,
-                .chooseFreeTime,
-                .inviteAndConfirmJoin,
-                .setUpScheduleChores,
                 .waitGuestsFreeTime,
+                .setUpScheduleChores,
                 .scheduleChores
             ]
         case .invitedWithProfile:
             return [
                 .welcome,
                 .createProfile,
+                .chooseFreeTime,
                 .createOrEnterHome,
                 .waitAcceptLink,
-                .inviteAndConfirmJoin,
-                .setUpScheduleChores,
-                .chooseFreeTime,
                 .waitAdminScheduling,
+                .setUpScheduleChores,
                 .scheduleChores
             ]
         case .invitedWithoutProfile:
             return [
                 .welcome,
                 .createProfile,
-                .inviteAndConfirmJoin,
-                .setUpScheduleChores,
                 .chooseFreeTime,
+                .inviteAndConfirmJoin,
                 .waitAdminScheduling,
+                .setUpScheduleChores,
                 .scheduleChores
             ]
         case .notDefined:
-            return [.welcome, .createProfile, .createOrEnterHome]
+            return [.welcome, .createProfile, .chooseFreeTime, .createOrEnterHome]
         }
     }
     

@@ -29,7 +29,7 @@ struct CreateOrEnterHouseOnboardingView: View {
     var body: some View {
         VStack(alignment: .center) {
             OnboardingHeader(
-                title: "Bem vindo, Gabriel! \(viewModel.userName)",
+                title: "Bem vindo, \(viewModel.currentUser?.name ?? "error no name")!",
                 description: "Sua casa já está no Pipa?"
             )
             

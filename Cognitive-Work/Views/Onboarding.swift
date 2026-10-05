@@ -104,7 +104,7 @@ struct Onboarding: View {
                     viewModel.finishOnboarding()
                 }
         case .waitGuestsFreeTime:
-            WaitUsersFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: false)
+            InviteAndWaitUsersFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: false)
             
         case .none:
             EmptyView()

@@ -13,7 +13,7 @@ import SwiftUI
 /// - `updateUsers()` can now run several times concurrently (push + foreground + poll). Each
 ///   run performs slow network reads, so an older run could finish *after* a newer one and
 ///   overwrite fresh data with a stale roster. Only the latest run may publish its result.
-struct WaitUsersFreeTimeOnboardingView: View {
+struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     // MARK: - Properties
     
@@ -269,7 +269,7 @@ struct WaitUsersFreeTimeOnboardingView: View {
 #Preview {
     @Previewable @State var mockViewModel = OnboardingViewModel()
     
-    WaitUsersFreeTimeOnboardingView(
+    InviteAndWaitUsersFreeTimeOnboardingView(
         viewModel: $mockViewModel,
         isFromSettings: false
     )

@@ -29,7 +29,7 @@ struct CreateProfileOnboardingView: View {
     var body: some View {
         VStack(alignment: .center, spacing: 58) {
             headerText
-                .padding(.top)
+                .padding(.top, height * 0.02)
             
             Spacer()
             
