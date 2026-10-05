@@ -141,8 +141,7 @@ struct ChoreDetailsCard: View {
                 .fontWeight(.thin)
             
             Text(chore.name.localizedDefault)
-                .font(.system(size: 25))
-                .fontWeight(.semibold)
+                .font(.appTitle(size: 25, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .frame(width: width * 0.7)
             

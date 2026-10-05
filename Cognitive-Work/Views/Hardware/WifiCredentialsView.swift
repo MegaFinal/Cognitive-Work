@@ -23,8 +23,7 @@ struct WifiCredentialsView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Conectar Harvi")
-                            .font(.largeTitle)
-                            .bold()
+                            .font(.appTitle(.largeTitle, weight: .bold))
 
                         Text("Para que seja possível conectar o Harvi ao WiFi da sua casa, entre no WiFi ESP32, com senha 12345678, retorne ao app e envie o nome e senha do WiFi.")
                             .foregroundStyle(.secondary)

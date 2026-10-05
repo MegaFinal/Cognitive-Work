@@ -73,6 +73,7 @@ private struct RetroAlert: View {
     
     var body: some View {
         VStack {
+            Spacer()
             Image(systemName: "chart.bar.xaxis")
                 .resizable()
                 .frame(width: width * 0.27, height: height * 0.089)
@@ -81,14 +82,13 @@ private struct RetroAlert: View {
             
             Text("Sua retrospectiva chegou!")
                 .bold()
-                .font(.largeTitle)
+                .font(.system(size: 32))
                 .multilineTextAlignment(.center)
                 .padding(.bottom, height * 0.018)
             
             Text("Veja como você se saiu durante os últimos 15 dias")
-                .font(.title2)
                 .multilineTextAlignment(.center)
-                .fontWeight(.regular)
+                .font(.system(size: 20))
                 .padding(.bottom, height * 0.037)
             
                 Button {
@@ -113,7 +113,7 @@ private struct RetroAlert: View {
                         .font(.system(size: 17))
                 }
                 .buttonStyle(.glass)
-        
+                .padding(.bottom)
         }
     }
 }
@@ -131,8 +131,7 @@ private struct RetroPercentageOfDoneView: View {
                 Spacer ()
                 
                 Text("\(String(format: "%.0f", percentage))%")
-                    .bold()
-                    .font(.system(size: 64))
+                    .font(.appTitle(size: 64, weight: .bold))
                     .padding(.bottom, height * 0.03)
                 
                 Text("Você realizou 0 de 20 \n tarefas da sua escala")
@@ -148,8 +147,7 @@ private struct RetroPercentageOfDoneView: View {
                 Spacer()
                 
                 Text("você consegue!")
-                    .bold()
-                    .font(.system(size: 40))
+                    .font(.appTitle(size: 40, weight: .bold))
                     .padding(.bottom, height * 0.018)
                 
                 Button {
@@ -160,7 +158,7 @@ private struct RetroPercentageOfDoneView: View {
                     Text("ver depois")
                         .fontWeight(.semibold)
                         .font(.subheadline)
-                        .foregroundStyle(.subTitleGray) //Arrumar depois a cor
+                        .foregroundStyle(.subTitleGray)
                 }
                 .padding(.bottom, height * 0.014)
                 
@@ -197,8 +195,7 @@ private struct RetroStreakView: View {
                 .padding(.bottom, height * 0.037)
             
             Text("0 dias")
-                .bold()
-                .font(.system(size: 64))
+                .font(.appTitle(size: 64, weight: .bold))
                 .padding(.bottom, height * 0.014)
             
             Text("seguidos sem atrasar nenhuma tarefa")
@@ -257,8 +254,7 @@ private struct RetroPointsView: View {
                 .padding(.bottom, height * 0.037)
             
             Text("4 pontos")
-                .bold()
-                .font(.system(size: 64))
+                .font(.appTitle(size: 64, weight: .bold))
                 .padding(.bottom, height * 0.014)
             
             Text("adquiridos por ter notado algo na casa")
@@ -335,8 +331,7 @@ struct RetroRoomsView: View {
     var body: some View {
         VStack {
             Text("6 cômodos")
-                .bold()
-                .font(.system(size: 64))
+                .font(.appTitle(size: 64, weight: .bold))
                 .padding(.top, height * 0.071)
             
             Text("A cozinha foi onde você mais trabalhou.")
@@ -400,8 +395,7 @@ struct RetroNewChoresDivision: View {
                 .padding(.top, height * 0.088)
             
             Text("Comece a nova divisão de tarefas da casa!")
-                .font(.title)
-                .bold()
+                .font(.appTitle(.title, weight: .bold))
                 .multilineTextAlignment(.leading)
             
             Text("Clique no botão abaixo para dividir as tarefas entre todos os moradores da casa automaticamente")

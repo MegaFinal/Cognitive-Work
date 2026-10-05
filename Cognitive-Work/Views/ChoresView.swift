@@ -196,8 +196,7 @@ struct ChoresView: View {
     private var header: some View {
         HStack {
             Text("Suas Tarefas")
-                .font(.system(size: 34))
-                .fontWeight(.bold)
+                .font(.appTitle(size: 34, weight: .bold))
                 .padding(.horizontal, 30)
                 .padding(.top, 20)
             

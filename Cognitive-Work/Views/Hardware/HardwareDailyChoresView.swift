@@ -44,12 +44,11 @@ struct HardwareDailyChoresView: View {
         HStack {
             HStack(alignment: .firstTextBaseline) {
                 Text("Tarefas do Dia,")
-                    .font(.title)
-                    .bold()
+                    .font(.appTitle(.title, weight: .bold))
                 // Was `todayDateFormatted`, which printed `Date()` while the table below listed
                 // the target day — so the header contradicted its own content.
                 Text(viewModel.targetDateFormatted)
-                    .font(.title2)
+                    .font(.appTitle(.title2, weight: .regular))
             }
             
             Spacer()
@@ -120,8 +119,7 @@ private struct UserDailyChoresColumn: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(group.user.name)
-                    .font(.title3)
-                    .fontWeight(.bold)
+                    .font(.appTitle(.title3, weight: .bold))
                 
                 Spacer()
                 

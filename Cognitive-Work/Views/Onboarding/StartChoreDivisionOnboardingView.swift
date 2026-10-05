@@ -20,7 +20,7 @@ struct StartChoreDivisionOnboardingView: View {
             
             VStack(alignment: .leading, spacing: 20) {
                 Text("Criar divisão de tarefas")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.appTitle(size: 28, weight: .bold))
                     .foregroundStyle(.titleGray)
                 
                 Text("Para que possamos ajudar no seu dia a dia em sua casa precisamos saber um pouco mais sobre ela!")

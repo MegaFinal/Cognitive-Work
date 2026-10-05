@@ -20,8 +20,7 @@ struct DevicePairView: View {
             VStack(alignment: .center, spacing: 32) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Parear dispositivo")
-                        .font(.largeTitle)
-                        .bold()
+                        .font(.appTitle(.largeTitle, weight: .bold))
                         .padding(.top, 50)
                     
                     Text("Para que seja possível conectar o seu celular com o hardware, retorne ao seu WiFi e clique para confirmar.")

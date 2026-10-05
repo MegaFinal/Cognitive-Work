@@ -92,7 +92,7 @@ struct CreateProfileOnboardingView: View {
     private var headerText: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Para começarmos...")
-                .font(.system(size: 32, weight: .bold))
+                .font(.appTitle(size: 32, weight: .bold))
                 .foregroundStyle(.black.opacity(0.7))
             
             Text("Escolha uma foto e um nome para utilizar no app")

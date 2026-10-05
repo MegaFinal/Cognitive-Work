@@ -23,8 +23,7 @@ struct ChoreCarouselCard: View {
         ZStack {
             VStack {
                 Text(chore.name.localizedDefault)
-                    .font(.system(size: 26))
-                    .fontWeight(.bold)
+                    .font(.appTitle(size: 28, weight: .bold))
                     .multilineTextAlignment(.center)
                     .frame(width: width * 0.6)
                 Spacer()

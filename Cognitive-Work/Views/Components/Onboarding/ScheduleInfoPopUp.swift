@@ -36,8 +36,7 @@ struct ScheduleInfoPopUp: View {
             .padding(.top, 5)
             
             Text("Sua escala está \npronta!")
-                .font(.system(size: 28))
-                .bold()
+                .font(.appTitle(size: 28, weight: .bold))
             
             Text("Dividimos as tarefas de acordo com o tempo livre de cada morador.")
                 .font(.system(size: 16))

@@ -126,8 +126,7 @@ struct SelectChoresOnboardingView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("O que a casa divide?")
-                .bold()
-                .font(.system(size: 32))
+                .font(.appTitle(size: 32, weight: .bold))
                 .foregroundStyle(.titleGray)
                 .padding(.top, 28)
             

@@ -116,8 +116,7 @@ struct ChoreCardListStyle: View {
                                     .font(.system(size: 12))
                                 
                                 Text(chore.name.localizedDefault)
-                                    .font(.system(size: 22))
-                                    .bold()
+                                    .font(.appTitle(size: 22, weight: .bold))
                             }
                             .foregroundColor(.white)
                             

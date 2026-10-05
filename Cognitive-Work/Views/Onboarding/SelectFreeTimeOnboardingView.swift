@@ -65,8 +65,7 @@ struct SelectFreeTimeOnboardingView: View {
             
             VStack(alignment: .leading) {
                 Text("Delimite seu tempo")
-                    .bold()
-                    .font(.system(size: 32))
+                    .font(.appTitle(size: 32, weight: .bold))
                     .foregroundStyle(.titleGray)
                     .padding(.top, height * 0.034)
                     .padding(.bottom, 10)

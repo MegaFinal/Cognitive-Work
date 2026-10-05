@@ -139,7 +139,7 @@ struct ChoreListLayout: View {
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(group.title)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.appTitle(size: 22, weight: .bold))
                 
                 if let dateText = group.dateText {
                     Text(dateText)

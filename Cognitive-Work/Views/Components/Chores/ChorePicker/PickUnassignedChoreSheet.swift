@@ -176,7 +176,7 @@ struct PickUnassignedChoreCard: View {
                 .foregroundStyle(.black)
             
             Text(chore.name.localizedDefault)
-                .font(.system(size: 22, weight: .bold))
+                .font(.appTitle(size: 22, weight: .bold))
                 .foregroundStyle(.black)
             
             HStack(spacing: 16) {
@@ -217,7 +217,7 @@ struct PickUnassignedChoreCard: View {
     private var calendarText: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Quando você deseja realizar esta tarefa?")
-                .font(.system(size: 28, weight: .bold))
+                .font(.appTitle(size: 28, weight: .bold))
                 .foregroundStyle(.black)
             
             Text("Esta escolha será apenas para a divisão de tarefas atual")

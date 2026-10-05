@@ -34,8 +34,7 @@ struct WaitHouseCreatorSheduleView: View {
                     .padding(.bottom)
                 
                 Text("Aguardando divisão de tarefas...")
-                    .font(.system(size: 34))
-                    .bold()
+                    .font(.appTitle(size: 34, weight: .bold))
                     .multilineTextAlignment(.center)
                 
                 ProgressView()

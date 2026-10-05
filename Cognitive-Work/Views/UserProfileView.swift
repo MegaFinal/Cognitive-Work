@@ -119,8 +119,7 @@ struct UserProfileView: View {
                         .frame(height: 50)
                 } else {
                     Text(viewModelUser.user?.name ?? "")
-                        .font(.system(size: 22))
-                        .bold()
+                        .font(.appTitle(size: 28, weight: .bold))
                     
                     Text(viewModelUser.user?.tier.displayName ?? L10n.tr("Ranking"))
                         .font(.system(size: 20))

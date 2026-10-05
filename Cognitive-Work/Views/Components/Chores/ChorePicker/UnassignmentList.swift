@@ -17,8 +17,7 @@ struct UnassignmentList: View {
         VStack(alignment: .leading) {
             HStack {
                 Text("Tarefas para pegar")
-                    .font(.system(size: 22))
-                    .bold()
+                    .font(.appTitle(size: 22, weight: .bold))
                     .foregroundStyle(.black)
                 
                 Spacer()

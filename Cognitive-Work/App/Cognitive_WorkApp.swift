@@ -19,6 +19,11 @@ struct Cognitive_WorkApp: App {
     /// Language picked in "Configurações Gerais" (or the device language by default).
     @State private var languageManager = LanguageManager.shared
     
+    init() {
+        // `.navigationTitle` is drawn by UIKit, so it needs the title font set on its appearance.
+        AppFont.applyToNavigationBars()
+    }
+    
     var body: some Scene {
         WindowGroup {
             Group {
