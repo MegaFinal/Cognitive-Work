@@ -422,6 +422,9 @@
         }
       }
     },
+    "Arraste em cada dia para definir seu tempo livre para as tarefas da casa" : {
+
+    },
     "Arrumar cama" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -562,6 +565,7 @@
       }
     },
     "Através da nossa escala de atividades e recorrência de tarefas automatizada, basta olhar o calendário e saber o que você precisa fazer!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1001,6 +1005,9 @@
         }
       }
     },
+    "Cuidar da casa também é lembrar e perceber o que falta. O Pipa organiza as tarefas e reconhece o trabalho de todos." : {
+
+    },
     "curta" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1036,6 +1043,7 @@
       }
     },
     "Defina seu tempo disponível para realizar tarefas domésticas durante a semana" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1056,6 +1064,7 @@
       }
     },
     "Delimite seu tempo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1127,6 +1136,7 @@
       }
     },
     "Deslize para cima para continuar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1145,6 +1155,9 @@
           }
         }
       }
+    },
+    "deslize para continuar!" : {
+
     },
     "Despensa" : {
       "extractionState" : "stale",
@@ -1231,6 +1244,9 @@
           }
         }
       }
+    },
+    "Dividir a casa vai além da faxina" : {
+
     },
     "Dividir mais tarde" : {
 
@@ -1569,6 +1585,7 @@
       }
     },
     "Escolha **apenas** as tarefas que serão divididas de maneira igual entre todos os moradores" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1903,96 +1920,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete"
-          }
-        }
-      }
-    },
-    "Sair da Casa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave Home"
-          }
-        }
-      }
-    },
-    "Sair da Casa?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave Home?"
-          }
-        }
-      }
-    },
-    "Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You'll no longer see this home's chores. The other residents stay in it, and you can rejoin with a new invite."
-          }
-        }
-      }
-    },
-    "Saindo da casa..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leaving your home..."
-          }
-        }
-      }
-    },
-    "Sair" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave"
-          }
-        }
-      }
-    },
-    "Não foi possível sair da casa. Verifique sua conexão e tente novamente." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't leave the home. Check your connection and try again."
-          }
-        }
-      }
-    },
-    "Não foi possível sair" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't leave"
-          }
-        }
-      }
-    },
-    "O que a casa divide?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What does the house share?"
-          }
-        }
-      }
-    },
-    "Marque **apenas** as tarefas que vão para a escala de todos." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark **only** the chores that go on everyone's schedule."
           }
         }
       }
@@ -2729,7 +2656,18 @@
         }
       }
     },
+    "Marque **apenas** as tarefas que vão para a escala de todos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark **only** the chores that go on everyone's schedule."
+          }
+        }
+      }
+    },
     "Mas antes, precisamos saber um pouco mais sobre a rotina na casa..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3227,6 +3165,7 @@
       }
     },
     "Nosso intuito é remover a carga mental da organização de tarefas de maneira justa e visual para todos os moradores." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3311,11 +3250,22 @@
       }
     },
     "O Pipa veio para facilitar a vida de quem divide moradia!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pipa is here to make life easier for people who share a home!"
+          }
+        }
+      }
+    },
+    "O que a casa divide?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What does the house share?"
           }
         }
       }
@@ -3512,6 +3462,7 @@
       }
     },
     "Para começarmos..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3711,6 +3662,9 @@
         }
       }
     },
+    "Pipa. Para aqueles que notam." : {
+
+    },
     "Podar plantas" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3790,6 +3744,9 @@
         }
       }
     },
+    "Quanto tempo você tem para a casa?" : {
+
+    },
     "Quarta - Feira" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3811,6 +3768,9 @@
           }
         }
       }
+    },
+    "Quem é você na casa?" : {
+
     },
     "Quem vai consumir/pagar" : {
       "localizations" : {
@@ -4213,6 +4173,7 @@
 
     },
     "Selecione as tarefas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4341,6 +4302,7 @@
       }
     },
     "Seu facilitador de organização doméstica!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

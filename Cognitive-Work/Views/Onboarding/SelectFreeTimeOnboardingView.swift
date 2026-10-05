@@ -59,24 +59,19 @@ struct SelectFreeTimeOnboardingView: View {
     // MARK: - Body
     
     var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = geometry.size.height
-            
             VStack(alignment: .leading) {
-                Text("Delimite seu tempo")
+                Text("Quanto tempo você tem para a casa?")
                     .bold()
                     .font(.system(size: 32))
                     .foregroundStyle(.titleGray)
-                    .padding(.top, height * 0.034)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, 5)
+                    .fixedSize(horizontal: false, vertical: true)
                 
-                Text("Defina seu tempo disponível para realizar tarefas domésticas durante a semana")
-                    .bold()
+                Text("Arraste em cada dia para definir seu tempo livre para as tarefas da casa")
                     .font(.system(size: 16))
                     .foregroundStyle(.subTitleGray)
                 
-                HStack(spacing: width * 0.073) {
+                HStack(spacing: width * 0.086) {
                     Spacer()
                     Text("30’")
                     Text("1h")
@@ -88,7 +83,7 @@ struct SelectFreeTimeOnboardingView: View {
                 .font(.system(size: 16))
                 .fontWeight(.medium)
                 .padding(.trailing, 10)
-                .padding(.top, height * 0.023)
+                .padding(.top, height * 0.005)
                 
                 ForEach($weekOrder, id: \.name) { $day in
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
@@ -96,30 +91,25 @@ struct SelectFreeTimeOnboardingView: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, width * 0.0865)
+            .padding(.horizontal, width * 0.0565)
             .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
             .hidesTabBar()
 
-        }
+        
         // MARK: - Confirmation Button
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                if viewModel.isLoading {
-                    ProgressView()
-                } else {
-                    Button {
-                        Task { await save() }
-                    } label: {
-                        Image(systemName: isFromSettings ? "checkmark" : "chevron.forward")
-                            .font(.system(size: 12))
-                            .bold()
-                            .foregroundColor(.white)
-                    }
-                    .tint(.blue)
-                    .buttonStyle(.glassProminent)
-                    .disabled(!canSave)
-                }
+        .overlay(alignment: .bottomTrailing) {
+            Button("Continuar", systemImage: "chevron.right") {
+                Task { save }
             }
+            .bold()
+            .labelStyle(.iconOnly)
+            .buttonStyle(.glassProminent)
+            .buttonBorderShape(.circle)
+            .controlSize(.large)
+            .padding(.bottom, height * 0.073)
+            .padding(.trailing, width * 0.061)
+            .disabled(!canSave)
+
         }
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -232,10 +222,6 @@ private struct OnboardingCustomSliderComponent: View {
     /// label of the currently selected free time.
     private var caption: some View {
         HStack {
-            Text(LocalizedStringKey(dayOfWeek.name.trimmingCharacters(in: .whitespaces)))
-                .font(.system(size: Layout.captionFontSize))
-                .fontWeight(.medium)
-            
             Text(dayOfWeek.freeTime.displayName)
                 .font(.system(size: Layout.captionFontSize))
                 .fontWeight(.light)
