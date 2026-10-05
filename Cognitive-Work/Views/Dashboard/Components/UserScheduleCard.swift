@@ -184,13 +184,13 @@ private struct ScheduleDayColumn: View {
     private func bar(for entry: DailyUsageEntry) -> some View {
         let resolvedChore = chore(entry)
         let resolvedRoom = resolvedChore.flatMap(room)
-        let maxBarHeight: CGFloat = 160
+        let maxBarHeight: CGFloat = 80
         
         RoomTexturedShape(
             shape: RoundedRectangle(cornerRadius: 15),
             room: resolvedRoom,
             zoom: 1.5,
-            fixedSize: maxBarHeight   // same texture size for every bar, whatever its height
+            fixedSize: maxBarHeight
         )
         .frame(width: 45, height: maxBarHeight * entry.tier.heightRatio)
         .contentShape(RoundedRectangle(cornerRadius: 15))
