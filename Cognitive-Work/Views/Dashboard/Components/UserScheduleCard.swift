@@ -139,32 +139,34 @@ private struct ScheduleDayColumn: View {
             .capitalized(with: L10n.locale)
     }
     
-    /// A single tappable bar that presents the chore popover.
-    @ViewBuilder
-    private func bar(for entry: DailyUsageEntry) -> some View {
-        let resolvedChore = chore(entry)
-        let resolvedRoom = resolvedChore.flatMap(room)
-        let maxBarHeight: CGFloat = 160
+    /// A shape that shows a room's ``RoomTextureBackground``, clipped to an outline.
+    ///
+    /// Delegating to ``RoomTextureBackground`` keeps bars and legend dots identical to the
+    /// room cards (same color, pattern and texture opacity). A `nil` room is drawn as plain
+    /// gray, matching how unknown rooms are shown elsewhere.
+    private struct RoomTexturedShape<S: Shape>: View {
         
-        RoomTexturedShape(shape: RoundedRectangle(cornerRadius: 15), room: resolvedRoom)
-            .frame(width: 45, height: maxBarHeight * entry.tier.heightRatio)
-            .contentShape(RoundedRectangle(cornerRadius: 15))
-            .onTapGesture {
-                selectedEntry = (selectedEntry == entry) ? nil : entry
+        /// The outline to clip to (a rounded rectangle for bars, a circle for legend dots).
+        let shape: S
+        
+        /// The room that provides the color and texture.
+        let room: RoomModel?
+        
+        /// Higher values draw bigger, fewer shapes.
+        var zoom: CGFloat = RoomTextureBackground.textureZoom
+        
+        /// Fixed size of the texture, forwarded to ``RoomTextureBackground``.
+        /// Use it so shapes of different sizes show the same artwork scale.
+        var fixedSize: CGFloat? = nil
+        
+        var body: some View {
+            if let room {
+                RoomTextureBackground(room: room, zoom: self.zoom, fixedSize: fixedSize)
+                    .clipShape(shape)
+            } else {
+                shape.fill(.gray)
             }
-            .popover(
-                isPresented: isPresented(entry),
-                attachmentAnchor: .rect(.bounds),
-                arrowEdge: .bottom
-            ) {
-                if let resolvedChore {
-                    ChorePopOverComponent(chore: resolvedChore, user: user, room: resolvedRoom)
-                        .padding()
-                        // Keeps a real popover on iPhone instead of a sheet.
-                        .presentationCompactAdaptation(.none)
-                        .presentationBackground(.white)
-                }
-            }
+        }
     }
     
     /// A binding that is `true` only while `entry` is the selected one.
@@ -175,6 +177,39 @@ private struct ScheduleDayColumn: View {
                 if !isShown, selectedEntry == entry { selectedEntry = nil }
             }
         )
+    }
+    
+    /// A single tappable bar that presents the chore popover.
+    @ViewBuilder
+    private func bar(for entry: DailyUsageEntry) -> some View {
+        let resolvedChore = chore(entry)
+        let resolvedRoom = resolvedChore.flatMap(room)
+        let maxBarHeight: CGFloat = 160
+        
+        RoomTexturedShape(
+            shape: RoundedRectangle(cornerRadius: 15),
+            room: resolvedRoom,
+            zoom: 1.5,
+            fixedSize: maxBarHeight   // same texture size for every bar, whatever its height
+        )
+        .frame(width: 45, height: maxBarHeight * entry.tier.heightRatio)
+        .contentShape(RoundedRectangle(cornerRadius: 15))
+        .onTapGesture {
+            selectedEntry = (selectedEntry == entry) ? nil : entry
+        }
+        .popover(
+            isPresented: isPresented(entry),
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: .bottom
+        ) {
+            if let resolvedChore {
+                ChorePopOverComponent(chore: resolvedChore, user: user, room: resolvedRoom)
+                    .padding()
+                    // Keeps a real popover on iPhone instead of a sheet.
+                    .presentationCompactAdaptation(.none)
+                    .presentationBackground(.white)
+            }
+        }
     }
 }
 

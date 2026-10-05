@@ -169,10 +169,12 @@ struct BarPercentageComponent: View {
             Text(viewModel.myCognitiveShareText)
                 .font(.system(size: 64, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
+            
             Text("do esforço mental da casa esta semana foi seu")
-                .font(.body)
+                .font(.footnote)
+                .lineLimit(nil)
         }
-        .frame(width: width * 0.87)
+        .frame(width: width * 0.9)
     }
     
     // MARK: - Expected contribution average as separate positioned views
@@ -214,7 +216,7 @@ struct BarPercentageComponent: View {
     let viewModel = DashboardViewModel()
     viewModel.myCognitiveShare = 0.4
     viewModel.idealCognitiveShare = 0.5
-    viewModel.myCognitiveShareText = "15%"
+    viewModel.myCognitiveShareText = "100%"
     viewModel.idealCognitiveShareText = "50%"
     
     return BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
