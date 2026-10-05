@@ -84,7 +84,8 @@ struct SelectRoomsOnboardingView: View {
                 OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: !viewModel.hasSelectedRooms) {
                     Task {
                         await viewModel.saveSelectedRooms()
-                        if !viewModel.isLoading {
+                        // `isLoading` is always false here, even on failure; check the error instead.
+                        if viewModel.errorMessage == nil {
                             viewModel.goToNextView()
                         }
                   }
@@ -126,6 +127,14 @@ struct SelectRoomsOnboardingView: View {
                 .presentationDetents([.medium])
         }
         .navigationBarBackButtonHidden()
+        .alert("Não deu para salvar os cômodos", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
     
     // MARK: - Editing

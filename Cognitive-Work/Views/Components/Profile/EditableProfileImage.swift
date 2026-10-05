@@ -19,6 +19,8 @@ struct EditableProfileImage: View {
     let isEditing: Bool
     @Binding var selection: PhotosPickerItem?
     
+    var elipseSize: CGFloat { width * 0.88 }
+
     var body: some View {
         
         if isEditing {
@@ -49,11 +51,11 @@ struct EditableProfileImage: View {
                     .clipped()
                     .background(Color(.systemBackground))
             } else {
-                Circle()
-                    .fill(Color(.systemGray5))
-                    .frame(width: 285, height: 285)
+                Image("OnboardingElipse")
+                    .resizable()
+                    .frame(width: elipseSize, height: elipseSize)
                     .overlay {
-                        Image(systemName: isEditing ? "person.fill.badge.plus" : "person.fill" )
+                        Image(systemName: "photo.badge.plus")
                             .font(.system(size: 65))
                             .foregroundStyle(.gray)
                     }

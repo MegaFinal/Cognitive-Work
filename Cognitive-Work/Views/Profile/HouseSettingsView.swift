@@ -24,12 +24,19 @@ struct HouseSettingsView: View {
     
     @AppStorage("didOnboard") private var didOnboard: Bool = true
     
+    /// Kept in `@State` so the invite screen keeps one instance (and its polling/share state)
+    /// instead of getting a brand-new view model on every redraw.
+    @State private var inviteViewModel = OnboardingViewModel()
+    
     var body: some View {
         VStack(spacing: 30) {
             // MARK: - Add roomates button
             NavigationLink {
-                InviteUsersOnboardingView(viewModel: .constant(makeInviteViewModel()), isFromSettings: true)
+                InviteAndWaitUsersFreeTimeOnboardingView(viewModel: $inviteViewModel, isFromSettings: true)
                     .padding(.bottom, 30)
+                    .onAppear {
+                        inviteViewModel.currentHouse = viewModel.house
+                    }
             } label: {
                 HStack {
                     Text("Adicionar moradores")
@@ -167,12 +174,6 @@ struct HouseSettingsView: View {
     }
     
     // MARK: - Helpers
-    private func makeInviteViewModel() -> OnboardingViewModel {
-        let inviteViewModel = OnboardingViewModel()
-        inviteViewModel.currentHouse = viewModel.house
-        return inviteViewModel
-    }
-    
 }
 
 #Preview {
