@@ -173,6 +173,9 @@
     "30’" : {
 
     },
+    "A casa que você pertencia foi deletada." : {
+
+    },
     "A cozinha foi onde você mais trabalhou." : {
 
     },
@@ -1569,6 +1572,7 @@
       }
     },
     "Escolha **apenas** as tarefas que serão divididas de maneira igual entre todos os moradores" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1907,96 +1911,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete"
-          }
-        }
-      }
-    },
-    "Sair da Casa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave Home"
-          }
-        }
-      }
-    },
-    "Sair da Casa?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave Home?"
-          }
-        }
-      }
-    },
-    "Você deixará de ver as tarefas desta casa. Os outros moradores continuam nela e você poderá entrar de novo com um convite." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You'll no longer see this home's chores. The other residents stay in it, and you can rejoin with a new invite."
-          }
-        }
-      }
-    },
-    "Saindo da casa..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leaving your home..."
-          }
-        }
-      }
-    },
-    "Sair" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leave"
-          }
-        }
-      }
-    },
-    "Não foi possível sair da casa. Verifique sua conexão e tente novamente." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't leave the home. Check your connection and try again."
-          }
-        }
-      }
-    },
-    "Não foi possível sair" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't leave"
-          }
-        }
-      }
-    },
-    "O que a casa divide?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What does the house share?"
-          }
-        }
-      }
-    },
-    "Marque **apenas** as tarefas que vão para a escala de todos." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark **only** the chores that go on everyone's schedule."
           }
         }
       }
@@ -2733,6 +2647,16 @@
         }
       }
     },
+    "Marque **apenas** as tarefas que vão para a escala de todos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark **only** the chores that go on everyone's schedule."
+          }
+        }
+      }
+    },
     "Mas antes, precisamos saber um pouco mais sobre a rotina na casa..." : {
       "localizations" : {
         "en" : {
@@ -3324,6 +3248,16 @@
         }
       }
     },
+    "O que a casa divide?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What does the house share?"
+          }
+        }
+      }
+    },
     "Ocorreu um erro." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3334,6 +3268,9 @@
           }
         }
       }
+    },
+    "Ok" : {
+
     },
     "OK" : {
       "localizations" : {
@@ -4220,6 +4157,7 @@
 
     },
     "Selecione as tarefas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5050,6 +4988,9 @@
       }
     },
     "Você realizou 0 de 20 \n tarefas da sua escala" : {
+
+    },
+    "Você será redirecionado ao início do aplicativo." : {
 
     },
     "Voltar" : {

@@ -68,7 +68,17 @@ final class ShopListViewModel {
         async let usersTask = CloudKitManager.shared.fetchHouseUsers()
         async let currentUserTask = CloudKitManager.shared.currentHouseUser()
 
-        let (house, users, current) = await (houseTask, usersTask, currentUserTask)
+        let users = await usersTask
+        let current = await currentUserTask
+
+        let house: HouseModel?
+        do {
+            house = try await houseTask
+        } catch {
+            guard !Task.isCancelled else { return }
+            errorMessage = L10n.tr("Não foi possível carregar a casa. Verifique sua conexão.")
+            return
+        }
 
         guard !Task.isCancelled else { return }
 
