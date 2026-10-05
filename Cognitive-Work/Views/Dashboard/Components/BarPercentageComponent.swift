@@ -14,10 +14,11 @@ struct BarPercentageComponent: View {
     // This will be replaced when the pending chores section is finalized.
     let isUnassignedChores: Bool
     
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if isUnassignedChores {
-                unownedChoresContent
+                unasingededChoresContent
             } else {
                 cognitiveLoadContent
             }
@@ -45,20 +46,24 @@ struct BarPercentageComponent: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
-            myContribuitionPercentage
-            
-            ZStack(alignment: .leading) {
+            // MARK: - Loading
+            if viewModel.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: height * 0.05)
+            } else {
+                myContribuitionPercentage
                 
-                baseBarChart
-                
-                myContributionChart
-                
-                // if the "ideal division is 0", don't show the line
-                if viewModel.idealCognitiveShare > 0 {
-                    averageLine
+                ZStack(alignment: .leading) {
+                    baseBarChart
+                    myContributionChart
+                    
+                    // if the "ideal division is 0 or 100%, don't show the line
+                    if viewModel.idealCognitiveShare > 0 && viewModel.idealCognitiveShare < 1{
+                        averageLine
+                    }
                 }
+                .frame(height: height * 0.05)
             }
-            .frame(height: height * 0.05)
             
             HStack(spacing: 16) {
                 caption("Você", myContributionColor)
@@ -68,16 +73,15 @@ struct BarPercentageComponent: View {
         }
     }
     
-    // MARK: - Unowned Chores
+    // MARK: - Unassigned Chores
     // TODO: Temporary visualization. Replace this layout when the pending chores section is finalized.
     
-    private var unownedChoresContent: some View {
+    private var unasingededChoresContent: some View {
         
         VStack(alignment: .leading, spacing: 16) {
             
             HStack(alignment: .top, spacing: 12) {
-                Text("\(viewModel.unownedPublicCount)")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                Text(viewModel.isLoading ? "–" : "\(viewModel.unownedPublicCount)")                    .font(.system(size: 64, weight: .bold, design: .rounded))
                     .foregroundStyle(.orange)
                 
                 VStack(alignment: .leading, spacing: 4) {
@@ -89,12 +93,17 @@ struct BarPercentageComponent: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            
-            ZStack(alignment: .leading) {
-                baseBarChart
-                unassignedChoresChart
+            // MARK: - Loading
+            if viewModel.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: height * 0.05)
+            } else {
+                ZStack(alignment: .leading) {
+                    baseBarChart
+                    unassignedChoresChart
+                }
+                .frame(height: height * 0.05)
             }
-            .frame(height: height * 0.05)
             
             HStack(spacing: 16) {
                 caption("tarefas sem dono", .orange)
@@ -184,6 +193,8 @@ struct BarPercentageComponent: View {
         }
     }
     
+    // MARK: - Load
+    
     // MARK: - Chart Caption
     
     private func caption(_ text: String,_ color: Color) -> some View {
@@ -202,7 +213,7 @@ struct BarPercentageComponent: View {
 #Preview {
     let viewModel = DashboardViewModel()
     viewModel.myCognitiveShare = 0.4
-    viewModel.idealCognitiveShare = 0.4
+    viewModel.idealCognitiveShare = 0.5
     viewModel.myCognitiveShareText = "15%"
     viewModel.idealCognitiveShareText = "50%"
     

@@ -15,7 +15,7 @@ import CloudKit
 /// - Pass nothing and the view fetches everything from CloudKit.
 /// - Pass `users` and `chores` and only the rest is fetched.
 
-struct UserCurrentFortnightlyView: View {
+struct UserCurrentDivisionComponent: View {
     
     /// Every resident of the house. When `nil`, data is fetched from CloudKit.
     var users: [UserModel]? = nil
@@ -32,6 +32,8 @@ struct UserCurrentFortnightlyView: View {
     /// The signed-in resident, when already known.
     var analizedUser: UserModel? = nil
     
+    var isLoading: Bool = false
+    
     @State private var viewModel = CurrentScheduleViewModel()
     
     var body: some View {
@@ -44,13 +46,13 @@ struct UserCurrentFortnightlyView: View {
                     user: viewModel.currentUser,
                     entries: viewModel.myEntries,
                     startDate: viewModel.startDate,
-                    legendRooms: viewModel.roomsInUse,
+                    roomCaption: viewModel.roomsInUse,
                     chore: viewModel.chore(for:),
                     room: viewModel.room(for:)
                 )
             }
         }
-        .task { await load() }
+            .task { await load() }
     }
     
     /// Loads the schedule using whatever data was provided, fetching the rest.
@@ -67,15 +69,15 @@ struct UserCurrentFortnightlyView: View {
 // MARK: PREVIEW
 #Preview {
     ScrollView {
-        UserCurrentFortnightlyView.preview
+        UserCurrentDivisionComponent.preview
             .padding(.horizontal, 16)
     }
 }
 
-private extension UserCurrentFortnightlyView {
+private extension UserCurrentDivisionComponent {
     
     /// Three residents, four rooms and a fortnight of chores, all in memory.
-    static var preview: UserCurrentFortnightlyView {
+    static var preview: UserCurrentDivisionComponent {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
@@ -170,7 +172,7 @@ private extension UserCurrentFortnightlyView {
             oneOffChore
         ]
         
-        return UserCurrentFortnightlyView(
+        return UserCurrentDivisionComponent(
             users: users,
             chores: chores,
             assignments: assignments,

@@ -20,17 +20,6 @@ import CloudKit
 /// The view is "dumb": it receives plain data and lookup closures, so it can be previewed
 /// without CloudKit.
 ///
-/// ```swift
-/// UserScheduleCard(
-///     user: viewModel.currentUser,
-///     entries: viewModel.myEntries,
-///     startDate: viewModel.startDate,
-///     legendRooms: viewModel.roomsInUse,
-///     chore: viewModel.chore(for:),
-///     room: viewModel.room(for:)
-/// )
-/// ```
-///
 /// > Note: With the default of 7 days the chart fits a 361 pt wide card. A larger
 /// > `daysToShow` scrolls horizontally.
 struct UserScheduleCard: View {
@@ -45,7 +34,7 @@ struct UserScheduleCard: View {
     let startDate: Date
     
     /// Rooms listed in the legend.
-    let legendRooms: [RoomModel]
+    let roomCaption: [RoomModel]
     
     /// Resolves the chore an entry refers to.
     let chore: (DailyUsageEntry) -> ChoreModel?
@@ -65,7 +54,7 @@ struct UserScheduleCard: View {
             
             chart
             
-            MyScheduleCaption(rooms: legendRooms)
+            RoomScheduleCaption(rooms: roomCaption)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 16)
@@ -82,7 +71,6 @@ struct UserScheduleCard: View {
             
             Spacer()
             
-//            MyScheduleAvatar(name: user?.name ?? "")
         }
     }
     
@@ -94,7 +82,7 @@ struct UserScheduleCard: View {
             HStack(alignment: .bottom, spacing: 0) {
                 ForEach(0..<daysToShow, id: \.self) { offset in
                     if let day = calendar.date(byAdding: .day, value: offset, to: firstDay) {
-                        MyScheduleDayColumn(
+                        ScheduleDayColumn(
                             day: day,
                             entries: entries.filter { calendar.isDate($0.day, inSameDayAs: day) },
                             selectedEntry: $selectedEntry,
@@ -105,6 +93,7 @@ struct UserScheduleCard: View {
                     }
                 }
             }
+            .frame(minHeight: 330, alignment: .bottom)   // piso, mas pode crescer
             .padding(.vertical, 12)
         }
         .scrollBounceBehavior(.basedOnSize)
@@ -114,7 +103,7 @@ struct UserScheduleCard: View {
 // MARK: - Day column
 
 /// One day of the chart: the weekday label with the day's chore bars stacked below it.
-private struct MyScheduleDayColumn: View {
+private struct ScheduleDayColumn: View {
     
     /// The day this column represents.
     let day: Date
@@ -129,16 +118,8 @@ private struct MyScheduleDayColumn: View {
     let chore: (DailyUsageEntry) -> ChoreModel?
     let room: (ChoreModel) -> RoomModel?
     
-    /// Height, in points, of a bar whose duration tier ratio is `1`.
-    private let maxBarHeight: CGFloat = 160
-    
-    /// Total height of every column, so the labels float at different heights like the design.
-    private let columnHeight: CGFloat = 330
-    
     var body: some View {
         VStack(spacing: 6) {
-            Spacer(minLength: 0)
-            
             Text(weekdayText)
                 .font(.system(size: 16.35, weight: .medium))
             
@@ -148,7 +129,7 @@ private struct MyScheduleDayColumn: View {
                 }
             }
         }
-        .frame(width: 46, height: columnHeight)
+        .frame(width: 50)
     }
     
     /// Short, capitalized weekday in the app's language (e.g. "Seg").
@@ -163,6 +144,7 @@ private struct MyScheduleDayColumn: View {
     private func bar(for entry: DailyUsageEntry) -> some View {
         let resolvedChore = chore(entry)
         let resolvedRoom = resolvedChore.flatMap(room)
+        let maxBarHeight: CGFloat = 160
         
         RoomTexturedShape(shape: RoundedRectangle(cornerRadius: 15), room: resolvedRoom)
             .frame(width: 45, height: maxBarHeight * entry.tier.heightRatio)
@@ -176,7 +158,6 @@ private struct MyScheduleDayColumn: View {
                 arrowEdge: .bottom
             ) {
                 if let resolvedChore {
-//                    ChoreCard(chore: resolvedChore, user: user, room: resolvedRoom)
                     ChorePopOverComponent(chore: resolvedChore, user: user, room: resolvedRoom)
                         .padding()
                         // Keeps a real popover on iPhone instead of a sheet.
@@ -228,7 +209,7 @@ private struct RoomTexturedShape<S: Shape>: View {
 // MARK: - Caption
 
 /// A wrapping legend that lists each room with its color.
-private struct MyScheduleCaption: View {
+private struct RoomScheduleCaption: View {
     
     /// Rooms to list.
     let rooms: [RoomModel]

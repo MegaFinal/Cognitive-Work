@@ -10,6 +10,7 @@ import SwiftUI
 struct DashboardView: View {
     @State var viewModel = DashboardViewModel()
     
+    
     var body: some View {
         NavigationStack {
             
@@ -22,19 +23,28 @@ struct DashboardView: View {
                         
                         HStack(spacing: 16) {
                             DoughnutChart(viewModel: $viewModel)
-                            PointsComponent(points: viewModel.myCognitiveLoad)
+                            PointsComponent(
+                                points: viewModel.myCognitiveLoad,
+                                isLoading: viewModel.isLoading
+                            )
                         }
                         
                         // MARK: - House cognitive division
-                        BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
+                        BarPercentageComponent(
+                            viewModel: viewModel,
+                            isUnassignedChores: false
+                        )
                         
                         // MARK: - Current Division
-                        UserCurrentFortnightlyView()
+                        UserCurrentDivisionComponent()
                             .padding(.horizontal, 16)
                         
                         // MARK: - Unassigned chore
                         // This will be replaced when the pending chores section is finalized.
-                        BarPercentageComponent(viewModel: viewModel, isUnassignedChores: true)
+                        BarPercentageComponent(
+                            viewModel: viewModel,
+                            isUnassignedChores: true
+                        )
                     }
                 }
             }

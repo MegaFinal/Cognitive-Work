@@ -11,6 +11,7 @@ struct PointsComponent: View {
     var points: Int
     var subtitle: String = "adquiridos por ter notado\nalgo na casa"
     var piglet: String = "RetroPig"
+    var isLoading: Bool = false
     
     var body: some View {
         ZStack {
@@ -23,16 +24,20 @@ struct PointsComponent: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.28, height: height * 0.08)
-                
-                Text("\(points) pontos")
-                    .font(.system(size: 20))
-                    .fontWeight(.semibold)
-                
-                Text(subtitle)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.subTitleGray)
-                    .fontWeight(.light)
-                    .multilineTextAlignment(.center)
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Text("\(points) pontos")
+                        .font(.system(size: 20))
+                        .fontWeight(.semibold)
+                    
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.subTitleGray)
+                        .fontWeight(.light)
+                        .multilineTextAlignment(.center)
+                }
             }
         }
     }

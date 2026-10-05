@@ -29,35 +29,40 @@ struct DoughnutChart: View {
     }
     
     var body: some View {
+        // MARK: - Loading
         ZStack {
             RoundedRectangle(cornerRadius: 20)
                 .foregroundStyle(Color(.systemGray6).opacity(0.5))
                 .frame(width: width * 0.437, height: height * 0.21)
             
-            VStack(spacing: 8) {
-                Text("Hoje")
-                    .font(.system(size: 17))
-                    .fontWeight(.semibold)
-                    .padding(.trailing, width * 0.3)
-                
-                ZStack {
-                    Text(viewModel.completionText)
-                        .font(.system(size: 20))
-                        .fontWeight(.black)
+            if viewModel.isLoading {
+                ProgressView()
+            } else {
+                VStack(spacing: 8) {
+                    Text("Hoje")
+                        .font(.system(size: 17))
+                        .fontWeight(.semibold)
+                        .padding(.trailing, width * 0.3)
                     
-                    Chart(slices) { slice in
-                        SectorMark(
-                            angle: .value("Chores", slice.size),
-                            innerRadius: .ratio(0.64)
-                        )
-                        .foregroundStyle(slice.color)
+                    ZStack {
+                        Text(viewModel.completionText)
+                            .font(.system(size: 20))
+                            .fontWeight(.black)
+                        
+                        Chart(slices) { slice in
+                            SectorMark(
+                                angle: .value("Chores", slice.size),
+                                innerRadius: .ratio(0.64)
+                            )
+                            .foregroundStyle(slice.color)
+                        }
+                        .frame(width: width * 0.27, height: height * 0.126)
                     }
-                    .frame(width: width * 0.27, height: height * 0.126)
+                    
+                    Text(completedAndAllChores)
+                        .font(.system(size: 15))
+                    
                 }
-                
-                Text(completedAndAllChores)
-                    .font(.system(size: 15))
-                
             }
         }
     }
