@@ -201,7 +201,7 @@ struct BarPercentageComponent: View {
 
 #Preview {
     let viewModel = DashboardViewModel()
-    viewModel.myCognitiveShare = 0.5
+    viewModel.myCognitiveShare = 0.4
     viewModel.idealCognitiveShare = 0.4
     viewModel.myCognitiveShareText = "15%"
     viewModel.idealCognitiveShareText = "50%"

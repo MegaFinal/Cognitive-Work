@@ -84,7 +84,7 @@ struct FortnightlyView: View {
         }
         .task {
             if let assignments, let rooms {
-                await viewModel.setup(users: users, chores: chores, assignments: assignments, rooms: rooms)
+                await viewModel.setup(users: users, chores: chores)
             } else {
                 await viewModel.setup(users: users, chores: chores)
             }

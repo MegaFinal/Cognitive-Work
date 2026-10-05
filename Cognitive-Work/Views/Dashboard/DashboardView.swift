@@ -28,8 +28,9 @@ struct DashboardView: View {
                         // MARK: - House cognitive division
                         BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
                         
-                        // TODO: - Current Division
-                        
+                        // MARK: - Current Division
+                        UserCurrentFortnightlyView()
+                            .padding(.horizontal, 16)
                         
                         // MARK: - Unassigned chore
                         // This will be replaced when the pending chores section is finalized.
