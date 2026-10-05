@@ -16,9 +16,8 @@ class RecurrentAssignmentModel: CloudKitSyncable {
     var day: Date
     var isCompleted: Bool
     
-    var userReference: CKRecord.Reference?
+    var userReferences: [CKRecord.Reference]?
     var userThatHaveDoneReference: CKRecord.Reference?
-    
     var choreReference: CKRecord.Reference?
     
     @ObservationIgnored
@@ -27,19 +26,25 @@ class RecurrentAssignmentModel: CloudKitSyncable {
     /// EventKit calendar item persistent identifier
     var calendarEventIdentifier: String?
     
-    var user: UserModel? {
+    var users: [UserModel] {
         get async {
-            if let userReference {
-                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [userReference])?.first
+            if let userReferences, !userReferences.isEmpty {
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(
+                    for: UserModel.self,
+                    recordReferences: userReferences
+                ) ?? []
             }
-            return nil
+            return []
         }
     }
     
     var userThatHaveDone: UserModel? {
         get async {
             if let userThatHaveDoneReference {
-                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: UserModel.self, recordReferences: [userThatHaveDoneReference])?.first
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(
+                    for: UserModel.self,
+                    recordReferences: [userThatHaveDoneReference]
+                )?.first
             }
             return nil
         }
@@ -48,16 +53,25 @@ class RecurrentAssignmentModel: CloudKitSyncable {
     var chore: ChoreModel? {
         get async {
             if let choreReference {
-                return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ChoreModel.self, recordReferences: [choreReference])?.first
+                return await CloudKitManager.shared.fetchRecordsByRecordReference(
+                    for: ChoreModel.self,
+                    recordReferences: [choreReference]
+                )?.first
             }
             return nil
         }
     }
 
-    init(day: Date, isCompleted: Bool = false, user: CKRecord.Reference? = nil, chore: CKRecord.Reference? = nil, calendarEventIdentifier: String? = nil) {
+    init(
+        day: Date,
+        isCompleted: Bool = false,
+        users: [CKRecord.Reference]? = nil,
+        chore: CKRecord.Reference? = nil,
+        calendarEventIdentifier: String? = nil
+    ) {
         self.day = Calendar.current.startOfDay(for: day)
         self.isCompleted = isCompleted
-        self.userReference = user
+        self.userReferences = users
         self.choreReference = chore
         self.calendarEventIdentifier = calendarEventIdentifier
     }
@@ -73,7 +87,7 @@ class RecurrentAssignmentModel: CloudKitSyncable {
         self.recordID = record.recordID
         self.isCompleted = isCompleted
         self.day = day
-        self.userReference = record["user"] as? CKRecord.Reference
+        self.userReferences = record["users"] as? [CKRecord.Reference]
         self.choreReference = record["chore"] as? CKRecord.Reference
         self.userThatHaveDoneReference = record["userThatHaveDone"] as? CKRecord.Reference
         self.calendarEventIdentifier = record["calendarEventIdentifier"] as? String
@@ -82,19 +96,12 @@ class RecurrentAssignmentModel: CloudKitSyncable {
     func populate(record: CKRecord) {
         record["isCompleted"] = isCompleted
         record["day"] = day
-        record["user"] = userReference
+        record["users"] = userReferences ?? []
         record["chore"] = choreReference
         record["userThatHaveDone"] = userThatHaveDoneReference
         record["calendarEventIdentifier"] = calendarEventIdentifier
     }
     
-    /// Flips ``isCompleted``, records who did it and persists the change.
-    ///
-    /// - Returns: `true` when CloudKit saved it. On failure the occurrence is left as it was.
-    /// Moves this single occurrence `days` forward. Recurring chores are scheduled through
-    /// their occurrences, so this — not the chore's `dueDate` — is what "Adiar" has to change.
-    ///
-    /// - Returns: `true` when CloudKit saved it. On failure the day is put back.
     @MainActor
     @discardableResult
     func postpone(byDays days: Int) async -> Bool {

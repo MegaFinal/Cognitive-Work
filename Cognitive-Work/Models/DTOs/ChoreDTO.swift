@@ -13,30 +13,11 @@ import CloudKit
 /// This type carries only what the selection screens need, keeping the UI free
 /// from direct CloudKit mutations. Once the user confirms the selection, the picked
 /// instances are mapped into ``ChoreModel`` records.
-///
-/// Declared as a class so ``isSelected`` and other properties can be mutated in place while the
-/// instance is shared by a list row, and marked `@Observable` so those
-/// mutations refresh the views observing it.
-///
-/// Example:
-/// ```swift
-/// let chore = ChoreDTO(
-///     name: "Wash the dishes",
-///     description: "Includes drying and putting away",
-///     frequency: .daily,
-///     duration: 10,
-///     priorityTag: .high
-/// )
-/// ```
 @Observable
 final class ChoreDTO: Identifiable {
 
     // MARK: - Properties
 
-    /// Stable identity used by `ForEach`.
-    ///
-    /// > Note: Generated locally instead of relying on ``name``, so two chores
-    /// > sharing the same name never collapse into a single row.
     let id = UUID()
     
     /// Identifier of the original stored record, if this DTO is editing an existing chore.
@@ -58,8 +39,6 @@ final class ChoreDTO: Identifiable {
     var priorityTag: PriorityTag
 
     /// Whether the user marked this chore to be split between the residents.
-    ///
-    /// Starts as `false` and is driven by the `Toggle` of the selection screen.
     var isSelected: Bool = false
     
     /// Whether every member of the house can see and claim the chore.
@@ -82,7 +61,7 @@ final class ChoreDTO: Identifiable {
     }
     var roomReference: CKRecord.Reference?
     
-    /// Every user in the rotation for this chore.
+    /// Every user assigned to this chore or occurrence.
     var responsibleUsers: [UserModel] = []
     
     /// The checklist items for this chore.
@@ -92,6 +71,14 @@ final class ChoreDTO: Identifiable {
     var hasChecklist: Bool = false
     
     var dailyAssignmentsReference: [CKRecord.Reference]? = nil
+    
+    /// Returns CloudKit references for all selected responsible users.
+    var responsibleUserReferences: [CKRecord.Reference] {
+        responsibleUsers.compactMap { user in
+            guard let id = user.recordID else { return nil }
+            return CKRecord.Reference(recordID: id, action: .none)
+        }
+    }
 
     // MARK: - Initialization
     
@@ -108,12 +95,6 @@ final class ChoreDTO: Identifiable {
     }
 
     /// Creates a chore draft from an existing ``ChoreModel`` for the editing flow.
-    ///
-    /// - Parameters:
-    ///   - model: The original chore model to copy data from.
-    ///   - users: The previously assigned responsible users.
-    ///   - checklist: The previously assigned checklist items.
-    ///   - room: The room this chore belongs to.
     init(
         from model: ChoreModel,
         users: [UserModel],
@@ -135,20 +116,14 @@ final class ChoreDTO: Identifiable {
         
         self.dailyAssignmentsReference = model.dailyAssignmentsReference
         
-        if let roomModel = room, let roomRecordID = roomModel.recordID {
+        self.room = room
+        if let roomRecordID = room?.recordID {
             self.roomReference = CKRecord.Reference(recordID: roomRecordID, action: .none)
         }
-        self.roomDTO = RoomDTO(name: "NoDTO", symbol: "xmark")
+        self.roomDTO = RoomDTO(name: room?.name ?? "NoDTO", symbol: room?.symbol ?? "xmark")
     }
 
     /// Creates a chore for the onboarding selection screens.
-    ///
-    /// - Parameters:
-    ///   - name: Name shown to the user.
-    ///   - description: Short explanation of what the chore involves.
-    ///   - frequency: How often the chore repeats.
-    ///   - duration: Estimated time to complete the chore, in minutes.
-    ///   - priorityTag: Priority level used to sort and highlight the chore.
     init(
         name: String,
         description: String,
