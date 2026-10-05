@@ -16,12 +16,15 @@ struct OnboardingHeader: View {
         VStack(alignment: .leading, spacing: 20) {
             Text(title)
                 .font(.appTitle(size: 30, weight: .bold))
+                .bold()
+                .fixedSize(horizontal: false, vertical: true)
             
             Text(description)
                 .foregroundColor(.subTitleGray)
         }
         .padding(.top, 20)
-        .padding(.horizontal, 30)
+        .padding(.horizontal, width * 0.08)
+        .frame(maxWidth: .infinity, alignment: .leading)  
     }
 }
 

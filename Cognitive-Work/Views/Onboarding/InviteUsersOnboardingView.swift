@@ -31,6 +31,7 @@ struct InviteUsersOnboardingView: View {
     
     var body: some View {
         VStack {
+<<<<<<< HEAD
             VStack(alignment: .leading, spacing: 10) {
                 Text("Adicione seus \nroomies!")
                     .font(.appTitle(size: 28, weight: .bold))
@@ -41,6 +42,9 @@ struct InviteUsersOnboardingView: View {
             .frame(width: width * 0.84)
             .foregroundColor(.secondary)
             .padding(.top, 30)
+=======
+
+>>>>>>> f181d18ec4412ddf76af8fb53237a8b7de4e9152
             
             Spacer()
             
@@ -85,11 +89,13 @@ struct InviteUsersOnboardingView: View {
     private func prepareInvite() async {
         resolvendoShare = true
         didFailToPrepareInvite = false
+        shareURL = nil
+        houseShare = nil
         defer { resolvendoShare = false }
         
         var house = viewModel.currentHouse
         if house == nil {
-            house = await CloudKitManager.shared.currentHouse()
+            house = try? await CloudKitManager.shared.currentHouse()
         }
         guard let house else {
             didFailToPrepareInvite = true

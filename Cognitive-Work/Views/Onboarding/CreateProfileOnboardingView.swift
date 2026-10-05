@@ -13,24 +13,27 @@ import PhotosUI
 /// Saves the profile to CloudKit on "Continuar" and only advances once the
 /// record actually comes back.
 struct CreateProfileOnboardingView: View {
-
+    
     // MARK: - Properties
-
+    
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
     @State private var usernameText: String = ""
-
+    
     /// Image chosen through the system photo picker, before it is converted.
     @State private var selectedItem: PhotosPickerItem? = nil
-
+    
     // MARK: - Body
-
+    
     var body: some View {
         VStack(alignment: .center, spacing: 58) {
             headerText
+                .padding(.top, height * 0.02)
             
-                EditableProfileImage(image: viewModel.userProfilePicture, isEditing: true, selection: $selectedItem)
+            Spacer()
+            
+            EditableProfileImage(image: viewModel.userProfilePicture, isEditing: true, selection: $selectedItem)
                 .layoutPriority(1)
             
             
@@ -42,6 +45,8 @@ struct CreateProfileOnboardingView: View {
                 .multilineTextAlignment(.center)
                 .characterLimit(TextLimits.userName, text: $viewModel.userName)
                 .submitLabel(.done)
+            
+            Spacer()
             
             OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty) {
                 Task {
@@ -91,8 +96,8 @@ struct CreateProfileOnboardingView: View {
     /// Title and supporting copy for this onboarding step.
     private var headerText: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Para começarmos...")
-                .font(.appTitle(size: 32, weight: .bold))
+            Text("Quem é você na casa?")
+                .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.black.opacity(0.7))
             
             Text("Escolha uma foto e um nome para utilizar no app")

@@ -111,12 +111,12 @@ func buildScheduleContext(
 func occurrenceOffsets(for frequency: Recurrence, windowDays: Int, phase: Int = 0) -> [Int] {
     let period: Int
     switch frequency {
-    case .daily:      period = 1
-    case .weekly:     period = 7
+    case .daily:       period = 1
+    case .weekly:      period = 7
     case .fortnightly: period = 14
-    case .monthly:    period = 14
-    case .none:       return []
-    case .undefined:  return []
+    case .monthly:     period = 14
+    case .none:        return []
+    case .undefined:   return []
     }
     
     let start = phase % period
@@ -161,28 +161,31 @@ func scheduleRecurringChores(
         guard let choreID = chore.recordID else { continue }
         var result = ScheduleResult(chore: chore)
         
-        let fixedUser = context.choreResponsibleMap[choreID]
-        let targetUsers = fixedUser.map { [$0] } ?? users
+        let targetUsers: [UserModel]
+        if let assignedUserRefs = chore.allResponsibleUsersReference, !assignedUserRefs.isEmpty {
+            let assignedIDs = Set(assignedUserRefs.map(\.recordID))
+            let filtered = users.filter { $0.recordID.map { assignedIDs.contains($0) } ?? false }
+            targetUsers = filtered.isEmpty ? users : filtered
+        } else if let fixedUser = context.choreResponsibleMap[choreID] {
+            targetUsers = [fixedUser]
+        } else {
+            targetUsers = users
+        }
         
         let phase = choreID.recordName.utf8.reduce(0) { $0 &+ Int($1) }
-        
-        let existingAssignmentDays: Set<Date> = Set((result.chore.dailyAssignmentsReference ?? []).compactMap { ref in
-            nil
-        })
         
         // Calculate the date offsets where this recurring chore should occur
         for dayOffset in occurrenceOffsets(for: chore.frequency, windowDays: 14, phase: phase) {
             guard let day = calendar.date(byAdding: .day, value: dayOffset, to: now) else { continue }
             let dayStart = calendar.startOfDay(for: day)
             
-            // If an assignment for this specific day already exists, you can add a check here to skip it and prevent duplicates.
             var chosenUser: UserModel?
             var chosenUserID: CKRecord.ID?
             var chosenSlotID: CKRecord.ID?
             var chosenRemaining: Double = 0
             var bestMinutes = Int.max
             
-            // Attempt to find the most suitable, least-loaded user among the candidates
+            // Attempt to find the most suitable, least-loaded user among the candidate pool for this day
             for user in targetUsers {
                 guard let userID = user.recordID,
                       let slot = slotsByUserAndDay[userID]?[dayStart],
@@ -205,22 +208,21 @@ func scheduleRecurringChores(
                 }
             }
             
-            // If a suitable user and time slot are found, deduct capacity and bind the user
-            let chosenUserRef: CKRecord.Reference?
+            // If a suitable user and time slot are found, deduct capacity and bind the single chosen user
+            let chosenUserRefs: [CKRecord.Reference]?
             if let finalUserID = chosenUserID, let slotID = chosenSlotID {
                 remainingCapacity[slotID] = max(chosenRemaining - chore.duration, 0)
                 userAssignedMinutes[finalUserID, default: 0] += Int(chore.duration)
-                chosenUserRef = CKRecord.Reference(recordID: finalUserID, action: .none)
+                chosenUserRefs = [CKRecord.Reference(recordID: finalUserID, action: .none)]
             } else {
-                // If no specific user is found,
-                // generate a placeholder instance with userReference set to nil.
-                chosenUserRef = nil
+                // If no specific user is found, generate a placeholder instance with users set to nil.
+                chosenUserRefs = nil
             }
             
             // Create a CloudKit reference, generate the daily assignment model, and append it to the current chore's results
             let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
             result.newAssignments.append(
-                RecurrentAssignmentModel(day: day, isCompleted: false, user: chosenUserRef, chore: choreRef)
+                RecurrentAssignmentModel(day: day, isCompleted: false, users: chosenUserRefs, chore: choreRef)
             )
         }
         
@@ -282,7 +284,8 @@ func occurrenceDays(
 /// - Parameters:
 ///   - chore: The newly created chore. Must already be saved (have a `recordID`) and have no
 ///     occurrences yet; otherwise nothing happens.
-///   - responsibleUsers: The users picked in the creation form, in order.
+///   - responsibleUsers: The users picked in the creation form; all of them are assigned to
+///     every occurrence.
 ///   - cycleEnd: The last day of the division cycle in progress, or `nil` when none is.
 func scheduleNewRecurringChore(
     _ chore: ChoreModel,
@@ -297,19 +300,25 @@ func scheduleNewRecurringChore(
           (chore.dailyAssignmentsReference ?? []).isEmpty
     else { return }
     
-    let start = pickedDate ?? Date() 
+    let start = pickedDate ?? Date()
     let days = occurrenceDays(for: chore.frequency, from: start, through: cycleEnd)
     guard !days.isEmpty else { return }
     
-    let rotation = responsibleUsers.compactMap { $0.recordID }
+    // Every occurrence is shared by all the users picked in the form, unlike the division,
+    // which gives each occurrence to a single user.
+    let userRefs = responsibleUsers.compactMap { user in
+        user.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+    }
     // Same reference action the division uses for an occurrence's chore.
     let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
     
-    let assignments = days.enumerated().map { index, day -> RecurrentAssignmentModel in
-        let userRef = rotation.isEmpty
-            ? nil
-            : CKRecord.Reference(recordID: rotation[index % rotation.count], action: .none)
-        return RecurrentAssignmentModel(day: day, isCompleted: false, user: userRef, chore: choreRef)
+    let assignments = days.map { day in
+        RecurrentAssignmentModel(
+            day: day,
+            isCompleted: false,
+            users: userRefs.isEmpty ? nil : userRefs,
+            chore: choreRef
+        )
     }
     
     // The chore was created in the house's zone, so its zone is the one the division uses.
@@ -607,9 +616,10 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
             recordsToSave.append(record)
             savedRefs.append(CKRecord.Reference(recordID: recordID, action: .none))
             
-            if let assignedID = assignment.userReference?.recordID {
-                // Group chore references by user ID to prepare for batch-updating UserModel instances later.
-                choresByUser[assignedID, default: []].append(CKRecord.Reference(recordID: choreID, action: .none))
+            if let assignedRefs = assignment.userReferences {
+                for ref in assignedRefs {
+                    choresByUser[ref.recordID, default: []].append(CKRecord.Reference(recordID: choreID, action: .none))
+                }
             }
         }
         if !savedRefs.isEmpty {
