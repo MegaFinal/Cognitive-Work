@@ -284,7 +284,8 @@ func occurrenceDays(
 /// - Parameters:
 ///   - chore: The newly created chore. Must already be saved (have a `recordID`) and have no
 ///     occurrences yet; otherwise nothing happens.
-///   - responsibleUsers: The users picked in the creation form, in order.
+///   - responsibleUsers: The users picked in the creation form; all of them are assigned to
+///     every occurrence.
 ///   - cycleEnd: The last day of the division cycle in progress, or `nil` when none is.
 func scheduleNewRecurringChore(
     _ chore: ChoreModel,
@@ -303,15 +304,21 @@ func scheduleNewRecurringChore(
     let days = occurrenceDays(for: chore.frequency, from: start, through: cycleEnd)
     guard !days.isEmpty else { return }
     
-    let rotation = responsibleUsers.compactMap { $0.recordID }
+    // Every occurrence is shared by all the users picked in the form, unlike the division,
+    // which gives each occurrence to a single user.
+    let userRefs = responsibleUsers.compactMap { user in
+        user.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+    }
     // Same reference action the division uses for an occurrence's chore.
     let choreRef = CKRecord.Reference(recordID: choreID, action: .deleteSelf)
     
-    let assignments = days.enumerated().map { index, day -> RecurrentAssignmentModel in
-        let userRefs: [CKRecord.Reference]? = rotation.isEmpty
-            ? nil
-            : [CKRecord.Reference(recordID: rotation[index % rotation.count], action: .none)]
-        return RecurrentAssignmentModel(day: day, isCompleted: false, users: userRefs, chore: choreRef)
+    let assignments = days.map { day in
+        RecurrentAssignmentModel(
+            day: day,
+            isCompleted: false,
+            users: userRefs.isEmpty ? nil : userRefs,
+            chore: choreRef
+        )
     }
     
     // The chore was created in the house's zone, so its zone is the one the division uses.
