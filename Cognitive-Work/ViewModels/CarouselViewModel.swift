@@ -553,7 +553,14 @@ class CarouselViewModel {
     }
     
     /// Refreshes the chores and recurrent assignments after a chore or its responsible user has been modified.
-    func refreshAfterChoreUpdate() async {
+    ///
+    /// - Parameters:
+    ///   - savedChores: Chores this device has just saved. They are kept over the fetched copies.
+    ///   - savedAssignments: Occurrences this device has just saved, kept the same way.
+    func refreshAfterChoreUpdate(
+        preserving savedChores: [ChoreModel] = [],
+        savedAssignments: [RecurrentAssignmentModel] = []
+    ) async {
         async let fetchC = CloudKitManager.shared.fetchAll(ChoreModel.self)
         async let fetchA = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
         
@@ -562,10 +569,50 @@ class CarouselViewModel {
         guard !Task.isCancelled else { return }
         
         await MainActor.run {
-            self.cardModels = self.choresVisible(chores, to: self.dashboardUser, among: self.userModels)
-            self.dailyAssignments = assignments
+            let mergedChores = Self.merging(chores, preserving: savedChores)
+            self.cardModels = self.choresVisible(mergedChores, to: self.dashboardUser, among: self.userModels)
+            self.dailyAssignments = Self.merging(assignments, preserving: savedAssignments)
             self.rebuildDerivedState()
         }
+    }
+    
+    /// Replaces the fetched copy of every record in `saved` with the local one, and adds the
+    /// saved records the query left out. See ``refreshAfterChoreUpdate(preserving:savedAssignments:)``.
+    ///
+    /// - Parameters:
+    ///   - fetched: What the query returned.
+    ///   - saved: Records this device has just persisted — the most recent version it knows.
+    /// - Returns: `fetched` with the saved records taking precedence.
+    static func merging<T: CloudKitSyncable>(_ fetched: [T], preserving saved: [T]) -> [T] {
+        var pending = Dictionary(
+            saved.compactMap { model in model.recordID.map { ($0, model) } },
+            uniquingKeysWith: { _, latest in latest }
+        )
+        guard !pending.isEmpty else { return fetched }
+        
+        var result = fetched.map { model -> T in
+            guard let id = model.recordID, let local = pending.removeValue(forKey: id) else { return model }
+            return local
+        }
+        result.append(contentsOf: pending.values)
+        return result
+    }
+    
+    /// Closes the edited chore's card in the grid when it no longer belongs there.
+    ///
+    /// - Parameter chore: The chore that was just edited.
+    @MainActor
+    func releaseFocusIfHiddenInGrid(_ chore: ChoreModel) {
+        guard layoutMode == .grid,
+              let choreID = chore.recordID,
+              focusedChoreRecordID == choreID
+        else { return }
+        
+        let current = cardModels.first { $0.recordID == choreID }
+        guard current.map(isVisibleInGrid) != true else { return }
+        
+        clearFocus()
+        rebuildDerivedState()
     }
     
     /// Private chores only reach the residents they belong to. The viewer is matched by

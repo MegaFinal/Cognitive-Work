@@ -39,7 +39,7 @@ struct WaitingAlgorithmView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 30)
         .navigationBarBackButtonHidden()
-
+        .hidesTabBar()
     }
 }
 

@@ -332,9 +332,17 @@ final class CreateAndEditChoreViewModel {
         ? Set((originalModel.dailyAssignmentsReference ?? []).map(\.recordID))
         : []
         
-        await carouselViewModel.refreshAfterChoreUpdate()
-        await syncCalendar(newOccurrenceIDs: newOccurrenceIDs, frequencyChanged: frequencyChanged)
+        await carouselViewModel.refreshAfterChoreUpdate(
+            preserving: [originalModel],
+            savedAssignments: assignmentsToUpdate
+        )
+        await syncCalendar(
+            newOccurrenceIDs: newOccurrenceIDs,
+            frequencyChanged: frequencyChanged,
+            savedAssignments: assignmentsToUpdate
+        )
         carouselViewModel.refreshVisible()
+        carouselViewModel.releaseFocusIfHiddenInGrid(originalModel)
         
         return true
     }
@@ -375,7 +383,14 @@ final class CreateAndEditChoreViewModel {
     }
     
     /// Mirrors the saved chore (or the occurrences it touched) into the user's calendar.
-    private func syncCalendar(newOccurrenceIDs: Set<CKRecord.ID>, frequencyChanged: Bool) async {
+    ///
+    /// - Parameter savedAssignments: Occurrences just saved; kept over the fetched copies, which
+    ///   can still be stale (see ``CarouselViewModel/refreshAfterChoreUpdate(preserving:savedAssignments:)``).
+    private func syncCalendar(
+        newOccurrenceIDs: Set<CKRecord.ID>,
+        frequencyChanged: Bool,
+        savedAssignments: [RecurrentAssignmentModel]
+    ) async {
         let chore = originalModel
         
         guard chore.frequency != .none else {
@@ -383,7 +398,8 @@ final class CreateAndEditChoreViewModel {
             return
         }
         
-        let freshAssignments = await cloudKit.fetchAll(RecurrentAssignmentModel.self)
+        let fetchedAssignments = await cloudKit.fetchAll(RecurrentAssignmentModel.self)
+        let freshAssignments = CarouselViewModel.merging(fetchedAssignments, preserving: savedAssignments)
         carouselViewModel.dailyAssignments = freshAssignments
         
         // When frequency changed, targetAssignments were wiped — use newOccurrenceIDs instead

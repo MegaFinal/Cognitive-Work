@@ -35,16 +35,16 @@ struct GeneralProfileSettingsView: View {
     
     var body: some View {
         VStack(spacing: 30) {
-            HStack {
-                Text("Permitir Notificações")
-                
-                Spacer()
-                
-                Toggle("", isOn: $isNotificationsEnabled)
-                    .toggleStyle(.switch)
-                    .padding(.trailing, 7)
-                    .frame(width: width * 0.37)
-            }
+//            HStack {
+//                Text("Permitir Notificações")
+//                
+//                Spacer()
+//                
+//                Toggle("", isOn: $isNotificationsEnabled)
+//                    .toggleStyle(.switch)
+//                    .padding(.trailing, 7)
+//                    .frame(width: width * 0.37)
+//            }
             
             HStack {
                 Text("Idioma")
