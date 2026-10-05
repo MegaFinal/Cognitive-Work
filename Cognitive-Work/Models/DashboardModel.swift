@@ -64,7 +64,9 @@ class DashboardModel: Identifiable {
                   calendar.isDate(assignment.day, inSameDayAs: today)
             else { continue }
             allAssignmentsToday[assignmentID] = assignment
-            if assignment.userReference?.recordID == targetUserID {
+            
+            let isAssignedToMe = (assignment.userReferences ?? []).contains { $0.recordID == targetUserID }
+            if isAssignedToMe {
                 myAssignmentsToday[assignmentID] = assignment
             }
         }

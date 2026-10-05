@@ -31,19 +31,30 @@ struct ChoreCardListStyle: View {
     }
     
     var occurrenceResponsibleUsers: [UserModel] {
-        guard chore.dailyAssignmentsReference?.isEmpty == false else {
-            guard let refs = chore.allResponsibleUsersReference else { return [] }
-            let ids = Set(refs.compactMap { $0.recordID })
-            return carouselViewModel.userModels.filter { user in
-                guard let id = user.recordID else { return false }
-                return ids.contains(id)
+        if let target = targetAssignments.first {
+            if let refs = target.userReferences {
+                let targetIDs = Set(refs.map(\.recordID))
+                guard !targetIDs.isEmpty else { return [] }
+                
+                return carouselViewModel.userModels.filter { user in
+                    guard let userID = user.recordID else { return false }
+                    return targetIDs.contains(userID)
+                }
             }
         }
-
-        let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+        
+        var targetIDs = Set<CKRecord.ID>()
+        if let refs = chore.allResponsibleUsersReference, !refs.isEmpty {
+            targetIDs.formUnion(refs.map(\.recordID))
+        } else if let currentID = chore.currentResponsibleReference?.recordID {
+            targetIDs.insert(currentID)
+        }
+        
+        guard !targetIDs.isEmpty else { return [] }
+        
         return carouselViewModel.userModels.filter { user in
-            guard let id = user.recordID else { return false }
-            return userIDs.contains(id)
+            guard let userID = user.recordID else { return false }
+            return targetIDs.contains(userID)
         }
     }
     
@@ -137,7 +148,7 @@ struct ChoreCardListStyle: View {
                                     Circle()
                                         .foregroundColor(.white)
                                         .frame(width: width * 0.05)
-
+                                    
                                     Image(systemName: isOccurrenceDone ? "checkmark.circle.fill" : "circle.fill")
                                         .foregroundColor(isOccurrenceDone ? .black : .white)
                                         .font(.system(size: 28))
@@ -159,7 +170,7 @@ struct ChoreCardListStyle: View {
 
 #Preview("Card em lista") {
     @Previewable @Namespace var namespace
-
+    
     let room: RoomModel = {
         var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")

@@ -189,22 +189,19 @@ final class CreateAndEditChoreViewModel {
     /// Rebuilds the draft from what is persisted and loads everything the form needs.
     func load() async {
         isLoaded = false
-        draft = ChoreDTO(from: originalModel, users: [], checklist: [], room: nil)
-        Self.replaceUndefinedTags(in: draft)
         fillFromMemory()
         
-        // CloudKit only for what the chores screen didn't have in memory.
         if availableRooms.isEmpty {
-            availableRooms = await cloudKit.fetchAll(RoomModel.self)
-                .filter { $0.name != "Casa" }
+            availableRooms = await cloudKit.fetchAll(RoomModel.self).filter { $0.name != "Casa" }
         }
         if currentHouseUser == nil {
             currentHouseUser = await cloudKit.currentHouseUser()
-            applyResponsibleUsers()
         }
         if draft.room == nil, originalModel.roomReference != nil {
             draft.room = await originalModel.room
         }
+        
+        draft.responsibleUsers = persistedResponsibleUsers()
         
         let checklistModels = await originalModel.checkList
         draft.checklist = checklistModels.map(CheckItemDTO.init(from:))
@@ -232,14 +229,20 @@ final class CreateAndEditChoreViewModel {
     
     /// The responsible users stored on the occurrence(s) being edited, or on the chore.
     private func persistedResponsibleUsers() -> [UserModel] {
-        let userIDs: Set<CKRecord.ID>
+        var userIDs = Set<CKRecord.ID>()
         
-        if !targetAssignments.isEmpty {
-            userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
-        } else if let refs = originalModel.allResponsibleUsersReference {
-            userIDs = Set(refs.map(\.recordID))
-        } else {
-            return []
+        if let target = targetAssignments.first {
+            if let refs = target.userReferences {
+                userIDs.formUnion(refs.map(\.recordID))
+                return availableHouseUsers.filter { user in
+                    guard let id = user.recordID else { return false }
+                    return userIDs.contains(id)
+                }
+            }
+        }
+        
+        if let refs = originalModel.allResponsibleUsersReference {
+            userIDs.formUnion(refs.map(\.recordID))
         }
         
         return availableHouseUsers.filter { user in
@@ -292,21 +295,17 @@ final class CreateAndEditChoreViewModel {
         let previousFrequency = originalModel.frequency
         let frequencyChanged = !isNewChore && previousFrequency != draft.frequency
         
-        // When frequency changes, targetAssignments are outdated/deleted, so pass empty targetAssignments
-        let assignmentsToUpdate = frequencyChanged ? [] : targetAssignments
-        
         do {
             try await originalModel.save(
                 from: draft,
                 pickedDate: selectedDate,
-                targetAssignments: assignmentsToUpdate
+                targetAssignments: frequencyChanged ? [] : targetAssignments
             )
         } catch {
             alert = FormAlert(kind: .saveFailed, message: error.localizedDescription)
             return false
         }
         
-        // MARK: - Schedule Generation & Frequency Handling
         if isNewChore {
             await scheduleNewRecurringChore(
                 originalModel,
@@ -316,18 +315,30 @@ final class CreateAndEditChoreViewModel {
             )
             await awardCreationScore()
         } else if frequencyChanged {
-            // Purge old occurrences and generate new series based on new frequency
             await carouselViewModel.handleFrequencyChange(
                 for: originalModel,
                 from: previousFrequency,
                 responsibleUsers: responsibleUsersForScheduling,
                 pickedDate: selectedDate
             )
+        } else if let target = targetAssignments.first {
+            if let pickedDate = selectedDate {
+                target.day = Calendar.current.startOfDay(for: pickedDate)
+            }
+            
+            // 支持清空责任人：当 draft.responsibleUsers 为空时，将 selectedRefs 设为 nil
+            let selectedRefs = draft.responsibleUsers.compactMap { user -> CKRecord.Reference? in
+                guard let id = user.recordID else { return nil }
+                return CKRecord.Reference(recordID: id, action: .none)
+            }
+            target.userReferences = selectedRefs.isEmpty ? nil : selectedRefs
+            
+            await cloudKit.update(target)
         } else {
             await applyPickedDateToOccurrence(isNewChore: isNewChore)
         }
         
-        // MARK: - Local & Remote Sync
+        // 刷新与同步
         let newOccurrenceIDs: Set<CKRecord.ID> = (isNewChore || frequencyChanged)
         ? Set((originalModel.dailyAssignmentsReference ?? []).map(\.recordID))
         : []

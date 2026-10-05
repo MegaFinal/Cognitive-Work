@@ -1,9 +1,9 @@
-////
-////  FortnightlyViewModel.swift
-////  Cognitive-Work
-////
-////  Created by anshu Li on 24/08/26.
-////
+//
+//  FortnightlyViewModel.swift
+//  Cognitive-Work
+//
+//  Created by anshu Li on 24/08/26.
+//
 
 import SwiftUI
 import CloudKit
@@ -144,24 +144,26 @@ class FortnightlyViewModel {
                     
                     guard let assignment = assignmentDict[assignmentID] else { continue }
                     
-                    let userID: CKRecord.ID?
-                    if let userRef = assignment.userReference {
-                        userID = userRef.recordID
-                    } else if let userObj = await assignment.user {
-                        userID = userObj.recordID
+                    var assignedUserIDs: [CKRecord.ID] = []
+                    
+                    if let refs = assignment.userReferences, !refs.isEmpty {
+                        assignedUserIDs = refs.map(\.recordID)
                     } else {
-                        userID = nil
+                        let usersObj = await assignment.users
+                        assignedUserIDs = usersObj.compactMap(\.recordID)
                     }
                     
-                    guard let finalUserID = userID, userIDs.contains(finalUserID) else { continue }
-                    
-                    entries.append(DailyUsageEntry(
-                        day: assignment.day,
-                        userID: finalUserID,
-                        choreID: choreID,
-                        minutes: chore.duration,
-                        choreName: chore.name
-                    ))
+                    for finalUserID in assignedUserIDs {
+                        guard userIDs.contains(finalUserID) else { continue }
+                        
+                        entries.append(DailyUsageEntry(
+                            day: assignment.day,
+                            userID: finalUserID,
+                            choreID: choreID,
+                            minutes: chore.duration,
+                            choreName: chore.name
+                        ))
+                    }
                 }
             } else {
                 guard let dueDate = chore.dueDate,
