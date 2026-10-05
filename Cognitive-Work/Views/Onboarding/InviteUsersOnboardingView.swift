@@ -31,17 +31,7 @@ struct InviteUsersOnboardingView: View {
     
     var body: some View {
         VStack {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Adicione seus \nroomies!")
-                    .bold()
-                    .font(.system(size: 28))
-                    .foregroundColor(.black)
-                
-                Text("Envie o convite para os outros moradores da sua casa se juntarem com você no app!")
-            }
-            .frame(width: width * 0.84)
-            .foregroundColor(.secondary)
-            .padding(.top, 30)
+
             
             Spacer()
             

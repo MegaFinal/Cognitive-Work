@@ -17,12 +17,14 @@ struct OnboardingHeader: View {
             Text(title)
                 .font(.system(size: 28))
                 .bold()
+                .fixedSize(horizontal: false, vertical: true)
             
             Text(description)
                 .foregroundColor(.subTitleGray)
         }
         .padding(.top, 20)
-        .padding(.horizontal, 30)
+        .padding(.horizontal, width * 0.08)
+        .frame(maxWidth: .infinity, alignment: .leading)  
     }
 }
 

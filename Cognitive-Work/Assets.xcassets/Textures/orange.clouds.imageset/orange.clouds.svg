@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Camada_1" data-name="Camada 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 568.86 757.26">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        fill: url(#Novo_padrão_5_cópia_2);
+      }
+
+      .cls-3 {
+        fill: #ffac9c;
+      }
+    </style>
+    <pattern id="Novo_padrão_5_cópia_2" data-name="Novo padrão 5 cópia 2" x="0" y="0" width="350.43" height="260.98" patternTransform="translate(-4063.6021 3494.8863) scale(.7614)" patternUnits="userSpaceOnUse" viewBox="0 0 350.43 260.98">
+      <g>
+        <rect class="cls-1" width="350.43" height="260.98"/>
+        <g>
+          <rect class="cls-3" x="175.61" y="242.9" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="253.15" y="242.9" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="314" y="242.9" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="207.37" y="242.85" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="313.77" y="230.3" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+        </g>
+        <g>
+          <rect class="cls-3" x="-36.43" y="242.9" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="41.11" y="242.9" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="132.82" y="242.85" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="101.95" y="242.9" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="41.11" y="242.9" width="35.08" height="35.08" rx="17.54" ry="17.54"/>
+        </g>
+        <g>
+          <rect class="cls-3" x="88.01" y="177.66" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="165.54" y="177.66" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="226.39" y="177.66" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="303.93" y="177.66" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="119.77" y="177.6" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="226.16" y="165.05" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="303.93" y="177.66" width="35.08" height="35.08" rx="17.54" ry="17.54"/>
+        </g>
+        <g>
+          <rect class="cls-3" x="-46.5" y="177.66" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="45.22" y="177.6" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="14.35" y="177.66" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+        </g>
+        <g>
+          <rect class="cls-3" x=".4" y="112.41" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="77.94" y="112.41" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="138.78" y="112.41" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="216.32" y="112.41" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="32.16" y="112.36" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="308.04" y="112.36" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="138.56" y="99.81" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="277.17" y="112.41" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="216.32" y="112.41" width="35.08" height="35.08" rx="17.54" ry="17.54"/>
+        </g>
+        <g>
+          <rect class="cls-3" x="263.22" y="47.17" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="340.76" y="47.17" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="294.98" y="47.11" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+        </g>
+        <g>
+          <rect class="cls-3" x="-9.67" y="47.17" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="51.18" y="47.17" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="128.71" y="47.17" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="220.43" y="47.11" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="50.95" y="34.56" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="189.56" y="47.17" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="128.71" y="47.17" width="35.08" height="35.08" rx="17.54" ry="17.54"/>
+        </g>
+        <g>
+          <rect class="cls-3" x="175.61" y="-18.07" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="253.15" y="-18.07" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="314" y="-18.07" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="207.37" y="-18.13" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="313.77" y="-30.68" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+        </g>
+        <g>
+          <rect class="cls-3" x="-36.43" y="-18.07" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="41.11" y="-18.07" width="49.22" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="132.82" y="-18.13" width="35.08" height="47.27" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="101.95" y="-18.07" width="65.91" height="35.08" rx="17.54" ry="17.54"/>
+          <rect class="cls-3" x="41.11" y="-18.07" width="35.08" height="35.08" rx="17.54" ry="17.54"/>
+        </g>
+      </g>
+    </pattern>
+  </defs>
+  <rect class="cls-2" width="568.86" height="757.26"/>
+</svg>

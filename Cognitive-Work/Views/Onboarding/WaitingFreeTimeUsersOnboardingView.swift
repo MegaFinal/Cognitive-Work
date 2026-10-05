@@ -5,6 +5,7 @@
 //  Created by Carolina Sun on 10/09/26.
 //
 
+import CloudKit
 import SwiftUI
 
 /// Onboarding step where the house owner waits for every member to finish
@@ -24,6 +25,11 @@ struct WaitUsersFreeTimeOnboardingView: View {
     @State private var pendingUsers: [UserModel] = []
     
     @State private var refreshGeneration: Int = 0
+    @State private var resolveShare = true
+    @State private var shareURL: URL? = nil
+    @State private var didFailToPrepareInvite = false
+    @State private var houseShare: CKShare? = nil
+    
     
     /// `false` until the first fetch returns;
     @State private var hasLoadedUsers = false
@@ -36,61 +42,79 @@ struct WaitUsersFreeTimeOnboardingView: View {
     // MARK: - Body
     
     var body: some View {
-        VStack {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Esperando os\nroomies!")
-                    .bold()
-                    .font(.system(size: 28))
-                    .foregroundColor(.black)
-                
-                VStack(alignment: .leading) {
-                    Text("Cada morador precisa preencher seus horários de tempo livre antes da divisão das tarefas.")
-                    Text("Os moradores em verde já finalizaram essa etapa.")
-                }
-            }
-            .frame(width: width * 0.84)
-            .foregroundColor(.secondary)
-            .padding(.top, 30)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Adicione seus roomies!")
+                .bold()
+                .font(.system(size: 28))
+                .foregroundColor(.black)
             
-            Spacer()
+            Text("Envie o convite para quem mora com você")
+                .foregroundColor(.secondary)
+                .padding(.bottom, height * 0.028)
+            
+            
+            Text("Na casa \(Text("\(houseUsers.count)").fontWeight(.black))")
+                .font(.body)
+                .frame(width: width * 0.84, alignment: .leading)
+                .padding(.top, 30)
+                .padding(.bottom, width * 0.02)
+            
             
             if !hasLoadedUsers {
                 ProgressView()
                     .controlSize(.large)
             }
-            
-            if !completedUsers.isEmpty {
-                completedUsersView
-            }
-            
-            Spacer()
-            
+                    
             if !pendingUsers.isEmpty {
+                Text("Em configuração")
+                .font(.subheadline)
+                .fontWeight(.thin)
                 pendingUsersView
             }
             
+            if !completedUsers.isEmpty {
+                Text("Usuarios prontos")
+                .font(.subheadline)
+                .fontWeight(.thin)
+                completedUsersView
+            }
+                        
+            
             Spacer()
+
             
-            Text("Assim que todos os moradores preencherem seus horários, a divisão das tarefas poderá ser realizada.")
-                .frame(width: width * 0.8)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.gray)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            VStack {
+                Text("Certifique-se de que todos os moradores estão dentro do app antes de continuar")
+                    .frame(width: width * 0.8)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.gray)
             
-            if !isFromSettings {
-                OnboardingProgressButton(
-                    width: 150,
-                    height: 50,
-                    text: "Iniciar divisão",
-                    isDisabled: !hasLoadedUsers
-                ) {
-                    viewModel.goToNextView()
+                HStack {
+                    inviteButton
+                        .frame(alignment: .center)
+                    
+                    Button("Continuar", systemImage: "chevron.right") {
+                        Task { viewModel.goToNextView() }
+                    }
+                    .bold()
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.glassProminent)
+                    .buttonBorderShape(.circle)
+                    .controlSize(.large)
+                    .disabled(!pendingUsers.isEmpty)
                 }
-                .multilineTextAlignment(.trailing)
-                .padding(.top)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.bottom, height * 0.073)
+                .padding(.trailing, width * 0.021)
             }
         }
         .frame(width: width * 0.84)
         .navigationBarBackButtonHidden(!isFromSettings)
+        .task(id: viewModel.currentHouse?.recordID) {
+            await prepareInvite()
+        }
         .task {
             await updateUsers()
             
@@ -111,6 +135,7 @@ struct WaitUsersFreeTimeOnboardingView: View {
             }
         }
     }
+    
     
     // MARK: - Subviews
     
@@ -142,6 +167,74 @@ struct WaitUsersFreeTimeOnboardingView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Subviews
+    
+    @ViewBuilder
+    private var inviteButton: some View {
+        if let shareURL, !resolveShare {
+            ShareLink(item: shareURL) {
+                inviteCapsule(color: .black) {
+                    Text("Compartilhar Convite")
+                }
+            }
+        } else if didFailToPrepareInvite && !resolveShare {
+            Button {
+                Task { await prepareInvite() }
+            } label: {
+                inviteCapsule(color: .black) {
+                    Label("Tentar novamente", systemImage: "arrow.clockwise")
+                }
+            }
+        } else {
+            inviteCapsule(color: .gray) {
+                ProgressView()
+                    .tint(.white)
+            }
+            .accessibilityLabel(Text("Preparando convite"))
+        }
+    }
+    
+    private func inviteCapsule<Content: View>(color: Color, @ViewBuilder label: () -> Content) -> some View {
+        label()
+            .font(.system(size: 17))
+            .frame(width: width * 0.539, height: height * 0.058, alignment: .center)
+            .foregroundColor(.white)
+            .background {
+                Capsule()
+                    .foregroundColor(color)
+                    .glassEffect()
+            }
+    }
+    
+    // MARK: - Actions
+    
+    /// Resolves the house's CKShare and its link.
+    private func prepareInvite() async {
+        resolveShare = true
+        didFailToPrepareInvite = false
+        defer { resolveShare = false }
+        
+        var house = viewModel.currentHouse
+        if house == nil {
+            house = await CloudKitManager.shared.currentHouse()
+        }
+        guard let house else {
+            didFailToPrepareInvite = true
+            return
+        }
+        
+        if let share = await CloudKitManager.shared.resolveShare(for: house) {
+            houseShare = share
+            do {
+                shareURL = try await CloudKitManager.shared.generateShareLink(share: share)
+            } catch {
+                print("Erro ao gerar link: \(error.localizedDescription)")
+            }
+        }
+        
+        didFailToPrepareInvite = shareURL == nil
     }
     
     private func updateUsers() async {
