@@ -326,7 +326,6 @@ final class CreateAndEditChoreViewModel {
                 target.day = Calendar.current.startOfDay(for: pickedDate)
             }
             
-            // 支持清空责任人：当 draft.responsibleUsers 为空时，将 selectedRefs 设为 nil
             let selectedRefs = draft.responsibleUsers.compactMap { user -> CKRecord.Reference? in
                 guard let id = user.recordID else { return nil }
                 return CKRecord.Reference(recordID: id, action: .none)
@@ -338,7 +337,6 @@ final class CreateAndEditChoreViewModel {
             await applyPickedDateToOccurrence(isNewChore: isNewChore)
         }
         
-        // 刷新与同步
         let newOccurrenceIDs: Set<CKRecord.ID> = (isNewChore || frequencyChanged)
         ? Set((originalModel.dailyAssignmentsReference ?? []).map(\.recordID))
         : []
