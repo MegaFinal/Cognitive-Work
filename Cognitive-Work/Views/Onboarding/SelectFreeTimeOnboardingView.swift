@@ -52,74 +52,60 @@ struct SelectFreeTimeOnboardingView: View {
         if isFromSettings {
             dismiss()
         } else {
-            viewModel.goToNextView()
+            viewModel.advanceAfterFreeTime()
         }
     }
     
     // MARK: - Body
     
     var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = geometry.size.height
+        VStack(alignment: .leading) {
+            Text("Quanto tempo você tem para a casa?")
+                .bold()
+                .font(.system(size: 32))
+                .foregroundStyle(.titleGray)
+                .padding(.bottom, 5)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, height * 0.02)
             
-            VStack(alignment: .leading) {
-                Text("Delimite seu tempo")
-                    .bold()
-                    .font(.system(size: 32))
-                    .foregroundStyle(.titleGray)
-                    .padding(.top, height * 0.034)
-                    .padding(.bottom, 10)
-                
-                Text("Defina seu tempo disponível para realizar tarefas domésticas durante a semana")
-                    .bold()
-                    .font(.system(size: 16))
-                    .foregroundStyle(.subTitleGray)
-                
-                HStack(spacing: width * 0.073) {
-                    Spacer()
-                    Text("30’")
-                    Text("1h")
-                    Text("2h")
-                    Text("3h")
-                    Text("4h")
-                    Text("5h")
-                }
+            Text("Arraste em cada dia para definir seu tempo livre para as tarefas da casa")
                 .font(.system(size: 16))
-                .fontWeight(.medium)
-                .padding(.trailing, 10)
-                .padding(.top, height * 0.023)
-                
-                ForEach($weekOrder, id: \.name) { $day in
-                    OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
-                }
-                
+                .foregroundStyle(.subTitleGray)
+            
+            HStack(spacing: width * 0.086) {
                 Spacer()
+                Text("30’")
+                Text("1h")
+                Text("2h")
+                Text("3h")
+                Text("4h")
+                Text("5h")
             }
-            .padding(.horizontal, width * 0.0865)
-            .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
-            .hidesTabBar()
-
+            .font(.system(size: 16))
+            .fontWeight(.medium)
+            .padding(.trailing, 10)
+            .padding(.top, height * 0.005)
+            
+            ForEach($weekOrder, id: \.name) { $day in
+                OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
+            }
+            
+            Spacer()
         }
+        .padding(.horizontal, width * 0.0565)
+        .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
+        .hidesTabBar()
+        
+        
         // MARK: - Confirmation Button
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                if viewModel.isLoading {
-                    ProgressView()
-                } else {
-                    Button {
-                        Task { await save() }
-                    } label: {
-                        Image(systemName: isFromSettings ? "checkmark" : "chevron.forward")
-                            .font(.system(size: 12))
-                            .bold()
-                            .foregroundColor(.white)
-                    }
-                    .tint(.blue)
-                    .buttonStyle(.glassProminent)
-                    .disabled(!canSave)
+        .overlay(alignment: .bottomTrailing) {
+            OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: "chevron.right", isSystemImage: true, isLoading: viewModel.isLoading, isDisabled: !canSave) {
+                Task {
+                    await save()
                 }
             }
+            .padding(.bottom, height * 0.073)
+            .padding(.trailing, width * 0.061)
         }
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -130,7 +116,15 @@ struct SelectFreeTimeOnboardingView: View {
             Text(viewModel.errorMessage ?? "")
         }
         .task {
-            guard isFromSettings else { return }
+            guard isFromSettings else {
+                // Restores a choice already made in onboarding (kept until the house exists).
+                if let pending = viewModel.pendingFreeTimeMinutes {
+                    for (index, minutes) in pending.enumerated() where weekOrder.indices.contains(index) {
+                        weekOrder[index].freeTime = FreeTimeEnum(minutes: minutes)
+                    }
+                }
+                return
+            }
             
             viewModel.isLoading = true
             let saved = await viewModel.fetchCurrentFreeTime()
@@ -205,7 +199,7 @@ private struct OnboardingCustomSliderComponent: View {
                 .fontWeight(.medium)
                 .frame(width: abbreviationWidth, alignment: .leading)
             
-            VStack {
+            VStack(spacing: 0) {
                 FreeTimeSlider(rating: $selectedFreeTimeLevel, isLoading: $isLoading)
                 
                 caption
@@ -232,10 +226,6 @@ private struct OnboardingCustomSliderComponent: View {
     /// label of the currently selected free time.
     private var caption: some View {
         HStack {
-            Text(LocalizedStringKey(dayOfWeek.name.trimmingCharacters(in: .whitespaces)))
-                .font(.system(size: Layout.captionFontSize))
-                .fontWeight(.medium)
-            
             Text(dayOfWeek.freeTime.displayName)
                 .font(.system(size: Layout.captionFontSize))
                 .fontWeight(.light)

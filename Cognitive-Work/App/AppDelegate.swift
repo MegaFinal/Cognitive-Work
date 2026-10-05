@@ -26,9 +26,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
     ) {
         Task {
+            NotificationCenter.default.post(name: .willAcceptShare, object: nil)
             let success = await CloudKitManager.shared.acceptShare(metadata: cloudKitShareMetadata)
             if success {
                 NotificationCenter.default.post(name: .didAcceptShare, object: nil)
+            } else {
+                NotificationCenter.default.post(name: .shareAcceptFailed, object: nil)
             }
         }
     }

@@ -173,6 +173,7 @@
     "30’" : {
 
     },
+    "A casa já foi criada por outro morador" : {
     "A casa que você pertencia foi deletada." : {
 
     },
@@ -201,6 +202,7 @@
       }
     },
     "Abra o link que enviaram para você e toque em entrar. Assim que aceitar, voltamos automaticamente por aqui." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -272,6 +274,7 @@
       }
     },
     "Adicione seus \nroomies!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -280,6 +283,9 @@
           }
         }
       }
+    },
+    "Adicione seus roomies!" : {
+
     },
     "adquiridos por ter notado algo na casa" : {
 
@@ -317,6 +323,7 @@
       }
     },
     "Aguardando o convite" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -425,6 +432,9 @@
         }
       }
     },
+    "Arraste em cada dia para definir seu tempo livre para as tarefas da casa" : {
+
+    },
     "Arrumar cama" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -501,6 +511,7 @@
       }
     },
     "Assim que todos os moradores preencherem seus horários, a divisão das tarefas poderá ser realizada." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -598,10 +609,14 @@
         }
       }
     },
+    "Bem vindo, %@!" : {
+
+    },
     "Cada coisa que você reparou conta!" : {
 
     },
     "Cada morador precisa preencher seus horários de tempo livre antes da divisão das tarefas." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -682,6 +697,9 @@
           }
         }
       }
+    },
+    "Certifique-se de que todos os moradores estão dentro do app antes de continuar" : {
+
     },
     "Certifique-se que o Harvi está conectado no WiFi e tente novamente." : {
       "extractionState" : "stale",
@@ -991,6 +1009,7 @@
       }
     },
     "Criar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1010,6 +1029,9 @@
           }
         }
       }
+    },
+    "Criar uma casa" : {
+
     },
     "Cuidar da casa também é lembrar e perceber o que falta. O Pipa organiza as tarefas e reconhece o trabalho de todos." : {
 
@@ -1049,6 +1071,7 @@
       }
     },
     "Defina seu tempo disponível para realizar tarefas domésticas durante a semana" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1069,6 +1092,7 @@
       }
     },
     "Delimite seu tempo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1354,7 +1378,11 @@
         }
       }
     },
+    "Em configuração" : {
+
+    },
     "em uma casa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1364,7 +1392,11 @@
         }
       }
     },
+    "Entrando na casa..." : {
+
+    },
     "Entrar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1373,6 +1405,9 @@
           }
         }
       }
+    },
+    "Entrar em uma casa" : {
+
     },
     "Enviar imagem" : {
       "localizations" : {
@@ -1405,6 +1440,7 @@
       }
     },
     "Envie o convite para os outros moradores da sua casa se juntarem com você no app!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1413,6 +1449,9 @@
           }
         }
       }
+    },
+    "Envie o convite para quem mora com você" : {
+
     },
     "Erro ao adicionar item." : {
       "extractionState" : "stale",
@@ -1783,6 +1822,7 @@
       }
     },
     "Esperando os\nroomies!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1793,6 +1833,7 @@
       }
     },
     "Esperando você aceitar o convite..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2758,6 +2799,12 @@
         }
       }
     },
+    "Moradores prontos" : {
+
+    },
+    "Na casa %@" : {
+
+    },
     "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2788,6 +2835,12 @@
           }
         }
       }
+    },
+    "Não deu para salvar as tarefas" : {
+
+    },
+    "Não deu para salvar os cômodos" : {
+
     },
     "Não deu para salvar seus horários" : {
       "localizations" : {
@@ -3428,6 +3481,7 @@
       }
     },
     "Os moradores em verde já finalizaram essa etapa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3470,6 +3524,7 @@
       }
     },
     "Para começarmos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3480,6 +3535,7 @@
       }
     },
     "Para começarmos..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3607,6 +3663,10 @@
         }
       }
     },
+    "Peça o convite para o administrador da casa" : {
+
+    },
+    "Pedir o convite por mensagem" : {
     "Pegar todas as tarefas diárias" : {
 
     },
@@ -3752,6 +3812,9 @@
         }
       }
     },
+    "Quando receber o link, é só tocar nele para entrar na casa!" : {
+
+    },
     "Quando você deseja realizar esta tarefa?" : {
 
     },
@@ -3764,6 +3827,9 @@
           }
         }
       }
+    },
+    "Quanto tempo você tem para a casa?" : {
+
     },
     "Quarta - Feira" : {
       "extractionState" : "stale",
@@ -3786,6 +3852,9 @@
           }
         }
       }
+    },
+    "Quem é você na casa?" : {
+
     },
     "Quem vai consumir/pagar" : {
       "localizations" : {
@@ -4401,6 +4470,9 @@
         }
       }
     },
+    "Sua casa já está no Pipa?" : {
+
+    },
     "Sua escala está \npronta!" : {
       "localizations" : {
         "en" : {
@@ -4756,6 +4828,7 @@
       }
     },
     "uma casa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5010,6 +5083,7 @@
       }
     },
     "Você pode entrar em uma casa existente através de um convite, ou criar uma nova." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5022,6 +5096,7 @@
     "Você realizou 0 de 20 \n tarefas da sua escala" : {
 
     },
+    "Você será o administrador" : {
     "Você será redirecionado ao início do aplicativo." : {
 
     },
