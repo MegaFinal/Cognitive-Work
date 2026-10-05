@@ -33,7 +33,7 @@ struct OnboardingChoreCard: View {
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
-            RoomTextureBackground(color: room.color, pattern: room.texturePattern)
+            RoomTextureBackground(color: room.color, pattern: room.texturePattern, textureOpacity: 0.7)
         }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
