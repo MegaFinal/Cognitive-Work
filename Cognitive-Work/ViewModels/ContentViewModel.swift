@@ -46,10 +46,8 @@ class ContentViewModel {
             guard !Task.isCancelled else { return }
             userHasNoHouse = (house == nil)
             hasFetchedInitially = true
-            print("fetchHouse do")
         } catch let error as CKError where [.zoneNotFound, .userDeletedZone, .unknownItem].contains(error.code) {
             userHasNoHouse = true   // the house is really gone
-            print("fetchHouse userHasNoHouse")
         } catch {
             print("currentHouse falhou:", type(of: error), error)
             if let ck = error as? CKError {
@@ -63,9 +61,7 @@ class ContentViewModel {
     }
     
     func accountWithoutHouseReturnToOnboarding() {
-        print("accountWithoutHouseReturnToOnboarding")
         self.didOnboard = false
-        print("didOnboard = \(didOnboard)")
     }
     
     func switchHouse(to metadata: CKShare.Metadata) async {
