@@ -490,6 +490,7 @@
       }
     },
     "Assim que todos os moradores preencherem enviaremos uma notificação avisando que a escala de tarefas foi dividida de uma forma justa por todos da casa!\n" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -752,6 +753,9 @@
     "Comece a nova divisão de tarefas da casa!" : {
 
     },
+    "Como administrador, você deverá selecionar as tarefas que serão divididas entre todos" : {
+
+    },
     "Cômodo" : {
       "localizations" : {
         "en" : {
@@ -976,6 +980,7 @@
       }
     },
     "Criamos um formulário curto, com duração de cerca de 5 minutos, você precisa apenas nos dizer mais serão as tarefas que serão divididas por todos da casa e qual sua carga horária por semana, o resto é com a gente!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -996,6 +1001,7 @@
       }
     },
     "Criar divisão de tarefas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2158,6 +2164,9 @@
         }
       }
     },
+    "Hora de começar a divisão de tarefas" : {
+
+    },
     "Idioma" : {
       "localizations" : {
         "en" : {
@@ -2353,7 +2362,11 @@
         }
       }
     },
+    "Levantando escalas" : {
+
+    },
     "Levantando escalas..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3477,6 +3490,7 @@
       }
     },
     "Para que possamos ajudar no seu dia a dia em sua casa precisamos saber um pouco mais sobre ela!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
