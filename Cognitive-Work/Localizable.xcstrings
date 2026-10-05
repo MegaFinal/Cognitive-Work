@@ -565,6 +565,7 @@
       }
     },
     "Através da nossa escala de atividades e recorrência de tarefas automatizada, basta olhar o calendário e saber o que você precisa fazer!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1004,6 +1005,9 @@
         }
       }
     },
+    "Cuidar da casa também é lembrar e perceber o que falta. O Pipa organiza as tarefas e reconhece o trabalho de todos." : {
+
+    },
     "curta" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1130,6 +1134,7 @@
       }
     },
     "Deslize para cima para continuar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1148,6 +1153,9 @@
           }
         }
       }
+    },
+    "deslize para continuar!" : {
+
     },
     "Despensa" : {
       "extractionState" : "stale",
@@ -1234,6 +1242,9 @@
           }
         }
       }
+    },
+    "Dividir a casa vai além da faxina" : {
+
     },
     "Dividir mais tarde" : {
 
@@ -2658,6 +2669,7 @@
       }
     },
     "Mas antes, precisamos saber um pouco mais sobre a rotina na casa..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3155,6 +3167,7 @@
       }
     },
     "Nosso intuito é remover a carga mental da organização de tarefas de maneira justa e visual para todos os moradores." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3239,6 +3252,7 @@
       }
     },
     "O Pipa veio para facilitar a vida de quem divide moradia!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3654,6 +3668,9 @@
           }
         }
       }
+    },
+    "Pipa. Para aqueles que notam." : {
+
     },
     "Podar plantas" : {
       "extractionState" : "stale",
@@ -4286,6 +4303,7 @@
       }
     },
     "Seu facilitador de organização doméstica!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
