@@ -165,6 +165,7 @@ struct ChoresView: View {
         .task {
             await carouselVM.fetchAllData()
             updateActiveRoomColor()
+            // lógica verificação house aqui
         }
         .task(id: carouselVM.activeIndex) {
             updateActiveRoomColor()

@@ -173,6 +173,9 @@
     "30’" : {
 
     },
+    "A casa que você pertencia foi deletada." : {
+
+    },
     "A cozinha foi onde você mais trabalhou." : {
 
     },
@@ -3280,6 +3283,9 @@
         }
       }
     },
+    "Ok" : {
+
+    },
     "OK" : {
       "localizations" : {
         "en" : {
@@ -5000,6 +5006,9 @@
       }
     },
     "Você realizou 0 de 20 \n tarefas da sua escala" : {
+
+    },
+    "Você será redirecionado ao início do aplicativo." : {
 
     },
     "Voltar" : {
