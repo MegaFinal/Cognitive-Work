@@ -153,7 +153,8 @@ private struct UserDailyChoresColumn: View {
             Text("Sem tarefas por hoje")
                 .font(.subheadline)
                 .fontWeight(.bold)
-                .lineLimit(2)
+                // No line limit: wraps onto as many lines as it needs instead of "…".
+                .fixedSize(horizontal: false, vertical: true)
 
             // Makes card expand when there's only one chore
             Spacer(minLength: 0)
@@ -180,11 +181,14 @@ private struct DailyChoreCard: View {
             Text(room?.name.localizedDefault ?? L10n.tr("Sem cômodo"))
                 .font(.caption)
                 .fontWeight(.medium)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(chore.name.localizedDefault)
                 .font(.headline)
                 .fontWeight(.bold)
-                .lineLimit(2)
+                // No line limit: long names (mostly in English) wrap onto as many lines as
+                // they need instead of being cut with "…".
+                .fixedSize(horizontal: false, vertical: true)
 
             // Makes card expand when there's only one chore
             Spacer(minLength: 0)

@@ -498,7 +498,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Cognitive-Work/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Pipa: Para Partilhar t";
+				INFOPLIST_KEY_CFBundleDisplayName = Pipa;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Precisamos de acesso ao seu calendário para sincronizar e atualizar as suas tarefas domésticas atribuídas.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -542,7 +542,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Cognitive-Work/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Pipa: Para Partilhar t";
+				INFOPLIST_KEY_CFBundleDisplayName = Pipa;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Precisamos de acesso ao seu calendário para sincronizar e atualizar as suas tarefas domésticas atribuídas.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

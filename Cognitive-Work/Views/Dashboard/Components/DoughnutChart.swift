@@ -39,10 +39,13 @@ struct DoughnutChart: View {
                 ProgressView()
             } else {
                 VStack(spacing: 8) {
+                    // Leading-aligned across the card's width (minus its margins) instead of a big
+                    // trailing padding, which left ~55pt and cut "Today" short; wraps if needed.
                     Text("Hoje")
                         .font(.system(size: 17))
                         .fontWeight(.semibold)
-                        .padding(.trailing, width * 0.3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(width: width * 0.437 - 40, alignment: .leading)
                     
                     ZStack {
                         Text(viewModel.completionText)

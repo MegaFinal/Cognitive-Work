@@ -42,20 +42,32 @@ struct WelcomeAnimatedOnboardingView: View{
                     Text("Dividir a casa vai além da faxina")
                         .bold()
                         .font(.largeTitle)
+                        .fixedSize(horizontal: false, vertical: true)
                         .padding(.bottom, height * 0.028)
                         .padding(.top, height * 0.052)
                     Text("Cuidar da casa também é lembrar e perceber o que falta. O Pipa organiza as tarefas e reconhece o trabalho de todos.")
                         .font(.body)
+                        .fixedSize(horizontal: false, vertical: true)
                         .padding(.bottom, height * 0.028)
                     
                     Text("Pipa. Para aqueles que notam.")
                         .font(.headline)
                         .fontWeight(.semibold)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     Spacer()
                 }
                 .padding(.horizontal, height * 0.028)
-                .frame(width: width, height: height * 0.6)
+                // Keeps the texts clear of the "Continuar" button pinned to the bottom corner,
+                // now that the sheet can grow with them.
+                .padding(.bottom, height * 0.15)
+                // Minimum (not fixed) height: on small screens or in English the texts need more
+                // room, and a fixed height compressed them into "…".
+                .frame(width: width)
+                .frame(minHeight: height * 0.6, alignment: .top)
+                // Takes its ideal height (≥ 60% of the screen) rather than stretching the
+                // `Spacer` to fill the whole screen.
+                .fixedSize(horizontal: false, vertical: true)
                 .background(Color.white)
                 .clipShape (
                     UnevenRoundedRectangle(topLeadingRadius: 32,topTrailingRadius: 32,style: .continuous)

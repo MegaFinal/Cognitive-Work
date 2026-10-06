@@ -99,11 +99,14 @@ struct CreateProfileOnboardingView: View {
             Text("Quem é você na casa?")
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.black.opacity(0.7))
+                .fixedSize(horizontal: false, vertical: true)
+
             
             Text("Escolha uma foto e um nome para utilizar no app")
                 .font(.system(size: 16))
                 .foregroundStyle(.gray)
                 .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
