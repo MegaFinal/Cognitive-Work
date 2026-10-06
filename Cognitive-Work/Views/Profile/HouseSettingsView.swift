@@ -47,6 +47,19 @@ struct HouseSettingsView: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
+            // MARK: - Rooms CRUD
+            NavigationLink {
+                RoomsManagementView(house: viewModel.house)
+            } label: {
+                HStack {
+                    Text("Cômodos")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
             if isCheckingAdmin {
                 ProgressView()
                     .frame(maxWidth: .infinity)
