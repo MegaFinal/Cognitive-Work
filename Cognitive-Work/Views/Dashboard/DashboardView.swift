@@ -36,7 +36,9 @@ struct DashboardView: View {
                         )
                         
                         // MARK: - Current Division
-                        UserCurrentDivisionComponent()
+                        UserCurrentDivisionComponent(
+                            periodStart: viewModel.periodStart
+                        )
                             .padding(.horizontal, 16)
                         
                         // MARK: - Unassigned chore

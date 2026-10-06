@@ -234,7 +234,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         
         var house = viewModel.currentHouse
         if house == nil {
-            house = await CloudKitManager.shared.currentHouse()
+            house = try? await CloudKitManager.shared.currentHouse()
         }
         guard let house else {
             didFailToPrepareInvite = true

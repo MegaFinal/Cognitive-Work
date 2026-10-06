@@ -939,9 +939,6 @@
         }
       }
     },
-    "Como administrador, você deverá selecionar as tarefas que serão divididas entre todos" : {
-
-    },
     "Cômodo" : {
       "localizations" : {
         "en" : {
@@ -2481,6 +2478,9 @@
           }
         }
       }
+    },
+    "ideal %@" : {
+
     },
     "Idioma" : {
       "localizations" : {
@@ -4893,6 +4893,9 @@
           }
         }
       }
+    },
+    "Sua divisão atual" : {
+
     },
     "Sua escala está \npronta!" : {
       "localizations" : {

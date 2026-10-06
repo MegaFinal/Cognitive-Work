@@ -42,8 +42,8 @@ struct UserScheduleCard: View {
     /// Resolves the room a chore belongs to.
     let room: (ChoreModel) -> RoomModel?
     
-    /// Number of day columns to display.
-    var daysToShow: Int = 14
+    /// Total number of days to display (should match the division interval)
+    let daysToShow = 14
     
     /// The entry whose popover is currently open, if any.
     @State private var selectedEntry: DailyUsageEntry?

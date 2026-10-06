@@ -32,6 +32,10 @@ struct UserCurrentDivisionComponent: View {
     /// The signed-in resident, when already known.
     var analizedUser: UserModel? = nil
     
+    /// Day the algorithm was run (start of the division).
+    /// When `nil`, falls back to the view model's own start date.
+    var periodStart: Date? = nil
+    
     var isLoading: Bool = false
     
     @State private var viewModel = CurrentScheduleViewModel()
@@ -45,10 +49,10 @@ struct UserCurrentDivisionComponent: View {
                 UserScheduleCard(
                     user: viewModel.currentUser,
                     entries: viewModel.myEntries,
-                    startDate: viewModel.startDate,
+                    startDate: periodStart ?? viewModel.startDate,
                     roomCaption: viewModel.roomsInUse,
                     chore: viewModel.chore(for:),
-                    room: viewModel.room(for:)
+                    room: viewModel.room(for:),
                 )
             }
         }
@@ -177,7 +181,8 @@ private extension UserCurrentDivisionComponent {
             chores: chores,
             assignments: assignments,
             rooms: [kitchen, bathroom, livingRoom, laundry],
-            analizedUser: users.first
+            analizedUser: users.first,
+            periodStart: today
         )
     }
 }
