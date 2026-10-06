@@ -41,8 +41,15 @@ final class RoomsManagementViewModel {
     /// Name of the room that represents chores for the whole house.
     static let houseWideRoomName = "Casa"
     
-    /// SF Symbol used for rooms created here (same one the onboarding uses for custom rooms).
+    /// Default SF Symbol for rooms created here (same one the onboarding uses for custom rooms).
     static let customRoomSymbol = "lamp.table"
+    
+    /// Icons a custom room can pick from.
+    static let customRoomSymbols = [
+        "lamp.table", "tv", "books.vertical", "gamecontroller",
+        "dumbbell", "pawprint", "car", "tree",
+        "shippingbox", "stairs", "bathtub", "music.note"
+    ]
     
     init(house: HouseModel? = nil) {
         self.house = house
@@ -107,7 +114,7 @@ final class RoomsManagementViewModel {
     ///
     /// - Returns: `true` on success, otherwise `false` with ``errorMessage`` set.
     @discardableResult
-    func createRoom(name: String, color: RoomColor) async -> Bool {
+    func createRoom(name: String, color: RoomColor, symbol: String = customRoomSymbol) async -> Bool {
         let name = name.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, !Self.isReservedName(name) else { return false }
         
@@ -124,7 +131,7 @@ final class RoomsManagementViewModel {
         
         let draft = RoomModel(
             name: name,
-            symbol: Self.customRoomSymbol,
+            symbol: symbol,
             house: houseReference,
             color: color
         )
@@ -151,11 +158,11 @@ final class RoomsManagementViewModel {
     
     // MARK: - Update
     
-    /// Renames a room and, for custom rooms, changes its color.
+    /// Renames a room and, for custom rooms, changes its color and icon.
     ///
     /// - Returns: `true` on success, otherwise `false` with ``errorMessage`` set.
     @discardableResult
-    func updateRoom(_ room: RoomModel, name: String, color: RoomColor) async -> Bool {
+    func updateRoom(_ room: RoomModel, name: String, color: RoomColor, symbol: String) async -> Bool {
         let name = name.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, !Self.isReservedName(name) else { return false }
         
@@ -172,6 +179,7 @@ final class RoomsManagementViewModel {
             }
         } else {
             updated.color = color
+            updated.symbol = symbol
         }
         updated.name = name
         
