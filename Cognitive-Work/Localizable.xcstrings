@@ -4,6 +4,9 @@
     "" : {
 
     },
+    "–" : {
+
+    },
     "%@" : {
 
     },
@@ -53,6 +56,9 @@
           }
         }
       }
+    },
+    "%lld pontos" : {
+
     },
     "%lld selecionados" : {
       "extractionState" : "stale",
@@ -868,6 +874,9 @@
         }
       }
     },
+    "Chores" : {
+
+    },
     "Clique nas tarefas para saber mais." : {
       "localizations" : {
         "en" : {
@@ -1484,6 +1493,9 @@
         }
       }
     },
+    "Divisão atual" : {
+
+    },
     "Divisão automática de tarefas" : {
       "localizations" : {
         "en" : {
@@ -1493,6 +1505,12 @@
           }
         }
       }
+    },
+    "Divisão da casa" : {
+
+    },
+    "do esforço mental da casa esta semana foi seu" : {
+
     },
     "Dobrar as peças limpas e distribuir nos armários." : {
       "extractionState" : "stale",
@@ -2442,7 +2460,6 @@
       }
     },
     "Hoje" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2461,6 +2478,9 @@
           }
         }
       }
+    },
+    "ideal %@" : {
+
     },
     "Idioma" : {
       "localizations" : {
@@ -3634,6 +3654,12 @@
         }
       }
     },
+    "O trabalho de notar, lembrar e distribuir tarefas também faz parte da organização da casa" : {
+
+    },
+    "O trabalho de notar, lembrar, decidir e acompanhar é tão importante quanto realizar uma tarefa" : {
+
+    },
     "Ocorreu um erro." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4120,6 +4146,9 @@
           }
         }
       }
+    },
+    "Progresso" : {
+
     },
     "Pular esta etapa" : {
       "localizations" : {
@@ -4810,6 +4839,9 @@
         }
       }
     },
+    "Seu progresso" : {
+
+    },
     "Sex" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4861,6 +4893,9 @@
           }
         }
       }
+    },
+    "Sua divisão atual" : {
+
     },
     "Sua escala está \npronta!" : {
       "localizations" : {
@@ -4952,6 +4987,9 @@
           }
         }
       }
+    },
+    "Tarefas sem dono" : {
+
     },
     "Tempo médio" : {
       "localizations" : {

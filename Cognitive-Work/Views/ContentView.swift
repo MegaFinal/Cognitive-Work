@@ -36,6 +36,11 @@ struct ContentView: View {
 //                    Label("Compras", systemImage: "basket")
 //                }
             
+            DashboardView()
+                .tabItem {
+                    Label("Progresso", systemImage: "figure.2")
+                }
+            
             UserProfileView()
                 .tabItem {
                     Label("Perfil", systemImage: "person.fill")
