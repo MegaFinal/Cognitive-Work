@@ -1699,6 +1699,7 @@
       }
     },
     "Enviaremos uma notificação quando a divisão estiver pronta." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2172,6 +2173,7 @@
       }
     },
     "Estamos apenas esperando que o criador da casa gere a divisão das tarefas." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2564,6 +2566,7 @@
       }
     },
     "Isso acontecerá de forma automática assim que todos os membros entrarem na casa e definirem seus horários de tempo livre." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3626,6 +3629,9 @@
           }
         }
       }
+    },
+    "O criador da casa vai gerar a divisão assim que todos definirem seu tempo livre" : {
+
     },
     "O dispositivo externo não respondeu como esperado." : {
       "extractionState" : "stale",
@@ -4875,10 +4881,10 @@
         }
       }
     },
-    "Seus cômodos" : {
+    "Seu progresso" : {
 
     },
-    "Seu progresso" : {
+    "Seus cômodos" : {
 
     },
     "Sex" : {

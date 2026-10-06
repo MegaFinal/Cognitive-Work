@@ -20,7 +20,10 @@ struct ChorePopOverComponent: View {
             ChorePriority(chore: chore, user: user)
         }
         .foregroundColor(.black)
-        .frame(width: width * 0.55, height: height * 0.1)
+        // Fixed width, minimum height: long names (mostly in English) wrap onto more lines and
+        // the popover grows instead of cutting them with "…".
+        .frame(width: width * 0.55, alignment: .leading)
+        .frame(minHeight: height * 0.1)
 //        .background(.white) // If wanted liquid glass efect, delete this
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .black.opacity(0.32), radius: 5.8, x: 4, y: 6)
@@ -31,10 +34,13 @@ struct ChorePopOverComponent: View {
             Text(room?.name.localizedDefault ?? L10n.tr("Cômodo"))
                 .fontWeight(.regular)
                 .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
             
             Text(chore.name.localizedDefault)
                 .bold()
                 .font(.title2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
