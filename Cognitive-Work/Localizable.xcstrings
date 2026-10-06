@@ -256,6 +256,9 @@
         }
       }
     },
+    "A cor e o ícone dos cômodos padrão não podem ser alterados." : {
+
+    },
     "A cozinha foi onde você mais trabalhou." : {
       "localizations" : {
         "en" : {
@@ -339,6 +342,9 @@
         }
       }
     },
+    "Adicionar cômodo" : {
+
+    },
     "Adicionar item" : {
       "localizations" : {
         "en" : {
@@ -358,6 +364,9 @@
           }
         }
       }
+    },
+    "Adicione os cômodos da sua casa para organizar as tarefas." : {
+
     },
     "Adicione seus \nroomies!" : {
       "extractionState" : "stale",
@@ -442,6 +451,9 @@
           }
         }
       }
+    },
+    "Algo deu errado" : {
+
     },
     "Alterar Tempo Livre" : {
       "localizations" : {
@@ -939,6 +951,9 @@
           }
         }
       }
+    },
+    "Cômodos" : {
+
     },
     "Compartilhar Convite" : {
       "localizations" : {
@@ -1559,6 +1574,12 @@
         }
       }
     },
+    "Editar" : {
+
+    },
+    "Editar Cômodo" : {
+
+    },
     "Editar item" : {
       "localizations" : {
         "en" : {
@@ -2154,6 +2175,9 @@
           }
         }
       }
+    },
+    "Este nome é reservado para tarefas da casa toda." : {
+
     },
     "Estender roupa" : {
       "extractionState" : "stale",
@@ -3312,6 +3336,9 @@
         }
       }
     },
+    "Não foi possível salvar o cômodo. Verifique sua conexão e tente novamente." : {
+
+    },
     "Não foi possível salvar seus horários. Tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3343,6 +3370,9 @@
           }
         }
       }
+    },
+    "Nenhum cômodo" : {
+
     },
     "Nenhum cômodo padrão foi selecionado para a casa." : {
       "localizations" : {
@@ -3549,6 +3579,9 @@
           }
         }
       }
+    },
+    "Novo Cômodo" : {
+
     },
     "Novo item" : {
       "localizations" : {
@@ -5146,6 +5179,9 @@
           }
         }
       }
+    },
+    "Toque em um cômodo para editá-lo ou deslize para excluí-lo." : {
+
     },
     "Trocando de casa..." : {
       "extractionState" : "stale",
