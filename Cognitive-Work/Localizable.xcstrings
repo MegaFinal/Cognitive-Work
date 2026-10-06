@@ -348,9 +348,6 @@
         }
       }
     },
-    "Adicionar cômodo" : {
-
-    },
     "Adicionar item" : {
       "localizations" : {
         "en" : {
@@ -370,9 +367,6 @@
           }
         }
       }
-    },
-    "Adicione os cômodos da sua casa para organizar as tarefas." : {
-
     },
     "Adicione seus \nroomies!" : {
       "extractionState" : "stale",
@@ -1150,6 +1144,9 @@
           }
         }
       }
+    },
+    "Cor" : {
+
     },
     "Cortar a grama e recolher o que foi aparado." : {
       "extractionState" : "stale",
@@ -2262,6 +2259,9 @@
         }
       }
     },
+    "Excluir %@" : {
+
+    },
     "Excluir Casa" : {
       "localizations" : {
         "en" : {
@@ -2502,6 +2502,9 @@
           }
         }
       }
+    },
+    "Ícone" : {
+
     },
     "ideal %@" : {
 
@@ -3391,9 +3394,6 @@
         }
       }
     },
-    "Nenhum cômodo" : {
-
-    },
     "Nenhum cômodo padrão foi selecionado para a casa." : {
       "localizations" : {
         "en" : {
@@ -3599,6 +3599,9 @@
           }
         }
       }
+    },
+    "Novo cômodo" : {
+
     },
     "Novo Cômodo" : {
 
@@ -4872,6 +4875,9 @@
         }
       }
     },
+    "Seus cômodos" : {
+
+    },
     "Seu progresso" : {
 
     },
@@ -5218,7 +5224,10 @@
         }
       }
     },
-    "Toque em um cômodo para editá-lo ou deslize para excluí-lo." : {
+    "Toque em um cômodo para editá-lo ou no + para criar um novo." : {
+
+    },
+    "Toque no ícone vermelho para excluir um cômodo." : {
 
     },
     "Trocando de casa..." : {
