@@ -118,6 +118,7 @@ class FortnightlyViewModel {
         
         await loadUsageEntries()
         
+        
         isLoading = false
     }
     
