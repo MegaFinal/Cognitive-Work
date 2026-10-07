@@ -44,7 +44,7 @@ struct WaitingAlgorithmView: View {
                 
                 VStack(spacing: 15) {
                     Text("Estamos ponderando, sorteando e dividindo as tarefas entre os moradores")
-                    Text("Enviaremos uma notificação quando a divisão estiver pronta")
+//                    Text("Enviaremos uma notificação quando a divisão estiver pronta")
                 }
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)

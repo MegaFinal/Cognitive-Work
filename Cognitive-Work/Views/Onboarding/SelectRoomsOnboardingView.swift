@@ -355,6 +355,10 @@ private struct RoomQuantityEditor: View {
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 25))
+        // Absorbs taps on the popup's empty areas so they don't reach the dimmed backdrop,
+        // which closes the editor. Buttons and the text field still take priority.
+        .contentShape(RoundedRectangle(cornerRadius: 25))
+        .onTapGesture {}
         .onChange(of: focusedInstance) { _, _ in
             restoreDefaultForEmptyNames()
         }
@@ -363,11 +367,13 @@ private struct RoomQuantityEditor: View {
     // MARK: - Subviews
     
     private var quantityStepper: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 0) {
             Button {
                 withAnimation(.snappy) { room.setQuantity(room.quantity - 1) }
             } label: {
                 Image(systemName: "minus")
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
             }
             .foregroundStyle(room.quantity > 1 ? Color.black : Color.gray.opacity(0.5))
             .disabled(room.quantity <= 1)
@@ -380,6 +386,8 @@ private struct RoomQuantityEditor: View {
                 withAnimation(.snappy) { room.setQuantity(room.quantity + 1) }
             } label: {
                 Image(systemName: "plus")
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
             }
             .foregroundStyle(room.quantity < maxQuantity ? Color.black : Color.gray.opacity(0.5))
             .disabled(room.quantity >= maxQuantity)
@@ -394,22 +402,28 @@ private struct RoomQuantityEditor: View {
     private func nameRow(index: Int, instance: RoomInstanceDTO) -> some View {
         let name = nameBinding(at: index)
         
-        return HStack {
-            TextField(room.instanceName(at: index), text: name)
+        return HStack(spacing: 0) {
+            TextField(room.instanceName(at: index).localizedDefault, text: name)
                 .font(.system(size: 20))
                 .foregroundStyle(.secondary)
                 .focused($focusedInstance, equals: instance.id)
                 .submitLabel(.done)
                 .characterLimit(maxNameLength, text: name)
             
+            // Tapping the pencil puts the cursor in this room's name field. The hit area is
+            // larger than the icon so it is easy to tap.
             Button {
+                HapticsManager.selection()
                 focusedInstance = instance.id
             } label: {
                 Image(systemName: "pencil")
                     .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.tr("Editar"))
         }
     }
     
@@ -418,7 +432,7 @@ private struct RoomQuantityEditor: View {
     /// Reads the room's current name (custom or default); writing stores it as a custom name.
     private func nameBinding(at index: Int) -> Binding<String> {
         Binding(
-            get: { room.instanceName(at: index) },
+            get: { room.instanceName(at: index).localizedDefault },
             set: { newName in
                 guard room.instances.indices.contains(index) else { return }
                 room.instances[index].customName = newName

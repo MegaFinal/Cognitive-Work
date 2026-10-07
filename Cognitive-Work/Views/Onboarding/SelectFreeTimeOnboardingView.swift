@@ -35,6 +35,12 @@ struct SelectFreeTimeOnboardingView: View {
     ]
     @State var showAllert: Bool = false
     
+    /// Becomes true once the saved free time has been fetched (settings only).
+    @State private var hasLoadedSavedTime: Bool = false
+    
+    /// Shows a loading state until the saved data arrives when opened from settings.
+    private var isFetchingSavedTime: Bool { isFromSettings && !hasLoadedSavedTime }
+    
     /// At least one day needs free time before saving.
     private var canSave: Bool {
         weekOrder.contains(where: { $0.freeTime != .none })
@@ -91,7 +97,7 @@ struct SelectFreeTimeOnboardingView: View {
             Spacer()
             HStack {
                 Spacer()
-                OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: "chevron.right", isSystemImage: true, isLoading: viewModel.isLoading, isDisabled: !canSave) {
+                OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: isFromSettings ? "checkmark" : "chevron.right", isSystemImage: true, isLoading: viewModel.isLoading, isDisabled: !canSave) {
                     Task {
                         await save()
                     }
@@ -99,7 +105,27 @@ struct SelectFreeTimeOnboardingView: View {
             }
         }
         .padding(.horizontal, width * 0.0565)
+        .opacity(isFetchingSavedTime ? 0 : 1)
+        .overlay {
+            if isFetchingSavedTime {
+                ProgressView()
+                    .controlSize(.large)
+            }
+        }
         .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
+        .toolbar {
+            // While saving, the system back button is hidden; a disabled one takes its place.
+            if isFromSettings && viewModel.isLoading {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                    .disabled(true)
+                }
+            }
+        }
         .onboardingBackButton(viewModel: viewModel, isHidden: isFromSettings)
         .hidesTabBar()
         .alert("Não deu para salvar seus horários", isPresented: Binding(
@@ -127,6 +153,7 @@ struct SelectFreeTimeOnboardingView: View {
                 weekOrder[index].freeTime = freeTime
             }
             viewModel.isLoading = false
+            hasLoadedSavedTime = true
         }
     }
 }
