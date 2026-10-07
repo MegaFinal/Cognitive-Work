@@ -11,7 +11,6 @@ import PhotosUI
 struct EditProfileView: View {
     @Bindable var viewModel: UserProfileViewModel
     @Environment(\.dismiss) private var dismiss
-        
     
     var body: some View {
         VStack(spacing: 40) {

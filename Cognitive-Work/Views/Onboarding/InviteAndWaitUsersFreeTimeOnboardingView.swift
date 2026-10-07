@@ -36,6 +36,12 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     private let pollingInterval: Duration = .seconds(5)
     
+    /// CloudKit can't run in Xcode previews (no iCloud entitlement there), and touching it
+    /// crashes the preview process. Every network call below is skipped when this is `true`.
+    private var isRunningForPreviews: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+    
     
     /// `true` when opened from the house settings ("Adicionar moradores"). There is no flow to
     /// advance there, so the onboarding-only controls ("Continuar" and its hint) are hidden.
@@ -61,10 +67,9 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                 .padding(.top, 30)
                 .padding(.bottom, width * 0.02)
             
-            
             if !hasLoadedUsers {
                 ProgressView()
-                    .controlSize(.large)
+                    .controlSize(.regular)
             }
                     
             if !pendingUsers.isEmpty {
@@ -80,13 +85,9 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                 .fontWeight(.thin)
                 completedUsersView
             }
-                        
             
             Spacer()
 
-            
-        }
-        .overlay(alignment: .bottomTrailing) {
             VStack {
                 if !isFromSettings {
                     Text("Certifique-se de que todos os moradores estão dentro do app antes de continuar")
@@ -96,10 +97,10 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                 }
             
                 HStack {
+                    Spacer()
                     inviteButton
                         .frame(alignment: .center)
                     
-                    // Settings has no next step: the throwaway view model there has no flow.
                     if !isFromSettings {
                         Button("Continuar", systemImage: "chevron.right") {
                             Task { viewModel.goToNextView() }
@@ -111,10 +112,8 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                         .controlSize(.large)
                         .disabled(!pendingUsers.isEmpty)
                     }
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, alignment: isFromSettings ? .center : .trailing)
-                .padding(.bottom, isFromSettings ? 0 : height * 0.073)
-                .padding(.trailing, isFromSettings ? 0 : width * 0.021)
             }
         }
         .frame(width: width * 0.84)
@@ -131,13 +130,8 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         .task(id: viewModel.currentHouse?.recordID) {
             await prepareInvite()
         }
-        // Keyed by the house: in settings `currentHouse` is only assigned in `onAppear`, so the
-        // first run could start without it. A new id restarts the loop with the right house.
         .task(id: viewModel.currentHouse?.recordID) {
-            // Retries the owner's own free time if saving it right after creating the house
-            // failed; otherwise the owner shows up as pending and "Continuar" never unlocks.
-            // Onboarding only: in settings there's nothing pending to flush.
-            if !isFromSettings {
+            if !isFromSettings && !isRunningForPreviews {
                 await viewModel.flushPendingFreeTimeIfNeeded()
             }
             await updateUsers()
@@ -237,6 +231,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     /// Resolves the house's CKShare and its link.
     private func prepareInvite() async {
+        guard !isRunningForPreviews else { return }
         resolveShare = true
         didFailToPrepareInvite = false
         defer { resolveShare = false }
@@ -269,6 +264,11 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     }
     
     private func updateUsers() async {
+        guard !isRunningForPreviews else {
+            hasLoadedUsers = true
+            return
+        }
+        
         // Sync fix: tag this run so a slower, older run can't overwrite a newer result.
         refreshGeneration += 1
         let generation = refreshGeneration

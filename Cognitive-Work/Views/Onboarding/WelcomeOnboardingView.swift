@@ -100,6 +100,7 @@ struct WelcomeOnboardingView: View {
         .transition(.opacity)
         .frame(maxHeight: .infinity, alignment: .bottom)
         .padding(.bottom, height * 0.07)
+        .fontWeight(.semibold)
     }
 }
 

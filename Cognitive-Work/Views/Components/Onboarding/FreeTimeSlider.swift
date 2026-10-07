@@ -47,7 +47,7 @@ struct FreeTimeSlider: View {
     var maxRating: Int = 6
 
     /// Width and height of a single square, in points.
-    var squareSize: CGFloat { width * 0.106}
+    var squareSize: CGFloat { width * 0.09}
 
     /// Color applied to the squares inside the current selection.
     var activeColor: Color = .choreBlue
@@ -77,7 +77,7 @@ struct FreeTimeSlider: View {
                         Rectangle()
                             .size(
                                 width: getSelectedWidth(in: geometry.size.width),
-                                height: squareSize /*geometry.size.height + 2*/
+                                height: squareSize
                             )
                     )
             }
@@ -104,6 +104,7 @@ struct FreeTimeSlider: View {
                     topTrailingRadius:    isLast  ? big : small
                 )
                 .fill(color)
+                .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 3)
                 .frame(width: squareSize, height: squareSize)
             }
         }
