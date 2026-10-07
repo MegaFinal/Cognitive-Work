@@ -74,7 +74,7 @@ struct ScheduleInfoPopUp: View {
                             .font(.system(size: 18))
                             .bold()
                         
-                        Text("As tarefas que sobraram da divisão ficam na tela inicial, no botão. Pegue as que couberem no seu tempo.")
+                        Text("As tarefas que sobraram da divisão ficam na tela inicial, no botão \(Image(systemName: "hand.tap")). Pegue as que couberem no seu tempo.")
                             .font(.system(size: 15))
                     }
                     .frame(width: width * 0.6)

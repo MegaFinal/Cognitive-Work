@@ -308,14 +308,6 @@ class OnboardingViewModel {
             }
         }
         
-        let roomToRepresentChoresToAllHome = RoomModel(
-            name: "Casa",
-            symbol: "house",
-            house: houseReference,
-            color: .orange
-        )
-        roomModels.append(roomToRepresentChoresToAllHome)
-        
         var recordsToSave: [CKRecord] = []
         for roomModel in roomModels {
             let record = CKRecord(recordType: RoomModel.recordType, zoneID: zoneID)
