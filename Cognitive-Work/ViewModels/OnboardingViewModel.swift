@@ -68,6 +68,21 @@ class OnboardingViewModel {
     
     var isRestoringSession: Bool = true
     
+    // MARK: - Going back
+    
+    /// True while a "voltar" is deleting the data of the step being returned to.
+    private(set) var isRollingBack = false
+    
+    /// Why the last "voltar" failed. The user stays on the current step when it is set.
+    var rollbackErrorMessage: String?
+    
+    /// What each step saved to CloudKit, so going back deletes exactly that.
+    /// See ``OnboardingRollbackJournal``.
+    @ObservationIgnored
+    private var rollbackJournal = OnboardingRollbackJournal.load() {
+        didSet { rollbackJournal.save() }
+    }
+    
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
     ///
@@ -83,6 +98,24 @@ class OnboardingViewModel {
             .jpegData(compressionQuality: 0.8)
             .flatMap { CloudKitManager.shared.createAsset(from: $0) }
         
+        // A private profile that wasn't created in this onboarding (an account from an earlier
+        // run) is kept when the user goes back to this step, so edit it instead of saving a
+        // duplicate profile.
+        if let existingProfile = currentUser,
+           existingProfile.recordID != nil,
+           !CloudKitManager.shared.isHouseUser(existingProfile) {
+            existingProfile.name = userName.isEmpty ? existingProfile.name : userName
+            if let imageCKAsset { existingProfile.profilePicture = imageCKAsset }
+            
+            if await CloudKitManager.shared.update(existingProfile) {
+                stateMachine.user = existingProfile
+            } else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao criar usuário.")
+            }
+            isLoading = false
+            return
+        }
+        
         if let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName {
             let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1, ownerRecordName: ownerRecordName)
             
@@ -90,6 +123,7 @@ class OnboardingViewModel {
                 self.currentUser = savedUser
                 self.stateMachine.user = savedUser
                 CloudKitManager.shared.setCurrentUser(savedUser)
+                rollbackJournal.createdProfile = savedUser.recordID.map(OnboardingRollbackJournal.StoredRecordID.init)
             } else {
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao criar usuário.")
             }
@@ -191,6 +225,7 @@ class OnboardingViewModel {
         )
          
         if success {
+            rollbackJournal.createdHouse = OnboardingRollbackJournal.StoredRecordID(houseRecordID)
             let savedHouse = HouseModel(record: houseRecord)
             self.currentHouse = savedHouse
             self.stateMachine.house = savedHouse
@@ -289,6 +324,7 @@ class OnboardingViewModel {
             for (index, record) in recordsToSave.enumerated() {
                 roomModels[index].recordID = record.recordID
             }
+            rollbackJournal.createdRooms += recordsToSave.map { OnboardingRollbackJournal.StoredRecordID($0.recordID) }
             
             let successAppend = await house.appendRoom(rooms: roomModels)
             if successAppend {
@@ -433,10 +469,220 @@ class OnboardingViewModel {
         stateMachine.back()
     }
     
+    // MARK: - Going back
+    
+    /// Returns to the previous onboarding step, first deleting from CloudKit whatever that step
+    /// saved when the user left it.
+    ///
+    /// Leaving a step is what writes its data ("Continuar" creates the profile, the house, the
+    /// rooms…). Returning to it means the user will submit it again, so its records are removed
+    /// first — otherwise a second "Continuar" would leave duplicates behind. Only the records of
+    /// the step being returned to are touched; earlier steps keep their data.
+    ///
+    /// If the cleanup fails the user stays on the current step and ``rollbackErrorMessage``
+    /// explains why, so CloudKit and the screen never disagree.
+    @MainActor
+    func goBack() async {
+        guard !isRollingBack, !isLoading, let target = stateMachine.previousStep else { return }
+        
+        isRollingBack = true
+        isLoading = true
+        rollbackErrorMessage = nil
+        CloudKitManager.shared.errorMessage = nil
+        defer {
+            isRollingBack = false
+            isLoading = false
+        }
+        
+        guard await rollbackData(savedBy: target) else {
+            rollbackErrorMessage = L10n.tr("Não foi possível desfazer esta etapa. Verifique sua conexão e tente novamente.")
+            return
+        }
+        
+        // Without its house, the creator is back to choosing between creating and joining one.
+        let newFlow: NavigationFlowsOnboarding? =
+            (target == .createOrEnterHome && stateMachine.flow == .houseCreator) ? .notDefined : nil
+        stateMachine.back(to: target, switchingTo: newFlow)
+    }
+    
+    /// Deletes what `step` saved to CloudKit when the user left it.
+    ///
+    /// - Returns: `true` when there was nothing to delete or everything was deleted.
+    @MainActor
+    private func rollbackData(savedBy step: OnboardingNavigationSteps) async -> Bool {
+        switch step {
+        case .createProfile:
+            return await rollbackProfile()
+        case .chooseFreeTime:
+            return await rollbackFreeTime()
+        case .createOrEnterHome:
+            return await rollbackHouse()
+        case .chooseRooms:
+            return await rollbackRooms()
+        case .welcome, .waitAcceptLink, .inviteAndConfirmJoin, .setUpScheduleChores,
+             .chooseChores, .scheduleChores, .waitAdminScheduling, .waitGuestsFreeTime:
+            // These steps only navigate; they don't write anything.
+            return true
+        }
+    }
+    
+    /// Undoes "Criar perfil": the private profile and, for an invited user who joined right
+    /// after creating it, their member record in the house.
+    @MainActor
+    private func rollbackProfile() async -> Bool {
+        let manager = CloudKitManager.shared
+        
+        if let membershipID = rollbackJournal.joinedMembership?.recordID {
+            // Unlink from the house first, so it never lists a member that no longer exists.
+            if let house = await freshHouse(for: membershipID.zoneID),
+               !(await house.removeUser(withID: membershipID)) {
+                return false
+            }
+            guard await manager.delete(recordIDs: [membershipID], zoneID: membershipID.zoneID) else {
+                return false
+            }
+            rollbackJournal.joinedMembership = nil
+            manager.invalidateSessionCache()
+        }
+        
+        if let profileID = rollbackJournal.createdProfile?.recordID {
+            guard await manager.delete(recordIDs: [profileID], zoneID: profileID.zoneID) else {
+                return false
+            }
+            rollbackJournal.createdProfile = nil
+            manager.clearCurrentUser()
+            currentUser = nil
+            stateMachine.user = nil
+        } else if let user = currentUser, manager.isHouseUser(user) {
+            // A profile from an earlier run is kept (it is edited on "Continuar" instead); point
+            // back at it now that the member record is gone.
+            await fetchCurrentUser()
+            stateMachine.user = currentUser
+        }
+        
+        return true
+    }
+    
+    /// Undoes "Selecionar tempo livre" when the slots were written to CloudKit (the user
+    /// already belonged to a house). A choice still pending locally stays, so the sliders
+    /// come back filled in.
+    @MainActor
+    private func rollbackFreeTime() async -> Bool {
+        let recordIDs = rollbackJournal.freeTimeRecords.map(\.recordID)
+        guard let zoneID = recordIDs.first?.zoneID else { return true }
+        
+        // Detach the slots from the member first: a reference to a deleted record would make
+        // the owner's screen read stale availability.
+        if let houseUser = currentUser, CloudKitManager.shared.isHouseUser(houseUser) {
+            houseUser.availableTimeReference = []
+            guard await CloudKitManager.shared.update(houseUser) else { return false }
+        }
+        guard await CloudKitManager.shared.delete(recordIDs: recordIDs, zoneID: zoneID) else {
+            return false
+        }
+        
+        rollbackJournal.freeTimeRecords = []
+        if pendingFreeTimeMinutes == nil {
+            pendingFreeTimeMinutes = rollbackJournal.lastFreeTimeMinutes
+        }
+        return true
+    }
+    
+    /// Undoes "Criar uma casa": the house with its whole hierarchy (member copy, shopping list,
+    /// availability, anything below it) and its share.
+    ///
+    /// Only for the house creator: joining a house through an invite creates nothing here.
+    @MainActor
+    private func rollbackHouse() async -> Bool {
+        guard stateMachine.flow == .houseCreator else { return true }
+        
+        let manager = CloudKitManager.shared
+        guard let houseID = rollbackJournal.createdHouse?.recordID
+                ?? (stateMachine.isOwner == true ? currentHouse?.recordID : nil)
+        else { return true }
+        
+        // The share isn't part of the parent hierarchy, so remove it explicitly. A missing
+        // share (the invite was never prepared) is fine.
+        if let house = currentHouse, house.recordID == houseID,
+           let houseRecord = await manager.fetchRecord(for: house),
+           let share = await manager.fetchShare(for: houseRecord) {
+            guard await manager.delete(recordIDs: [share.recordID], zoneID: houseID.zoneID) else {
+                return false
+            }
+        }
+        
+        guard await manager.deleteChildren(of: houseID, includingSelf: true) else { return false }
+        manager.invalidateSessionCache()
+        
+        // Free time was written on the deleted member copy; keep it pending for the next house.
+        if pendingFreeTimeMinutes == nil {
+            pendingFreeTimeMinutes = rollbackJournal.lastFreeTimeMinutes
+        }
+        
+        rollbackJournal.createdHouse = nil
+        rollbackJournal.createdRooms = []
+        rollbackJournal.freeTimeRecords = []
+        
+        currentHouse = nil
+        stateMachine.house = nil
+        selectedChores = []
+        
+        // `currentUser` was the in-house copy that was just deleted.
+        await fetchCurrentUser()
+        stateMachine.user = currentUser
+        return true
+    }
+    
+    /// Undoes "Definir os cômodos": the rooms that step created, and their references on the
+    /// house. The room selection on screen is kept, so the user only adjusts it.
+    @MainActor
+    private func rollbackRooms() async -> Bool {
+        var roomIDs = rollbackJournal.createdRooms.map(\.recordID)
+        
+        // Progress saved before the journal existed: at this point of the flow, every room in
+        // the house was created by that step.
+        if roomIDs.isEmpty, stateMachine.isOwner == true {
+            roomIDs = await fetchRooms().compactMap(\.recordID)
+        }
+        guard let zoneID = roomIDs.first?.zoneID else { return true }
+        
+        if let house = await freshHouse(for: zoneID) ?? currentHouse {
+            guard await house.removeRooms(withIDs: Set(roomIDs)) else { return false }
+            currentHouse = house
+            stateMachine.house = house
+        }
+        guard await CloudKitManager.shared.delete(recordIDs: roomIDs, zoneID: zoneID) else {
+            return false
+        }
+        
+        rollbackJournal.createdRooms = []
+        // The marks pointed at the rooms that were just deleted.
+        selectedChores = []
+        return true
+    }
+    
+    /// The house record re-read by ID (immediately consistent), when it lives in `zoneID`.
+    @MainActor
+    private func freshHouse(for zoneID: CKRecordZone.ID) async -> HouseModel? {
+        guard let houseID = currentHouse?.recordID, houseID.zoneID == zoneID else { return nil }
+        return await CloudKitManager.shared.fetchRecordsByRecordReference(
+            for: HouseModel.self,
+            recordReferences: [CKRecord.Reference(recordID: houseID, action: .none)]
+        )?.first
+    }
+    
+    /// Free time to show when the free-time step opens again: the pending choice, or the last
+    /// one saved during this onboarding.
+    var freeTimeToRestore: [Int]? {
+        pendingFreeTimeMinutes ?? rollbackJournal.lastFreeTimeMinutes
+    }
+    
     func finishOnboarding() {
         isOnboardingSkipped = true
         pendingFreeTimeMinutes = nil
         stateMachine.resetProgress()
+        rollbackJournal = OnboardingRollbackJournal()
+        OnboardingRollbackJournal.clear()
     }
     
     /// Moves an invited user (``NavigationFlowsOnboarding/invitedWithProfile``) past the
@@ -543,6 +789,7 @@ class OnboardingViewModel {
         defer { isLoading = false }
         
         let minutes = daysOfWeekDTO.map { Int(($0.freeTime.timeInHours * 60).rounded()) }
+        rollbackJournal.lastFreeTimeMinutes = minutes
         
         await reloadSessionIfNeeded()
         
@@ -560,6 +807,9 @@ class OnboardingViewModel {
             return false
         }
         pendingFreeTimeMinutes = nil
+        // `setAvailableTimes` already replaced (and deleted) the previous slots.
+        rollbackJournal.freeTimeRecords = (houseUser.availableTimeReference ?? [])
+            .map { OnboardingRollbackJournal.StoredRecordID($0.recordID) }
         return true
     }
     
@@ -654,6 +904,7 @@ class OnboardingViewModel {
             savedUser = await CloudKitManager.shared.create(sharedUser, id: sharedUserID, parent: house.reference(action: .none))
             if let savedUser {
                 await house.appendUsers([savedUser])
+                rollbackJournal.joinedMembership = savedUser.recordID.map(OnboardingRollbackJournal.StoredRecordID.init)
             }
         }
         

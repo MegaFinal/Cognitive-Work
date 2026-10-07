@@ -71,6 +71,11 @@ class OnboardingStateMachine {
     
     /// The dynamic array of sequential steps dictated by the currently active ``flow``.
     var steps: [OnboardingNavigationSteps] {
+        Self.steps(for: flow)
+    }
+    
+    /// The sequential steps of a given flow.
+    static func steps(for flow: NavigationFlowsOnboarding) -> [OnboardingNavigationSteps] {
         switch flow {
         case .houseCreator:
             return [
@@ -115,6 +120,12 @@ class OnboardingStateMachine {
         steps.indices.contains(index) ? steps[index] : nil
     }
     
+    /// The step a "voltar" from ``current`` leads to, or `nil` on the first step.
+    var previousStep: OnboardingNavigationSteps? {
+        let previous = index - 1
+        return steps.indices.contains(previous) ? steps[previous] : nil
+    }
+    
     // MARK: - Navigation & Mutators
 
     /// Assigns a newly created or fetched user to the state machine's memory.
@@ -132,6 +143,24 @@ class OnboardingStateMachine {
     /// Retreats the state machine to the previous step, safely bounded to zero.
     func back() {
         index = max(index - 1, 0)
+    }
+
+    /// Goes back to `step`, optionally switching to another flow at the same time.
+    ///
+    /// The index is set *before* the flow so ``current`` never points past the end of the new
+    /// (possibly shorter) ``steps`` array in between.
+    ///
+    /// - Parameters:
+    ///   - step: The step to show.
+    ///   - newFlow: The flow to switch to, or `nil` to keep the current one.
+    func back(to step: OnboardingNavigationSteps, switchingTo newFlow: NavigationFlowsOnboarding? = nil) {
+        let targetSteps = newFlow.map(Self.steps(for:)) ?? steps
+        guard let targetIndex = targetSteps.firstIndex(of: step) else {
+            back()
+            return
+        }
+        index = targetIndex
+        if let newFlow { flow = newFlow }
     }
 
     /// Clears the persisted progress completely.

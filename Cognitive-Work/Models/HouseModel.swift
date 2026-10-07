@@ -186,10 +186,31 @@ class HouseModel: CloudKitSyncable {
     @discardableResult
     func removeUser(_ user: UserModel) async -> Bool {
         guard let recordID = user.recordID else { return true }
+        return await removeUser(withID: recordID)
+    }
+    
+    /// Removes a user's reference from this house's `users` list by its record ID and saves it.
+    ///
+    /// Useful when the user record may already be gone (e.g. undoing an onboarding step).
+    @discardableResult
+    func removeUser(withID recordID: CKRecord.ID) async -> Bool {
         guard let usersReference, usersReference.contains(where: { $0.recordID == recordID }) else {
             return true
         }
         self.usersReference = usersReference.filter { $0.recordID != recordID }
+        return await CloudKitManager.shared.update(self)
+    }
+    
+    /// Removes several rooms' references from this house's `rooms` list in a single save.
+    ///
+    /// - Returns: `true` when the references were removed (or none were present), `false` if
+    ///   CloudKit rejects the update (see ``CloudKitManager/errorMessage``).
+    @discardableResult
+    func removeRooms(withIDs recordIDs: Set<CKRecord.ID>) async -> Bool {
+        guard let roomsReference, roomsReference.contains(where: { recordIDs.contains($0.recordID) }) else {
+            return true
+        }
+        self.roomsReference = roomsReference.filter { !recordIDs.contains($0.recordID) }
         return await CloudKitManager.shared.update(self)
     }
     

@@ -52,7 +52,7 @@ struct WaitAcceptLinkOnboardingView: View {
                     }
                     .transition(.opacity)
                 } else {
-                    ShareLink(item: "eai amigo, cade meu link 🤨🤨") {
+                    ShareLink(item: String(localized: "eai amigo, cade meu link 🤨🤨")) {
                         Label("Pedir o convite por mensagem", systemImage: "square.and.arrow.up")
                             .fontWeight(.semibold)
                     }
