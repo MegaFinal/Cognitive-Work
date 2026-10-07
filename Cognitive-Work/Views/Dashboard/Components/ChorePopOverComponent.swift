@@ -20,13 +20,9 @@ struct ChorePopOverComponent: View {
             ChorePriority(chore: chore, user: user)
         }
         .foregroundColor(.black)
-        // Fixed width, minimum height: long names (mostly in English) wrap onto more lines and
-        // the popover grows instead of cutting them with "…".
         .frame(width: width * 0.55, alignment: .leading)
         .frame(minHeight: height * 0.1)
-//        .background(.white) // If wanted liquid glass efect, delete this
         .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.32), radius: 5.8, x: 4, y: 6)
     }
     
     private var title: some View {

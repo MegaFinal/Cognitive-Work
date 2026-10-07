@@ -13,8 +13,7 @@ struct BarPercentageComponent: View {
     // Temporary visualization for unowned chores.
     // This will be replaced when the pending chores section is finalized.
     let isUnassignedChores: Bool
-    
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if isUnassignedChores {
@@ -40,17 +39,13 @@ struct BarPercentageComponent: View {
         VStack(alignment: .leading, spacing: 16) {
             
             Text("Divisão da casa")
-                .font(.title2.bold())
+                .font(.system(size: 22).bold())
             
             Text("O trabalho de notar, lembrar, decidir e acompanhar é tão importante quanto realizar uma tarefa")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
-            // MARK: - Loading
-            if viewModel.isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity, minHeight: height * 0.05)
-            } else {
+            do {
                 myContribuitionPercentage
                 
                 ZStack(alignment: .leading) {
@@ -81,7 +76,8 @@ struct BarPercentageComponent: View {
         VStack(alignment: .leading, spacing: 16) {
             
             HStack(alignment: .top, spacing: 12) {
-                Text(viewModel.isLoading ? "–" : "\(viewModel.unownedPublicCount)")                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                Text("\(viewModel.unownedPublicCount)")
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
                     .foregroundStyle(.orange)
                 
                 VStack(alignment: .leading, spacing: 4) {
@@ -93,11 +89,7 @@ struct BarPercentageComponent: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            // MARK: - Loading
-            if viewModel.isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity, minHeight: height * 0.05)
-            } else {
+            do {
                 ZStack(alignment: .leading) {
                     baseBarChart
                     unassignedChoresChart
@@ -174,7 +166,7 @@ struct BarPercentageComponent: View {
                 .font(.footnote)
                 .lineLimit(nil)
         }
-        .frame(width: width * 0.9)
+        .frame(width: width * 0.8)
     }
     
     // MARK: - Expected contribution average as separate positioned views

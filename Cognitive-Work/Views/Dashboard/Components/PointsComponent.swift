@@ -11,7 +11,6 @@ struct PointsComponent: View {
     var points: Int
     var subtitle: LocalizedStringKey = "adquiridos por ter notado\nalgo na casa"
     var piglet: String = "RetroPig"
-    var isLoading: Bool = false
     
     var body: some View {
         ZStack {
@@ -24,10 +23,7 @@ struct PointsComponent: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.28, height: height * 0.08)
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
+                do {
                     Text("\(points) pontos")
                         .font(.system(size: 20))
                         .fontWeight(.semibold)

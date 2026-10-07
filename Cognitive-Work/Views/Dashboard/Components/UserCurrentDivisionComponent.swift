@@ -36,9 +36,13 @@ struct UserCurrentDivisionComponent: View {
     /// When `nil`, falls back to the view model's own start date.
     var periodStart: Date? = nil
     
-    var isLoading: Bool = false
+    /// View model owned by a parent that loads everything together (the dashboard).
+    /// When set, this view only displays it and does no loading of its own.
+    var sharedViewModel: CurrentScheduleViewModel? = nil
     
-    @State private var viewModel = CurrentScheduleViewModel()
+    @State private var ownViewModel = CurrentScheduleViewModel()
+    
+    private var viewModel: CurrentScheduleViewModel { sharedViewModel ?? ownViewModel }
     
     /// `CloudKitManager.dataRevision` the schedule was last loaded at.
     @State private var loadedRevision: Int?
@@ -46,8 +50,8 @@ struct UserCurrentDivisionComponent: View {
     var body: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity, minHeight: 200)
+                // Only seen standalone; inside the dashboard the parent overlay covers loading.
+                Color.clear.frame(height: 200)
             } else {
                 UserScheduleCard(
                     user: viewModel.currentUser,
@@ -60,6 +64,7 @@ struct UserCurrentDivisionComponent: View {
             }
         }
         .task(id: CloudKitManager.shared.dataRevision) {
+            guard sharedViewModel == nil else { return }
             let revision = CloudKitManager.shared.dataRevision
             guard loadedRevision != revision else { return }
             await load()
