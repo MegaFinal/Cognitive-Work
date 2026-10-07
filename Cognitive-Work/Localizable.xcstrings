@@ -1236,6 +1236,17 @@
         }
       }
     },
+    "Crie uma tarefa para a casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create a chore for the house"
+          }
+        }
+      }
+    },
     "Cuidar da casa também é lembrar e perceber o que falta. O Pipa organiza as tarefas e reconhece o trabalho de todos." : {
       "localizations" : {
         "en" : {
@@ -1462,6 +1473,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Day and urgency"
+          }
+        }
+      }
+    },
+    "Dia livre por aqui!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A free day!"
           }
         }
       }
@@ -3164,6 +3185,16 @@
         }
       }
     },
+    "Nada na sua divisão ainda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing in your division yet"
+          }
+        }
+      }
+    },
     "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3480,6 +3511,7 @@
       }
     },
     "Nenhuma tarefa ainda" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3520,6 +3552,7 @@
       }
     },
     "Nenhuma tarefa no momento" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4108,6 +4141,17 @@
         }
       }
     },
+    "Pegue uma tarefa que está sem dono" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick up a chore nobody owns yet"
+          }
+        }
+      }
+    },
     "Pendente" : {
       "localizations" : {
         "en" : {
@@ -4264,6 +4308,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wed"
+          }
+        }
+      }
+    },
+    "Quando as tarefas forem divididas, elas aparecem aqui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once chores are divided, they'll show up here."
           }
         }
       }
@@ -4883,6 +4937,16 @@
         }
       }
     },
+    "Seu dia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your day"
+          }
+        }
+      }
+    },
     "Seu facilitador de organização doméstica!" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4984,6 +5048,16 @@
         }
       }
     },
+    "Sua divisão" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your division"
+          }
+        }
+      }
+    },
     "Sua divisão atual" : {
 
     },
@@ -5008,6 +5082,7 @@
       }
     },
     "Suas Tarefas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5266,6 +5341,7 @@
       }
     },
     "Toque em \"+\" para criar a primeira tarefa da casa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5657,6 +5733,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You'll be responsible for every day of the period."
+          }
+        }
+      }
+    },
+    "Você não tem tarefas para hoje. Aproveite o descanso ou adicione algo à sua rotina." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have no chores today. Enjoy the break or add something to your routine."
           }
         }
       }

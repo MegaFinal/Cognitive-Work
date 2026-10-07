@@ -37,6 +37,9 @@ struct WaitAcceptLinkOnboardingView: View {
                     title: "Peça o convite para o administrador da casa",
                     description: "Quando receber o link, é só tocar nele para entrar na casa!"
                 )
+                // Not at the top of the screen (the illustration is above it), so it keeps
+                // its distance from the image.
+                .padding(.top, 20)
                 .padding(.bottom, height * 0.052)
                 
                 
