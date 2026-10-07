@@ -40,6 +40,9 @@ struct UserCurrentDivisionComponent: View {
     
     @State private var viewModel = CurrentScheduleViewModel()
     
+    /// `CloudKitManager.dataRevision` the schedule was last loaded at.
+    @State private var loadedRevision: Int?
+    
     var body: some View {
         Group {
             if viewModel.isLoading {
@@ -56,7 +59,12 @@ struct UserCurrentDivisionComponent: View {
                 )
             }
         }
-            .task { await load() }
+        .task(id: CloudKitManager.shared.dataRevision) {
+            let revision = CloudKitManager.shared.dataRevision
+            guard loadedRevision != revision else { return }
+            await load()
+            if !Task.isCancelled { loadedRevision = revision }
+        }
     }
     
     /// Loads the schedule using whatever data was provided, fetching the rest.
@@ -142,7 +150,7 @@ private extension UserCurrentDivisionComponent {
                 let day = calendar.date(byAdding: .day, value: dayOffset, to: tomorrow) ?? tomorrow
                 let assignment = RecurrentAssignmentModel(
                     day: day,
-                    users: [userReferences[index % userReferences.count]],  
+                    users: [userReferences[index % userReferences.count]],
                     chore: reference(choreRecordName)
                 )
                 let assignmentRecordName = "\(choreRecordName)-\(dayOffset)"

@@ -56,6 +56,7 @@ extension CloudKitManager {
             invalidateSessionCacheIfNeeded(for: T.self)
             
             await HardwareViewModel.notifyDataChanged()
+            markDataChanged()
             return saved
         } catch {
             errorMessage = "Failed to create \(T.recordType): \(error.localizedDescription)"
@@ -377,6 +378,7 @@ extension CloudKitManager {
             _ = try await database.save(record)
             
             await HardwareViewModel.notifyDataChanged()
+            markDataChanged()
             return true
         } catch {
             errorMessage = "Failed to update \(T.recordType): \(error.localizedDescription)"
@@ -391,6 +393,7 @@ extension CloudKitManager {
             _ = try await database.save(record)
             
             await HardwareViewModel.notifyDataChanged()
+            markDataChanged()
             return true
         } catch {
             errorMessage = "Failed to update \(record.recordType): \(error.localizedDescription)"
@@ -419,6 +422,7 @@ extension CloudKitManager {
             invalidateSessionCacheIfNeeded(for: T.self)
             
             await HardwareViewModel.notifyDataChanged()
+            markDataChanged()
             return true
         } catch {
             errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
@@ -434,6 +438,7 @@ extension CloudKitManager {
             _ = try await database.deleteRecord(withID: recordID)
             
             await HardwareViewModel.notifyDataChanged()
+            markDataChanged()
             return true
         } catch {
             errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
@@ -464,6 +469,7 @@ extension CloudKitManager {
             _ = try await database.modifyRecords(saving: [], deleting: recordIDs)
             
             await HardwareViewModel.notifyDataChanged()
+            markDataChanged()
             return true
         } catch {
             errorMessage = "Failed to delete records: \(error.localizedDescription)"

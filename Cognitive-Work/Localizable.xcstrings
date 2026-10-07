@@ -3172,6 +3172,7 @@
       }
     },
     "Não deu para salvar os cômodos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3363,6 +3364,9 @@
       }
     },
     "Não foi possível salvar o cômodo. Verifique sua conexão e tente novamente." : {
+
+    },
+    "Não foi possível salvar os cômodos" : {
 
     },
     "Não foi possível salvar seus horários. Tente novamente." : {

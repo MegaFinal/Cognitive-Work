@@ -86,25 +86,55 @@ class DashboardViewModel {
     
     var isLoading: Bool = true
     
+    /// `CloudKitManager.dataRevision` the cached data was fetched at. `nil` until the first load.
+    private var loadedRevision: Int?
+    
+    /// Day the cached data was built for. "Today" cards go stale at midnight
+    private var loadedDay: Date?
+    
+    /// Whether the cached data is out of date
+    var needsReload: Bool {
+        guard let loadedRevision, let loadedDay else { return true }
+        return loadedRevision != CloudKitManager.shared.dataRevision
+            || !Calendar.current.isDateInToday(loadedDay)
+    }
+    
+    /// Loads only when ``needsReload`` says so.
+    func loadIfNeeded() async {
+        guard needsReload else { return }
+        await load()
+    }
+    
     func load() async {
-        isLoading = true
+        let revision = CloudKitManager.shared.dataRevision
         
-        defer {
-            isLoading = false
-        }
+        if loadedRevision == nil { isLoading = true }
+        
         async let fetchUser = CloudKitManager.shared.fetchMyHouseUser()
         async let fetchMembers = CloudKitManager.shared.fetchHouseUsers()
         async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
         async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
         async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
         
-        user = await fetchUser
-        houseMembers = await fetchMembers
-        chores = await fetchChores
-        assignments = await fetchAssignments
-        rooms = await fetchRooms
+        let newUser = await fetchUser
+        let newMembers = await fetchMembers
+        let newChores = await fetchChores
+        let newAssignments = await fetchAssignments
+        let newRooms = await fetchRooms
+        
+        guard !Task.isCancelled else { return }
+        
+        user = newUser
+        houseMembers = newMembers
+        chores = newChores
+        assignments = newAssignments
+        rooms = newRooms
         
         refresh()
+        
+        loadedRevision = revision
+        loadedDay = Calendar.current.startOfDay(for: .now)
+        isLoading = false
     }
     func refresh() {
         loadCompletionRing()
