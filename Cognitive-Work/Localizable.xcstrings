@@ -948,6 +948,9 @@
         }
       }
     },
+    "Como essa tarefa deve ser feita? (opcional)" : {
+
+    },
     "Cômodo" : {
       "localizations" : {
         "en" : {
@@ -1216,6 +1219,9 @@
           }
         }
       }
+    },
+    "Criar tarefa" : {
+
     },
     "Criar uma casa" : {
       "localizations" : {
@@ -1638,6 +1644,9 @@
           }
         }
       }
+    },
+    "Ela já entra marcada e vai para a escala de **todos**." : {
+
     },
     "Em configuração" : {
       "localizations" : {
@@ -3574,6 +3583,9 @@
         }
       }
     },
+    "Nome da tarefa" : {
+
+    },
     "Nome da Tarefa" : {
       "localizations" : {
         "en" : {
@@ -3634,9 +3646,6 @@
           }
         }
       }
-    },
-    "Nova Tarefa" : {
-
     },
     "Novo cômodo" : {
 

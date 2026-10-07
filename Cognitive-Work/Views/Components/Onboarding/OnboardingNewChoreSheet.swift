@@ -48,51 +48,26 @@ struct OnboardingNewChoreSheet: View {
     
     // MARK: - Body
     
+    /// The selected room's color drives the whole sheet, like the room cards do elsewhere.
+    private var accent: RoomColor {
+        selectedRoom?.color ?? .orange
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 25) {
-                    header
-                    
-                    VStack(spacing: 10) {
-                        HStack {
-                            Text("Prioridade")
-                            Spacer()
-                            ChoreTagPicker(chore: $draft, type: .priority)
-                        }
-                        
-                        HStack {
-                            Text("Duração")
-                            Spacer()
-                            ChoreTagPicker(chore: $draft, type: .duration)
-                        }
-                        
-                        HStack {
-                            Text("Frequência")
-                            Spacer()
-                            ChoreTagPicker(chore: $draft, type: .frequency)
-                        }
-                    }
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                    
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Descrição")
-                            .font(.system(size: 15))
-                            .fontWeight(.semibold)
-                        
-                        TextField("Descrição da Tarefa", text: $draft.description, axis: .vertical)
-                            .font(.system(size: 17))
-                            .foregroundColor(.gray)
-                            .characterLimit(TextLimits.choreDescription, text: $draft.description)
-                    }
+                VStack(alignment: .leading, spacing: 22) {
+                    titleBlock
+                    heroCard
+                    attributesCard
+                    descriptionCard
                 }
-                .padding(.vertical)
-                .frame(width: width * 0.9)
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 22)
+                .padding(.top, 4)
+                .padding(.bottom, 24)
             }
-            .navigationTitle("Nova Tarefa")
-            .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .bottom) { createButton }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -100,88 +75,194 @@ struct OnboardingNewChoreSheet: View {
                     } label: {
                         Image(systemName: "xmark")
                     }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        create()
-                    } label: {
-                        Image(systemName: "checkmark")
-                    }
-                    .disabled(!canCreate)
+                    .tint(.black)
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
             .dismissKeyboardOnTap()
-            .onAppear { isNameFocused = true }
         }
+        .presentationDragIndicator(.visible)
+        .presentationCornerRadius(32)
+        .animation(.snappy(duration: 0.3), value: selectedRoomID)
     }
     
     // MARK: - Subviews
     
-    /// Room icon, chore name and room picker.
-    private var header: some View {
-        HStack {
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Nova tarefa")
+                .bold()
+                .font(.system(size: 32))
+                .foregroundStyle(.titleGray)
+            
+            Text("Ela já entra marcada e vai para a escala de **todos**.")
+                .font(.system(size: 16))
+                .foregroundStyle(.subTitleGray)
+        }
+    }
+    
+    /// Room card in the same look as the rest of the app: the room's color and texture, its
+    /// icon, and the chore's name written straight on it.
+    private var heroCard: some View {
+        VStack(spacing: 18) {
             Image(systemName: selectedRoom?.symbol ?? "house")
                 .resizable()
                 .scaledToFit()
-                .frame(width: width * 0.15)
-                .fontWeight(.thin)
+                .fontWeight(.light)
+                .frame(width: 64, height: 64)
                 .contentTransition(.symbolEffect(.replace))
-                .padding(.leading, 8)
             
-            Spacer()
-            
-            VStack(spacing: 25) {
-                VStack(spacing: 2) {
-                    TextField(
-                        "",
-                        text: $draft.name,
-                        prompt: Text("Nome da Tarefa")
-                            .foregroundStyle(.black)
-                    )
-                    .font(.system(size: 28))
-                    .bold()
-                    .focused($isNameFocused)
-                    .characterLimit(TextLimits.choreName, text: $draft.name)
-                    .submitLabel(.done)
-                    
-                    Capsule()
-                        .frame(height: height * 0.0015)
-                }
+            VStack(spacing: 6) {
+                TextField(
+                    "",
+                    text: $draft.name,
+                    prompt: Text("Nome da tarefa").foregroundStyle(.white.opacity(0.7))
+                )
+                .font(.system(size: 28, weight: .bold))
+                .multilineTextAlignment(.center)
+                .tint(.white)
+                .focused($isNameFocused)
+                .characterLimit(TextLimits.choreName, text: $draft.name)
+                .submitLabel(.done)
                 
-                HStack {
-                    Text("Cômodo")
-                        .bold()
-                    
-                    Spacer()
-                    
-                    Menu {
-                        Picker("Cômodo", selection: $selectedRoomID) {
-                            ForEach(rooms) { room in
-                                Text(room.name.localizedDefault)
-                                    .tag(RoomModel.ID?(room.id))
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            CapsuleTag(
-                                tagName: selectedRoom?.name.localizedDefault ?? L10n.tr("Sem Cômodo"),
-                                tagColor: selectedRoom?.color.uiColor ?? .gray,
-                                horizontalPadding: 10.0,
-                                verticalPadding: 1.5
-                            )
-                            
-                            Image(systemName: "chevron.up.chevron.down")
-                                .foregroundColor(.black)
-                                .imageScale(.small)
-                        }
-                        .fixedSize()
-                    }
-                    .id(selectedRoomID)
+                Capsule()
+                    .fill(.white.opacity(0.55))
+                    .frame(height: 2)
+                    .padding(.horizontal, 24)
+            }
+            
+            roomMenu
+        }
+        .foregroundStyle(.white)
+        .padding(.vertical, 26)
+        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity)
+        .background {
+            if let selectedRoom {
+                RoomTextureBackground(room: selectedRoom)
+            } else {
+                Color.gray
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
+    }
+    
+    private var roomMenu: some View {
+        Menu {
+            Picker("Cômodo", selection: $selectedRoomID) {
+                ForEach(rooms) { room in
+                    Text(room.name.localizedDefault)
+                        .tag(RoomModel.ID?(room.id))
                 }
             }
-            .frame(width: width * 0.65)
+        } label: {
+            HStack(spacing: 6) {
+                Text(selectedRoom?.name.localizedDefault ?? L10n.tr("Sem Cômodo"))
+                    .font(.system(size: 15, weight: .semibold))
+                
+                Image(systemName: "chevron.up.chevron.down")
+                    .imageScale(.small)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(.white.opacity(0.22), in: Capsule())
+            .overlay(Capsule().strokeBorder(.white.opacity(0.45), lineWidth: 1))
         }
+    }
+    
+    /// Priority, duration and frequency, one rounded row each, tinted with the room's color.
+    private var attributesCard: some View {
+        VStack(spacing: 0) {
+            attributeRow(icon: "flag.fill", title: "Prioridade") {
+                ChoreTagPicker(chore: $draft, type: .priority)
+            }
+            
+            Divider().padding(.leading, 62)
+            
+            attributeRow(icon: "clock.fill", title: "Duração") {
+                ChoreTagPicker(chore: $draft, type: .duration)
+            }
+            
+            Divider().padding(.leading, 62)
+            
+            attributeRow(icon: "arrow.triangle.2.circlepath", title: "Frequência") {
+                ChoreTagPicker(chore: $draft, type: .frequency)
+            }
+        }
+        .padding(.horizontal, 16)
+        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+    
+    private func attributeRow<Control: View>(
+        icon: String,
+        title: LocalizedStringKey,
+        @ViewBuilder control: () -> Control
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(accent.uiColor)
+                .frame(width: 34, height: 34)
+                .background(accent.lowOpacityColor.opacity(0.35), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            
+            Text(title)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(.black)
+            
+            Spacer(minLength: 8)
+            
+            control()
+        }
+        .padding(.vertical, 12)
+    }
+    
+    private var descriptionCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label {
+                Text("Descrição")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(.black)
+            } icon: {
+                Image(systemName: "text.alignleft")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(accent.uiColor)
+            }
+            
+            TextField("Como essa tarefa deve ser feita? (opcional)", text: $draft.description, axis: .vertical)
+                .font(.system(size: 16))
+                .foregroundStyle(.black.opacity(0.7))
+                .lineLimit(3...6)
+                .characterLimit(TextLimits.choreDescription, text: $draft.description)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+    
+    private var createButton: some View {
+        Button {
+            create()
+        } label: {
+            HStack(spacing: 8) {
+                Text("Criar tarefa")
+                    .font(.system(size: 18, weight: .bold))
+                Image(systemName: "checkmark")
+                    .font(.system(size: 16, weight: .bold))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(canCreate ? accent.uiColor : Color(.systemGray3), in: Capsule())
+            .shadow(color: canCreate ? accent.uiColor.opacity(0.35) : .clear, radius: 10, x: 0, y: 5)
+        }
+        .buttonStyle(.plain)
+        .disabled(!canCreate)
+        .padding(.horizontal, 22)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(.bar)
     }
     
     // MARK: - Actions
