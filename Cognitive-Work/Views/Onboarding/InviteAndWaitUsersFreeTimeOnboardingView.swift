@@ -51,15 +51,13 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Adicione seus roomies!")
-                .bold()
-                .font(.system(size: 28))
-                .foregroundColor(.black)
-            
-            Text("Envie o convite para quem mora com você")
-                .foregroundColor(.secondary)
-                .padding(.bottom, height * 0.028)
-            
+            // The view is already inset by `width * 0.84`, which is the header's own side margin.
+            OnboardingHeader(
+                title: "Adicione seus roomies!",
+                description: "Envie o convite para quem mora com você",
+                containerInset: width * 0.08
+            )
+            .padding(.bottom, height * 0.028)
             
             Text("Na casa \(Text("\(houseUsers.count)").fontWeight(.black))")
                 .font(.body)

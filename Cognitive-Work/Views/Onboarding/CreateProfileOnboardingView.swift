@@ -31,9 +31,11 @@ struct CreateProfileOnboardingView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            headerText
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, height * 0.02)
+            OnboardingHeader(
+                title: "Quem é você na casa?",
+                description: "Escolha uma foto e um nome para utilizar no app",
+                containerInset: width * 0.0565
+            )
             
             Spacer(minLength: 16)
             
@@ -103,24 +105,6 @@ struct CreateProfileOnboardingView: View {
         }
     }
     
-    // MARK: - Subviews
-    
-    /// Title and supporting copy for this onboarding step.
-    private var headerText: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Quem é você na casa?")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(.black.opacity(0.7))
-                .fixedSize(horizontal: false, vertical: false)
-
-            
-            Text("Escolha uma foto e um nome para utilizar no app")
-                .font(.system(size: 16))
-                .foregroundStyle(.gray)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
 }
 
 #Preview {

@@ -33,9 +33,7 @@ struct Carousel: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             else if viewModel.visibleChores.isEmpty {
-                Text("Nenhuma tarefa no momento")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.black)
+                ChoresEmptyState(kind: .today)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .contentShape(Rectangle())
             }

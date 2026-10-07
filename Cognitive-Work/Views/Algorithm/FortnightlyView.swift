@@ -27,8 +27,8 @@ struct FortnightlyView: View {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Escala quinzenal")
                     .bold()
-                    .font(.system(size: 28))
-                    .foregroundColor(.black)
+                    .font(.system(size: 30))
+                    .foregroundStyle(.titleGray)
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text(description)

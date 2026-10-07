@@ -18,7 +18,7 @@ struct ChoresView: View {
     @State var carouselVM = CarouselViewModel()
     
     /// The dominant color derived from the currently focused chore's room.
-    @State private var activeRoomColor: Color = .gray
+    @State private var activeRoomColor: Color = .black
     
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
@@ -193,10 +193,15 @@ struct ChoresView: View {
     
     // MARK: - Subviews
     
+    /// "Seu dia" in the carousel (today's chores), "Sua divisão" in the list (the whole division).
+    private var headerTitle: LocalizedStringKey {
+        carouselVM.layoutMode == .grid ? "Seu dia" : "Sua divisão"
+    }
+    
     /// Page title alongside the layout toggle control.
     private var header: some View {
         HStack {
-            Text("Suas Tarefas")
+            Text(headerTitle)
                 .font(.system(size: 34))
                 .fontWeight(.bold)
                 .padding(.horizontal, 30)
@@ -282,7 +287,7 @@ struct ChoresView: View {
     private func updateActiveRoomColor() {
         guard !carouselVM.visibleChores.isEmpty,
               carouselVM.visibleChores.indices.contains(carouselVM.activeIndex) else {
-            activeRoomColor = .gray
+            activeRoomColor = .black
             return
         }
         

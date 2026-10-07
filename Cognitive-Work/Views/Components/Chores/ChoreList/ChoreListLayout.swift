@@ -160,15 +160,7 @@ struct ChoreListLayout: View {
     /// Shown when there's nothing to list — either the house has no chores, or the active
     /// filter matches none.
     private var emptyState: some View {
-        ContentUnavailableView(
-            viewModel.isFilterOn ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa ainda",
-            systemImage: "checklist",
-            description: Text(
-                viewModel.isFilterOn
-                ? "Nenhuma tarefa corresponde ao filtro selecionado."
-                : "Toque em \"+\" para criar a primeira tarefa da casa."
-            )
-        )
+        ChoresEmptyState(kind: viewModel.isFilterOn ? .filtered : .division)
     }
     
     // MARK: - Day grouping

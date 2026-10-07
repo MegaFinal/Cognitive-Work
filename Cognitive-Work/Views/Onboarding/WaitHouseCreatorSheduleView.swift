@@ -55,7 +55,7 @@ struct WaitHouseCreatorSheduleView: View {
                     }
                 
                 Text("Aguardando divisão de tarefas...")
-                    .font(.system(size: 32))
+                    .font(.system(size: 30))
                     .bold()
                 
                 VStack(spacing: 15) {

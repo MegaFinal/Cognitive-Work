@@ -69,7 +69,6 @@ struct SelectChoresOnboardingView: View {
             
             VStack(alignment: .leading, spacing: 20) {
                 header
-                    .padding(.horizontal, horizontalMargin)
                 
                 VStack {
                     if isLoadingRooms {
@@ -135,18 +134,10 @@ struct SelectChoresOnboardingView: View {
     // MARK: - Subviews
     
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("O que a casa divide?")
-                .bold()
-                .font(.system(size: 32))
-                .foregroundStyle(.titleGray)
-                .padding(.top, 28)
-            
-            Text("Marque **apenas** as tarefas que vão para a escala de todos.")
-                .font(.system(size: 16))
-                .foregroundStyle(.subTitleGray)
-                .padding(.bottom, 20)
-        }
+        OnboardingHeader(
+            title: "O que a casa divide?",
+            description: "Marque **apenas** as tarefas que vão para a escala de todos."
+        )
     }
     
     /// Horizontal row of room capsules.

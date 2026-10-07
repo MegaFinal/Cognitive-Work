@@ -60,18 +60,12 @@ struct SelectFreeTimeOnboardingView: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Quanto tempo você tem para a casa?")
-                    .bold()
-                    .font(.system(size: 28))
-                    .foregroundStyle(.titleGray)
-                
-                Text("Arraste em cada dia para definir seu tempo livre para as tarefas da casa")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.subTitleGray)
-            }
-            .frame(width: width * 0.8)
-            .padding(.vertical, 25)
+            OnboardingHeader(
+                title: "Quanto tempo você tem para a casa?",
+                description: "Arraste em cada dia para definir seu tempo livre para as tarefas da casa",
+                containerInset: width * 0.0565
+            )
+            .padding(.bottom, 20)
             
             VStack {
                 HStack(spacing: width * 0.07) {
