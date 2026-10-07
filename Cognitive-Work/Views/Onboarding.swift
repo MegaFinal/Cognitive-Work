@@ -125,9 +125,12 @@ struct Onboarding: View {
             WaitHouseCreatorSheduleView(viewModel: $viewModel)
             
         case .scheduleChores:
-            FortnightlyScheduleView(shouldGenerate: viewModel.stateMachine.isOwner ?? false) {
-                    viewModel.finishOnboarding()
-                }
+            FortnightlyScheduleView(
+                shouldGenerate: viewModel.stateMachine.isOwner ?? false,
+                knownChoreIDs: viewModel.createdChoreRecordIDs
+            ) {
+                viewModel.finishOnboarding()
+            }
         case .waitGuestsFreeTime:
             InviteAndWaitUsersFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: false)
             

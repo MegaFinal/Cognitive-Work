@@ -16,15 +16,21 @@ struct FortnightlyScheduleView: View {
     let shouldGenerate: Bool
     let action: () -> Void
     
-    /// - Parameter scheduleViewModel: Pre-filled data (e.g. for previews). `nil` loads from CloudKit.
+    /// - Parameters:
+    ///   - scheduleViewModel: Pre-filled data (e.g. for previews). `nil` loads from CloudKit.
+    ///   - knownChoreIDs: Chores saved just before this screen (onboarding) that a CloudKit
+    ///     query may not return yet; they're read by ID so the division includes them.
     init(
         shouldGenerate: Bool,
         scheduleViewModel: ScheduleViewModel? = nil,
+        knownChoreIDs: [CKRecord.ID] = [],
         action: @escaping () -> Void
     ) {
         self.shouldGenerate = shouldGenerate
         self.action = action
-        self._scheduleViewModel = State(initialValue: scheduleViewModel ?? ScheduleViewModel())
+        self._scheduleViewModel = State(
+            initialValue: scheduleViewModel ?? ScheduleViewModel(knownChoreIDs: knownChoreIDs)
+        )
     }
     
     /// `true` while `WaitingAlgorithmView` or the info pop-up is on screen: the navigation bar

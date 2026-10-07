@@ -2206,6 +2206,9 @@
         }
       }
     },
+    "Este cômodo ainda não tem tarefas. Crie as que fazem sentido para ele." : {
+
+    },
     "Este nome é reservado para tarefas da casa toda." : {
 
     },
@@ -3423,7 +3426,11 @@
         }
       }
     },
+    "Nenhum cômodo foi encontrado para a casa." : {
+
+    },
     "Nenhum cômodo padrão foi selecionado para a casa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3619,7 +3626,6 @@
       }
     },
     "Nova tarefa" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3628,6 +3634,9 @@
           }
         }
       }
+    },
+    "Nova Tarefa" : {
+
     },
     "Novo cômodo" : {
 

@@ -56,6 +56,10 @@ struct OnboardingRollbackJournal: Codable {
 
     /// Rooms created by `OnboardingViewModel.saveSelectedRooms()`.
     var createdRooms: [StoredRecordID] = []
+    
+    /// Chores created by `OnboardingViewModel.createDefaultChores()`. Read by the division
+    /// step, which fetches them by ID: a query right after the save may not return them yet.
+    var createdChores: [StoredRecordID] = []
 
     /// Last free time the user picked (minutes per day, Monday first). Lets the choice be
     /// restored as pending when the house it was written to is deleted.
