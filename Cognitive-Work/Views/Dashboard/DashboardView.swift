@@ -10,7 +10,6 @@ import SwiftUI
 struct DashboardView: View {
     @State var viewModel = DashboardViewModel()
     
-    
     var body: some View {
         NavigationStack {
             
@@ -24,8 +23,7 @@ struct DashboardView: View {
                         HStack(spacing: 16) {
                             DoughnutChart(viewModel: $viewModel)
                             PointsComponent(
-                                points: viewModel.myCognitiveLoad,
-                                isLoading: viewModel.isLoading
+                                points: viewModel.myCognitiveLoad
                             )
                         }
                         
@@ -37,7 +35,8 @@ struct DashboardView: View {
                         
                         // MARK: - Current Division
                         UserCurrentDivisionComponent(
-                            periodStart: viewModel.periodStart
+                            periodStart: viewModel.periodStart,
+                            sharedViewModel: viewModel.schedule
                         )
                             .padding(.horizontal, 16)
                         
@@ -49,6 +48,15 @@ struct DashboardView: View {
                         )
                     }
                 }
+            }
+            // Same pattern as the chore edit screen: dimmed and locked until everything is loaded.
+            .disabled(viewModel.isLoading)
+            .opacity(viewModel.isLoading ? 0.5 : 1)
+        }
+        .overlay {
+            if viewModel.isLoading {
+                ProgressView()
+                    .controlSize(.large)
             }
         }
         .task(id: CloudKitManager.shared.dataRevision) {

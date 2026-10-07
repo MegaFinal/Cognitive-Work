@@ -35,9 +35,7 @@ struct DoughnutChart: View {
                 .foregroundStyle(Color(.systemGray6).opacity(0.5))
                 .frame(width: width * 0.437, height: height * 0.21)
             
-            if viewModel.isLoading {
-                ProgressView()
-            } else {
+            do {
                 VStack(spacing: 8) {
                     // Leading-aligned across the card's width (minus its margins) instead of a big
                     // trailing padding, which left ~55pt and cut "Today" short; wraps if needed.

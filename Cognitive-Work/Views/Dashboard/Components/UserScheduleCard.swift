@@ -16,10 +16,6 @@ import CloudKit
 /// Each bar is one chore. Its **height** comes from the chore's duration tier
 /// (``DailyUsageEntry/tier``) and its **color** from the room the chore belongs to.
 /// Tapping a bar opens a popover with the chore's details.
-///
-/// The view is "dumb": it receives plain data and lookup closures, so it can be previewed
-/// without CloudKit.
-///
 /// > Note: With the default of 7 days the chart fits a 361 pt wide card. A larger
 /// > `daysToShow` scrolls horizontally.
 struct UserScheduleCard: View {
@@ -56,10 +52,11 @@ struct UserScheduleCard: View {
             
             RoomScheduleCaption(rooms: roomCaption)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 16)
-        .background(Color(red: 245 / 255, green: 245 / 255, blue: 245 / 255),
-                    in: RoundedRectangle(cornerRadius: 20))
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .foregroundColor(Color(.systemGray6).opacity(0.5))
+        )
     }
     
     // MARK: Subviews
@@ -67,7 +64,7 @@ struct UserScheduleCard: View {
     private var header: some View {
         HStack(alignment: .top) {
             Text("Sua divisão atual")
-                .font(.system(size: 28, weight: .bold))
+                .font(.system(size: 22).bold())
             
             Spacer()
             
@@ -93,7 +90,7 @@ struct UserScheduleCard: View {
                     }
                 }
             }
-            .frame(minHeight: 330, alignment: .bottom)   // piso, mas pode crescer
+            .frame(minHeight: 330, alignment: .bottom)
             .padding(.vertical, 12)
         }
         .scrollBounceBehavior(.basedOnSize)
@@ -251,7 +248,7 @@ private struct RoomScheduleCaption: View {
     
     var body: some View {
         LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 130), alignment: .leading)],
+            columns: [GridItem(.adaptive(minimum: 90), alignment: .leading)],
             alignment: .leading,
             spacing: 8
         ) {
@@ -267,23 +264,3 @@ private struct RoomScheduleCaption: View {
         }
     }
 }
-
-// MARK: - User Avatar
-
-/// A circular avatar showing the user's initial.
-///
-/// > Note: This is a placeholder. Replace the body with your `UserProfileCache`
-/// > image loading to show the real profile picture.
-//private struct MyScheduleAvatar: View {
-//    
-//    /// The user's display name.
-//    let name: String
-//    
-//    var body: some View {
-//        Text(name.prefix(1).uppercased())
-//            .font(.headline)
-//            .frame(width: 44, height: 44)
-//            .background(.white, in: Circle())
-//            .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
-//    }
-//}
