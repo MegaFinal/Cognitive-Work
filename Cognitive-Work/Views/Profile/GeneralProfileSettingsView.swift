@@ -10,9 +10,7 @@ import SwiftUI
 struct GeneralProfileSettingsView: View {
     @Bindable var viewModel: UserProfileViewModel
     @Bindable var houseViewModel: HouseEditViewModel
-    
-    @State private var isNotificationsEnabled = false
-    
+        
     /// Persisted and read by ``HapticsManager`` on every vibration, so the switch applies in
     /// real time. (It used to be a local `@State` that nothing read, reset on every visit.)
     @AppStorage(HapticsManager.storageKey) private var areHapticsEnabled = true
@@ -32,20 +30,8 @@ struct GeneralProfileSettingsView: View {
         )
     }
     
-    
     var body: some View {
         VStack(spacing: 30) {
-            HStack {
-                Text("Permitir Notificações")
-                
-                Spacer()
-                
-                Toggle("", isOn: $isNotificationsEnabled)
-                    .toggleStyle(.switch)
-                    .padding(.trailing, 7)
-                    .frame(width: width * 0.37)
-            }
-            
             HStack {
                 Text("Idioma")
                 

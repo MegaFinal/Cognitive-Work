@@ -4155,6 +4155,7 @@
       }
     },
     "Permitir Notificações" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
