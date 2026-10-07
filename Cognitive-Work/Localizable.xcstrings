@@ -6109,6 +6109,56 @@
           }
         }
       }
+    },
+    "Escolha os cômodos que existem na sua casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the rooms that exist in your home"
+          }
+        }
+      }
+    },
+    "Selecione as tarefas que serão divididas igualmente entre todos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the chores that will be split equally among everyone"
+          }
+        }
+      }
+    },
+    "O Pipa pega as informações de todos e divide as tarefas da melhor forma possivel!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pipa gathers everyone's information and splits the chores in the best way possible!"
+          }
+        }
+      }
+    },
+    "adquiridos por ter notado\nalgo na casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "earned for noticing\nsomething around the house"
+          }
+        }
+      }
+    },
+    "Excluindo cômodo..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting room..."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
