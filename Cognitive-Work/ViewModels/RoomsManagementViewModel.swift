@@ -44,12 +44,18 @@ final class RoomsManagementViewModel {
     /// Default SF Symbol for rooms created here (same one the onboarding uses for custom rooms).
     static let customRoomSymbol = "lamp.table"
     
-    /// Icons a custom room can pick from.
-    static let customRoomSymbols = [
-        "lamp.table", "tv", "books.vertical", "gamecontroller",
-        "dumbbell", "pawprint", "car", "tree",
-        "shippingbox", "stairs", "bathtub", "music.note"
-    ]
+    /// Icons a custom room can pick from: the custom-room set followed by the icons of every
+    /// default room type (Quarto, Cozinha…), without repeats.
+    static let customRoomSymbols: [String] = {
+        let customSymbols = [
+            "lamp.table", "tv", "books.vertical", "gamecontroller",
+            "dumbbell", "pawprint", "car", "tree",
+            "shippingbox", "stairs", "bathtub", "music.note"
+        ]
+        var seen = Set<String>()
+        return (customSymbols + DefaultRoomsOnboarding.allCases.map(\.symbol))
+            .filter { seen.insert($0).inserted }
+    }()
     
     init(house: HouseModel? = nil) {
         self.house = house
@@ -114,7 +120,12 @@ final class RoomsManagementViewModel {
     ///
     /// - Returns: `true` on success, otherwise `false` with ``errorMessage`` set.
     @discardableResult
-    func createRoom(name: String, color: RoomColor, symbol: String = customRoomSymbol) async -> Bool {
+    func createRoom(
+        name: String,
+        color: RoomColor,
+        symbol: String = customRoomSymbol,
+        pattern: RoomTexturePattern = .fallback
+    ) async -> Bool {
         let name = name.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, !Self.isReservedName(name) else { return false }
         
@@ -133,7 +144,8 @@ final class RoomsManagementViewModel {
             name: name,
             symbol: symbol,
             house: houseReference,
-            color: color
+            color: color,
+            pattern: pattern
         )
         
         guard let created = await CloudKitManager.shared.create(
@@ -158,11 +170,17 @@ final class RoomsManagementViewModel {
     
     // MARK: - Update
     
-    /// Renames a room and, for custom rooms, changes its color and icon.
+    /// Renames a room and, for custom rooms, changes its color, icon and texture.
     ///
     /// - Returns: `true` on success, otherwise `false` with ``errorMessage`` set.
     @discardableResult
-    func updateRoom(_ room: RoomModel, name: String, color: RoomColor, symbol: String) async -> Bool {
+    func updateRoom(
+        _ room: RoomModel,
+        name: String,
+        color: RoomColor,
+        symbol: String,
+        pattern: RoomTexturePattern
+    ) async -> Bool {
         let name = name.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, !Self.isReservedName(name) else { return false }
         
@@ -180,6 +198,7 @@ final class RoomsManagementViewModel {
         } else {
             updated.color = color
             updated.symbol = symbol
+            updated.pattern = pattern
         }
         updated.name = name
         

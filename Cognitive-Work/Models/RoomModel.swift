@@ -36,6 +36,10 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// The room type this room was created from during onboarding (e.g. `"Quarto"`)
     var kind: String?
     
+    /// Texture picked for a custom room. Default room types ignore it and use their own
+    /// (see ``texturePattern``); `nil` uses ``RoomTexturePattern/fallback``.
+    var pattern: RoomTexturePattern?
+    
     /// Whether the color or symbol stored in CloudKit differs from ``color``/``symbol`` — a
     /// value from an older palette, or a default room still carrying its old look — so the
     /// record should be re-saved. See ``migrateStoredColorsIfNeeded(_:)``.
@@ -84,6 +88,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         self.relatedChoresReference = record["relatedChores"] as? [CKRecord.Reference]
         self.houseReference = record["house"] as? CKRecord.Reference
         self.kind = kind
+        self.pattern = (record["pattern"] as? String).flatMap(RoomTexturePattern.init(rawValue:))
         self.color = color
         self.needsColorMigration = storedColor != color.rawValue || storedSymbol != symbol
     }
@@ -101,7 +106,8 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         relatedChores: [CKRecord.Reference]? = nil,
         house: CKRecord.Reference? = nil,
         color: RoomColor,
-        kind: String? = nil
+        kind: String? = nil,
+        pattern: RoomTexturePattern? = nil
     ) {
         self.recordID = nil
         self.name = name
@@ -110,6 +116,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         self.houseReference = house
         self.color = color
         self.kind = kind
+        self.pattern = pattern
     }
     
     /// Writes this model's values into a CloudKit record.
@@ -130,6 +137,9 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         record["roomColor"] = color.rawValue
         if let kind {
             record["kind"] = kind
+        }
+        if let pattern {
+            record["pattern"] = pattern.rawValue
         }
     }
     

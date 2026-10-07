@@ -265,7 +265,7 @@
         }
       }
     },
-    "A cor e o ícone dos cômodos padrão não podem ser alterados." : {
+    "A cor, o grafismo e o ícone dos cômodos padrão não podem ser alterados." : {
 
     },
     "A cozinha foi onde você mais trabalhou." : {
@@ -2422,6 +2422,9 @@
         }
       }
     },
+    "Grafismo" : {
+
+    },
     "grama" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2566,6 +2569,9 @@
           }
         }
       }
+    },
+    "Indisponível nesta cor" : {
+
     },
     "Iniciar divisão" : {
       "extractionState" : "stale",
@@ -3883,6 +3889,7 @@
       }
     },
     "Outro Cômodo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
