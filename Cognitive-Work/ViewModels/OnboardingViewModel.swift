@@ -452,6 +452,13 @@ class OnboardingViewModel {
                 roomReference: roomReference
             )
             
+            // `ChoreModel.init` flips a coin for `shouldBeIncluded` on monthly chores (it spreads
+            // them over alternating 14-day divisions), which left about half of the monthly
+            // chores picked here out of the first division. Everything the user selected in the
+            // onboarding must enter it; the scheduler flips the flag afterwards, so the next
+            // division is the one that skips them.
+            choreModel.shouldBeIncluded = choreDTO.frequency == .monthly ? true : nil
+            
             let record = CKRecord(recordType: ChoreModel.recordType, zoneID: zoneID)
             choreModel.populate(record: record)
             record.parent = parentReference
@@ -461,7 +468,9 @@ class OnboardingViewModel {
         
         if !recordsToCreate.isEmpty {
             let success = await CloudKitManager.shared.batchSave(records: recordsToCreate, zoneID: zoneID)
-            if !success {
+            if success {
+                rollbackJournal.createdChores += recordsToCreate.map { OnboardingRollbackJournal.StoredRecordID($0.recordID) }
+            } else {
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao criar tarefas padrão.")
             }
         }
@@ -527,8 +536,10 @@ class OnboardingViewModel {
             return await rollbackHouse()
         case .chooseRooms:
             return await rollbackRooms()
+        case .chooseChores:
+            return await rollbackChores()
         case .welcome, .waitAcceptLink, .inviteAndConfirmJoin, .setUpScheduleChores,
-             .chooseChores, .scheduleChores, .waitAdminScheduling, .waitGuestsFreeTime:
+             .scheduleChores, .waitAdminScheduling, .waitGuestsFreeTime:
             // These steps only navigate; they don't write anything.
             return true
         }
@@ -629,6 +640,7 @@ class OnboardingViewModel {
         
         rollbackJournal.createdHouse = nil
         rollbackJournal.createdRooms = []
+        rollbackJournal.createdChores = []
         rollbackJournal.freeTimeRecords = []
         
         currentHouse = nil
@@ -669,6 +681,28 @@ class OnboardingViewModel {
         return true
     }
     
+    /// Undoes "Escolher tarefas": the chores that step created, together with the occurrences
+    /// the division generated for them (children of each chore).
+    ///
+    /// Without this the step looked like it wrote nothing, so coming back and confirming again
+    /// was a no-op for every chore that already existed (``createDefaultChores()`` skips them by
+    /// room and name): a changed frequency was ignored and unmarked chores stayed in the house.
+    @MainActor
+    private func rollbackChores() async -> Bool {
+        let choreIDs = rollbackJournal.createdChores.map(\.recordID)
+        
+        if let zoneID = choreIDs.first?.zoneID {
+            guard await CloudKitManager.shared.delete(recordIDs: choreIDs, zoneID: zoneID) else {
+                return false
+            }
+        }
+        
+        rollbackJournal.createdChores = []
+        // The marks on screen are rebuilt from the defaults, so the old selection must go too.
+        selectedChores = []
+        return true
+    }
+    
     /// The house record re-read by ID (immediately consistent), when it lives in `zoneID`.
     @MainActor
     private func freshHouse(for zoneID: CKRecordZone.ID) async -> HouseModel? {
@@ -677,6 +711,12 @@ class OnboardingViewModel {
             for: HouseModel.self,
             recordReferences: [CKRecord.Reference(recordID: houseID, action: .none)]
         )?.first
+    }
+    
+    /// Chores saved by the chores step of this onboarding. The division step fetches them by ID
+    /// so the scheduler sees them even before CloudKit's query index catches up.
+    var createdChoreRecordIDs: [CKRecord.ID] {
+        rollbackJournal.createdChores.map(\.recordID)
     }
     
     /// Free time to show when the free-time step opens again: the pending choice, or the last

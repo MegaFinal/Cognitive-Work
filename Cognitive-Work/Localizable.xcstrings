@@ -948,6 +948,9 @@
         }
       }
     },
+    "Como essa tarefa deve ser feita? (opcional)" : {
+
+    },
     "Cômodo" : {
       "localizations" : {
         "en" : {
@@ -1216,6 +1219,9 @@
           }
         }
       }
+    },
+    "Criar tarefa" : {
+
     },
     "Criar uma casa" : {
       "localizations" : {
@@ -1638,6 +1644,9 @@
           }
         }
       }
+    },
+    "Ela já entra marcada e vai para a escala de **todos**." : {
+
     },
     "Em configuração" : {
       "localizations" : {
@@ -2205,6 +2214,9 @@
           }
         }
       }
+    },
+    "Este cômodo ainda não tem tarefas. Crie as que fazem sentido para ele." : {
+
     },
     "Este nome é reservado para tarefas da casa toda." : {
 
@@ -3423,7 +3435,11 @@
         }
       }
     },
+    "Nenhum cômodo foi encontrado para a casa." : {
+
+    },
     "Nenhum cômodo padrão foi selecionado para a casa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3567,6 +3583,9 @@
         }
       }
     },
+    "Nome da tarefa" : {
+
+    },
     "Nome da Tarefa" : {
       "localizations" : {
         "en" : {
@@ -3619,7 +3638,6 @@
       }
     },
     "Nova tarefa" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

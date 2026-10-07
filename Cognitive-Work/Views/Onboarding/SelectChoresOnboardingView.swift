@@ -8,21 +8,14 @@
 import SwiftUI
 import CloudKit
 
-/// Seventh onboarding step, where the user picks the chores that are split
-/// equally between every resident of the house.
+/// Onboarding step where the house owner picks the chores that are split equally between
+/// every resident of the house.
 ///
-/// Rooms are listed as collapsible sections. Tapping the chevron of a room
-/// toggles ``RoomDTO/isExpanded`` for that room alone, revealing the chores
-/// that can be marked through a `Toggle`. The trailing button advances to the
-/// next step.
-///
-/// Spacing is derived from the container size reported by `GeometryReader`, so
-/// the layout keeps its proportions across device sizes.
-///
-/// > Warning: Every room currently expands the same ``mockedChores`` array.
-/// > Since ``ChoreDTO`` is a reference type, selecting a chore in one room also
-/// > selects it in the others. Give each room its own list before replacing the
-/// > mock with real data.
+/// Rooms are listed as capsules; the selected one shows its chores. Default room types bring
+/// their suggested chores (``DefaultRoomsOnboarding/defaultChores``); every room also ends with
+/// a "Nova tarefa" row that opens ``OnboardingNewChoreSheet`` to create a chore of its own,
+/// which comes back already marked. Nothing is saved until the trailing button calls
+/// ``OnboardingViewModel/createDefaultChores()``.
 struct SelectChoresOnboardingView: View {
     
     // MARK: - Properties
@@ -43,6 +36,9 @@ struct SelectChoresOnboardingView: View {
     
     /// Rooms handed in by the caller (previews), shown instead of fetching them from CloudKit.
     private let injectedRooms: [RoomModel]
+    
+    /// Whether the sheet for creating a chore outside the default list is shown.
+    @State private var isCreatingChore = false
     
     /// - Parameters:
     ///   - viewModel: State shared by every step of the flow.
@@ -110,8 +106,10 @@ struct SelectChoresOnboardingView: View {
             guard injectedRooms.isEmpty else { return }
             isLoadingRooms = true
             guard viewModel.currentHouse != nil else { return }
-            rooms = await viewModel.fetchRooms().filter {
-                DefaultRoomsOnboarding(rawValue: $0.kind ?? $0.name) != nil
+            // Every room is listed: default types bring their suggested chores, the others
+            // (custom rooms and the house-wide one, last) start empty for the user to fill.
+            rooms = await viewModel.fetchRooms().sorted { lhs, rhs in
+                !Self.isHouseWide(lhs) && Self.isHouseWide(rhs)
             }
             if selectedRoom == nil {
                 selectedRoomID = rooms.first?.id
@@ -120,6 +118,11 @@ struct SelectChoresOnboardingView: View {
         }
         .task(id: selectedRoomID) {
             loadChoresIfNeeded(for: selectedRoom)
+        }
+        .sheet(isPresented: $isCreatingChore) {
+            OnboardingNewChoreSheet(rooms: rooms, initialRoom: selectedRoom) { chore, room in
+                add(chore, to: room)
+            }
         }
         .onboardingBackButton(viewModel: viewModel)
         .alert("Não deu para salvar as tarefas", isPresented: Binding(
@@ -174,7 +177,17 @@ struct SelectChoresOnboardingView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 14) {
                 if let room = selectedRoom {
-                    ForEach(choresByRoom[room.id] ?? []) { chore in
+                    let chores = choresByRoom[room.id] ?? []
+                    
+                    if chores.isEmpty {
+                        Text("Este cômodo ainda não tem tarefas. Crie as que fazem sentido para ele.")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.subTitleGray)
+                            .multilineTextAlignment(.center)
+                            .padding(.vertical, 8)
+                    }
+                    
+                    ForEach(chores) { chore in
                         ChoreSelectionRow(
                             chore: chore,
                             color: room.color,
@@ -182,6 +195,11 @@ struct SelectChoresOnboardingView: View {
                         ) {
                             toggle(chore, in: room)
                         }
+                    }
+                    
+                    NewChoreRow(color: room.color) {
+                        guard !viewModel.isLoading else { return }
+                        isCreatingChore = true
                     }
                 }
             }
@@ -195,13 +213,29 @@ struct SelectChoresOnboardingView: View {
     
     // MARK: - Selection
     
-    /// Builds the room's default chores the first time it is shown.
+    /// Builds the room's default chores the first time it is shown. Rooms that aren't a
+    /// default type start with no chores.
     private func loadChoresIfNeeded(for room: RoomModel?) {
-        guard let room, choresByRoom[room.id] == nil,
-              let defaultRoom = DefaultRoomsOnboarding(rawValue: room.kind ?? room.name)
-        else { return }
+        guard let room, choresByRoom[room.id] == nil else { return }
         
-        choresByRoom[room.id] = defaultRoom.defaultChores
+        choresByRoom[room.id] = DefaultRoomsOnboarding(rawValue: room.kind ?? room.name)?.defaultChores ?? []
+    }
+    
+    /// Adds a chore created in ``OnboardingNewChoreSheet`` to its room's list, already marked,
+    /// and shows that room.
+    private func add(_ chore: ChoreDTO, to room: RoomModel) {
+        loadChoresIfNeeded(for: room)
+        choresByRoom[room.id, default: []].append(chore)
+        viewModel.selectedChores.append(chore)
+        
+        withAnimation(.snappy(duration: 0.25)) {
+            selectedRoomID = room.id
+        }
+    }
+    
+    /// The room that holds chores for the whole house ("Casa").
+    private static func isHouseWide(_ room: RoomModel) -> Bool {
+        room.kind == nil && room.name == RoomsManagementViewModel.houseWideRoomName
     }
     
     /// How many of `room`'s chores are marked.
@@ -262,6 +296,36 @@ private struct RoomCapsule: View {
         .buttonStyle(.plain)
         .animation(.snappy(duration: 0.25), value: selectedCount)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// Last row of a room's list: opens the sheet to create a chore that isn't suggested.
+private struct NewChoreRow: View {
+    let color: RoomColor
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(color.uiColor)
+                
+                Text("Nova tarefa")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(.black)
+                
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(color.uiColor.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
