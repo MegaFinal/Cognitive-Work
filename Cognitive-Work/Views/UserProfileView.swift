@@ -176,41 +176,41 @@ private struct SettingsButtonsSection: View {
             
             
             // MARK: HarviiConnection
-//            Button {
-//                if viewModelHardware.isPaired {
-//                    hardwareSheet = .existing
-//                } else if !viewModelHardware.hostName.isEmpty {
-//                    hardwareSheet = .pair
-//                } else {
-//                    hardwareSheet = .wifi
-//                }
-//            } label: {
-//                Text("Conectar com meu Hardware")
-//            }
-//            .padding(.horizontal)
+            Button {
+                if viewModelHardware.isPaired {
+                    hardwareSheet = .existing
+                } else if !viewModelHardware.hostName.isEmpty {
+                    hardwareSheet = .pair
+                } else {
+                    hardwareSheet = .wifi
+                }
+            } label: {
+                Text("Conectar com meu Hardware")
+            }
+            .padding(.horizontal)
         }
-//        .sheet(item: $hardwareSheet) { sheet in
-//            Group {
-//                switch sheet {
-//                case .existing:
-//                    ExistingIPView(
-//                        viewModelHardware: $viewModelHardware,
-//                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
-//                    )
-//                case .pair:
-//                    NavigationStack {
-//                        DevicePairView(
-//                            hardwareViewModel: viewModelHardware,
-//                            onClose: { hardwareSheet = nil }
-//                        )
-//                    }
-//                case .wifi:
-//                    WifiCredentialsView(viewModel: viewModelHardware)
-//                }
-//            }
-//            .presentationDetents([.medium ])
-//            .presentationDragIndicator(.visible)
-//        }
+        .sheet(item: $hardwareSheet) { sheet in
+            Group {
+                switch sheet {
+                case .existing:
+                    ExistingIPView(
+                        viewModelHardware: $viewModelHardware,
+                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+                    )
+                case .pair:
+                    NavigationStack {
+                        DevicePairView(
+                            hardwareViewModel: viewModelHardware,
+                            onClose: { hardwareSheet = nil }
+                        )
+                    }
+                case .wifi:
+                    WifiCredentialsView(viewModel: viewModelHardware)
+                }
+            }
+            .presentationDetents([.medium ])
+            .presentationDragIndicator(.visible)
+        }
     }
 }
 
