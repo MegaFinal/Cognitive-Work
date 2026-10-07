@@ -80,12 +80,32 @@ class CloudKitManager {
     @ObservationIgnored
     private var sharedZonesLookup: Task<[CKRecordZone]?, Never>?
     
+    // MARK: - Data revision
+    
+    /// Counter that changes whenever house data changes, locally or remotely.
+    private(set) var dataRevision: Int = 0
+    
+    /// Records that house data changed
+    func markDataChanged() {
+        Task { @MainActor in
+            self.dataRevision &+= 1
+        }
+    }
+    
     private init() {
         container = CKContainer(
             identifier: "iCloud.JonasMelo.Cognitive-Work"
         )
         privateDB = container.privateCloudDatabase
         sharedDB = container.sharedCloudDatabase
+        
+        NotificationCenter.default.addObserver(
+            forName: .cloudKitDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.markDataChanged()
+        }
     }
     
     
@@ -720,6 +740,7 @@ class CloudKitManager {
             }
         
             await HardwareViewModel.notifyDataChanged()
+            markDataChanged()
             return true
         } catch {
             self.errorMessage = "Batch save failed: \(error.localizedDescription)"
@@ -761,6 +782,7 @@ class CloudKitManager {
                 _ = try await database.modifyRecords(saving: recordsToSave, deleting: [])
                 
                 await HardwareViewModel.notifyDataChanged()
+                markDataChanged()
             } catch {
                 errorMessage = "Batch update failed: \(error.localizedDescription)"
                 print("    batchUpdate FAILED (\(T.recordType)): \(error)")

@@ -51,9 +51,8 @@ struct DashboardView: View {
                 }
             }
         }
-        .task {
-            await viewModel.load()
-            viewModel.loadCompletionRing()
+        .task(id: CloudKitManager.shared.dataRevision) {
+            await viewModel.loadIfNeeded()
         }
     }
     

@@ -16,8 +16,7 @@ struct RoomTextureBackground: View {
     let zoom: CGFloat
     
     /// When set, the texture is drawn in a square of this size, regardless of the frame
-    /// of whoever uses it. This keeps the artwork identical across shapes of different sizes.
-    /// `nil` keeps the original behavior (the texture fills the available space).
+    /// of whoever uses it.
     let fixedSize: CGFloat?
     
     /// The texture is always drawn at this opacity, over the room's color.
