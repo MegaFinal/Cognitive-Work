@@ -58,7 +58,44 @@
       }
     },
     "%lld pontos" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld point"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld points"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld ponto"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld pontos"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld selecionados" : {
       "extractionState" : "stale",
@@ -246,7 +283,14 @@
       }
     },
     "A casa criada será apagada e os roomies que já entraram perderão o acesso." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The house you created will be deleted and any roomies who already joined will lose access."
+          }
+        }
+      }
     },
     "A casa já foi criada por outro morador" : {
       "localizations" : {
@@ -269,7 +313,14 @@
       }
     },
     "A cor, o grafismo e o ícone dos cômodos padrão não podem ser alterados." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The color, pattern and icon of the default rooms can't be changed."
+          }
+        }
+      }
     },
     "A cozinha foi onde você mais trabalhou." : {
       "localizations" : {
@@ -459,7 +510,14 @@
       }
     },
     "Algo deu errado" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong"
+          }
+        }
+      }
     },
     "Alterar Tempo Livre" : {
       "localizations" : {
@@ -887,7 +945,20 @@
       }
     },
     "Chores" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chores"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarefas"
+          }
+        }
+      }
     },
     "Clique nas tarefas para saber mais." : {
       "localizations" : {
@@ -952,7 +1023,14 @@
       }
     },
     "Como essa tarefa deve ser feita? (opcional)" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How should this chore be done? (optional)"
+          }
+        }
+      }
     },
     "Cômodo" : {
       "localizations" : {
@@ -965,7 +1043,14 @@
       }
     },
     "Cômodos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rooms"
+          }
+        }
+      }
     },
     "Compartilhar Convite" : {
       "localizations" : {
@@ -1155,7 +1240,14 @@
       }
     },
     "Cor" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color"
+          }
+        }
+      }
     },
     "Cortar a grama e recolher o que foi aparado." : {
       "extractionState" : "stale",
@@ -1224,7 +1316,14 @@
       }
     },
     "Criar tarefa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create chore"
+          }
+        }
+      }
     },
     "Criar uma casa" : {
       "localizations" : {
@@ -1539,7 +1638,14 @@
       }
     },
     "Divisão atual" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current split"
+          }
+        }
+      }
     },
     "Divisão automática de tarefas" : {
       "localizations" : {
@@ -1552,10 +1658,24 @@
       }
     },
     "Divisão da casa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "House split"
+          }
+        }
+      }
     },
     "do esforço mental da casa esta semana foi seu" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "of the house's mental load this week was yours"
+          }
+        }
+      }
     },
     "Dobrar as peças limpas e distribuir nos armários." : {
       "extractionState" : "stale",
@@ -1633,10 +1753,24 @@
       }
     },
     "Editar" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        }
+      }
     },
     "Editar Cômodo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Room"
+          }
+        }
+      }
     },
     "Editar item" : {
       "localizations" : {
@@ -1670,7 +1804,14 @@
       }
     },
     "Ela já entra marcada e vai para a escala de **todos**." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It starts out selected and goes on **everyone's** schedule."
+          }
+        }
+      }
     },
     "Em configuração" : {
       "localizations" : {
@@ -2240,10 +2381,24 @@
       }
     },
     "Este cômodo ainda não tem tarefas. Crie as que fazem sentido para ele." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This room has no chores yet. Create the ones that make sense for it."
+          }
+        }
+      }
     },
     "Este nome é reservado para tarefas da casa toda." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This name is reserved for whole-house chores."
+          }
+        }
+      }
     },
     "Estender roupa" : {
       "extractionState" : "stale",
@@ -2311,7 +2466,14 @@
       }
     },
     "Excluir %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete %@"
+          }
+        }
+      }
     },
     "Excluir Casa" : {
       "localizations" : {
@@ -2459,7 +2621,14 @@
       }
     },
     "Grafismo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pattern"
+          }
+        }
+      }
     },
     "grama" : {
       "extractionState" : "stale",
@@ -2558,10 +2727,24 @@
       }
     },
     "Ícone" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icon"
+          }
+        }
+      }
     },
     "ideal %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ideal %@"
+          }
+        }
+      }
     },
     "Idioma" : {
       "localizations" : {
@@ -2607,7 +2790,14 @@
       }
     },
     "Indisponível nesta cor" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable in this color"
+          }
+        }
+      }
     },
     "Iniciar divisão" : {
       "extractionState" : "stale",
@@ -3258,7 +3448,14 @@
       }
     },
     "Não deu para voltar" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't go back"
+          }
+        }
+      }
     },
     "Não é possivel estar em duas casas ao mesmo tempo" : {
       "localizations" : {
@@ -3432,10 +3629,24 @@
       }
     },
     "Não foi possível salvar o cômodo. Verifique sua conexão e tente novamente." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the room. Check your connection and try again."
+          }
+        }
+      }
     },
     "Não foi possível salvar os cômodos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save the rooms"
+          }
+        }
+      }
     },
     "Não foi possível salvar seus horários. Tente novamente." : {
       "extractionState" : "stale",
@@ -3616,7 +3827,14 @@
       }
     },
     "Nome da tarefa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chore name"
+          }
+        }
+      }
     },
     "Nome da Tarefa" : {
       "localizations" : {
@@ -3680,10 +3898,24 @@
       }
     },
     "Novo cômodo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New room"
+          }
+        }
+      }
     },
     "Novo Cômodo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Room"
+          }
+        }
+      }
     },
     "Novo item" : {
       "localizations" : {
@@ -3707,7 +3939,14 @@
       }
     },
     "O criador da casa vai gerar a divisão assim que todos definirem seu tempo livre" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The house creator will generate the split once everyone sets their free time"
+          }
+        }
+      }
     },
     "O dispositivo externo não respondeu como esperado." : {
       "extractionState" : "stale",
@@ -3773,10 +4012,24 @@
       }
     },
     "O trabalho de notar, lembrar e distribuir tarefas também faz parte da organização da casa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The work of noticing, remembering and assigning chores is also part of running the house"
+          }
+        }
+      }
     },
     "O trabalho de notar, lembrar, decidir e acompanhar é tão importante quanto realizar uma tarefa" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The work of noticing, remembering, deciding and following up matters as much as doing a chore"
+          }
+        }
+      }
     },
     "Ocorreu um erro." : {
       "extractionState" : "stale",
@@ -4279,7 +4532,14 @@
       }
     },
     "Progresso" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progress"
+          }
+        }
+      }
     },
     "Pular esta etapa" : {
       "localizations" : {
@@ -4991,10 +5251,24 @@
       }
     },
     "Seu progresso" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your progress"
+          }
+        }
+      }
     },
     "Seus cômodos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your rooms"
+          }
+        }
+      }
     },
     "Sex" : {
       "extractionState" : "stale",
@@ -5059,7 +5333,14 @@
       }
     },
     "Sua divisão atual" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your current split"
+          }
+        }
+      }
     },
     "Sua escala está \npronta!" : {
       "localizations" : {
@@ -5154,7 +5435,14 @@
       }
     },
     "Tarefas sem dono" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unassigned chores"
+          }
+        }
+      }
     },
     "Tempo médio" : {
       "localizations" : {
@@ -5352,10 +5640,24 @@
       }
     },
     "Toque em um cômodo para editá-lo ou no + para criar um novo." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a room to edit it, or tap + to create a new one."
+          }
+        }
+      }
     },
     "Toque no ícone vermelho para excluir um cômodo." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the red icon to delete a room."
+          }
+        }
+      }
     },
     "Trocando de casa..." : {
       "extractionState" : "stale",
@@ -5799,7 +6101,14 @@
       }
     },
     "Voltar para a etapa anterior?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go back to the previous step?"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
