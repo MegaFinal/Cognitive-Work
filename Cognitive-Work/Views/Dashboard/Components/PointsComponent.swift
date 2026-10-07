@@ -9,7 +9,7 @@ import SwiftUI
 
 struct PointsComponent: View {
     var points: Int
-    var subtitle: String = "adquiridos por ter notado\nalgo na casa"
+    var subtitle: LocalizedStringKey = "adquiridos por ter notado\nalgo na casa"
     var piglet: String = "RetroPig"
     var isLoading: Bool = false
     

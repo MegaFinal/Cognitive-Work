@@ -57,8 +57,8 @@ struct StartChoreDivisionOnboardingView: View {
 
 private struct InfoCard: View {
     var number: String
-    var title: String
-    var description: String
+    var title: LocalizedStringKey
+    var description: LocalizedStringKey
     var tagColor: Color
     var backgroundColor: Color
     
