@@ -3438,11 +3438,7 @@
         }
       }
     },
-    "Nenhum cômodo foi encontrado para a casa." : {
-
-    },
     "Nenhum cômodo padrão foi selecionado para a casa." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
