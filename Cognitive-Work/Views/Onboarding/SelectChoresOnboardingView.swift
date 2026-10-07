@@ -120,6 +120,7 @@ struct SelectChoresOnboardingView: View {
         .task(id: selectedRoomID) {
             loadChoresIfNeeded(for: selectedRoom)
         }
+        .onboardingBackButton(viewModel: viewModel)
         .alert("Não deu para salvar as tarefas", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }

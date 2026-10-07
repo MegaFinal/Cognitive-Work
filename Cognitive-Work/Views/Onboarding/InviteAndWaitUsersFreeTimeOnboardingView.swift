@@ -119,6 +119,15 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         }
         .frame(width: width * 0.84)
         .navigationBarBackButtonHidden(!isFromSettings)
+        // Going back deletes the house created in the previous step; ask first when roomies
+        // already joined it, since they lose access too.
+        .onboardingBackButton(
+            viewModel: viewModel,
+            confirmationMessage: houseUsers.count > 1
+                ? LocalizedStringKey("A casa criada será apagada e os roomies que já entraram perderão o acesso.")
+                : nil,
+            isHidden: isFromSettings
+        )
         .task(id: viewModel.currentHouse?.recordID) {
             await prepareInvite()
         }

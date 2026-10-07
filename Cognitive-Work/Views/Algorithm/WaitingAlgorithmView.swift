@@ -17,7 +17,7 @@ struct WaitingAlgorithmView: View {
                 ForEach(columns.indices, id: \.self) { index in
                     InfinityRow(
                         cards: columns[index],
-                        movesUp: index.isMultiple(of: 1),
+                        movesUp: index.isMultiple(of: 2),
                         speed: 0,
                         phase: Double(index) * 130
                     )

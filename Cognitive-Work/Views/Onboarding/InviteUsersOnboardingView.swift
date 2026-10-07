@@ -60,6 +60,7 @@ struct InviteUsersOnboardingView: View {
         }
         .frame(width: width * 0.84)
         .navigationBarBackButtonHidden(!isFromSettings)
+        .onboardingBackButton(viewModel: viewModel, isHidden: isFromSettings)
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
                 houseUsers = await viewModel.fetchHouseUsers()

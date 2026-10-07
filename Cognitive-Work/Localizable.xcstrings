@@ -242,6 +242,9 @@
         }
       }
     },
+    "A casa criada será apagada e os roomies que já entraram perderão o acesso." : {
+
+    },
     "A casa já foi criada por outro morador" : {
       "localizations" : {
         "en" : {
@@ -1585,6 +1588,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duration"
+          }
+        }
+      }
+    },
+    "eai amigo, cade meu link 🤨🤨" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hey friend, where's my link 🤨🤨"
           }
         }
       }
@@ -3190,6 +3203,9 @@
           }
         }
       }
+    },
+    "Não deu para voltar" : {
+
     },
     "Não é possivel estar em duas casas ao mesmo tempo" : {
       "localizations" : {
@@ -5666,6 +5682,9 @@
           }
         }
       }
+    },
+    "Voltar para a etapa anterior?" : {
+
     }
   },
   "version" : "1.0"

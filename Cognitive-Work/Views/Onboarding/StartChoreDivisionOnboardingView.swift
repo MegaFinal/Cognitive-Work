@@ -51,6 +51,7 @@ struct StartChoreDivisionOnboardingView: View {
                 viewModel.goToNextView()
             }
         }
+        .onboardingBackButton(viewModel: viewModel)
     }
 }
 

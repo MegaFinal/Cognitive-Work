@@ -94,6 +94,7 @@ struct SelectFreeTimeOnboardingView: View {
         }
         .padding(.horizontal, width * 0.0565)
         .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
+        .onboardingBackButton(viewModel: viewModel, isHidden: isFromSettings)
         .hidesTabBar()
         
         
@@ -118,7 +119,7 @@ struct SelectFreeTimeOnboardingView: View {
         .task {
             guard isFromSettings else {
                 // Restores a choice already made in onboarding (kept until the house exists).
-                if let pending = viewModel.pendingFreeTimeMinutes {
+                if let pending = viewModel.freeTimeToRestore {
                     for (index, minutes) in pending.enumerated() where weekOrder.indices.contains(index) {
                         weekOrder[index].freeTime = FreeTimeEnum(minutes: minutes)
                     }

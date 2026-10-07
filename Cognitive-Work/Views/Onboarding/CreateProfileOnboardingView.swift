@@ -94,6 +94,13 @@ struct CreateProfileOnboardingView: View {
             }
         }
         .dismissKeyboardOnTap()
+        .onboardingBackButton(viewModel: viewModel)
+        .onAppear {
+            // Coming back to this step with a profile kept from an earlier run: show its name.
+            if viewModel.userName.isEmpty, let user = viewModel.currentUser {
+                viewModel.userName = user.name
+            }
+        }
     }
     
     // MARK: - Subviews
