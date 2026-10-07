@@ -52,6 +52,9 @@ struct RoomDTO: Identifiable {
 
     /// Color used to identify the room in the UI.
     var color: RoomColor = .blue
+    
+    /// Texture picked for a custom room; `nil` for the default types, which have their own.
+    var pattern: RoomTexturePattern? = nil
 
     /// Whether the room section is showing its chores.
     ///

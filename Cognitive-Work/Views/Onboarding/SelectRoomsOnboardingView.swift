@@ -124,7 +124,7 @@ struct SelectRoomsOnboardingView: View {
         .sheet(isPresented: $isShowingCustomRoomSheet) {
             NewRoomSheet()
                 .environment(viewModel)
-                .presentationDetents([.medium])
+                .presentationDetents([.large])
         }
         .onboardingBackButton(viewModel: viewModel)
         .navigationBarBackButtonHidden()

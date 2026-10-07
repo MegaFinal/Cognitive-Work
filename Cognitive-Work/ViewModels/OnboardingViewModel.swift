@@ -258,8 +258,15 @@ class OnboardingViewModel {
     /// - Parameters:
     ///   - name: The display name for the new room
     ///   - color: The accent color chosen for the new room
-    func addCustomRoom(name: String, color: RoomColor) {
-        let newRoom = RoomDTO(name: name, symbol: "lamp.table", isSelected: true, color: color)
+    ///   - symbol: The SF Symbol chosen for the new room
+    ///   - pattern: The texture chosen for the new room
+    func addCustomRoom(
+        name: String,
+        color: RoomColor,
+        symbol: String = RoomsManagementViewModel.customRoomSymbol,
+        pattern: RoomTexturePattern = .fallback
+    ) {
+        let newRoom = RoomDTO(name: name, symbol: symbol, isSelected: true, color: color, pattern: pattern)
         let otherButtonIndex = availableRooms.count - 1
         availableRooms.insert(newRoom, at: otherButtonIndex)
     }
@@ -295,7 +302,8 @@ class OnboardingViewModel {
                     symbol: draft.symbol,
                     house: houseReference,
                     color: draft.color,
-                    kind: draft.name
+                    kind: draft.name,
+                    pattern: draft.pattern
                 )
             }
         }

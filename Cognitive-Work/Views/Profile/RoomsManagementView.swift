@@ -74,16 +74,16 @@ struct RoomsManagementView: View {
             if isEmpty { isEditing = false }
         }
         .sheet(isPresented: $isCreatingRoom) {
-            RoomFormSheet(room: nil) { name, color, symbol in
-                let didSave = await viewModel.createRoom(name: name, color: color, symbol: symbol)
+            RoomFormSheet(room: nil) { name, color, symbol, pattern in
+                let didSave = await viewModel.createRoom(name: name, color: color, symbol: symbol, pattern: pattern)
                 // The sheet shows its own error, the screen's alert can't appear over it.
                 if !didSave { viewModel.errorMessage = nil }
                 return didSave
             }
         }
         .sheet(item: $roomBeingEdited) { room in
-            RoomFormSheet(room: room) { name, color, symbol in
-                let didSave = await viewModel.updateRoom(room, name: name, color: color, symbol: symbol)
+            RoomFormSheet(room: room) { name, color, symbol, pattern in
+                let didSave = await viewModel.updateRoom(room, name: name, color: color, symbol: symbol, pattern: pattern)
                 if !didSave { viewModel.errorMessage = nil }
                 return didSave
             }
@@ -368,18 +368,21 @@ private extension View {
 /// Sheet used both to create a room (`room == nil`) and to edit an existing one.
 ///
 /// The top of the sheet is the room's own texture, so the user sees the card change as they
-/// pick a color or icon. Default room types (Quarto, Cozinha…) have a fixed color and icon, so
-/// only their name can be changed; custom rooms can also pick a color and an icon.
+/// pick a color, texture or icon. Default room types (Quarto, Cozinha…) have a fixed look, so
+/// only their name can be changed; custom rooms can also pick a color, a texture and an icon.
+///
+/// Also used by the onboarding (see ``NewRoomSheet``), so both screens create rooms the same way.
 struct RoomFormSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     let room: RoomModel?
     /// Persists the form. Returns `true` when the sheet can close.
-    let onSave: @MainActor (_ name: String, _ color: RoomColor, _ symbol: String) async -> Bool
+    let onSave: @MainActor (_ name: String, _ color: RoomColor, _ symbol: String, _ pattern: RoomTexturePattern) async -> Bool
     
     @State private var name: String
     @State private var selectedColor: RoomColor
     @State private var selectedSymbol: String
+    @State private var selectedPattern: RoomTexturePattern
     @State private var isSaving = false
     @State private var didFailToSave = false
     /// Bumped on every save failure to shake the name field.
@@ -388,12 +391,13 @@ struct RoomFormSheet: View {
     
     private let symbolColumns = Array(repeating: GridItem(spacing: 12), count: 6)
     
-    init(room: RoomModel?, onSave: @escaping @MainActor (_ name: String, _ color: RoomColor, _ symbol: String) async -> Bool) {
+    init(room: RoomModel?, onSave: @escaping @MainActor (_ name: String, _ color: RoomColor, _ symbol: String, _ pattern: RoomTexturePattern) async -> Bool) {
         self.room = room
         self.onSave = onSave
         _name = State(initialValue: room?.name ?? "")
         _selectedColor = State(initialValue: room?.color ?? .purple)
         _selectedSymbol = State(initialValue: room?.symbol ?? RoomsManagementViewModel.customRoomSymbol)
+        _selectedPattern = State(initialValue: room?.texturePattern ?? .fallback)
     }
     
     private var isEditingRoom: Bool { room != nil }
@@ -403,8 +407,10 @@ struct RoomFormSheet: View {
         return RoomsManagementViewModel.isDefaultType(room)
     }
     
+    /// The texture shown everywhere in the sheet: the picked one, or the fallback when the
+    /// picked color has no image of it.
     private var pattern: RoomTexturePattern {
-        room?.texturePattern ?? .fallback
+        selectedPattern.resolved(for: selectedColor)
     }
     
     private var trimmedName: String {
@@ -427,7 +433,7 @@ struct RoomFormSheet: View {
                     nameField
                     
                     if isLookLocked {
-                        Label("A cor e o ícone dos cômodos padrão não podem ser alterados.", systemImage: "lock.fill")
+                        Label("A cor, o grafismo e o ícone dos cômodos padrão não podem ser alterados.", systemImage: "lock.fill")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -435,6 +441,7 @@ struct RoomFormSheet: View {
                     } else {
                         colorPicker
                         symbolPicker
+                        patternPicker
                     }
                 }
                 .padding(.bottom, 30)
@@ -480,7 +487,7 @@ struct RoomFormSheet: View {
     private var hero: some View {
         ZStack {
             RoomTextureBackground(color: selectedColor, pattern: pattern, zoom: 3)
-                .id(selectedColor)
+                .id("\(selectedColor.rawValue).\(pattern.rawValue)")
                 .transition(.opacity)
             
             Image(systemName: selectedSymbol)
@@ -507,6 +514,7 @@ struct RoomFormSheet: View {
         .frame(maxWidth: .infinity)
         .clipped()
         .animation(.easeInOut(duration: 0.3), value: selectedColor)
+        .animation(.easeInOut(duration: 0.3), value: pattern)
     }
     
     // MARK: - Name
@@ -557,6 +565,37 @@ struct RoomFormSheet: View {
                         HapticsManager.selection()
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
                             selectedColor = color
+                            // Keep what's saved equal to what's shown when this color lacks
+                            // the picked texture.
+                            selectedPattern = selectedPattern.resolved(for: color)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+    }
+    
+    // MARK: - Pattern
+    
+    /// One textured tile per pattern, in the selected color. Patterns the asset catalog
+    /// doesn't have in that color are shown disabled.
+    private var patternPicker: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionTitle("Grafismo")
+            
+            HStack(spacing: 10) {
+                ForEach(RoomTexturePattern.allCases, id: \.self) { option in
+                    PatternSwatch(
+                        color: selectedColor,
+                        pattern: option,
+                        isSelected: pattern == option,
+                        isAvailable: option.isAvailable(for: selectedColor)
+                    ) {
+                        HapticsManager.selection()
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+                            selectedPattern = option
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -617,7 +656,7 @@ struct RoomFormSheet: View {
         Task { @MainActor in
             isSaving = true
             didFailToSave = false
-            let didSave = await onSave(trimmedName, selectedColor, selectedSymbol)
+            let didSave = await onSave(trimmedName, selectedColor, selectedSymbol, pattern)
             isSaving = false
             
             if didSave {
@@ -706,6 +745,55 @@ private struct ColorSwatch: View {
     }
 }
 
+/// A texture option: a rounded tile of the selected color with that texture, and its name.
+private struct PatternSwatch: View {
+    let color: RoomColor
+    let pattern: RoomTexturePattern
+    let isSelected: Bool
+    let isAvailable: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            RoomTextureBackground(color: color, pattern: pattern, zoom: 1.2)
+                .withTextureOpacity(0.45)
+                .aspectRatio(1, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(color.uiColor, lineWidth: 3)
+                        .padding(-4)
+                        .opacity(isSelected ? 1 : 0)
+                }
+                .overlay {
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .scaleEffect(isSelected ? 1.06 : 1)
+            
+            Text(pattern.displayName)
+                .font(.caption)
+                .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .opacity(isAvailable ? 1 : 0.3)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard isAvailable else { return }
+            action()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(pattern.displayName))
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityHint(isAvailable ? Text("") : Text("Indisponível nesta cor"))
+    }
+}
+
 #Preview("Cômodos") {
     NavigationStack {
         RoomsManagementView(house: HouseModel(name: "Casa", description: "Casa para o preview"))
@@ -713,9 +801,9 @@ private struct ColorSwatch: View {
 }
 
 #Preview("Novo cômodo") {
-    RoomFormSheet(room: nil) { _, _, _ in true }
+    RoomFormSheet(room: nil) { _, _, _, _ in true }
 }
 
 #Preview("Editar cômodo padrão") {
-    RoomFormSheet(room: RoomModel(name: "Cozinha", symbol: "cooktop", color: .yellow, kind: "Cozinha")) { _, _, _ in true }
+    RoomFormSheet(room: RoomModel(name: "Cozinha", symbol: "cooktop", color: .yellow, kind: "Cozinha")) { _, _, _, _ in true }
 }
