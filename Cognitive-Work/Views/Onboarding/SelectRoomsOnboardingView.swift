@@ -127,7 +127,8 @@ struct SelectRoomsOnboardingView: View {
                 .presentationDetents([.medium])
         }
         .onboardingBackButton(viewModel: viewModel)
-        .alert("Não deu para salvar os cômodos", isPresented: Binding(
+        .navigationBarBackButtonHidden()
+        .alert("Não foi possível salvar os cômodos", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {

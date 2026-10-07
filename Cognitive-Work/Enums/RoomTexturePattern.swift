@@ -15,8 +15,9 @@ enum RoomTexturePattern: String, CaseIterable {
     case stars
     case worms
     
-    /// Used for rooms that aren't one of the default types (custom rooms).
-    static let fallback: RoomTexturePattern = .sparkles
+    /// Used for rooms that aren't one of the default types (custom rooms). Must exist in every
+    /// ``RoomColor``: `clouds` is the only pattern the asset catalog has for all five colors.
+    static let fallback: RoomTexturePattern = .clouds
     
     /// Name of the texture image in the asset catalog for a room of `color`.
     func assetName(for color: RoomColor) -> String {
@@ -34,7 +35,7 @@ extension DefaultRoomsOnboarding {
         case .livingRoom: .stars
         case .garage: .halfCircle
         case .kitchen: .halfCircle
-        case .pantry: .sparkles
+        case .pantry: .worms
         case .bathroom: .sparkles
         case .powderRoom: .clouds
         case .laundryRoom: .stars
