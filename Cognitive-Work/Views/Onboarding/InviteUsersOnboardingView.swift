@@ -31,8 +31,6 @@ struct InviteUsersOnboardingView: View {
     
     var body: some View {
         VStack {
-
-            
             Spacer()
             
             if !houseUsers.isEmpty {
@@ -50,13 +48,12 @@ struct InviteUsersOnboardingView: View {
                 inviteButton
                 
                 if !isFromSettings {
-                    OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true) {
+                    OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: "chevron.forward", isSystemImage: true) {
                         viewModel.goToNextView()
                     }
                     .multilineTextAlignment(.trailing)
                 }
             }
-            .padding(.top)
         }
         .frame(width: width * 0.84)
         .navigationBarBackButtonHidden(!isFromSettings)
@@ -136,7 +133,7 @@ struct InviteUsersOnboardingView: View {
     private func inviteCapsule<Content: View>(color: Color, @ViewBuilder label: () -> Content) -> some View {
         label()
             .font(.system(size: 17))
-            .frame(width: width * 0.5, height: height * 0.065, alignment: .center)
+            .frame(width: width * 0.5, height: height * 0.057, alignment: .center)
             .foregroundColor(.white)
             .background {
                 Capsule()
