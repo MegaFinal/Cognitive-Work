@@ -121,10 +121,6 @@ struct UserProfileView: View {
                     Text(viewModelUser.user?.name ?? "")
                         .font(.system(size: 22))
                         .bold()
-                    
-                    Text(viewModelUser.user?.tier.displayName ?? L10n.tr("Ranking"))
-                        .font(.system(size: 20))
-                        .fontWeight(.light)
                 }
             }
             .padding(.top, (height * 0.25) - (width * 0.25))

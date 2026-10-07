@@ -60,53 +60,53 @@ struct SelectFreeTimeOnboardingView: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Quanto tempo você tem para a casa?")
-                .bold()
-                .font(.system(size: 32))
-                .foregroundStyle(.titleGray)
-                .padding(.bottom, 5)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, height * 0.02)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Quanto tempo você tem para a casa?")
+                    .bold()
+                    .font(.system(size: 28))
+                    .foregroundStyle(.titleGray)
+                
+                Text("Arraste em cada dia para definir seu tempo livre para as tarefas da casa")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.subTitleGray)
+            }
+            .frame(width: width * 0.8)
+            .padding(.vertical, 25)
             
-            Text("Arraste em cada dia para definir seu tempo livre para as tarefas da casa")
+            VStack {
+                HStack(spacing: width * 0.07) {
+                    Spacer()
+                    Text("30’")
+                    Text("1h")
+                    Text("2h")
+                    Text("3h")
+                    Text("4h")
+                    Text("5h")
+                }
                 .font(.system(size: 16))
-                .foregroundStyle(.subTitleGray)
-            
-            HStack(spacing: width * 0.086) {
-                Spacer()
-                Text("30’")
-                Text("1h")
-                Text("2h")
-                Text("3h")
-                Text("4h")
-                Text("5h")
+                .fontWeight(.medium)
+                .padding(.trailing, 12)
+                .padding(.top, height * 0.005)
+                
+                ForEach($weekOrder, id: \.name) { $day in
+                    OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
+                }
             }
-            .font(.system(size: 16))
-            .fontWeight(.medium)
-            .padding(.trailing, 10)
-            .padding(.top, height * 0.005)
-            
-            ForEach($weekOrder, id: \.name) { $day in
-                OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
-            }
+            .padding(.horizontal)
             
             Spacer()
+            HStack {
+                Spacer()
+                OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: "chevron.right", isSystemImage: true, isLoading: viewModel.isLoading, isDisabled: !canSave) {
+                    Task {
+                        await save()
+                    }
+                }
+            }
         }
         .padding(.horizontal, width * 0.0565)
         .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
         .hidesTabBar()
-        
-        
-        // MARK: - Confirmation Button
-        .overlay(alignment: .bottomTrailing) {
-            OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: "chevron.right", isSystemImage: true, isLoading: viewModel.isLoading, isDisabled: !canSave) {
-                Task {
-                    await save()
-                }
-            }
-            .padding(.bottom, height * 0.073)
-            .padding(.trailing, width * 0.061)
-        }
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -151,10 +151,6 @@ private struct OnboardingCustomSliderComponent: View {
     
     /// Layout values shared by the component, kept here to avoid magic numbers.
     private enum Layout {
-        /// Horizontal spacing between the day abbreviation and the slider,
-        /// expressed as a fraction of the available width.
-        static let horizontalSpacingRatio: CGFloat = 0.03
-        
         /// Width reserved for the day abbreviation, expressed as a fraction of
         /// the available width.
         static let abbreviationWidthRatio: CGFloat = 0.091
@@ -178,11 +174,6 @@ private struct OnboardingCustomSliderComponent: View {
     /// Amount of free-time blocks currently selected on the slider.
     @State private var selectedFreeTimeLevel: Int = 0
     
-    /// Horizontal spacing between the day abbreviation and the slider.
-    private var horizontalSpacing: CGFloat {
-        width * Layout.horizontalSpacingRatio
-    }
-    
     /// Width reserved for the day abbreviation.
     private var abbreviationWidth: CGFloat {
         width * Layout.abbreviationWidthRatio
@@ -193,13 +184,14 @@ private struct OnboardingCustomSliderComponent: View {
     // MARK: - Body
     
     var body: some View {
-        HStack(spacing: horizontalSpacing) {
+        HStack(spacing: 10) {
             Text(LocalizedStringKey(dayOfWeek.nameAbbreviation))
                 .font(.system(size: Layout.abbreviationFontSize))
                 .fontWeight(.medium)
                 .frame(width: abbreviationWidth, alignment: .leading)
+                .padding(.bottom)
             
-            VStack(spacing: 0) {
+            VStack(spacing: 8) {
                 FreeTimeSlider(rating: $selectedFreeTimeLevel, isLoading: $isLoading)
                 
                 caption
@@ -232,7 +224,7 @@ private struct OnboardingCustomSliderComponent: View {
             
             Spacer()
         }
-        .foregroundStyle(.delimiteTimeTextComponent)
+        .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.45))
     }
 }
 

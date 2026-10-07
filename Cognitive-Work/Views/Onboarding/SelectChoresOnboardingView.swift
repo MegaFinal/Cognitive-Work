@@ -67,35 +67,36 @@ struct SelectChoresOnboardingView: View {
             let height = geometry.size.height
             let horizontalMargin = width * 0.06
             
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 20) {
                 header
                     .padding(.horizontal, horizontalMargin)
                 
-                if isLoadingRooms {
-                    ProgressView("Carregando Comodos e Tarefas...")
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, height * 0.1)
-                } else if rooms.isEmpty {
-                    Text("Nenhum cômodo padrão foi selecionado para a casa.")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.subTitleGray)
-                        .padding(.horizontal, horizontalMargin)
-                } else {
-                    roomSelector(horizontalMargin: horizontalMargin)
-                        .padding(.bottom, height * 0.025)
-                    
-                    choreList(horizontalMargin: horizontalMargin)
+                VStack {
+                    if isLoadingRooms {
+                        ProgressView("Carregando Comodos e Tarefas...")
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, height * 0.1)
+                    } else if rooms.isEmpty {
+                        Text("Nenhum cômodo padrão foi selecionado para a casa.")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.subTitleGray)
+                            .padding(.horizontal, horizontalMargin)
+                    } else {
+                        roomSelector(horizontalMargin: horizontalMargin)
+                            .padding(.bottom, height * 0.025)
+                        
+                        choreList(horizontalMargin: horizontalMargin)
+                    }
                 }
             }
             .navigationBarBackButtonHidden()
         }
         .overlay {
-            OnboardingProgressButton(width: 50.0, height: 50.0, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading ,isDisabled: viewModel.selectedChores.isEmpty) {
+            OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: "chevron.forward", isSystemImage: true, isLoading: viewModel.isLoading ,isDisabled: viewModel.selectedChores.isEmpty) {
                 viewModel.isLoading = true
                 await viewModel.createDefaultChores()
                 
-                // `isLoading` is always false here, even on failure; check the error instead.
                 if viewModel.errorMessage == nil {
                     viewModel.goToNextView()
                 }

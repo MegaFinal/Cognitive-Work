@@ -120,7 +120,7 @@ struct ScheduleInfoPopUp: View {
         .padding(.horizontal, 22)
         .frame(width: width * 0.87)
         .background(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 32)
                 .foregroundColor(.white)
                 .shadow(color: .black.opacity(0.2), radius: 3.2, x: 0, y: 4)
         )
