@@ -1104,6 +1104,7 @@
       }
     },
     "Conectar com meu Hardware" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
