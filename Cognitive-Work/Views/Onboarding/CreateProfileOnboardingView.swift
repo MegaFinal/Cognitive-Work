@@ -24,18 +24,20 @@ struct CreateProfileOnboardingView: View {
     /// Image chosen through the system photo picker, before it is converted.
     @State private var selectedItem: PhotosPickerItem? = nil
     
+    /// `true` while the picked photo is being loaded and converted.
+    @State private var isLoadingImage = false
+    
     // MARK: - Body
     
     var body: some View {
-        VStack(alignment: .center, spacing: 58) {
+        VStack(spacing: 0) {
             headerText
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, height * 0.02)
             
-            Spacer()
+            Spacer(minLength: 16)
             
-            EditableProfileImage(image: viewModel.userProfilePicture, isEditing: true, selection: $selectedItem)
-                .layoutPriority(1)
-            
+            EditableProfileImage(image: viewModel.userProfilePicture, isEditing: true, selection: $selectedItem, isLoading: isLoadingImage)
             
             TextField("Nome", text: $viewModel.userName)
                 .textFieldStyle(.plain)
@@ -45,8 +47,9 @@ struct CreateProfileOnboardingView: View {
                 .multilineTextAlignment(.center)
                 .characterLimit(TextLimits.userName, text: $viewModel.userName)
                 .submitLabel(.done)
+                .padding(.top, 32)
             
-            Spacer()
+            Spacer(minLength: 16)
             
             OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty) {
                 Task {
@@ -64,10 +67,9 @@ struct CreateProfileOnboardingView: View {
                     viewModel.isLoading = false
                 }
             }
-            
+            .padding(.bottom, height * 0.02)
         }
-        .navigationBarBackButtonHidden()
-        .padding()
+        .padding(.horizontal, width * 0.0565)
         .alert("Não deu para criar o perfil", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -77,9 +79,12 @@ struct CreateProfileOnboardingView: View {
             Text(viewModel.errorMessage ?? "")
         }
         .onChange(of: selectedItem) { _, newItem in
+            guard let newItem else { return }
             Task {
-                if let newItem,
-                   let data = try? await newItem.loadTransferable(type: Data.self),
+                isLoadingImage = true
+                defer { isLoadingImage = false }
+                
+                if let data = try? await newItem.loadTransferable(type: Data.self),
                    let uiImage = UIImage(data: data) {
                     
                     await MainActor.run {
@@ -99,7 +104,7 @@ struct CreateProfileOnboardingView: View {
             Text("Quem é você na casa?")
                 .font(.system(size: 32, weight: .bold))
                 .foregroundStyle(.black.opacity(0.7))
-                .fixedSize(horizontal: false, vertical: true)
+                .fixedSize(horizontal: false, vertical: false)
 
             
             Text("Escolha uma foto e um nome para utilizar no app")
