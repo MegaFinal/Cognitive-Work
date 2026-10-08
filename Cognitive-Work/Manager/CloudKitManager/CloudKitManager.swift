@@ -549,6 +549,7 @@ class CloudKitManager {
         let member = UserModel(
             name: profile.name,
             profilePicture: profilePictureDuplicate,
+            banner: profile.banner,
             tier: profile.tier,
             coins: profile.coins,
             points: profile.points,

@@ -24,6 +24,8 @@ class OnboardingViewModel {
     var userName: String = ""
     
     var userProfilePicture: UIImage?
+    /// Banner picked for the profile being created.
+    var userBanner: ProfileBanner = .default
     /// The name of the house being created
     var houseName: String = "Minha Casa"
     /// A short description of the house being created
@@ -127,6 +129,7 @@ class OnboardingViewModel {
            !CloudKitManager.shared.isHouseUser(existingProfile) {
             existingProfile.name = userName.isEmpty ? existingProfile.name : userName
             if let imageCKAsset { existingProfile.profilePicture = imageCKAsset }
+            existingProfile.banner = userBanner
             
             if await CloudKitManager.shared.update(existingProfile) {
                 stateMachine.user = existingProfile
@@ -138,7 +141,7 @@ class OnboardingViewModel {
         }
         
         if let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName {
-            let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1, ownerRecordName: ownerRecordName)
+            let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, banner: userBanner, tier: .tier1, ownerRecordName: ownerRecordName)
             
             if let savedUser = await CloudKitManager.shared.create(newUser) {
                 self.currentUser = savedUser
@@ -214,6 +217,7 @@ class OnboardingViewModel {
         let userCopy = UserModel(
             name: user.name,
             profilePicture: assetCopy,
+            banner: user.banner,
             tier: user.tier,
             coins: user.coins,
             points: user.points,
@@ -993,6 +997,7 @@ class OnboardingViewModel {
         let sharedUser = UserModel(
             name: profile.name,
             profilePicture: assetCopy,
+            banner: profile.banner,
             tier: profile.tier,
             coins: profile.coins,
             points: profile.points,

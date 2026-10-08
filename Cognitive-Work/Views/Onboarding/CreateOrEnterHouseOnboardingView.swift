@@ -115,6 +115,7 @@ struct CreateOrEnterHouseOnboardingView: View {
                             .font(.title2)
                         Text("A casa já foi criada por outro morador")
                             .font(.subheadline)
+                            .multilineTextAlignment(.leading)
                     }
                     .foregroundStyle(.chorePurple)
                     .padding(.horizontal, width * 0.04)

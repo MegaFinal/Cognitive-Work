@@ -93,8 +93,8 @@ struct UserProfileView: View {
     
     private var userInfo: some View {
         ZStack(alignment: .top) {
-            Rectangle()
-                .foregroundColor(.orange)
+            RoomTextureBackground(color: viewModelUser.displayedBanner.color,
+                                  pattern: viewModelUser.displayedBanner.pattern)
                 .frame(height: height * 0.26)
                 .shadow(color: .black.opacity(0.14), radius: 16.46937, x: 0, y: 4.68879)
             

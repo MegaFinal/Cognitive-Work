@@ -526,6 +526,17 @@
         }
       }
     },
+    "Alterar banner" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change banner"
+          }
+        }
+      }
+    },
     "Alterar Tempo Livre" : {
       "localizations" : {
         "en" : {
@@ -806,6 +817,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bathroom"
+          }
+        }
+      }
+    },
+    "Banner do perfil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile banner"
           }
         }
       }
@@ -1754,26 +1775,6 @@
         }
       }
     },
-    "Oi! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hi! I downloaded Pipa and I want to join our home. Can you send me the invite link? 🏠"
-          }
-        }
-      }
-    },
-    "Oi, aqui é %@! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hi, it's %@! I downloaded Pipa and I want to join our home. Can you send me the invite link? 🏠"
-          }
-        }
-      }
-    },
     "Editar" : {
       "localizations" : {
         "en" : {
@@ -2250,6 +2251,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose a photo and a name to use in the app"
+          }
+        }
+      }
+    },
+    "Escolher banner" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose banner"
           }
         }
       }
@@ -4108,6 +4120,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "An error occurred."
+          }
+        }
+      }
+    },
+    "Oi, aqui é %@! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi, it's %@! I downloaded Pipa and I want to join our home. Can you send me the invite link? 🏠"
+          }
+        }
+      }
+    },
+    "Oi! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi! I downloaded Pipa and I want to join our home. Can you send me the invite link? 🏠"
           }
         }
       }
