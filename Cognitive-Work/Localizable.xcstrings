@@ -2149,6 +2149,17 @@
         }
       }
     },
+    "Escolha o tempo livre de pelo menos um dia." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick free time for at least one day."
+          }
+        }
+      }
+    },
     "Escolha os ambientes presentes na sua residência, aperte e segure para editar seus nomes e quantidades." : {
       "localizations" : {
         "en" : {
@@ -5065,6 +5076,16 @@
         }
       }
     },
+    "Salvo no seu perfil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved to your profile"
+          }
+        }
+      }
+    },
     "Se esta tarefa for recorrente, apenas esta ocorrência será excluída — as demais continuam como estão. Essa ação é permanente." : {
       "localizations" : {
         "en" : {
@@ -5335,6 +5356,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your rooms"
+          }
+        }
+      }
+    },
+    "Seus horários foram salvos no seu perfil, mas ainda não chegaram à casa. Vamos tentar de novo automaticamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your schedule was saved to your profile but hasn't reached the house yet. We'll retry automatically."
           }
         }
       }
