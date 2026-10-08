@@ -42,8 +42,8 @@ struct UnassignmentList: View {
                 .frame(maxHeight: 190)
             }
         }
-        .padding(25)
-        .frame(width: 260)
+        .padding(15)
+        .frame(width: width * 0.7)
         .glassEffect(.regular.tint(.white.opacity(0.35)), in: .rect(cornerRadius: 28))
         .shadow(radius: 28, y: 4)
     }
@@ -57,27 +57,26 @@ struct UnassignmentList: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.chore.name)
-                        .font(.system(size: 16))
+                    Text(item.chore.localizedName)
+                        .font(.system(size: 15))
                         .foregroundStyle(.black)
+                        .fontWeight(.semibold)
                     
                     HStack(spacing: 6) {
                         CapsuleTag(
                             tagName: item.chore.frequency.displayName,
                             tagColor: item.chore.frequency.color,
+                            textColor: item.chore.frequency.textColor,
                             horizontalPadding: 6,
                             verticalPadding: 1.5
                         )
                         
-                        if let date = item.displayDate {
-                            Text(date.formatted(date: .numeric, time: .omitted))
-                                .font(.system(size: 11))
-                                .foregroundStyle(.gray)
-                        } else if item.needsDateSelection {
-                            Text("Escolher data")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.gray)
-                        }
+                        CapsuleTag(
+                            tagName: item.chore.priorityTag.displayName,
+                            tagColor: item.chore.priorityTag.color,
+                            horizontalPadding: 6,
+                            verticalPadding: 1.5
+                        )
                     }
                 }
                 .padding(5)
@@ -92,17 +91,16 @@ struct UnassignmentList: View {
                         Circle()
                             .foregroundStyle(.white)
                     )
-                    .shadow(color: roomColor, radius: 8)
             }
             .padding(.horizontal, 7)
             .padding(.vertical, 4)
             .contentShape(Rectangle())
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .foregroundStyle(roomColor.opacity(0.5))
-            )
         }
         .buttonStyle(ScaleButtonStyle())
+        .glassEffect(
+            .regular.tint(roomColor.opacity(0.2)),
+            in: .rect(cornerRadius: 16)
+        )
     }
     
     private struct ScaleButtonStyle: ButtonStyle {

@@ -21,6 +21,7 @@ class OnboardingStateMachine {
     private enum StorageKey {
         static let index = "onboarding.index"
         static let flow = "onboarding.flow"
+        static let skippedToCreateOrEnter = "onboarding.skippedToCreateOrEnter"
     }
 
     // MARK: - Properties
@@ -47,6 +48,13 @@ class OnboardingStateMachine {
         didSet { UserDefaults.standard.set(flow.rawValue, forKey: StorageKey.flow) }
     }
 
+    /// True when the user reached "create or enter a house" straight from the welcome screen
+    /// (profile and free time already known, e.g. after leaving a house). "Voltar" from that
+    /// step then returns to the welcome screen instead of the steps that were skipped.
+    var skippedToCreateOrEnter: Bool {
+        didSet { UserDefaults.standard.set(skippedToCreateOrEnter, forKey: StorageKey.skippedToCreateOrEnter) }
+    }
+
     // MARK: - Initialization
 
     /// Initializes the state machine, restoring the previous session's index and flow from `UserDefaults`.
@@ -55,6 +63,7 @@ class OnboardingStateMachine {
 
         let savedFlow = UserDefaults.standard.string(forKey: StorageKey.flow)
         self.flow = savedFlow.flatMap(NavigationFlowsOnboarding.init(rawValue:)) ?? .notDefined
+        self.skippedToCreateOrEnter = UserDefaults.standard.bool(forKey: StorageKey.skippedToCreateOrEnter)
     }
 
     // MARK: - Computed Properties
@@ -71,29 +80,31 @@ class OnboardingStateMachine {
     
     /// The dynamic array of sequential steps dictated by the currently active ``flow``.
     var steps: [OnboardingNavigationSteps] {
+        Self.steps(for: flow)
+    }
+    
+    /// The sequential steps of a given flow.
+    static func steps(for flow: NavigationFlowsOnboarding) -> [OnboardingNavigationSteps] {
         switch flow {
         case .houseCreator:
             return [
                 .welcome,
                 .createProfile,
+                .chooseFreeTime,
                 .createOrEnterHome,
+                .waitGuestsFreeTime,
+                .setUpScheduleChores,
                 .chooseRooms,
                 .chooseChores,
-                .chooseFreeTime,
-                .inviteAndConfirmJoin,
-                .setUpScheduleChores,
-                .waitGuestsFreeTime,
                 .scheduleChores
             ]
         case .invitedWithProfile:
             return [
                 .welcome,
                 .createProfile,
+                .chooseFreeTime,
                 .createOrEnterHome,
                 .waitAcceptLink,
-                .inviteAndConfirmJoin,
-                .setUpScheduleChores,
-                .chooseFreeTime,
                 .waitAdminScheduling,
                 .scheduleChores
             ]
@@ -101,14 +112,13 @@ class OnboardingStateMachine {
             return [
                 .welcome,
                 .createProfile,
-                .inviteAndConfirmJoin,
-                .setUpScheduleChores,
                 .chooseFreeTime,
+                .inviteAndConfirmJoin,
                 .waitAdminScheduling,
                 .scheduleChores
             ]
         case .notDefined:
-            return [.welcome, .createProfile, .createOrEnterHome]
+            return [.welcome, .createProfile, .chooseFreeTime, .createOrEnterHome]
         }
     }
     
@@ -117,6 +127,13 @@ class OnboardingStateMachine {
     /// - Returns: The active `OnboardingNavigationSteps`, or `nil` if the index is out of bounds.
     var current: OnboardingNavigationSteps? {
         steps.indices.contains(index) ? steps[index] : nil
+    }
+    
+    /// The step a "voltar" from ``current`` leads to, or `nil` on the first step.
+    var previousStep: OnboardingNavigationSteps? {
+        if skippedToCreateOrEnter, current == .createOrEnterHome { return .welcome }
+        let previous = index - 1
+        return steps.indices.contains(previous) ? steps[previous] : nil
     }
     
     // MARK: - Navigation & Mutators
@@ -138,6 +155,25 @@ class OnboardingStateMachine {
         index = max(index - 1, 0)
     }
 
+    /// Goes back to `step`, optionally switching to another flow at the same time.
+    ///
+    /// The index is set *before* the flow so ``current`` never points past the end of the new
+    /// (possibly shorter) ``steps`` array in between.
+    ///
+    /// - Parameters:
+    ///   - step: The step to show.
+    ///   - newFlow: The flow to switch to, or `nil` to keep the current one.
+    func back(to step: OnboardingNavigationSteps, switchingTo newFlow: NavigationFlowsOnboarding? = nil) {
+        let targetSteps = newFlow.map(Self.steps(for:)) ?? steps
+        guard let targetIndex = targetSteps.firstIndex(of: step) else {
+            back()
+            return
+        }
+        index = targetIndex
+        if targetIndex == 0 { skippedToCreateOrEnter = false }
+        if let newFlow { flow = newFlow }
+    }
+
     /// Clears the persisted progress completely.
     ///
     /// > Important: Call this once onboarding finishes (or is skipped) so a future run
@@ -145,8 +181,19 @@ class OnboardingStateMachine {
     func resetProgress() {
         index = 0
         flow = .notDefined
+        skippedToCreateOrEnter = false
     }
-    
+
+    /// Forgets the persisted progress without needing an instance.
+    ///
+    /// Used when the user leaves or deletes their house, so the onboarding that opens next starts
+    /// from the welcome screen instead of resuming a stale step.
+    static func clearPersistedProgress() {
+        UserDefaults.standard.removeObject(forKey: StorageKey.index)
+        UserDefaults.standard.removeObject(forKey: StorageKey.flow)
+        UserDefaults.standard.removeObject(forKey: StorageKey.skippedToCreateOrEnter)
+    }
+
     func jumpToStep(index: Int) {
         self.index = min(max(index, 0), steps.count - 1)
     }

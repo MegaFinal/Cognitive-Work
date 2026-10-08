@@ -234,31 +234,39 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
                 
                 let newID = CKRecord.ID(recordName: UUID().uuidString, zoneID: recordID.zoneID)
                 let record = CKRecord(recordType: AvailableTimeModel.recordType, recordID: newID)
-                record.parent = houseReference
                 
                 let linked = AvailableTimeModel(
                     capacityMinutes: time.capacityMinutes,
                     day: futureDay,
                     user: userRef
                 )
-                if let saved = await CloudKitManager.shared.create(linked, zoneID: recordID.zoneID, parent: parentReference),
-                   let savedID = saved.recordID {
-                    newRefs.append(CKRecord.Reference(recordID: savedID, action: .none))
-                }
+                linked.populate(record: record)
+                record.parent = parentReference
+                
+                recordsToSave.append(record)
+                newRefs.append(CKRecord.Reference(recordID: newID, action: .none))
             }
         }
         
-        let requestedSlots = times.contains { $0.capacityMinutes > 0 }
-        guard !requestedSlots || !newRefs.isEmpty else { return false }
-        
+        // One batch instead of one `create` per slot (up to 7 days × 4 weeks = 28 sequential
+        // round-trips), which kept the "Criar uma casa" spinner going for a long time.
         if !recordsToSave.isEmpty {
+            await CloudKitManager.shared.createZoneIfNeeded()
             let saveSuccess = await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: recordID.zoneID)
             guard saveSuccess else { return false }
         }
         
+        let originalRefs = availableTimeReference
         self.availableTimeReference = newRefs
-        
-        guard await CloudKitManager.shared.update(self) else { return false }
+
+        guard await CloudKitManager.shared.update(self) else {
+            // Keep the in-memory model in line with the record that was not updated, so a retry
+            // deletes the right "previous" slots. The slots saved above stay: unreferenced they
+            // are harmless, whereas deleting them after an ambiguous failure could leave the
+            // profile pointing at records that no longer exist.
+            self.availableTimeReference = originalRefs
+            return false
+        }
         
         let previousIDs = previousRefs.map(\.recordID)
         if !previousIDs.isEmpty {

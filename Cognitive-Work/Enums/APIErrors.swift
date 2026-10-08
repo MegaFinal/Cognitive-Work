@@ -14,11 +14,11 @@ enum APIErrors: String, Error {
     
     var errorDescription: String? {
         switch self {
-        case .invalidURL:      return "Não foi possível encontrar o dispositivo externo. Confira o IP."
-        case .unableToEncode:  return "Erro ao preparar os dados."
-        case .invalidResponse: return "O dispositivo externo não respondeu como esperado."
+        case .invalidURL:      return L10n.tr("Não foi possível encontrar o dispositivo externo. Confira o IP.")
+        case .unableToEncode:  return L10n.tr("Erro ao preparar os dados.")
+        case .invalidResponse: return L10n.tr("O dispositivo externo não respondeu como esperado.")
         case .invalidData:  return "Resposta do dispositivo externo em formato inesperado."
-        case .unknownError: return "Erro desconhecido."
+        case .unknownError: return L10n.tr("Erro desconhecido.")
         }
     }
 }

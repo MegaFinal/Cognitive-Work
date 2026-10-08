@@ -37,10 +37,10 @@ struct ChoreCard: View {
     
     private var title: some View {
         VStack {
-            Text(room?.name ?? "Cômodo")
+            Text(room?.name.localizedDefault ?? L10n.tr("Cômodo"))
                 .fontWeight(.regular)
                 .font(.system(size: 17, weight: .semibold))
-            Text(chore.name)
+            Text(chore.localizedName)
                 .bold()
                 .font(.system(size: 28))
         }
@@ -49,7 +49,9 @@ struct ChoreCard: View {
 
 private struct ChorePriority: View {
     let chore: ChoreModel
-    @State var user: UserModel?
+    /// Was `@State`: SwiftUI keeps a `@State` value across re-renders and ignores the new one
+    /// passed in by the parent, so every card kept showing the first selected user's photo.
+    let user: UserModel?
     
     var body: some View {
         HStack {
@@ -60,7 +62,7 @@ private struct ChorePriority: View {
                 UserProfilePictureTag(user: user, widthMultiplier: 0.08)
 
                 CapsuleTag(
-                    tagName: chore.priorityTag.rawValue,
+                    tagName: chore.priorityTag.displayName,
                     tagColor: chore.priorityTag.color,
                     horizontalPadding: 7,
                     verticalPadding: 1.5

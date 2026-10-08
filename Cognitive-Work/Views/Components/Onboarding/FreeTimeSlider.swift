@@ -27,7 +27,7 @@ struct FreeTimeSlider: View {
     /// Layout values shared by the component, kept here to avoid magic numbers.
     private enum Layout {
         /// Corner radius applied to every square of the row.
-        static let squareCornerRadius: CGFloat = 4
+        static let squareCornerRadius: CGFloat = 9
 
         /// Extra width added to the mask when every square is selected, so the
         /// last square is fully covered instead of being clipped by rounding.
@@ -47,7 +47,7 @@ struct FreeTimeSlider: View {
     var maxRating: Int = 6
 
     /// Width and height of a single square, in points.
-    var squareSize: CGFloat = 38
+    var squareSize: CGFloat { width * 0.09}
 
     /// Color applied to the squares inside the current selection.
     var activeColor: Color = .choreBlue
@@ -77,7 +77,7 @@ struct FreeTimeSlider: View {
                         Rectangle()
                             .size(
                                 width: getSelectedWidth(in: geometry.size.width),
-                                height: squareSize /*geometry.size.height + 2*/
+                                height: squareSize
                             )
                     )
             }
@@ -94,10 +94,18 @@ struct FreeTimeSlider: View {
     /// - Returns: The horizontal row of squares.
     private func buildSquaresRow(color: Color) -> some View {
         HStack(spacing: spacing) {
-            ForEach(0 ..< maxRating, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: Layout.squareCornerRadius)
-                    .frame(width: squareSize, height: squareSize)
-                    .foregroundColor(color)
+            ForEach(0 ..< maxRating, id: \.self) { i in
+                let isFirst = i == 0, isLast = i == maxRating - 1
+                let big: CGFloat = 17, small = Layout.squareCornerRadius
+                UnevenRoundedRectangle(
+                    topLeadingRadius:     isFirst ? big : small,
+                    bottomLeadingRadius:  isFirst ? big : small,
+                    bottomTrailingRadius: isLast  ? big : small,
+                    topTrailingRadius:    isLast  ? big : small
+                )
+                .fill(color)
+                .shadow(color: .black.opacity(0.15), radius: 3, x: 1, y: 3)
+                .frame(width: squareSize, height: squareSize)
             }
         }
     }
@@ -121,13 +129,7 @@ struct FreeTimeSlider: View {
     /// - Parameter rowWidth: Rendered width of the squares row, in points.
     /// - Returns: The mask width, in points.
     private func getSelectedWidth(in rowWidth: CGFloat) -> CGFloat {
-        guard rating > 0 else {
-            return 0
-        }
-        guard rating < maxRating else {
-            return rowWidth + Layout.fullSelectionOverflow * 3
-        }
-
+        guard rating > 0 else { return 0 }
         return CGFloat(rating) * squareSize + CGFloat(rating - 1) * spacing
     }
 

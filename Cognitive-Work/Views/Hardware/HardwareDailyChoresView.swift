@@ -86,7 +86,7 @@ struct HardwareDailyChoresView: View {
                     Circle()
                         .fill(room.color.uiColor)
                         .frame(width: 10, height: 10)
-                    Text(room.name)
+                    Text(room.name.localizedDefault)
                         .font(.footnote)
                 }
             }
@@ -153,7 +153,8 @@ private struct UserDailyChoresColumn: View {
             Text("Sem tarefas por hoje")
                 .font(.subheadline)
                 .fontWeight(.bold)
-                .lineLimit(2)
+                // No line limit: wraps onto as many lines as it needs instead of "…".
+                .fixedSize(horizontal: false, vertical: true)
 
             // Makes card expand when there's only one chore
             Spacer(minLength: 0)
@@ -177,14 +178,17 @@ private struct DailyChoreCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(room?.name ?? "Sem cômodo")
+            Text(room?.name.localizedDefault ?? L10n.tr("Sem cômodo"))
                 .font(.caption)
                 .fontWeight(.medium)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Text(chore.name)
+            Text(chore.localizedName)
                 .font(.headline)
                 .fontWeight(.bold)
-                .lineLimit(2)
+                // No line limit: long names (mostly in English) wrap onto as many lines as
+                // they need instead of being cut with "…".
+                .fixedSize(horizontal: false, vertical: true)
 
             // Makes card expand when there's only one chore
             Spacer(minLength: 0)
@@ -202,7 +206,7 @@ private struct OverflowStrip: View {
     var count: Int
 
     var body: some View {
-        Text("+\(count) \(count == 1 ? "tarefa" : "tarefas")")
+        Text(verbatim: "+" + L10n.tr("%lld tarefas", count))
             .font(.caption)
             .fontWeight(.semibold)
             .foregroundColor(.secondary)

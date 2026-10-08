@@ -200,11 +200,12 @@
 				};
 			};
 			buildConfigurationList = 910DAADE3026477D00F899C0 /* Build configuration list for PBXProject "Cognitive-Work" */;
-			developmentRegion = en;
+			developmentRegion = "pt-BR";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				"pt-BR",
 			);
 			mainGroup = 910DAADA3026477D00F899C0;
 			minimizedProjectReferenceProxies = 1;
@@ -497,7 +498,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Cognitive-Work/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "";
+				INFOPLIST_KEY_CFBundleDisplayName = Pipa;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Precisamos de acesso ao seu calendário para sincronizar e atualizar as suas tarefas domésticas atribuídas.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -541,7 +542,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Cognitive-Work/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "";
+				INFOPLIST_KEY_CFBundleDisplayName = Pipa;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Precisamos de acesso ao seu calendário para sincronizar e atualizar as suas tarefas domésticas atribuídas.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

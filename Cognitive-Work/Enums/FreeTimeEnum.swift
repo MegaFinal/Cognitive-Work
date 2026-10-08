@@ -7,12 +7,18 @@
 
 enum FreeTimeEnum: String{
     case none = ""
-    case thirtyMinutes = "Até 30 minutos"
-    case oneHour = "Até 1 hora"
-    case twoHours = "Até 2 horas"
-    case threeHours = "Até 3 horas"
-    case fourHours = "Até 4 horas"
+    case thirtyMinutes = "30 minutos"
+    case oneHour = "1 hora"
+    case twoHours = "2 horas"
+    case threeHours = "3 horas"
+    case fourHours = "4 horas"
     case fiveHours = "5 horas ou mais"
+    
+    /// Label shown to the user, in the app's language. (`rawValue` is kept as the stable
+    /// Portuguese identifier.)
+    var displayName: String {
+        rawValue.isEmpty ? "" : L10n.tr(rawValue)
+    }
     
     var timeInHours: Double {
         switch self {

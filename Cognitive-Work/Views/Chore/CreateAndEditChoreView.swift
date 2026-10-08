@@ -35,6 +35,9 @@ struct CreateAndEditChoreView: View {
             VStack(alignment: .leading, spacing: 25) {
                 header
                 
+                // MARK: - Validation warnings
+                validationWarning
+                
                 // MARK: - Pickers
                 VStack(spacing: 10) {
                     HStack {
@@ -72,7 +75,7 @@ struct CreateAndEditChoreView: View {
                     TextField("Descrição da Tarefa", text: $viewModel.draft.description, axis: .vertical)
                         .font(.system(size: 17))
                         .foregroundColor(.gray)
-                        .characterLimit(250, text: $viewModel.draft.description)
+                        .characterLimit(TextLimits.choreDescription, text: $viewModel.draft.description)
                 }
                 
                 // MARK: - Checklist
@@ -95,9 +98,6 @@ struct CreateAndEditChoreView: View {
                 
                 Spacer()
                 
-                // MARK: - Confirmation Button
-                confirmButton
-                
                 // MARK: - Delete Button
                 if viewModel.showsDeleteButton {
                     deleteButton
@@ -105,6 +105,42 @@ struct CreateAndEditChoreView: View {
             }
             .padding(.vertical)
             .frame(width: width * 0.9)
+            // `load()` rebuilds the draft, so anything typed before it finishes would be lost.
+            .disabled(!viewModel.isLoaded)
+            .opacity(viewModel.isLoaded ? 1 : 0.5)
+        }
+        .hidesTabBar()
+        .overlay {
+            if !viewModel.isLoaded {
+                ProgressView()
+                    .controlSize(.large)
+            }
+        }
+        .navigationBarBackButtonHidden(viewModel.isSaving || viewModel.isDeleting)
+        .toolbar {
+            // MARK: - Confirmation Button
+            ToolbarItem(placement: .confirmationAction) {
+                if viewModel.isSaving {
+                    ProgressView()
+                } else {
+                    Button {
+                        Task {
+                            if await viewModel.confirm() {
+                                HapticsManager.notify(.success)
+                                dismiss()
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12))
+                            .bold()
+                            .foregroundColor(.white)
+                    }
+                    .tint(.blue)
+                    .buttonStyle(.glassProminent)
+                    .disabled(!viewModel.canConfirm)
+                }
+            }
         }
         .task {
             await viewModel.load()
@@ -115,7 +151,7 @@ struct CreateAndEditChoreView: View {
         .onChange(of: viewModel.draft.frequency) { _, _ in
             viewModel.frequencyDidChange()
         }
-        .toolbar(.hidden, for: .tabBar)
+        .hidesTabBar()
         .dismissKeyboardOnTap()
         .alert("Excluir Tarefa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
@@ -171,7 +207,8 @@ struct CreateAndEditChoreView: View {
                     )
                     .font(.system(size: 28))
                     .bold()
-                    .characterLimit(18, text: $viewModel.draft.name)
+                    .characterLimit(TextLimits.choreName, text: $viewModel.draft.name)
+                    .submitLabel(.done)
                     
                     Capsule()
                         .frame(height: height * 0.0015)
@@ -186,7 +223,7 @@ struct CreateAndEditChoreView: View {
                     Menu {
                         Picker("Cômodo", selection: $viewModel.draft.room) {
                             ForEach(viewModel.availableRooms, id: \.self) { room in
-                                ColorIconTagLabel(title: room.name.capitalized, color: room.color.uiColor)
+                                ColorIconTagLabel(title: room.name.localizedDefault.capitalized(with: L10n.locale), color: room.color.uiColor)
                                     .tag(RoomModel?(room))
                             }
                         }
@@ -194,7 +231,7 @@ struct CreateAndEditChoreView: View {
                     label: {
                         HStack {
                             CapsuleTag(
-                                tagName: viewModel.draft.room?.name.capitalized ?? "Sem Cômodo",
+                                tagName: viewModel.draft.room?.name.localizedDefault.capitalized(with: L10n.locale) ?? L10n.tr("Sem Cômodo"),
                                 tagColor: viewModel.draft.room?.color.uiColor ?? .gray,
                                 horizontalPadding: 10.0,
                                 verticalPadding: 1.5
@@ -204,7 +241,9 @@ struct CreateAndEditChoreView: View {
                                 .foregroundColor(.black)
                                 .imageScale(.small)
                         }
+                        .fixedSize()
                     }
+                    .id(viewModel.draft.room?.recordID)
                 }
             }
             .frame(width: width * 0.65)
@@ -280,44 +319,20 @@ struct CreateAndEditChoreView: View {
         }
     }
     
-    /// Bottom-anchored confirmation button, featuring an embedded loading state.
-    private var confirmButton: some View {
-        VStack(spacing: 8) {
-            if viewModel.showsMissingRoomWarning {
-                Text("Escolha um cômodo para confirmar a tarefa.")
-                    .font(.system(size: 13))
-                    .foregroundColor(.red)
-            }
-            
-            HStack {
-                Spacer()
-                
-                Button {
-                    Task {
-                        if await viewModel.confirm() {
-                            dismiss()
-                        }
-                    }
-                } label: {
-                    Group {
-                        if viewModel.isSaving {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Confirmar")
-                                .foregroundColor(.white)
-                                .fontWeight(.bold)
-                        }
-                    }
-                    .frame(width: width * 0.8, height: height * 0.06)
-                    .background(Color.blue)
-                    .clipShape(Capsule())
-                }
-                .disabled(!viewModel.canConfirm)
-                .opacity(viewModel.canConfirm || viewModel.isSaving ? 1 : 0.5)
-                
-                Spacer()
-            }
+    /// Explains why the (top-right) confirm button is disabled. Shown near the top so it is
+    /// visible without scrolling.
+    @ViewBuilder
+    private var validationWarning: some View {
+        if viewModel.showsMissingRoomWarning {
+            Text("Escolha um cômodo para confirmar a tarefa.")
+                .font(.system(size: 13))
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        } else if viewModel.showsMissingDateWarning {
+            Text("Escolha uma data para confirmar a tarefa.")
+                .font(.system(size: 13))
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
     
@@ -359,5 +374,34 @@ struct CreateAndEditChoreView: View {
                     .renderingMode(.original)
             }
         }
+    }
+}
+
+#Preview("Edição") {
+    let house = CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview-house"), action: .none)
+    let user = UserModel(
+        name: "Ana",
+        tier: .tier1,
+        house: house,
+        recordID: CKRecord.ID(recordName: "preview-user-Ana"),
+        ownerRecordName: "preview-owner-Ana"
+    )
+    let chore = ChoreModel(
+        name: "Lavar a louça",
+        description: "Pratos, copos e panelas.",
+        dueDate: Calendar.current.date(byAdding: .day, value: 2, to: Date()),
+        frequency: .weekly,
+        duration: 30,
+        isPublic: true,
+        priorityTag: .high
+    )
+    chore.recordID = CKRecord.ID(recordName: "preview-chore")
+    
+    return NavigationStack {
+        CreateAndEditChoreView(
+            originalModel: chore,
+            availableHouseUsers: [user],
+            carouselViewModel: CarouselViewModel()
+        )
     }
 }

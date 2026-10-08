@@ -89,7 +89,7 @@ class HardwareViewModel {
         isPairing = false
 
         if conectionResult == .success {
-            try? await sendChartToESP32()
+            await HardwareViewModel.deliverNow()
         }
     }
     
@@ -101,17 +101,17 @@ class HardwareViewModel {
 
         var title: String {
             switch self {
-            case .success: "Pareamento completo!"
-            case .failureWiFi: "Falha na conexão"
-            case .failureParing: "Falha no pareamento"
+            case .success: L10n.tr("Pareamento completo!")
+            case .failureWiFi: L10n.tr("Falha na conexão")
+            case .failureParing: L10n.tr("Falha no pareamento")
             }
         }
 
         var message: String {
             switch self {
-            case .success: "Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvi!"
-            case .failureWiFi: "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente."
-            case .failureParing: "Certifique-se que o Harvi está conectado no WiFi e tente novamente."
+            case .success: L10n.tr("Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvi!")
+            case .failureWiFi: L10n.tr("Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente.")
+            case .failureParing: L10n.tr("Certifique-se que o Harvi está conectado no WiFi e tente novamente.")
             }
         }
     }
@@ -150,14 +150,63 @@ class HardwareViewModel {
         }
     }
     
-    /// Call after any change saved to CloudKit.
+    // MARK: - Delivery queue
+
+    /// Waits for changes to settle, so close changes (e.g. Chore + DailyAssignment) become one send.
+    @MainActor private static var settleTask: Task<Void, Never>?
+
+    /// The send in progress, if any. Only one at a time.
+    @MainActor private static var deliveryTask: Task<Void, Never>?
+
+    /// Set when something changed during a send: one more send runs at the end with the latest data.
+    @MainActor private static var needsAnotherSend = false
+
+    /// Call after any change saved to CloudKit (or received through a silent push).
     ///
-    /// Marks the change as pending and tries to deliver it right away. Away from home,
-    /// the next chance (app opening, silent push or background refresh) retries.
-    static func notifyDataChanged(file: String = #fileID, line: Int = #line) {
-        print("notifyDataChanged from \(file):\(line)")
+    /// Marks the change as pending and delivers it 2 seconds after the last change.
+    @MainActor
+    static func notifyDataChanged() {
         markPendingUpdate()
-        Task { await HardwareViewModel().refreshDeviceIfNeeded() }
+
+        settleTask?.cancel()
+        settleTask = Task {
+            try? await Task.sleep(for: .nanoseconds(1))
+            guard !Task.isCancelled else { return }
+            startDelivery()
+        }
+    }
+
+    /// Delivers right away (app opening, background refresh) through the same queue.
+    @MainActor
+    static func deliverNow() async {
+        startDelivery()
+        await deliveryTask?.value
+    }
+
+    /// Waits for any scheduled or running delivery. Used by the silent push,
+    /// so iOS keeps the app awake until the chart is sent.
+    @MainActor
+    static func waitForPendingDelivery() async {
+        await settleTask?.value
+        await deliveryTask?.value
+    }
+
+    /// Starts a send, or, if one is already running, asks it to run once more at the end.
+    @MainActor
+    private static func startDelivery() {
+        guard deliveryTask == nil else {
+            needsAnotherSend = true
+            return
+        }
+
+        deliveryTask = Task {
+            repeat {
+                needsAnotherSend = false
+                await HardwareViewModel().refreshDeviceIfNeeded()
+            } while needsAnotherSend
+
+            deliveryTask = nil
+        }
     }
     
     // MARK: - Image & Chart Transmission (ESP32 Display)
@@ -229,7 +278,7 @@ class HardwareViewModel {
         house = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
 
         guard let houseRecordID = house?.recordID else {
-            errorMessage = "Casa não encontrada."
+            errorMessage = L10n.tr("Casa não encontrada.")
             return false
         }
 
@@ -241,7 +290,7 @@ class HardwareViewModel {
             zoneID: houseRecordID.zoneID,
             parent: houseReference
         ) else {
-            errorMessage = "Erro ao criar nome do host (Harvi)."
+            errorMessage = L10n.tr("Erro ao criar nome do host (Harvi).")
             return false
         }
 

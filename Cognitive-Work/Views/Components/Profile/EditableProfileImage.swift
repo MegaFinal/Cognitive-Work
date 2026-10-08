@@ -19,19 +19,31 @@ struct EditableProfileImage: View {
     let isEditing: Bool
     @Binding var selection: PhotosPickerItem?
     
+    /// Shows a spinner over the circle while a picked photo is still loading.
+    var isLoading: Bool = false
+    
+    /// Size the empty-state circle is drawn at (from the handoff).
+    private var elipseSize: CGFloat { width * 0.88 }
+
+    /// Space the component claims in its parent's layout. The placeholder is
+    /// larger and overflows this slot visually, so it never pushes or squeezes
+    /// the views around it.
+    private let layoutSize: CGFloat = 285
+
     var body: some View {
-        
-        if isEditing {
-            PhotosPicker(selection: $selection, matching: .images) {
-                ZStack(alignment: .bottomTrailing) {
+        Group {
+            if isEditing {
+                PhotosPicker(selection: $selection, matching: .images) {
                     profileImage
+                        .contentShape(Circle())
                 }
+                .buttonStyle(.plain)
+                .disabled(isLoading)
+            } else {
+                profileImage
             }
-            .buttonStyle(.plain)
         }
-        else {
-            profileImage
-        }
+        .frame(width: layoutSize, height: layoutSize)
     }
     
     /// The circular avatar, falling back to a placeholder when no picture was chosen yet.
@@ -42,16 +54,29 @@ struct EditableProfileImage: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 285, height: 285)
+                    .clipped()
                     .background(Color(.systemBackground))
             } else {
-                Circle()
-                    .fill(Color(.systemGray5))
-                    .frame(width: 285, height: 285)
+                Image("OnboardingElipse")
+                    .resizable()
+                    .frame(width: elipseSize, height: elipseSize)
                     .overlay {
-                        Image(systemName: isEditing ? "person.fill.badge.plus" : "person.fill" )
-                            .font(.system(size: 65))
-                            .foregroundStyle(.gray)
+                        if !isLoading {
+                            Image(systemName: "photo.badge.plus")
+                                .font(.system(size: 65))
+                                .foregroundStyle(.gray)
+                        }
                     }
+            }
+        }
+        .overlay {
+            if isLoading {
+                ZStack {
+                    Color.black.opacity(image == nil ? 0 : 0.3)
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(image == nil ? .gray : .white)
+                }
             }
         }
         .clipShape(Circle())

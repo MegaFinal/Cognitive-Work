@@ -12,22 +12,23 @@ struct FortnightlyView: View {
     let users: [UserModel]
     let chores: [ChoreModel]
     
+    /// Assignments and rooms already in memory. When both are given nothing is fetched.
+    var assignments: [RecurrentAssignmentModel]? = nil
+    var rooms: [RoomModel]? = nil
+    
     @State private var viewModel = FortnightlyViewModel()
     @State private var selectedEntry: DailyUsageEntry?
     @State private var selectedUser: UserModel?
     
-    
-    let description: String = """
-        Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível.
-        """
+    let description: LocalizedStringKey = "Dividimos as tarefas escolhidas pelos moradores pensando nas cargas horárias que cada um tem disponível."
     
     var body: some View {
         VStack {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Escala quinzenal")
                     .bold()
-                    .font(.system(size: 28))
-                    .foregroundColor(.black)
+                    .font(.system(size: 30))
+                    .foregroundStyle(.titleGray)
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text(description)
@@ -37,7 +38,7 @@ struct FortnightlyView: View {
             }
             .padding(.bottom, 30)
             .foregroundColor(.secondary)
-            .frame(width: width * 0.8)
+            .frame(width: width * 0.888)
             
             ScrollView(showsIndicators: false) {
                 chart
@@ -46,8 +47,8 @@ struct FortnightlyView: View {
             Spacer()
         }
         .navigationBarBackButtonHidden()
-        .frame(width: width * 0.85)
         .padding(.top, 30)
+        
     }
     
     private var chart: some View {
@@ -82,7 +83,11 @@ struct FortnightlyView: View {
             }
         }
         .task {
-            await viewModel.setup(users: users, chores: chores)
+            if let assignments, let rooms {
+                await viewModel.setup(users: users, chores: chores)
+            } else {
+                await viewModel.setup(users: users, chores: chores)
+            }
             selectInitialEntry()
         }
     }

@@ -21,7 +21,7 @@ struct CreateAndEditChoreViewModelTests {
             name: "Lavar a louça",
             description: "Secar e guardar",
             frequency: .weekly,
-            duration: 1800,
+            duration: 30,
             isPublic: true,
             priorityTag: .medium
         )
@@ -169,7 +169,7 @@ struct CreateAndEditChoreViewModelTests {
         
         #expect(viewModel.draft.priorityTag == .low)
         #expect(viewModel.draft.frequency == Recurrence.none)
-        #expect(ChoreDurationTier.from(minutes: viewModel.draft.duration / 60) == .veryQuick)
+        #expect(ChoreDurationTier.from(minutes: viewModel.draft.duration) == .quick)
     }
     
     @Test func longDurationIsNeverUndefined() {
@@ -242,5 +242,46 @@ struct CreateAndEditChoreViewModelTests {
         
         draft.description = "   "
         #expect(!draft.hasFullDetails)
+    }
+    
+    // MARK: - Date
+    
+    @Test func newChoreNeedsADate() {
+        let viewModel = makeViewModel()
+        viewModel.draft.frequency = .weekly
+        viewModel.selectedDate = nil
+        
+        #expect(!viewModel.hasDate)
+        #expect(!viewModel.canConfirm)
+    }
+    
+    @Test func dailyChoreCountsAsDated() {
+        let viewModel = makeViewModel()
+        viewModel.draft.frequency = .daily
+        viewModel.selectedDate = nil
+        
+        #expect(viewModel.hasDate)
+    }
+    
+    @Test func editingDoesNotRequireADate() {
+        let viewModel = makeViewModel(chore: makeChore(recordName: "chore"))
+        viewModel.selectedDate = nil
+        
+        #expect(viewModel.hasDate)
+    }
+    
+    @Test func savingANewChoreWithoutDateIsRefused() async {
+        let chore = makeChore()
+        let draft = ChoreDTO(from: chore, users: [], checklist: [])
+        draft.roomReference = CKRecord.Reference(recordID: CKRecord.ID(recordName: "room"), action: .none)
+        
+        do {
+            try await chore.save(from: draft)
+            Issue.record("save should have thrown")
+        } catch ChoreSaveError.missingDate {
+        } catch {
+            Issue.record("unexpected error: \(error)")
+        }
+        #expect(chore.recordID == nil)
     }
 }

@@ -6,99 +6,137 @@
 //
 
 import SwiftUI
+import CloudKit
 
 /// The step where the user chooses whether to join an existing house
 /// or create a new one
 /// On success the flow advances to ``FourthOnboardingView``
 struct CreateOrEnterHouseOnboardingView: View {
-
+    
     // MARK: - Properties
-
+    
     /// The shared onboarding view model, read from the environment
     @Binding var viewModel: OnboardingViewModel
     
-
+    @State private var isCreatingHouse = false
+    
+    /// An invite is being accepted or the house joined (shown on the "Entrar" card).
+    private var isEnteringHouse: Bool { viewModel.isAcceptingInvite || viewModel.isJoiningHouse }
+    
+    private var isBusy: Bool { isCreatingHouse || isEnteringHouse || viewModel.isLoading }
+    
     // MARK: - Body
     //
     // Two branching actions: joining an existing house switches the flow to
     // `.invitedWithProfile`, creating one saves the house before advancing.
-
+    
     var body: some View {
-        VStack {
+        VStack(alignment: .center) {
             OnboardingHeader(
-                title: "Para começarmos",
-                description: "Você pode entrar em uma casa existente através de um convite, ou criar uma nova."
+                title: "Bem vindo, \(viewModel.currentUser?.name ?? viewModel.userName)!",
+                description: "Sua casa já está no Pipa?"
             )
-             
+            
+            
             Spacer()
             
-            HStack(spacing: 15) {
-                Button {
-                    viewModel.stateMachine.flow = .invitedWithProfile
-                    viewModel.goToNextView()
-                } label: {
-                    VStack (spacing: 40){
-                        Image(systemName: "figure.walk.arrival")
-                            .resizable()
-                            .frame(width: width * 0.22, height: height * 0.11)
-                        
-                        VStack {
-                            Text("Entrar")
-                                .bold()
-                            Text("em uma casa")
-                        }
+            Button {
+                Task {
+                    isCreatingHouse = true
+                    defer { isCreatingHouse = false }
+                    await viewModel.createHouseAndLinkUser()
+                    
+                    if viewModel.currentHouse != nil {
+                        viewModel.stateMachine.flow = .houseCreator
+                        viewModel.goToNextView()
                     }
-                    .foregroundColor(.blue)
-                    .frame(width: width * 0.4, height: height * 0.4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .foregroundColor(.white)
-                            .shadow(color: .black.opacity(0.25), radius: 5.95, x: 0, y: 4)
-                      )
                 }
-                .disabled(viewModel.isLoading)
-                
-                Button {
-                    Task {
-                        viewModel.isLoading = true
-                        await viewModel.createHouseAndLinkUser()
-                         
-                        if viewModel.currentHouse != nil {
-                            viewModel.stateMachine.flow = .houseCreator
-                            viewModel.goToNextView()
+            } label: {
+                VStack(alignment: .center){
+                    if isCreatingHouse {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                    } else {
+                        Image("HousePlus")
+                            .resizable()
+                            .frame(width: width * 0.297, height: height * 0.13)
+            
+                        VStack(alignment: .leading) {
+                            Text("Criar uma casa")
+                                .bold()
+                                .font(.title2)
+                            Text("Você será o administrador")
+                                .font(.subheadline)
                         }
-                        viewModel.isLoading = false
+                        .padding(.horizontal, width * 0.04)
+                        .frame(minWidth: width * 0.854, alignment: .leading)
                     }
-                } label: {
-                    VStack (spacing: 40){
-                        if viewModel.isLoading {
+                }
+                .foregroundColor(.white)
+                .frame(width: width * 0.854, height: height * 0.255)
+                
+            }
+            .background {
+                Color(.chorePurple)
+                Image("purple.clouds")
+                    .opacity(0.15)
+                    .allowsHitTesting(false)
+            }
+            .clipShape(.rect(cornerRadius: 24))
+            // `clipShape` only clips drawing, not hit testing: the texture (~566×753 pt, not
+            // resizable) kept an invisible touch area far outside the card.
+            .contentShape(.rect(cornerRadius: 24))
+            .disabled(isBusy)
+            
+            Button {
+                viewModel.stateMachine.flow = .invitedWithProfile
+                viewModel.goToNextView()
+            } label: {
+                VStack{
+                    // While an invite is accepted, only the icon becomes a spinner (same frame,
+                    // so the card doesn't jump).
+                    Group {
+                        if isEnteringHouse {
                             ProgressView()
                                 .scaleEffect(1.5)
-                              .tint(.white)
+                                .tint(.chorePurple)
                         } else {
-                            Image(systemName: "house")
+                            Image("TocToc")
                                 .resizable()
-                                .frame(width: width * 0.24, height: height * 0.1)
-                            
-                            VStack {
-                                Text("Criar")
-                                    .bold()
-                                Text("uma casa")
-                            }
                         }
                     }
-                    .foregroundColor(.white)
-                    .frame(width: width * 0.4, height: height * 0.4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .foregroundColor(.blue)
-                            .shadow(color: .black.opacity(0.25), radius: 5.95, x: 0, y: 4)
-                    )
+                    .frame(width: width * 0.414, height: height * 0.123)
+                    .padding(.bottom, height * 0.018)
+                    
+                    VStack(alignment: .leading) {
+                        Text("Entrar em uma casa")
+                            .bold()
+                            .font(.title2)
+                        Text("A casa já foi criada por outro morador")
+                            .font(.subheadline)
+                    }
+                    .foregroundStyle(.chorePurple)
+                    .padding(.horizontal, width * 0.04)
+                    .frame(minWidth: width * 0.854, alignment: .leading)
                 }
-                .disabled(viewModel.isLoading)
+                .frame(width: width * 0.854, height: height * 0.255)
             }
+            .background {
+                Color(.lowOpacityPink)
+                Image("purple.worms")
+                    .opacity(0.15)
+                    .allowsHitTesting(false)
+            }
+            .clipShape(.rect(cornerRadius: 24))
+            // Same as above: this card's oversized texture was covering "Criar uma casa" and
+            // swallowing its taps (it's later in the VStack, so it sits on top).
+            .contentShape(.rect(cornerRadius: 24))
+            .disabled(isBusy)
+            
             Spacer()
         }
+        .onboardingBackButton(viewModel: viewModel, isDisabled: isBusy)
         .alert("Não deu para criar a casa", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }

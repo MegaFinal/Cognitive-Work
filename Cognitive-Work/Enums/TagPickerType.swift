@@ -13,20 +13,26 @@ enum TagPickerType {
     case priority
     case frequency
     case duration
-//    case room
         
     /// Decodes a relevant identifier label given an overarching DTO reference constraints object point.
     func labelName(for chore: ChoreDTO, currentRoom: RoomModel?) -> String {
         switch self {
         case .priority:
-            return chore.priorityTag.rawValue.capitalized
+            return chore.priorityTag.displayName
         case .frequency:
-            return chore.frequency.rawValue.capitalized
+            return chore.frequency.displayName
         case .duration:
-            let minutes = chore.duration / 60
-            return ChoreDurationTier.from(minutes: minutes).displayText.capitalized
-//        case .room:
-//            return currentRoom?.name.capitalized ?? "Sem Cômodo"
+            return ChoreDurationTier.from(minutes: chore.duration).displayText
+        }
+    }
+    
+    /// Text color of the tag: recurrence tags have their own, every other tag uses white.
+    func labelTextColor(for chore: ChoreDTO) -> Color {
+        switch self {
+        case .frequency:
+            return chore.frequency.textColor
+        case .priority, .duration:
+            return .white
         }
     }
     
@@ -38,10 +44,7 @@ enum TagPickerType {
         case .frequency:
             return chore.frequency.color
         case .duration:
-            let minutes = chore.duration / 60
-            return ChoreDurationTier.from(minutes: minutes).color
-//        case .room:
-//            return currentRoom?.color.uiColor ?? .gray
+            return ChoreDurationTier.from(minutes: chore.duration).color
         }
     }
 }

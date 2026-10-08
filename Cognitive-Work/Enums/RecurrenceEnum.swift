@@ -20,11 +20,22 @@ enum Recurrence: String, CaseIterable, Hashable {
     var color: Color {
         switch self {
         case .undefined: return .gray
-        case .none: return .black
-        case .daily: return .choreGreen
-        case .weekly: return .choreYellow
-        case .fortnightly: return .choreOrange
-        case .monthly: return .chorePurple
+        case .none: return .recurrenceTagPurple
+        case .daily: return .recurrenceTagRed
+        case .weekly: return .recurrenceTagOrange
+        case .fortnightly: return .recurrenceTagGreen
+        case .monthly: return .recurrenceTagBlue
+        }
+    }
+    
+    var textColor: Color {
+        switch self {
+        case .undefined: return .gray
+        case .none: return .recurrenceTextPurple
+        case .daily: return .recurrenceTextRed
+        case .weekly: return .recurrenceTextOrange
+        case .fortnightly: return .recurrenceTextGreen
+        case .monthly: return .recurrenceTextBlue
         }
     }
     
@@ -47,12 +58,12 @@ enum Recurrence: String, CaseIterable, Hashable {
     
     var displayName: String {
         switch self {
-        case .none: return "Única"
-        case .daily: return "Diária"
-        case .weekly: return "Semanal"
-        case .fortnightly: return "Quinzenal"
-        case .monthly: return "Mensal"
-        case .undefined: return "Indefinida"
+        case .none: return L10n.tr("única")
+        case .daily: return L10n.tr("diária")
+        case .weekly: return L10n.tr("semanal")
+        case .fortnightly: return L10n.tr("quinzenal")
+        case .monthly: return L10n.tr("mensal")
+        case .undefined: return L10n.tr("indefinida")
         }
     }
 }

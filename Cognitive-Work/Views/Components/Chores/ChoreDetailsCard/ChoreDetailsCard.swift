@@ -15,6 +15,7 @@ import CloudKit
 /// postponement actions, and a completion swipe toggle.
 struct ChoreDetailsCard: View {
     @Bindable var chore: ChoreModel
+    
     /// The specific occurrence this card represents, when opened from the list
     /// layout. `nil` in the grid, where the card stands for the chore as a whole.
     var recurrentAssignment: RecurrentAssignmentModel?
@@ -32,6 +33,15 @@ struct ChoreDetailsCard: View {
     
     @State private var checkList: [CheckItemModel] = []
     
+    /// `true` while the checklist items are fetched the first time the card is flipped.
+    @State private var isLoadingChecklist = false
+    
+    /// Which postpone action is being saved, to show its spinner and block double taps.
+    @State private var postponingDays: Int?
+    
+    /// Shown when the new date couldn't be saved.
+    @State private var didFailToPostpone = false
+    
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
@@ -41,22 +51,35 @@ struct ChoreDetailsCard: View {
         return carouselViewModel.getAssignments(for: chore, on: nextDate)
     }
     
+    /// Collects all responsible users for this chore and occurrence to display in the header action bar.
+    ///
+    /// Prioritizes individual occurrence's multi-user assignment list (`userReferences`),
+    /// falling back to the chore's global rotation list (`allResponsibleUsersReference`).
     var occurrenceResponsibleUsers: [UserModel] {
-        guard chore.dailyAssignmentsReference?.isEmpty == false else {
-            guard let refs = chore.allResponsibleUsersReference else { return [] }
-            
-            let ids = Set(refs.compactMap { $0.recordID })
-            
-            return carouselViewModel.userModels.filter { user in
-                guard let id = user.recordID else { return false }
-                return ids.contains(id)
+        if let target = targetAssignments.first {
+            if let refs = target.userReferences {
+                let targetIDs = Set(refs.map(\.recordID))
+                guard !targetIDs.isEmpty else { return [] }
+                
+                return carouselViewModel.userModels.filter { user in
+                    guard let userID = user.recordID else { return false }
+                    return targetIDs.contains(userID)
+                }
             }
         }
-
-        let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+        
+        var targetIDs = Set<CKRecord.ID>()
+        if let refs = chore.allResponsibleUsersReference, !refs.isEmpty {
+            targetIDs.formUnion(refs.map(\.recordID))
+        } else if let currentID = chore.currentResponsibleReference?.recordID {
+            targetIDs.insert(currentID)
+        }
+        
+        guard !targetIDs.isEmpty else { return [] }
+        
         return carouselViewModel.userModels.filter { user in
-            guard let id = user.recordID else { return false }
-            return userIDs.contains(id)
+            guard let userID = user.recordID else { return false }
+            return targetIDs.contains(userID)
         }
     }
     
@@ -64,9 +87,7 @@ struct ChoreDetailsCard: View {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
     
-    
     var body: some View {
-        let _ = print("details:", chore.name, recurrentAssignment?.recordID?.recordName ?? "NIL")
         ZStack {
             VStack(spacing: 0) {
                 header
@@ -74,16 +95,29 @@ struct ChoreDetailsCard: View {
                 info
                 
                 VStack {
-                    postponeButtons
-                    
-                    SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
-                        Task {
-                            recurrentAssignment == nil
-                            ? await carouselViewModel.toggle(chore: chore)
-                            : await carouselViewModel.toggle(assignment: recurrentAssignment!)
-                        }
-                    }, color: room?.color.uiColor ?? .gray)
-                    .padding(.horizontal, 30)
+                    // Daily chores can't be postponed: tomorrow already has its own occurrence.
+                    if chore.frequency != .daily {
+                        postponeButtons
+                        
+                        SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
+                            Task {
+                                recurrentAssignment == nil
+                                ? await carouselViewModel.toggle(chore: chore)
+                                : await carouselViewModel.toggle(assignment: recurrentAssignment!)
+                            }
+                        }, color: room?.color.uiColor ?? .gray)
+                        .padding(.horizontal, 30)
+                    } else {
+                        SwipeToCompleteButton(isDone: isOccurrenceDone, action: {
+                            Task {
+                                recurrentAssignment == nil
+                                ? await carouselViewModel.toggle(chore: chore)
+                                : await carouselViewModel.toggle(assignment: recurrentAssignment!)
+                            }
+                        }, color: room?.color.uiColor ?? .gray)
+                        .padding(.horizontal, 30)
+                        .padding(.top, height * 0.06)
+                    }
                 }
             }
             .padding(.top, 8)
@@ -91,9 +125,16 @@ struct ChoreDetailsCard: View {
             actionBar
         }
         .task(id: isShowingBack) {
-            if isShowingBack && checkList.isEmpty {
+            if isShowingBack && checkList.isEmpty && !(chore.checkListReference ?? []).isEmpty {
+                isLoadingChecklist = true
                 checkList = await chore.checkList
+                isLoadingChecklist = false
             }
+        }
+        .alert("Não foi possível adiar", isPresented: $didFailToPostpone) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Verifique sua conexão e tente novamente.")
         }
         .frame(width: width * 0.88, height: height * 0.599)
         .background(.white)
@@ -112,7 +153,7 @@ struct ChoreDetailsCard: View {
                 .frame(width: width * 0.19, height: height * 0.09)
                 .fontWeight(.thin)
             
-            Text(chore.name)
+            Text(chore.localizedName)
                 .font(.system(size: 25))
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
@@ -120,22 +161,23 @@ struct ChoreDetailsCard: View {
             
             HStack(spacing: 12) {
                 CapsuleTag(
-                    tagName: chore.priorityTag.rawValue,
+                    tagName: chore.priorityTag.displayName,
                     tagColor: chore.priorityTag.color,
                     horizontalPadding: 10.0,
                     verticalPadding: 1.5
                 )
                 
                 CapsuleTag(
-                    tagName: ChoreDurationTier.from(minutes: chore.duration / 60).displayText,
-                    tagColor: ChoreDurationTier.from(minutes: chore.duration / 60).color,
+                    tagName: ChoreDurationTier.from(minutes: chore.duration).displayText,
+                    tagColor: ChoreDurationTier.from(minutes: chore.duration).color,
                     horizontalPadding: 10.0,
                     verticalPadding: 1.5
                 )
                 
                 CapsuleTag(
-                    tagName: chore.frequency.rawValue,
+                    tagName: chore.frequency.displayName,
                     tagColor: chore.frequency.color,
+                    textColor: chore.frequency.textColor,
                     horizontalPadding: 10.0,
                     verticalPadding: 1.5
                 )
@@ -144,11 +186,11 @@ struct ChoreDetailsCard: View {
         .foregroundColor(.black)
     }
     
-    /// The central information scroll view: description, room tag and the interactive checklist.
+    /// The central information scroll view: description, room tag, and the interactive checklist.
     private var info: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(chore.description)
+                Text(chore.localizedDescription)
                     .font(.system(size: 14))
                     .frame(width: width * 0.75, alignment: .leading)
                 
@@ -160,7 +202,7 @@ struct ChoreDetailsCard: View {
                     Spacer()
                     
                     CapsuleTag(
-                        tagName: room?.name ?? "Unnamed room",
+                        tagName: room?.name.localizedDefault ?? L10n.tr("Sem cômodo"),
                         tagColor: room?.color.uiColor ?? .gray,
                         horizontalPadding: 10.0,
                         verticalPadding: 1.5
@@ -172,12 +214,16 @@ struct ChoreDetailsCard: View {
                         .font(.system(size: 15))
                         .fontWeight(.semibold)
                     Spacer()
-                    Text(occurrenceDate?.formatted(date: .numeric, time: .omitted) ?? "Sem data definida")
+                    Text(occurrenceDate?.formatted(.dateTime.day().month(.twoDigits).year().locale(L10n.locale)) ?? L10n.tr("Sem data definida"))
                         .font(.system(size: 12))
                 }
                 
                 VStack(alignment: .leading, spacing: 5) {
-                    ForEach($checkList, id: \.id) { $item in
+                    if isLoadingChecklist {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    }
+                    ForEach($checkList, id: \.id) {$item in
                         ChecklistItemButton(item: $item)
                     }
                 }
@@ -187,19 +233,19 @@ struct ChoreDetailsCard: View {
         .padding(.top)
     }
     
+    /// Shorter English labels need less horizontal padding.
+    private var isEnglish: Bool { LanguageManager.shared.current == .english }
+    
     /// Quick actions to delay the chore's deadline directly from the details card.
     private var postponeButtons: some View {
         HStack {
             Button {
-                Task {
-                    await chore.postpone(byDays: 7)
-                }
+                postpone(byDays: 7)
             } label: {
-                Text("Adiar 1 semana")
-                    .font(.system(size: 13))
-                    .foregroundColor(.black)
+                postponeLabel("Adiar 1 semana", days: 7)
             }
-            .padding(.horizontal, 25)
+            .disabled(postponingDays != nil)
+            .padding(.horizontal, isEnglish ? 18 : 25)
             .padding(.vertical, 10)
             .background(.gray.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 22))
@@ -207,15 +253,12 @@ struct ChoreDetailsCard: View {
             Spacer()
             
             Button {
-                Task {
-                    await chore.postpone(byDays: 1)
-                }
+                postpone(byDays: 1)
             } label: {
-                Text("Adiar 1 dia")
-                    .font(.system(size: 13))
-                    .foregroundColor(.black)
+                postponeLabel("Adiar 1 dia", days: 1)
             }
-            .padding(.horizontal, 32)
+            .disabled(postponingDays != nil)
+            .padding(.horizontal, isEnglish ? 18 : 32)
             .padding(.vertical, 10)
             .background(.gray.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 22))
@@ -224,7 +267,48 @@ struct ChoreDetailsCard: View {
         .frame(width: width * 0.72)
     }
     
-    /// Floating top bar with dismiss, responsible avatars and the edit shortcut.
+    /// The postpone text, swapped for a spinner (keeping its size) while that action saves.
+    private func postponeLabel(_ title: LocalizedStringKey, days: Int) -> some View {
+        Text(title)
+            .font(.system(size: 13))
+            .foregroundColor(.black)
+            .opacity(postponingDays == days ? 0 : 1)
+            .overlay {
+                if postponingDays == days {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+    }
+    
+    /// Saves the new date and refreshes the carousel so the card reflects it.
+    private func postpone(byDays days: Int) {
+        postponingDays = days
+        Task {
+            let success = await carouselViewModel.postpone(
+                chore: chore,
+                assignment: recurrentAssignment ?? targetAssignments.first,
+                byDays: days
+            )
+            postponingDays = nil
+            
+            guard success else {
+                HapticsManager.notify(.error)
+                didFailToPostpone = true
+                return
+            }
+            
+            HapticsManager.notify(.success)
+            // The occurrence moved to another day: close the card so it leaves today's list.
+            if carouselViewModel.layoutMode == .grid {
+                carouselViewModel.clearFocus()
+            } else {
+                carouselViewModel.clearFocusedDetails()
+            }
+        }
+    }
+    
+    /// Floating top bar with dismiss button, responsible user avatars, and the edit shortcut.
     private var actionBar: some View {
         HStack {
             Button {
@@ -239,6 +323,7 @@ struct ChoreDetailsCard: View {
             
             Spacer()
             
+            // Renders single avatar view if only 1 responsible user is assigned, or avatar list view when >= 2
             if occurrenceResponsibleUsers.count == 1 {
                 UserProfilePictureTag(user: occurrenceResponsibleUsers.first, widthMultiplier: 0.08)
             } else {
@@ -256,8 +341,9 @@ struct ChoreDetailsCard: View {
                 Image(systemName: "pencil")
                     .foregroundColor(.white)
             }
+            .disabled(isOccurrenceDone)
             .padding(12)
-            .background(.blue)
+            .background(isOccurrenceDone ? Color.gray : Color.blue)
             .clipShape(Circle())
             .glassEffect()
         }
@@ -279,6 +365,7 @@ private struct ChecklistItemButton: View {
     
     var body: some View {
         Button {
+            HapticsManager.selection()
             Task {
                 await item.toggle()
             }
@@ -288,7 +375,7 @@ private struct ChecklistItemButton: View {
                     .foregroundColor(item.isDone ? .black : .gray)
                     .font(.system(size: 17, weight: .semibold))
                 
-                Text(item.name)
+                Text(item.name.localizedDefault)
                     .strikethrough(item.isDone, color: .gray)
                     .foregroundColor(item.isDone ? .gray : .black)
                     .font(.system(size: 13))
@@ -312,7 +399,7 @@ private struct ChecklistItemButton: View {
         let chore = ChoreModel(
             name: "Lavar a louça",
             description: "Lavar tudo que estiver na pia, secar e guardar nos armários.",
-            frequency: .daily,
+            frequency: .weekly,
             duration: 1200,
             isPublic: true,
             priorityTag: .medium,

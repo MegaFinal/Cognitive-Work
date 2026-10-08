@@ -19,42 +19,70 @@ struct WaitHouseCreatorSheduleView: View {
 
     private let pollingInterval: Duration = .seconds(5)
     
-    let description1: String = "Estamos apenas esperando que o criador da casa gere a divisão das tarefas."
-    let description2: String = "Isso acontecerá de forma automática assim que todos os membros entrarem na casa e definirem seus horários de tempo livre."
-    let description3: String = "Enviaremos uma notificação quando a divisão estiver pronta."
+    // `LocalizedStringKey` (not `String`) so `Text` translates them.
+    let description1: LocalizedStringKey = "O criador da casa vai gerar a divisão assim que todos definirem seu tempo livre"
+    let description2: LocalizedStringKey = "Enviaremos uma notificação quando a divisão estiver pronta"
+    
+    /// Scrolling chore cards behind the card, same as ``WaitingAlgorithmView``.
+    private let columns = ChoreDTO.columnsMock
+    @State private var isRotating = 0.0
     
     var body: some View {
-        GeometryReader { geometry in
-            VStack(alignment: .center, spacing: 40) {
-                Image(systemName: "circle.hexagonpath")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: geometry.size.width * 0.4)
-                    .padding(.bottom)
-                
-                Text("Aguardando divisão de tarefas...")
-                    .font(.system(size: 34))
-                    .bold()
-                    .multilineTextAlignment(.center)
-                
-                VStack(alignment: .leading, spacing: 15) {
-                    Text(description1)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(nil)
-                    
-                    Text(description2)
-                        .multilineTextAlignment(.leading)
-                        .foregroundColor(.gray)
-                    
-                    Text(description3)
-                        .multilineTextAlignment(.leading)
-                        .foregroundColor(.gray)
+        ZStack {
+            HStack(alignment: .top, spacing: 16) {
+                ForEach(columns.indices, id: \.self) { index in
+                    InfinityRow(
+                        cards: columns[index],
+                        movesUp: index.isMultiple(of: 1),
+                        speed: 0,
+                        phase: Double(index) * 130
+                    )
+                    .frame(width: 110)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .padding(.horizontal, 30)
+            .frame(width: width, height: height, alignment: .top)
+            .clipped()
+            .opacity(0.6)
+            
+            VStack(spacing: 30) {
+                Image("loadingIcon")
+                    .rotationEffect(.degrees(isRotating))
+                    .onAppear {
+                        withAnimation(.linear(duration: 1)
+                            .speed(0.1).repeatForever(autoreverses: false)) {
+                                isRotating = 360.0
+                            }
+                    }
+                
+                Text("Aguardando divisão de tarefas...")
+                    .font(.system(size: 30))
+                    .bold()
+                
+                VStack(spacing: 15) {
+                    Text(description1)
+                    Text(description2)
+                }
+                .padding(.horizontal)
+                
+                // MARK: - Skip
+                // Lets the guest go straight into the app instead of watching the automatic
+                // division; it still arrives later through CloudKit.
+                OnboardingSkipButton {
+                    viewModel.finishOnboarding()
+                }
+            }
+            .multilineTextAlignment(.center)
+            .frame(width: width * 0.8)
+            .padding(.horizontal, 16)
+            .padding(.top, 36)
+            .padding(.bottom, 24)
+            .background(
+                RoundedRectangle(cornerRadius: 32)
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 3.2, x: 0, y: 4)
+            )
         }
+        .ignoresSafeArea()
         .navigationBarBackButtonHidden()
         .task {
             await viewModel.checkAndAdvanceIfScheduleReady()

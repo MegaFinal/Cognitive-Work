@@ -16,6 +16,9 @@ struct Cognitive_WorkApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var hardwareViewModel = HardwareViewModel()
     
+    /// Language picked in "Configurações Gerais" (or the device language by default).
+    @State private var languageManager = LanguageManager.shared
+    
     var body: some Scene {
         WindowGroup {
             Group {
@@ -25,15 +28,13 @@ struct Cognitive_WorkApp: App {
                     Onboarding(didOnboard: $didOnboard)
                 }
             }
-            // Dynamic Type is not supported: every explicit font uses a fixed size, and this
-            // pins everything else (texts with no `.font`, buttons, navigation titles, sheets)
-            // to the default "Large" content size so it ignores the system text size setting.
             .dynamicTypeSize(.large)
+            .environment(\.locale, languageManager.locale)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
-                Task { await hardwareViewModel.refreshDeviceIfNeeded() }
+                Task { await HardwareViewModel.deliverNow() }
             case .background:
                 HardwareBackgroundSync.scheduleAppRefresh()
             default:
@@ -42,7 +43,7 @@ struct Cognitive_WorkApp: App {
         }
         .backgroundTask(.appRefresh(HardwareBackgroundSync.refreshTaskID)) {
             await HardwareBackgroundSync.scheduleAppRefresh()   // schedule the next one
-            await HardwareViewModel().refreshDeviceIfNeeded()
+            await HardwareViewModel.deliverNow()
         }
     }
 }

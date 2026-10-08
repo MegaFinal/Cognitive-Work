@@ -26,9 +26,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
     ) {
         Task {
+            NotificationCenter.default.post(name: .willAcceptShare, object: nil)
             let success = await CloudKitManager.shared.acceptShare(metadata: cloudKitShareMetadata)
             if success {
                 NotificationCenter.default.post(name: .didAcceptShare, object: nil)
+            } else {
+                NotificationCenter.default.post(name: .shareAcceptFailed, object: nil)
             }
         }
     }
@@ -44,8 +47,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             
             // Something changed in the house: bring the device up to date if this phone is at home
             print("Silent push received")
-            HardwareViewModel.markPendingUpdate()
-            await HardwareViewModel().refreshDeviceIfNeeded()
+            HardwareViewModel.notifyDataChanged()
+            await HardwareViewModel.waitForPendingDelivery()
         }
         return .newData
     }

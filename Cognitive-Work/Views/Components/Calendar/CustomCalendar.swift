@@ -12,21 +12,28 @@ struct CustomCalendar: View {
     let window: Range<Date>
     let opacityForDay: (Date) -> Double
     var highlightedDays: [Date] = []
-    var showsSelectionLabel: Bool = true
     var earliestSelectable: Date? = nil   // days before this are shown grey and can't be tapped
+    var selectableDays: Set<Date>? = nil
+    var onTapDay: ((Date) -> Void)? = nil
     
-    private let daysOfWeek = Date.capitalizedFirstLettersOfWeekdays
+    /// Computed (not stored) so it follows a language change without recreating the view.
+    private var daysOfWeek: [String] { Date.capitalizedFirstLettersOfWeekdays }
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
     private let calendar = Calendar.current
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 8) {
             header
+                .padding(5)
             weekdayRow
             dayGrid
-            if showsSelectionLabel { selectedDateLabel }
         }
-        .padding()
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .foregroundStyle(Color.gray.opacity(0.08))
+        )
     }
     
     // MARK: - Data
@@ -76,16 +83,15 @@ struct CustomCalendar: View {
     }
     
     private func monthName(_ date: Date) -> String {
-        date.formatted(.dateTime.month(.wide).locale(Locale(identifier: "pt_BR")))
-            .capitalized
+        date.formatted(.dateTime.month(.wide).locale(L10n.locale))
+            .capitalized(with: L10n.locale)
     }
     
     // MARK: - Subviews
     
     private var header: some View {
         Text(headerTitle)
-            .font(.title3)
-            .fontWeight(.semibold)
+            .font(.system(size: 16))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
     }
@@ -94,9 +100,9 @@ struct CustomCalendar: View {
         HStack {
             ForEach(daysOfWeek.indices, id: \.self) { index in
                 Text(daysOfWeek[index])
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 15))
                     .frame(maxWidth: .infinity)
-                    .foregroundStyle(.black.opacity(0.4))
+                    .foregroundStyle(.black.opacity(0.3))
             }
         }
     }
@@ -104,26 +110,37 @@ struct CustomCalendar: View {
     private var dayGrid: some View {
         LazyVGrid(columns: columns, spacing: 10) {
             ForEach(gridDays, id: \.self) { day in
-                let selectable = window.contains(day.startOfDay)
-                    && day.startOfDay >= (earliestSelectable ?? .distantPast)
+                let normalizedDay = day.startOfDay
+                let today = Calendar.current.startOfDay(for: Date())
+                let inWindow = window.contains(normalizedDay) && normalizedDay >= (earliestSelectable ?? today)
+                let isAllowedBySlots = selectableDays?.contains(normalizedDay) ?? true
+                let selectable = inWindow && isAllowedBySlots
+                let highlighted = selectable && (isSelected(normalizedDay) || isHighlighted(normalizedDay))
+                
                 DayCell(
                     day: day,
                     opacity: selectable ? opacityForDay(day) : 0,
                     isSelectable: selectable,
-                    isSelected: isSelected(day) || isHighlighted(day),
-                    action: { select(day) }
+                    isSelected: highlighted,
+                    action: {
+                        guard selectable else { return }
+                        if let onTapDay {
+                            onTapDay(normalizedDay)
+                        } else {
+                            select(normalizedDay)
+                        }
+                    }
                 )
             }
         }
     }
-    
-    
+        
     private var selectedDateLabel: some View {
         if let selectedDate {
             Text(selectedDate.formatted(
                 .dateTime
                     .weekday(.wide).day().month(.wide).year()
-                    .locale(Locale(identifier: "pt_BR")))
+                    .locale(L10n.locale))
             )
             .font(.system(size: 15, weight: .semibold))
             .frame(maxWidth: .infinity, alignment: .center)

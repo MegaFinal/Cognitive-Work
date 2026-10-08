@@ -16,12 +16,16 @@ struct CheckListCreateAndEdit: View {
     /// A draft array of `CheckItemDTO` items backing the visual list.
     @Binding var localChecklist: [CheckItemDTO]
     
+    /// The row whose text field currently has the keyboard.
+    @FocusState private var focusedItemID: UUID?
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach($localChecklist) { $item in
                 HStack {
                     Button {
                         item.isDone.toggle()
+                        HapticsManager.selection()
                     } label: {
                         Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
                             .foregroundColor(item.isDone ? .black : .gray)
@@ -32,14 +36,17 @@ struct CheckListCreateAndEdit: View {
                         .strikethrough(item.isDone, color: .gray)
                         .foregroundColor(item.isDone ? .gray : .black)
                         .font(.system(size: 15))
+                        .characterLimit(TextLimits.checklistItem, text: $item.name)
+                        .focused($focusedItemID, equals: item.id)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            insertItem(after: item.id)
+                        }
                     
                     Spacer()
                     
                     Button {
-                        localChecklist.removeAll { $0.id == item.id }
-                        if localChecklist.isEmpty {
-                            hasChecklist = false
-                        }
+                        remove(item.id)
                     } label: {
                         Image(systemName: "minus.circle.fill")
                             .foregroundColor(.red)
@@ -47,7 +54,7 @@ struct CheckListCreateAndEdit: View {
                 }
             }
             Button {
-                localChecklist.append(CheckItemDTO(name: "", isDone: false))
+                appendItem()
             } label: {
                 HStack {
                     Image(systemName: "plus.circle.fill")
@@ -57,6 +64,42 @@ struct CheckListCreateAndEdit: View {
                 .foregroundColor(.blue)
                 .padding(.top, 5)
             }
+        }
+    }
+    
+    // MARK: - Actions
+    
+    /// Creates an empty row right after `id` and focuses it (keyboard return).
+    private func insertItem(after id: UUID) {
+        guard let index = localChecklist.firstIndex(where: { $0.id == id }) else { return }
+        
+        // Return on a blank row ends the list instead of creating another blank row.
+        guard !localChecklist[index].name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            focusedItemID = nil
+            return
+        }
+        
+        let newItem = CheckItemDTO(name: "", isDone: false)
+        localChecklist.insert(newItem, at: index + 1)
+        focusedItemID = newItem.id
+    }
+    
+    /// "Adicionar item": reuses a trailing blank row if there is one, otherwise appends.
+    private func appendItem() {
+        if let last = localChecklist.last,
+           last.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            focusedItemID = last.id
+            return
+        }
+        let newItem = CheckItemDTO(name: "", isDone: false)
+        localChecklist.append(newItem)
+        focusedItemID = newItem.id
+    }
+    
+    private func remove(_ id: UUID) {
+        localChecklist.removeAll { $0.id == id }
+        if localChecklist.isEmpty {
+            hasChecklist = false
         }
     }
 }

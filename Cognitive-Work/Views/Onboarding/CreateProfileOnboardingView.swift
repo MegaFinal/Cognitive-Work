@@ -13,26 +13,33 @@ import PhotosUI
 /// Saves the profile to CloudKit on "Continuar" and only advances once the
 /// record actually comes back.
 struct CreateProfileOnboardingView: View {
-
+    
     // MARK: - Properties
-
+    
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
     @State private var usernameText: String = ""
-
+    
     /// Image chosen through the system photo picker, before it is converted.
     @State private var selectedItem: PhotosPickerItem? = nil
-
+    
+    /// `true` while the picked photo is being loaded and converted.
+    @State private var isLoadingImage = false
+    
     // MARK: - Body
-
+    
     var body: some View {
-        VStack(alignment: .center, spacing: 58) {
-            headerText
+        VStack(spacing: 0) {
+            OnboardingHeader(
+                title: "Quem é você na casa?",
+                description: "Escolha uma foto e um nome para utilizar no app",
+                containerInset: width * 0.0565
+            )
             
-                EditableProfileImage(image: viewModel.userProfilePicture, isEditing: true, selection: $selectedItem)
-                .layoutPriority(1)
+            Spacer(minLength: 16)
             
+            EditableProfileImage(image: viewModel.userProfilePicture, isEditing: true, selection: $selectedItem, isLoading: isLoadingImage)
             
             TextField("Nome", text: $viewModel.userName)
                 .textFieldStyle(.plain)
@@ -40,6 +47,11 @@ struct CreateProfileOnboardingView: View {
                 .foregroundColor(.primary)
                 .accentColor(.blue)
                 .multilineTextAlignment(.center)
+                .characterLimit(TextLimits.userName, text: $viewModel.userName)
+                .submitLabel(.done)
+                .padding(.top, 32)
+            
+            Spacer(minLength: 16)
             
             OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty) {
                 Task {
@@ -57,10 +69,9 @@ struct CreateProfileOnboardingView: View {
                     viewModel.isLoading = false
                 }
             }
-            
+            .padding(.bottom, height * 0.02)
         }
-        .navigationBarBackButtonHidden()
-        .padding()
+        .padding(.horizontal, width * 0.0565)
         .alert("Não deu para criar o perfil", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -70,9 +81,12 @@ struct CreateProfileOnboardingView: View {
             Text(viewModel.errorMessage ?? "")
         }
         .onChange(of: selectedItem) { _, newItem in
+            guard let newItem else { return }
             Task {
-                if let newItem,
-                   let data = try? await newItem.loadTransferable(type: Data.self),
+                isLoadingImage = true
+                defer { isLoadingImage = false }
+                
+                if let data = try? await newItem.loadTransferable(type: Data.self),
                    let uiImage = UIImage(data: data) {
                     
                     await MainActor.run {
@@ -82,23 +96,15 @@ struct CreateProfileOnboardingView: View {
             }
         }
         .dismissKeyboardOnTap()
-    }
-    
-    // MARK: - Subviews
-    
-    /// Title and supporting copy for this onboarding step.
-    private var headerText: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Para começarmos...")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(.black.opacity(0.7))
-            
-            Text("Escolha uma foto e um nome para utilizar no app")
-                .font(.system(size: 16))
-                .foregroundStyle(.gray)
-                .lineLimit(nil)
+        .onboardingBackButton(viewModel: viewModel)
+        .onAppear {
+            // Coming back to this step with a profile kept from an earlier run: show its name.
+            if viewModel.userName.isEmpty, let user = viewModel.currentUser {
+                viewModel.userName = user.name
+            }
         }
     }
+    
 }
 
 #Preview {

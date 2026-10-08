@@ -44,7 +44,7 @@ struct CopyButtonView: View {
         } label: {
             HStack {
                 Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc")
-                Text(isCopied ? "Copiado" : (textToCopy ?? "Nenhum link ainda"))
+                Text(isCopied ? L10n.tr("Copiado") : (textToCopy ?? L10n.tr("Nenhum link ainda")))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
