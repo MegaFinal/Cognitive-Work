@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct RetroNewChoresDivision: View {
-    /// Called when "Divisão automática de tarefas" is tapped.
+    /// Called when "Divisão automática de tarefas" is tapped (`RetroViewModel.requestAutomaticDivision`).
     var onAutomaticDivision: () -> Void = {}
+    /// Called when "Dividir mais tarde" is tapped (`RetroViewModel.deferDivision`).
+    var onLater: () -> Void = {}
     
     var body: some View {
         VStack {
@@ -44,7 +46,7 @@ struct RetroNewChoresDivision: View {
             .glassEffectTransition(.identity)
             
             Button {
-
+                onLater()
             } label: {
                 Text("Dividir mais tarde")
                     .fontWeight(.semibold)

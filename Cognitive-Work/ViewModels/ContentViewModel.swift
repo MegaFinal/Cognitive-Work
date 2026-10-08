@@ -76,6 +76,36 @@ class ContentViewModel {
         self.errorMessage = CloudKitManager.shared.errorMessage
     }
     
+    // MARK: - Retrospective
+
+    /// Whether the retrospective is on screen.
+    var showRetro = false
+
+    /// Day the retrospective was last offered (kept so it shows at most once a day).
+    @ObservationIgnored
+    private var lastRetroPresentedDay: Date? {
+        get { UserDefaults.standard.object(forKey: "retro.lastPresentedDay") as? Date }
+        set { UserDefaults.standard.set(newValue, forKey: "retro.lastPresentedDay") }
+    }
+
+    /// Shows the retrospective when the period of the last division is over.
+    /// Best effort: if the schedule can't be read there is nothing to compare, so nothing is shown.
+    func checkRetro() async {
+        guard !userHasNoHouse, !showRetro else { return }
+
+        let assignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        guard !Task.isCancelled, !showRetro else { return }
+
+        guard RetroTriggerPolicy.shouldPresent(
+            lastScheduledDay: assignments.map(\.day).max(),
+            lastPresentedDay: lastRetroPresentedDay,
+            now: .now
+        ) else { return }
+
+        lastRetroPresentedDay = .now
+        withAnimation(.easeInOut) { showRetro = true }
+    }
+
     // MARK: - Free time
 
     /// Makes the free time on the private profile and on the house profile agree, and retries a

@@ -7,39 +7,14 @@
 
 import SwiftUI
 
+/// Reads only `viewModel.pointsContent`. Thresholds, coin counts and messages live in the view model.
 struct RetroPointsView: View {
-    @Binding var page: Int
-    @Binding var isRetroDone: Bool
-    var points: Int = 4
-
-    /// From this many points on, the pig gets a coin (RetroPigCoin).
-    private let coinPigThreshold = 50
-    /// From this many points on, coins also float around the pig.
-    private let floatingCoinsThreshold = 100
-    /// Every extra `pointsPerExtraCoin` points after the threshold reveals one more floating coin.
-    private let pointsPerExtraCoin = 50
+    let viewModel: RetroViewModel
 
     @State private var showCoinPig = false
     @State private var showFloatingCoins = false
 
-    private var hasCoinPig: Bool { points >= coinPigThreshold }
-    private var hasFloatingCoins: Bool { points >= floatingCoinsThreshold }
-
-    private var floatingCoinsCount: Int {
-        guard hasFloatingCoins else { return 0 }
-        let extra = (points - floatingCoinsThreshold) / pointsPerExtraCoin
-        return min(2 + extra, RetroCoinsScatter.maxCount)
-    }
-
-    private var message: String {
-        if hasFloatingCoins {
-            return "Boa parte do que a casa fez começou com você percebendo, parabéns!"
-        } else if hasCoinPig {
-            return "Reparar que algo precisa ser feito também é trabalho, parabéns!"
-        } else {
-            return "Cada coisa que você reparou conta!"
-        }
-    }
+    private var content: RetroPointsContent { viewModel.pointsContent }
 
     var body: some View {
         VStack {
@@ -60,22 +35,25 @@ struct RetroPointsView: View {
             .foregroundStyle(.gray)
             .overlay {
                 if showFloatingCoins {
-                    RetroCoinsScatter(count: floatingCoinsCount)
+                    RetroCoinsScatter(count: content.floatingCoinsCount)
                 }
             }
             .padding(.bottom, height * 0.037)
-            .task {
-                guard hasCoinPig else { return }
+            // Restarts if the content changes while the page is on screen.
+            .task(id: content) {
+                showCoinPig = false
+                showFloatingCoins = false
+                guard content.hasCoinPig else { return }
                 try? await Task.sleep(for: .seconds(0.6))
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.5)) {
                     showCoinPig = true
                 }
-                guard hasFloatingCoins else { return }
+                guard content.hasFloatingCoins else { return }
                 try? await Task.sleep(for: .seconds(0.5))
                 showFloatingCoins = true
             }
             
-            Text("\(points) \(points == 1 ? "ponto" : "pontos")")
+            Text(content.pointsLabel)
                 .bold()
                 .font(.system(size: 64))
                 .padding(.bottom, height * 0.014)
@@ -86,7 +64,7 @@ struct RetroPointsView: View {
                 .multilineTextAlignment(.center)
                 .padding(.bottom, height * 0.014)
             
-            Text(message)
+            Text(content.message)
                 .font(.callout)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.gray) //arrumar o cinza depois
@@ -96,7 +74,7 @@ struct RetroPointsView: View {
             
             Button {
                 withAnimation {
-                    isRetroDone = true
+                    viewModel.skipRetrospective()
                 }
             } label: {
                 Text("ver depois")
@@ -108,7 +86,7 @@ struct RetroPointsView: View {
             
             Button {
                 withAnimation {
-                    page += 1
+                    viewModel.continueToNextPage()
                 }
             } label: {
                 Text("Continuar")
@@ -122,21 +100,16 @@ struct RetroPointsView: View {
     }
 }
 
-
+#if DEBUG
 #Preview("4 pontos") {
-    @Previewable @State var page = 2
-    @Previewable @State var isRetroDone = false
-    RetroPointsView(page: $page, isRetroDone: $isRetroDone, points: 4)
+    RetroPreviewHost(points: 4) { RetroPointsView(viewModel: $0) }
 }
 
 #Preview("50 pontos") {
-    @Previewable @State var page = 2
-    @Previewable @State var isRetroDone = false
-    RetroPointsView(page: $page, isRetroDone: $isRetroDone, points: 50)
+    RetroPreviewHost(points: 50) { RetroPointsView(viewModel: $0) }
 }
 
 #Preview("100 pontos") {
-    @Previewable @State var page = 2
-    @Previewable @State var isRetroDone = false
-    RetroPointsView(page: $page, isRetroDone: $isRetroDone, points: 100)
+    RetroPreviewHost(points: 100) { RetroPointsView(viewModel: $0) }
 }
+#endif

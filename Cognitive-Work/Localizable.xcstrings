@@ -4,12 +4,6 @@
     "" : {
 
     },
-    "%@" : {
-
-    },
-    "%@%%" : {
-
-    },
     "%lld" : {
 
     },
@@ -175,6 +169,9 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "×%lld" : {
 
     },
@@ -219,6 +216,7 @@
       }
     },
     "4 pontos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -260,6 +258,7 @@
       }
     },
     "6 cômodos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -320,6 +319,7 @@
       }
     },
     "A cozinha foi onde você mais trabalhou." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -821,6 +821,7 @@
       }
     },
     "Cada coisa que você reparou conta!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5557,6 +5558,9 @@
         }
       }
     },
+    "Tentar de novo" : {
+
+    },
     "Tentar novamente" : {
       "localizations" : {
         "en" : {
@@ -5944,6 +5948,7 @@
       }
     },
     "Vamos tentar de novo na próxima" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6102,6 +6107,7 @@
       }
     },
     "você consegue!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6164,6 +6170,7 @@
       }
     },
     "Você realizou 0 de 20 \n tarefas da sua escala" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

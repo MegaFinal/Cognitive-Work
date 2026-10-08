@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RetroAlert: View {
-    @Binding var isExpanded: Bool
+    let viewModel: RetroViewModel
     
     var body: some View {
         VStack {
@@ -32,7 +32,7 @@ struct RetroAlert: View {
             
                 Button {
                     withAnimation {
-                        isExpanded.toggle()
+                        viewModel.startRetrospective()
                     }
                 } label: {
                     Text("Ver minha retrospectiva")
@@ -42,23 +42,53 @@ struct RetroAlert: View {
                 }
                 .buttonStyle(.glassProminent)
                 .glassEffectTransition(.identity)
+                // The pages need the loaded data.
+                .disabled(viewModel.loadState != .loaded)
 
-                Button {
-                    isExpanded = true
-                } label: {
-                    Text("Pular para a nova divisão")
-                        .frame(width: width * 0.69, height: height * 0.037)
-                        .fontWeight(.medium)
-                        .font(.system(size: 17))
+                // Only the house owner can start a new division.
+                if viewModel.isHouseOwner {
+                    Button {
+                        withAnimation {
+                            viewModel.skipRetrospective()
+                        }
+                    } label: {
+                        Text("Pular para a nova divisão")
+                            .frame(width: width * 0.69, height: height * 0.037)
+                            .fontWeight(.medium)
+                            .font(.system(size: 17))
+                    }
+                    .buttonStyle(.glass)
                 }
-                .buttonStyle(.glass)
-        
+            
+            loadStatus
+        }
+    }
+
+    /// Spinner while loading; message and retry if loading failed.
+    @ViewBuilder
+    private var loadStatus: some View {
+        switch viewModel.loadState {
+        case .idle, .loading:
+            ProgressView()
+                .padding(.top, height * 0.02)
+        case .failed(let error):
+            VStack(spacing: 4) {
+                Text(error.localizedDescription)
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.gray)
+                Button("Tentar de novo") { viewModel.reload() }
+                    .font(.footnote.weight(.semibold))
+            }
+            .padding(.top, height * 0.02)
+        case .loaded:
+            EmptyView()
         }
     }
 }
 
-
+#if DEBUG
 #Preview {
-    @Previewable @State var isExpanded = false
-    RetroAlert(isExpanded: $isExpanded)
+    RetroPreviewHost(startOnPages: false) { RetroAlert(viewModel: $0) }
 }
+#endif

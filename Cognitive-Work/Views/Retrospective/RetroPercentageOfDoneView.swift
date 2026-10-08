@@ -7,17 +7,13 @@
 
 import SwiftUI
 
+/// Reads only `viewModel.percentageContent`; all numbers and messages come from the view model.
 struct RetroPercentageOfDoneView: View {
-    @Binding var page: Int
-    @Binding var isRetroDone: Bool
-    var completedChores: Int = 0
-    var totalChores: Int = 20
-    @State var percentage: Double = 0.0
+    let viewModel: RetroViewModel
+    /// Animated value (0...100) that drives the pie and the counter.
+    @State private var percentage: Double = 0.0
 
-    private var targetPercentage: Double {
-        guard totalChores > 0 else { return 0 }
-        return min(max(Double(completedChores) / Double(totalChores) * 100, 0), 100)
-    }
+    private var content: RetroPercentageContent { viewModel.percentageContent }
 
     var body: some View {
         ZStack {
@@ -48,26 +44,26 @@ struct RetroPercentageOfDoneView: View {
                     .font(.system(size: 64))
                     .padding(.bottom, height * 0.03)
                 
-                Text("Você realizou \(completedChores) de \(totalChores) \n tarefas da sua escala")
+                Text(content.summary)
                     .font(.title)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, height * 0.008)
                 
-                Text("Vamos tentar de novo na próxima")
+                Text(content.subtitle)
                     .font(.callout)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.subTitleGray) //Arrumar depois a cor
                 
                 Spacer()
                 
-                Text("você consegue!")
+                Text(content.closing)
                     .bold()
                     .font(.system(size: 40))
                     .padding(.bottom, height * 0.018)
                 
                 Button {
                     withAnimation {
-                        isRetroDone = true
+                        viewModel.skipRetrospective()
                     }
                 } label: {
                     Text("ver depois")
@@ -79,7 +75,7 @@ struct RetroPercentageOfDoneView: View {
                 
                 Button {
                     withAnimation {
-                        page += 1
+                        viewModel.continueToNextPage()
                     }
                 } label: {
                     Text("Continuar")
@@ -93,42 +89,38 @@ struct RetroPercentageOfDoneView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
-        .onAppear {
+        // Not onAppear: changing the state there can be applied before the first frame is drawn,
+        // so the view would appear already filled. Drawing 0 first, then animating, always plays.
+        // Re-runs every time the page appears (task restarts) and if the data changes.
+        .task(id: content.percentage) {
             percentage = 0
-            withAnimation(.easeInOut(duration: 2).delay(0.3)) {
-                percentage = targetPercentage
+            try? await Task.sleep(for: .seconds(0.3))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 2)) {
+                percentage = content.percentage
             }
         }
     }
 }
 
-
+#if DEBUG
 #Preview("0%") {
-    @Previewable @State var page = 0
-    @Previewable @State var isRetroDone = false
-    RetroPercentageOfDoneView(page: $page, isRetroDone: $isRetroDone)
+    RetroPreviewHost(completed: 0, total: 20) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 
 #Preview("25%") {
-    @Previewable @State var page = 0
-    @Previewable @State var isRetroDone = false
-    RetroPercentageOfDoneView(page: $page, isRetroDone: $isRetroDone, completedChores: 25, totalChores: 100)
+    RetroPreviewHost(completed: 25, total: 100) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 
 #Preview("50%") {
-    @Previewable @State var page = 0
-    @Previewable @State var isRetroDone = false
-    RetroPercentageOfDoneView(page: $page, isRetroDone: $isRetroDone, completedChores: 50, totalChores: 100)
+    RetroPreviewHost(completed: 50, total: 100) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 
 #Preview("75%") {
-    @Previewable @State var page = 0
-    @Previewable @State var isRetroDone = false
-    RetroPercentageOfDoneView(page: $page, isRetroDone: $isRetroDone, completedChores: 75, totalChores: 100)
+    RetroPreviewHost(completed: 75, total: 100) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 
 #Preview("100%") {
-    @Previewable @State var page = 0
-    @Previewable @State var isRetroDone = false
-    RetroPercentageOfDoneView(page: $page, isRetroDone: $isRetroDone, completedChores: 100, totalChores: 100)
+    RetroPreviewHost(completed: 100, total: 100) { RetroPercentageOfDoneView(viewModel: $0) }
 }
+#endif

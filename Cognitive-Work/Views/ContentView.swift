@@ -47,6 +47,15 @@ struct ContentView: View {
                 }
         }
         .environment(tabBarVisibility)
+        // Over the whole TabView (tab bar included) once the last division's period is over.
+        .overlay {
+            if viewModel.showRetro {
+                RetroView {
+                    withAnimation(.easeInOut) { viewModel.showRetro = false }
+                }
+                .transition(.opacity)
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { cloudMetadata in
             viewModel.showInviteAcceptAlert = true
             viewModel.shareMetadata = cloudMetadata.object as? CKShare.Metadata
@@ -88,13 +97,17 @@ struct ContentView: View {
             await viewModel.leaveOrphanedHouses()
             await viewModel.fetchHouse()
             await viewModel.syncFreeTime()
+            await viewModel.checkRetro()
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task { await viewModel.fetchHouse() }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                Task { await viewModel.fetchHouse() }
+                Task {
+                    await viewModel.fetchHouse()
+                    await viewModel.checkRetro()
+                }
             }
         }
     }
