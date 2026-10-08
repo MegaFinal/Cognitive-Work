@@ -87,6 +87,7 @@ struct ContentView: View {
         .task {
             await viewModel.leaveOrphanedHouses()
             await viewModel.fetchHouse()
+            await viewModel.syncFreeTime()
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task { await viewModel.fetchHouse() }

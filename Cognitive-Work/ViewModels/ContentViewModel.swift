@@ -61,7 +61,14 @@ class ContentViewModel {
     }
     
     func accountWithoutHouseReturnToOnboarding() {
+        Self.resetOnboardingProgress()
         self.didOnboard = false
+    }
+    
+    /// The onboarding that opens next must start at the welcome screen, not resume a stale step.
+    static func resetOnboardingProgress() {
+        OnboardingStateMachine.clearPersistedProgress()
+        OnboardingRollbackJournal.clear()
     }
     
     func switchHouse(to metadata: CKShare.Metadata) async {
@@ -69,14 +76,25 @@ class ContentViewModel {
         self.errorMessage = CloudKitManager.shared.errorMessage
     }
     
+    // MARK: - Free time
+
+    /// Makes the free time on the private profile and on the house profile agree, and retries a
+    /// write to the house profile that failed earlier (see `FreeTimeSyncService`). Best effort:
+    /// a failure is simply tried again the next time the app opens.
+    func syncFreeTime() async {
+        guard !userHasNoHouse else { return }
+        await FreeTimeSyncService.live().reconcile()
+    }
+
     // MARK: - Orphaned houses
-    
+
     /// Leaves any house this iCloud account is still attached to without a member record
     func leaveOrphanedHouses() async {
         let removed = await CloudKitManager.shared.pruneOrphanedSharedMemberships()
         guard removed > 0 else { return }
         do {
             if try await CloudKitManager.shared.currentHouse(forceRefresh: true) == nil {
+                Self.resetOnboardingProgress()
                 didOnboard = false
             } else {
                 NotificationCenter.default.post(name: .cloudKitDidChange, object: nil)

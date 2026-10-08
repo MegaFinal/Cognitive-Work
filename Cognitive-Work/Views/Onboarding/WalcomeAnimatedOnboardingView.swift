@@ -75,8 +75,13 @@ struct WelcomeAnimatedOnboardingView: View{
                 .overlay(alignment: .bottomTrailing) {
                     
                     Button("Continuar", systemImage: "chevron.right") {
-                        viewModel.goToNextView()
+                        // A returning user (profile and free time already saved) goes straight
+                        // to "create or enter a house"; a new one goes on to the profile.
+                        viewModel.advanceFromWelcome()
                     }
+                    // Where "Continuar" leads depends on the account check that runs when this
+                    // screen opens.
+                    .disabled(viewModel.isCheckingAccount)
                     .bold()
                     .labelStyle(.iconOnly)
                     .buttonStyle(.glassProminent)

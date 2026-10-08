@@ -34,7 +34,10 @@ struct SelectFreeTimeOnboardingView: View {
         DayOfWeekDTO(name: "Domingo ",nameAbbreviation: "Dom")
     ]
     @State var showAllert: Bool = false
-    
+
+    /// The free time was saved on the profile but not on the house yet (see `save()`).
+    @State private var showSyncWarning: Bool = false
+
     /// Becomes true once the saved free time has been fetched (settings only).
     @State private var hasLoadedSavedTime: Bool = false
     
@@ -52,9 +55,20 @@ struct SelectFreeTimeOnboardingView: View {
     private func save() async {
         viewModel.isLoading = true
         defer { viewModel.isLoading = false }
-        
+
         guard await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) else { return }
         HapticsManager.notify(.success)
+
+        // Saved on the user's profile but not yet on the house's: say so before moving on (the
+        // alert's button continues). The sync is retried automatically.
+        if viewModel.freeTimeSyncWarning != nil {
+            showSyncWarning = true
+            return
+        }
+        continueAfterSaving()
+    }
+
+    private func continueAfterSaving() {
         if isFromSettings {
             dismiss()
         } else {
@@ -135,6 +149,14 @@ struct SelectFreeTimeOnboardingView: View {
             Button("OK", role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+        .alert("Salvo no seu perfil", isPresented: $showSyncWarning) {
+            Button("OK") {
+                viewModel.freeTimeSyncWarning = nil
+                continueAfterSaving()
+            }
+        } message: {
+            Text(viewModel.freeTimeSyncWarning ?? "")
         }
         .task {
             guard isFromSettings else {

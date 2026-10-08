@@ -256,9 +256,17 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
             guard saveSuccess else { return false }
         }
         
+        let originalRefs = availableTimeReference
         self.availableTimeReference = newRefs
-        
-        guard await CloudKitManager.shared.update(self) else { return false }
+
+        guard await CloudKitManager.shared.update(self) else {
+            // Keep the in-memory model in line with the record that was not updated, so a retry
+            // deletes the right "previous" slots. The slots saved above stay: unreferenced they
+            // are harmless, whereas deleting them after an ambiguous failure could leave the
+            // profile pointing at records that no longer exist.
+            self.availableTimeReference = originalRefs
+            return false
+        }
         
         let previousIDs = previousRefs.map(\.recordID)
         if !previousIDs.isEmpty {
