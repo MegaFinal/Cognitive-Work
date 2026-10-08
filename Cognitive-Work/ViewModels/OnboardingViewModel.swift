@@ -34,7 +34,12 @@ class OnboardingViewModel {
     var isCheckingAccount: Bool = true
     /// A message describing the most recent error, if any
     var errorMessage: String? = nil
-    
+
+    /// Set when free time was saved on the private profile but could not be written to the house
+    /// profile yet. Not an error: the save succeeded and the sync is retried automatically. The
+    /// free-time screen shows it before moving on.
+    var freeTimeSyncWarning: String? = nil
+
     var stateMachine = OnboardingStateMachine()
     
     var isOnboardingSkipped: Bool = false
@@ -83,6 +88,22 @@ class OnboardingViewModel {
         didSet { rollbackJournal.save() }
     }
     
+    // MARK: - Free time sync
+
+    @ObservationIgnored
+    private var freeTimeSyncStorage: FreeTimeSyncService?
+
+    /// Keeps free time on both the private profile and the in-house profile.
+    /// See the documentation in `FreeTimeSyncService.swift`.
+    private var freeTimeSync: FreeTimeSyncService {
+        if let freeTimeSyncStorage { return freeTimeSyncStorage }
+        let service = FreeTimeSyncService.live(publicStoreProvider: { [weak self] in
+            await self?.houseFreeTimeStore()
+        })
+        freeTimeSyncStorage = service
+        return service
+    }
+
     // MARK: - CloudKit
     /// Creates the user's profile record in CloudKit and advances to the "join or create a house" step
     ///
@@ -719,7 +740,9 @@ class OnboardingViewModel {
     
     func finishOnboarding() {
         isOnboardingSkipped = true
-        pendingFreeTimeMinutes = nil
+        // `pendingFreeTimeMinutes` is deliberately kept: it is only set while the house profile
+        // does not have the free time yet, and `FreeTimeSyncService.reconcile()` (run when the
+        // main screen opens) finishes the job if the write during onboarding failed.
         stateMachine.resetProgress()
         rollbackJournal = OnboardingRollbackJournal()
         OnboardingRollbackJournal.clear()
@@ -758,35 +781,43 @@ class OnboardingViewModel {
            let user = currentUser, CloudKitManager.shared.isHouseUser(user) {
             advanceAfterJoiningHouse()
         } else {
+            // A returning user who had to fill in free time on the way (none was saved) still
+            // goes back to the welcome screen from "create or enter", not to this screen.
+            if stateMachine.steps.indices.contains(stateMachine.index + 1),
+               stateMachine.steps[stateMachine.index + 1] == .createOrEnterHome {
+                stateMachine.skippedToCreateOrEnter = isReturningUser
+            }
             goToNextView()
         }
     }
     
+    /// The profile already existed before this onboarding run (e.g. the user left a house),
+    /// as opposed to one created in this run.
+    private var isReturningUser: Bool {
+        currentUser != nil && rollbackJournal.createdProfile == nil
+    }
+    
     // MARK: - Pending free time
     
-    private static let pendingFreeTimeKey = "onboarding.pendingFreeTime"
-    
-    /// Free time chosen before the user belongs to a house (minutes per day, Monday first).
+    /// Free time that is already on the private profile but not (known to be) on the in-house
+    /// profile yet (minutes per day, Monday first). Persisted so a relaunch doesn't lose it.
     ///
-    /// The free-time step now comes *before* creating/joining a house, but free time must live
-    /// on the in-house user record (the one housemates and the scheduler read). It's kept here
-    /// — persisted so a relaunch doesn't lose it — until ``flushPendingFreeTimeIfNeeded()``
-    /// can write it.
+    /// Free time is stored on the private profile (survives leaving a house) *and* on the
+    /// in-house profile (what housemates and the scheduler read). This is the gap between the
+    /// two: set while the user has no house yet, or when writing the in-house profile failed,
+    /// and cleared by ``flushPendingFreeTimeIfNeeded()`` / `FreeTimeSyncService`.
     var pendingFreeTimeMinutes: [Int]? {
-        get { UserDefaults.standard.array(forKey: Self.pendingFreeTimeKey) as? [Int] }
-        set {
-            if let newValue {
-                UserDefaults.standard.set(newValue, forKey: Self.pendingFreeTimeKey)
-            } else {
-                UserDefaults.standard.removeObject(forKey: Self.pendingFreeTimeKey)
-            }
-        }
+        get { freeTimeSync.pendingPublicSync }
+        set { freeTimeSync.pendingPublicSync = newValue }
     }
-    
-    private static func availableTimes(from minutes: [Int]) -> [AvailableTimeModel] {
-        minutes.map { AvailableTimeModel(capacityMinutes: $0, day: Date()) }
+
+    /// The in-house profile as a free-time store, or `nil` while the user has no house yet.
+    @MainActor
+    private func houseFreeTimeStore() async -> FreeTimeProfileStore? {
+        guard let houseUser = await resolveHouseUser() else { return nil }
+        return UserModelFreeTimeStore(user: houseUser)
     }
-    
+
     /// The user's in-house record, or `nil` while they don't belong to a house yet.
     @MainActor
     private func resolveHouseUser() async -> UserModel? {
@@ -806,71 +837,114 @@ class OnboardingViewModel {
     @MainActor
     @discardableResult
     func flushPendingFreeTimeIfNeeded() async -> Bool {
-        guard let minutes = pendingFreeTimeMinutes else { return true }
-        guard let houseUser = await resolveHouseUser(),
-              await houseUser.setAvailableTimes(Self.availableTimes(from: minutes)) else {
-            return false
-        }
-        pendingFreeTimeMinutes = nil
-        return true
+        await freeTimeSync.flushPending()
     }
-    
-    /// Saves the free time chosen during onboarding on the current user's in-house record.
+
+    /// Saves the free time chosen by the user on the private profile *and* on the in-house
+    /// profile.
     ///
-    /// When the user doesn't belong to a house yet (free time now comes before creating or
-    /// joining one), the choice is kept in ``pendingFreeTimeMinutes`` and written later by
-    /// ``flushPendingFreeTimeIfNeeded()``. Saving it on the private profile instead left the
-    /// records outside the house, so housemates and the scheduler never saw them.
+    /// The private profile is written first and is the source of truth: it survives leaving a
+    /// house, so the next house gets the same free time without asking again. When the user has
+    /// no house yet, the choice stays in ``pendingFreeTimeMinutes`` and is written to the
+    /// in-house profile by ``flushPendingFreeTimeIfNeeded()`` once the house exists (the
+    /// in-house profile is what housemates and the scheduler read).
+    ///
+    /// - Returns: `false` (with ``errorMessage`` set) only when the private profile could not be
+    ///   written, in which case nothing was changed. If just the in-house write failed, it
+    ///   returns `true` and sets ``freeTimeSyncWarning``; the sync is retried automatically.
     @MainActor
     @discardableResult
     func setAvailableTimeToUser(daysOfWeekDTO: [DayOfWeekDTO]) async -> Bool {
         isLoading = true
         errorMessage = nil
+        freeTimeSyncWarning = nil
         defer { isLoading = false }
-        
+
         let minutes = daysOfWeekDTO.map { Int(($0.freeTime.timeInHours * 60).rounded()) }
         rollbackJournal.lastFreeTimeMinutes = minutes
-        
+
         await reloadSessionIfNeeded()
-        
-        guard let houseUser = await resolveHouseUser() else {
-            guard currentUser != nil else {
-                errorMessage = L10n.tr("Não foi possível salvar seus horários. Tente novamente.")
-                return false
+
+        let genericError = L10n.tr("Não foi possível salvar seus horários. Tente novamente.")
+
+        do {
+            switch try await freeTimeSync.save(minutes: minutes) {
+            case .synced:
+                // `setAvailableTimes` already replaced (and deleted) the previous slots.
+                if let houseUser = currentUser, CloudKitManager.shared.isHouseUser(houseUser) {
+                    rollbackJournal.freeTimeRecords = (houseUser.availableTimeReference ?? [])
+                        .map { OnboardingRollbackJournal.StoredRecordID($0.recordID) }
+                }
+            case .privateOnly:
+                break
+            case .publicSyncPending:
+                freeTimeSyncWarning = L10n.tr("Seus horários foram salvos no seu perfil, mas ainda não chegaram à casa. Vamos tentar de novo automaticamente.")
             }
-            pendingFreeTimeMinutes = minutes
             return true
-        }
-        
-        guard await houseUser.setAvailableTimes(Self.availableTimes(from: minutes)) else {
-            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Não foi possível salvar seus horários. Tente novamente.")
+        } catch let error as FreeTimeSyncError {
+            switch error {
+            case .invalidInput:
+                errorMessage = L10n.tr("Escolha o tempo livre de pelo menos um dia.")
+            case .privateProfileUnavailable:
+                errorMessage = genericError
+            case .privateWriteFailed:
+                errorMessage = CloudKitManager.shared.errorMessage ?? genericError
+            }
+            return false
+        } catch {
+            errorMessage = genericError
             return false
         }
-        pendingFreeTimeMinutes = nil
-        // `setAvailableTimes` already replaced (and deleted) the previous slots.
-        rollbackJournal.freeTimeRecords = (houseUser.availableTimeReference ?? [])
-            .map { OnboardingRollbackJournal.StoredRecordID($0.recordID) }
-        return true
     }
-    
+
     /// Loads the free time currently saved for the user, keyed by the row index used in
     /// `SelectFreeTimeOnboardingView.weekOrder` (0 = Monday … 6 = Sunday).
     ///
-    /// Used when the screen is opened from the profile to edit existing values.
+    /// Reads the private profile first and falls back to the in-house profile. Used when the
+    /// screen is opened from the profile to edit existing values.
     @MainActor
     func fetchCurrentFreeTime() async -> [Int: FreeTimeEnum] {
         await reloadSessionIfNeeded()
-        guard let user = currentUser else { return [:] }
-        
-        let calendar = Calendar.current
-        var minutesByIndex: [Int: Int] = [:]
-        
-        for slot in await user.availableTime {
-            let index = (calendar.component(.weekday, from: slot.day) + 5) % 7
-            minutesByIndex[index] = max(minutesByIndex[index] ?? 0, slot.capacityMinutes)
+        guard case .found(let minutes) = await freeTimeSync.restore() else { return [:] }
+
+        var freeTimeByIndex: [Int: FreeTimeEnum] = [:]
+        for (index, value) in minutes.enumerated() where value > 0 {
+            freeTimeByIndex[index] = FreeTimeEnum(minutes: value)
         }
-        
-        return minutesByIndex.mapValues { FreeTimeEnum(minutes: $0) }
+        return freeTimeByIndex
+    }
+
+    /// Brings the free time saved on the private profile back, so a user who left a house (or
+    /// reinstalled the app) is not asked for it again. The value is kept as pending so the next
+    /// house created or joined receives it.
+    ///
+    /// - Returns: `true` when free time is known (already pending, or found on the profile).
+    ///   `false` when there is none, or it could not be read: the free-time step is then shown,
+    ///   so a house is never created without it.
+    @MainActor
+    private func restoreFreeTimeFromProfile() async -> Bool {
+        guard await freeTimeSync.restoreAsPending() else { return false }
+        rollbackJournal.lastFreeTimeMinutes = pendingFreeTimeMinutes
+        return true
+    }
+
+    // MARK: - Welcome
+
+    /// Leaves the welcome screen. A new user goes on to create a profile; a user who already has
+    /// a profile and free time (e.g. after leaving a house) goes straight to "create or enter a
+    /// house", without being asked for either again.
+    func advanceFromWelcome() {
+        let target = OnboardingRouting.stepAfterWelcome(
+            hasProfile: currentUser != nil,
+            hasFreeTime: freeTimeToRestore != nil
+        )
+        if let index = stateMachine.steps.firstIndex(of: target) {
+            // "Voltar" from "create or enter" must come back here, not to the skipped steps.
+            stateMachine.skippedToCreateOrEnter = (target == .createOrEnterHome)
+            stateMachine.jumpToStep(index: index)
+        } else {
+            goToNextView()
+        }
     }
     
     func fetchHouse() async {
@@ -1134,13 +1208,19 @@ class OnboardingViewModel {
                     self.finishOnboarding()
                 }
             } else {
-                stateMachine.flow = .notDefined
-                // Free time now comes before the house; skipping it left the member without
-                // availability (and the owner stuck waiting for them).
-                let target: OnboardingNavigationSteps = pendingFreeTimeMinutes == nil ? .chooseFreeTime : .createOrEnterHome
-                if let targetIndex = stateMachine.steps.firstIndex(of: target) {
-                    stateMachine.jumpToStep(index: targetIndex)
-                }
+                // An account with a profile and no house (it left or deleted its house, or the
+                // app was reinstalled) always starts over at the welcome screen, which leads to
+                // "create or enter a house" (see `advanceFromWelcome()`). Progress and rollback
+                // data persisted by an earlier onboarding are stale here: resuming them used to
+                // jump straight to "create or enter" with "voltar" pointing at the free-time step.
+                stateMachine.resetProgress()
+                rollbackJournal = OnboardingRollbackJournal()
+                
+                // Free time is stored on the private profile too, so it survives leaving a
+                // house. A returning user keeps it instead of being asked again; it is only
+                // missing for accounts that never saved one (or when it could not be read),
+                // and a house is never created without it (the owner would be stuck waiting).
+                _ = await restoreFreeTimeFromProfile()
             }
         }
     }
