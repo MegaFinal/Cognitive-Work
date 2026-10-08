@@ -9,17 +9,19 @@ import SwiftUI
 import Foundation
 
 /// The animated background of the welcome screen.
-///
-/// Shows columns of chore cards scrolling in alternating directions:
-/// even columns move up and odd columns move down, each one slightly
-/// out of phase so neighboring columns never line up.
 struct WelcomeAnimatedOnboardingView: View{
     @Binding var viewModel: OnboardingViewModel
     
     @State var showSheet: Bool = false
     
     /// Mock columns, built only once since ``ChoreDTO`` is a class.
-    private let columns = ChoreDTO.colunasMock
+    private let columns = ChoreDTO.columnsMock
+    
+    /// Speed of each column, in points per second.
+    private static let speeds: [Double] = [17, 19, 17, 19]
+    
+    /// Starting offset of each column, in points. A card plus its spacing is 186pt.
+    private static let phases: [Double] = [93, 40, 0, 40]
     
     var body: some View {
         ZStack {
@@ -29,7 +31,8 @@ struct WelcomeAnimatedOnboardingView: View{
                 ForEach(columns.indices, id: \.self) { index in
                     InfinityRow(cards: columns[index],
                                 movesUp: index.isMultiple(of: 2),
-                                phase: Double(index) * 60)
+                                speed: Self.speeds[index % Self.speeds.count],
+                                phase: Self.phases[index % Self.phases.count])
                     .frame(width: 110)
                 }
             }
@@ -58,15 +61,9 @@ struct WelcomeAnimatedOnboardingView: View{
                     Spacer()
                 }
                 .padding(.horizontal, height * 0.028)
-                // Keeps the texts clear of the "Continuar" button pinned to the bottom corner,
-                // now that the sheet can grow with them.
                 .padding(.bottom, height * 0.15)
-                // Minimum (not fixed) height: on small screens or in English the texts need more
-                // room, and a fixed height compressed them into "…".
                 .frame(width: width)
                 .frame(minHeight: height * 0.6, alignment: .top)
-                // Takes its ideal height (≥ 60% of the screen) rather than stretching the
-                // `Spacer` to fill the whole screen.
                 .fixedSize(horizontal: false, vertical: true)
                 .background(Color.white)
                 .clipShape (
