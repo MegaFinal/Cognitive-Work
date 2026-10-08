@@ -443,6 +443,16 @@
         }
       }
     },
+    "adquiridos por ter notado\nalgo na casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "earned for noticing\nsomething around the house"
+          }
+        }
+      }
+    },
     "adquiridos por ter notado algo na casa" : {
       "localizations" : {
         "en" : {
@@ -2110,6 +2120,9 @@
         }
       }
     },
+    "Escolha as tarefas" : {
+
+    },
     "Escolha o dia da tarefa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2127,6 +2140,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose the rooms in your home; touch and hold to edit their names and quantities."
+          }
+        }
+      }
+    },
+    "Escolha os cômodos que existem na sua casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the rooms that exist in your home"
           }
         }
       }
@@ -2415,6 +2438,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Straighten the sheet, comforter and pillows."
+          }
+        }
+      }
+    },
+    "Excluindo cômodo..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting room..."
           }
         }
       }
@@ -3977,6 +4011,19 @@
         }
       }
     },
+    "O Pipa divide!" : {
+
+    },
+    "O Pipa pega as informações de todos e divide as tarefas da melhor forma possivel!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pipa gathers everyone's information and splits the chores in the best way possible!"
+          }
+        }
+      }
+    },
     "O Pipa usa a conta do iCloud do seu iPhone para guardar os dados da sua casa com segurança e sincronizar tudo entre você e os demais moradores. Verifique se você está conectado a uma conta do iCloud nos Ajustes do seu iPhone para continuar." : {
       "localizations" : {
         "en" : {
@@ -5076,6 +5123,16 @@
         }
       }
     },
+    "Selecione as tarefas que serão divididas igualmente entre todos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the chores that will be split equally among everyone"
+          }
+        }
+      }
+    },
     "Sem cômodo" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6103,56 +6160,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Go back to the previous step?"
-          }
-        }
-      }
-    },
-    "Escolha os cômodos que existem na sua casa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose the rooms that exist in your home"
-          }
-        }
-      }
-    },
-    "Selecione as tarefas que serão divididas igualmente entre todos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select the chores that will be split equally among everyone"
-          }
-        }
-      }
-    },
-    "O Pipa pega as informações de todos e divide as tarefas da melhor forma possivel!" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pipa gathers everyone's information and splits the chores in the best way possible!"
-          }
-        }
-      }
-    },
-    "adquiridos por ter notado\nalgo na casa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "earned for noticing\nsomething around the house"
-          }
-        }
-      }
-    },
-    "Excluindo cômodo..." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deleting room..."
           }
         }
       }
