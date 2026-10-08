@@ -1754,12 +1754,22 @@
         }
       }
     },
-    "eai amigo, cade meu link 🤨🤨" : {
+    "Oi! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hey friend, where's my link 🤨🤨"
+            "value" : "Hi! I downloaded Pipa and I want to join our home. Can you send me the invite link? 🏠"
+          }
+        }
+      }
+    },
+    "Oi, aqui é %@! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi, it's %@! I downloaded Pipa and I want to join our home. Can you send me the invite link? 🏠"
           }
         }
       }

@@ -67,8 +67,9 @@ struct UserProfileView: View {
         .task {
             async let loadUserTask: () = viewModelUser.loadUser()
             async let loadIpTask: () = viewModelHardware.fetchHostName()
+            async let loadAdminTask: Bool = viewModelHouse.checkAdminStatus()
             
-            _ = await (loadUserTask, loadIpTask)
+            _ = await (loadUserTask, loadIpTask, loadAdminTask)
         }
         // MARK: Alert if didn't save
         .alert(
