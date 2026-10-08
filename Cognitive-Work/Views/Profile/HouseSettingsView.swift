@@ -19,8 +19,7 @@ struct HouseSettingsView: View {
     @State private var leaveErrorMessage: String?
     @State private var deleteErrorMessage: String?
     
-    /// Admin-only rows used to pop in after an unannounced CloudKit round trip.
-    @State private var isCheckingAdmin = true
+    private var isCheckingAdmin: Bool { !viewModel.isAdminResolved }
     
     @AppStorage("didOnboard") private var didOnboard: Bool = true
     
@@ -112,6 +111,7 @@ struct HouseSettingsView: View {
         .alert("Excluir Casa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {
+                guard viewModel.isAdminResolved, viewModel.isUserAdmin else { return }
                 isDeletingHouse = true
                 Task {
                     let success = await viewModel.deleteHouse()
@@ -157,7 +157,6 @@ struct HouseSettingsView: View {
         .blockingOperation(isPresented: $isDeletingHouse, message: "Excluindo sua casa...")
         .task {
             await viewModel.checkAdminStatus()
-            isCheckingAdmin = false
         }
         // `deleteErrorMessage` was set on failure but never presented.
         .alert(

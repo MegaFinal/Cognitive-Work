@@ -16,13 +16,8 @@ final class HouseEditViewModel {
     /// The house currently loaded for display/editing.
     private(set) var house: HouseModel?
 
-    /// True while a house is being fetched.
     private(set) var isLoading = false
 
-    /// True while a delete is in flight.
-    ///
-    /// Kept separate from ``isLoading`` so the two operations can overlap without one
-    /// switching the other's indicator off when it finishes first.
     private(set) var isDeleting = false
 
     /// True while the member is leaving the house.
@@ -30,6 +25,8 @@ final class HouseEditViewModel {
 
     private(set) var errorMessage: String?
     var isUserAdmin: Bool = false
+
+    private(set) var isAdminResolved = false
 
     init(house: HouseModel? = nil) {
         self.house = house
@@ -51,10 +48,12 @@ final class HouseEditViewModel {
         guard let house
         else {
             isUserAdmin = false
+            isAdminResolved = true
             return false
         }
 
         isUserAdmin = await house.isAdmin() == true
+        isAdminResolved = true
         return true
     }
 
@@ -65,7 +64,7 @@ final class HouseEditViewModel {
         isLoading = true
         defer { isLoading = false }
 
-        guard let fetchedHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
+        guard let fetchedHouse = try? await CloudKitManager.shared.currentHouse()
         else {
             errorMessage = "Failed to retrieve the record"
             return
@@ -98,6 +97,7 @@ final class HouseEditViewModel {
         }
 
         house = nil
+        resetAdminState()
         errorMessage = nil
         return true
     }
@@ -137,8 +137,14 @@ final class HouseEditViewModel {
         }
 
         self.house = nil
+        resetAdminState()
         errorMessage = nil
         return true
+    }
+    
+    private func resetAdminState() {
+        isUserAdmin = false
+        isAdminResolved = false
     }
     
     func getOutOfTheHouse() async {

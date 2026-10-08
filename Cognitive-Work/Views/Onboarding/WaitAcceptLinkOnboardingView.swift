@@ -25,6 +25,17 @@ struct WaitAcceptLinkOnboardingView: View {
         viewModel.isAcceptingInvite || viewModel.isJoiningHouse
     }
     
+    /// Text of the message that asks the house admin for the invite link. Short, says who is asking
+    /// and where from (the app), and what is wanted, since the admin may get it with no context.
+    /// Resolved with ``L10n`` so it follows the language chosen in the app, not just the device's.
+    private var inviteRequestMessage: String {
+        let name = viewModel.currentUser?.name.trimmingCharacters(in: .whitespaces) ?? ""
+        guard !name.isEmpty else {
+            return L10n.tr("Oi! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠")
+        }
+        return L10n.tr("Oi, aqui é %@! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠", name)
+    }
+    
     // MARK: - Body
     
     var body: some View {
@@ -55,7 +66,7 @@ struct WaitAcceptLinkOnboardingView: View {
                     }
                     .transition(.opacity)
                 } else {
-                    ShareLink(item: String(localized: "eai amigo, cade meu link 🤨🤨")) {
+                    ShareLink(item: inviteRequestMessage) {
                         Label("Pedir o convite por mensagem", systemImage: "square.and.arrow.up")
                             .fontWeight(.semibold)
                     }
