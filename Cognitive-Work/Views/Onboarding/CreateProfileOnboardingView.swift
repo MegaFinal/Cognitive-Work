@@ -27,6 +27,9 @@ struct CreateProfileOnboardingView: View {
     /// `true` while the picked photo is being loaded and converted.
     @State private var isLoadingImage = false
     
+    /// Whether the banner picker sheet is open.
+    @State private var isPickingBanner = false
+    
     // MARK: - Body
     
     var body: some View {
@@ -39,7 +42,15 @@ struct CreateProfileOnboardingView: View {
             
             Spacer(minLength: 16)
             
-            EditableProfileImage(image: viewModel.userProfilePicture, isEditing: true, selection: $selectedItem, isLoading: isLoadingImage)
+            EditableProfileImage(
+                image: viewModel.userProfilePicture,
+                isEditing: true,
+                selection: $selectedItem,
+                isLoading: isLoadingImage,
+                banner: viewModel.userBanner,
+                onEditBanner: { isPickingBanner = true }
+            )
+            .disabled(viewModel.isLoading)
             
             TextField("Nome", text: $viewModel.userName)
                 .textFieldStyle(.plain)
@@ -49,7 +60,7 @@ struct CreateProfileOnboardingView: View {
                 .multilineTextAlignment(.center)
                 .characterLimit(TextLimits.userName, text: $viewModel.userName)
                 .submitLabel(.done)
-                .padding(.top, 32)
+                .padding(.top, 52)
             
             Spacer(minLength: 16)
             
@@ -95,16 +106,21 @@ struct CreateProfileOnboardingView: View {
                 }
             }
         }
+        .sheet(isPresented: $isPickingBanner) {
+            ProfileBannerSheet(banner: viewModel.userBanner, image: viewModel.userProfilePicture) { banner in
+                viewModel.userBanner = banner
+            }
+        }
         .dismissKeyboardOnTap()
         .onboardingBackButton(viewModel: viewModel)
         .onAppear {
             // Coming back to this step with a profile kept from an earlier run: show its name.
             if viewModel.userName.isEmpty, let user = viewModel.currentUser {
                 viewModel.userName = user.name
+                viewModel.userBanner = user.banner
             }
         }
     }
-    
 }
 
 #Preview {

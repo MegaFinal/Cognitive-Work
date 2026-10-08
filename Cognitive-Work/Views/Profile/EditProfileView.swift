@@ -12,35 +12,19 @@ struct EditProfileView: View {
     @Bindable var viewModel: UserProfileViewModel
     @Environment(\.dismiss) private var dismiss
     
+    /// Whether the banner picker sheet is open.
+    @State private var isPickingBanner = false
+    
     var body: some View {
         VStack(spacing: 40) {
-            // MARK: - Photo Picker
-            PhotosPicker(selection: $viewModel.selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
-                ZStack(alignment: .bottomTrailing) {
-                    if let data = viewModel.displayedImageData, let uiImage = UIImage(data: data) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: width * 0.7, height: width * 0.7)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.25), radius: 7.26429, x: 0, y: 5.38095)
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.gray)
-                            .frame(width: width * 0.7, height: width * 0.7)
-                            .background(.white)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.25), radius: 7.26429, x: 0, y: 5.38095)
-                    }
-                }
-                // `clipShape` only clips the drawing; without this the picker still reacted to
-                // taps on the square corners around the circle.
-                .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .contentShape(Circle())
+            // MARK: - Photo + banner
+            EditableProfileImage(
+                image: viewModel.displayedImageData.flatMap(UIImage.init(data:)),
+                isEditing: true,
+                selection: $viewModel.selectedPhotoItem,
+                banner: viewModel.editedBanner,
+                onEditBanner: { isPickingBanner = true }
+            )
             .disabled(viewModel.isSaving)
             
             // MARK: - Name Textfield
@@ -65,6 +49,14 @@ struct EditProfileView: View {
             Spacer()
         }
         .padding(.top, 70)
+        .sheet(isPresented: $isPickingBanner) {
+            ProfileBannerSheet(
+                banner: viewModel.editedBanner,
+                image: viewModel.displayedImageData.flatMap(UIImage.init(data:))
+            ) { banner in
+                viewModel.editedBanner = banner
+            }
+        }
         .navigationTitle("Editar Perfil")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(viewModel.isSaving)

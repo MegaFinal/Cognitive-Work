@@ -5,7 +5,6 @@
 //  Created by Carolina Sun on 31/08/26.
 //
 
-
 import SwiftUI
 import PhotosUI
 
@@ -19,11 +18,14 @@ struct EditableProfileImage: View {
     let isEditing: Bool
     @Binding var selection: PhotosPickerItem?
     
-    /// Shows a spinner over the circle while a picked photo is still loading.
     var isLoading: Bool = false
     
+    var banner: ProfileBanner? = nil
+    
+    var onEditBanner: (() -> Void)? = nil
+    
     /// Size the empty-state circle is drawn at (from the handoff).
-    private var elipseSize: CGFloat { width * 0.88 }
+    fileprivate var elipseSize: CGFloat { width * 0.8 }
 
     /// Space the component claims in its parent's layout. The placeholder is
     /// larger and overflows this slot visually, so it never pushes or squeezes
@@ -44,10 +46,25 @@ struct EditableProfileImage: View {
             }
         }
         .frame(width: layoutSize, height: layoutSize)
+        .overlay {
+            if banner != nil, let onEditBanner {
+                bannerEditButton(action: onEditBanner)
+            }
+        }
+    }
+    
+    /// The avatar: inside the banner ring when there is a banner, otherwise the plain circle.
+    @ViewBuilder
+    private var profileImage: some View {
+        if let banner {
+            bannerAvatar(banner)
+        } else {
+            plainProfileImage
+        }
     }
     
     /// The circular avatar, falling back to a placeholder when no picture was chosen yet.
-    private var profileImage: some View {
+    private var plainProfileImage: some View {
         Group {
             if let image = image {
                 Image(uiImage: image)
@@ -57,9 +74,7 @@ struct EditableProfileImage: View {
                     .clipped()
                     .background(Color(.systemBackground))
             } else {
-                Image("OnboardingElipse")
-                    .resizable()
-                    .frame(width: elipseSize, height: elipseSize)
+                placeholderRing
                     .overlay {
                         if !isLoading {
                             Image(systemName: "photo.badge.plus")
@@ -81,6 +96,71 @@ struct EditableProfileImage: View {
         }
         .clipShape(Circle())
         .shadow(radius: 5)
+    }
+}
+
+extension EditableProfileImage {
+    fileprivate var placeholderRing: some View {
+        Image("OnboardingElipse")
+            .resizable()
+            .frame(width: elipseSize, height: elipseSize)
+    }
+    
+    fileprivate var innerSize: CGFloat { elipseSize * 0.7 }
+    
+    fileprivate func bannerAvatar(_ banner: ProfileBanner) -> some View {
+        ZStack {
+            RoomTextureBackground(color: banner.color, pattern: banner.pattern, zoom: 2)
+                .frame(width: elipseSize, height: elipseSize)
+            
+            ZStack {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Color.white
+                    if !isLoading {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.system(size: 65))
+                            .foregroundStyle(.gray)
+                    }
+                }
+                
+                if isLoading {
+                    Color.black.opacity(image == nil ? 0 : 0.3)
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(image == nil ? .gray : .white)
+                }
+            }
+            .frame(width: innerSize, height: innerSize)
+            .clipShape(Circle())
+        }
+        .frame(width: elipseSize, height: elipseSize)
+        .clipShape(Circle())
+        .shadow(radius: 5)
+    }
+    
+    fileprivate func bannerEditButton(action: @escaping () -> Void) -> some View {
+        let offset = elipseSize / 2 * 0.7071
+        return Button {
+            HapticsManager.selection()
+            action()
+        } label: {
+            Image(systemName: "pencil")
+                .font(.system(size: 28))
+                .foregroundColor(.white)
+                .padding(18)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(
+            .regular.interactive().tint(.black),
+            in: .circle
+        )
+        .disabled(isLoading)
+        .offset(x: offset, y: offset)
     }
 }
 

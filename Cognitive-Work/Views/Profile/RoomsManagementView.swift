@@ -701,7 +701,7 @@ private struct PulsingPlaceholder: View {
     }
 }
 
-private extension RoomTextureBackground {
+extension RoomTextureBackground {
     /// Same background with a different texture opacity.
     func withTextureOpacity(_ opacity: Double) -> Self {
         var copy = self
@@ -711,7 +711,7 @@ private extension RoomTextureBackground {
 }
 
 /// A color option shown as a small textured circle of that color.
-private struct ColorSwatch: View {
+struct ColorSwatch: View {
     let color: RoomColor
     let pattern: RoomTexturePattern
     let isSelected: Bool
@@ -746,7 +746,7 @@ private struct ColorSwatch: View {
 }
 
 /// A texture option: a rounded tile of the selected color with that texture, and its name.
-private struct PatternSwatch: View {
+struct PatternSwatch: View {
     let color: RoomColor
     let pattern: RoomTexturePattern
     let isSelected: Bool

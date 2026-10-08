@@ -29,7 +29,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// and still carries the asset. See ``CloudKitSyncable/listDesiredKeys``.
     static let listDesiredKeys: [CKRecord.FieldKey]? = [
         "name", "ownerRecordName", "tier", "coins", "points", "couponLimit",
-        "badges", "chores", "availableTime", "coupons", "house"
+        "badges", "chores", "availableTime", "coupons", "house",
+        "bannerColor", "bannerPattern"
     ]
     
     /// Identifier of the stored record, or `nil` before the user is saved.
@@ -42,6 +43,9 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     
     /// Optional avatar image.
     var profilePicture: CKAsset?
+    
+    /// Color and texture of the banner behind the profile picture.
+    var banner: ProfileBanner = .default
     
     /// Progression level reached by the user.
     var tier: Tier
@@ -127,6 +131,10 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.couponLimit = couponLimit
         self.tier = Tier(rawValue: record["tier"] as? String ?? "") ?? .tier1
         self.profilePicture = record["profilePicture"] as? CKAsset
+        self.banner = ProfileBanner(
+            storedColor: record["bannerColor"] as? String,
+            storedPattern: record["bannerPattern"] as? String
+        )
         self.badgesReference = record["badges"] as? [CKRecord.Reference] ?? []
         self.choresReference = record["chores"] as? [CKRecord.Reference] ?? []
         self.availableTimeReference = record["availableTime"] as? [CKRecord.Reference]
@@ -141,6 +149,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     init(
         name: String,
         profilePicture: CKAsset? = nil,
+        banner: ProfileBanner = .default,
         tier: Tier,
         coins: Int = 0,
         points: Int = 0,
@@ -156,6 +165,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.recordID = recordID
         self.name = name
         self.profilePicture = profilePicture
+        self.banner = banner
         self.tier = tier
         self.coins = coins
         self.points = points
@@ -179,6 +189,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         if let profilePicture {
             record["profilePicture"] = profilePicture
         }
+        record["bannerColor"] = banner.color.rawValue
+        record["bannerPattern"] = banner.pattern.rawValue
         record["tier"] = tier.rawValue
         record["coins"] = coins
         record["points"] = points

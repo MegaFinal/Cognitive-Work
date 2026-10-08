@@ -25,6 +25,7 @@ final class UserProfileViewModel {
     var didSaveSuccessfully = false
     
     var editedName: String = ""
+    var editedBanner: ProfileBanner = .default
     var editedProfilePicture: Data?
     var selectedPhotoItem: PhotosPickerItem? {
         didSet { loadSelectedPhoto() }
@@ -111,9 +112,17 @@ final class UserProfileViewModel {
         return nil
     }
     
+    /// The banner to draw: the one being edited while editing, otherwise the saved one.
+    var displayedBanner: ProfileBanner {
+        if isEditing { return editedBanner }
+        return privateUser?.banner ?? user?.banner ?? .default
+    }
+    
     var hasUnsavedChanges: Bool {
         guard let privateUser else { return false }
-        return editedName != privateUser.name || editedProfilePicture != privateUser.profilePicture?.fileURL?.dataRepresentation
+        return editedName != privateUser.name
+            || editedBanner != privateUser.banner
+            || editedProfilePicture != privateUser.profilePicture?.fileURL?.dataRepresentation
     }
     
     var canSave: Bool {
@@ -162,6 +171,7 @@ final class UserProfileViewModel {
     
     func startEditing() {
         editedName = privateUser?.name ?? ""
+        editedBanner = privateUser?.banner ?? .default
         if let fileURL = privateUser?.profilePicture?.fileURL {
             do {
                 editedProfilePicture = try Data(contentsOf: fileURL)
@@ -198,8 +208,11 @@ final class UserProfileViewModel {
         let previousPrivatePicture = privateUser.profilePicture
         let previousHouseName = user?.name
         let previousHousePicture = user?.profilePicture
+        let previousPrivateBanner = privateUser.banner
+        let previousHouseBanner = user?.banner
         
         privateUser.name = editedName
+        privateUser.banner = editedBanner
         
         if let editedProfilePicture {
             privateUser.profilePicture = CloudKitManager.shared.createAsset(from: editedProfilePicture)
@@ -207,6 +220,7 @@ final class UserProfileViewModel {
         
         if let user {
             user.name = editedName
+            user.banner = editedBanner
             if let editedProfilePicture {
                 user.profilePicture = CloudKitManager.shared.createAsset(from: editedProfilePicture)
             }
@@ -223,10 +237,12 @@ final class UserProfileViewModel {
                 if !privateSuccess {
                     privateUser.name = previousPrivateName
                     privateUser.profilePicture = previousPrivatePicture
+                    privateUser.banner = previousPrivateBanner
                 }
                 if !houseSuccess, let previousHouseName {
                     user.name = previousHouseName
                     user.profilePicture = previousHousePicture
+                    user.banner = previousHouseBanner ?? .default
                 }
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro desconhecido.")
             }
@@ -238,6 +254,7 @@ final class UserProfileViewModel {
             } else {
                 privateUser.name = previousPrivateName
                 privateUser.profilePicture = previousPrivatePicture
+                privateUser.banner = previousPrivateBanner
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro desconhecido.")
             }
         }
