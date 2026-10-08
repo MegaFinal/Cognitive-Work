@@ -126,7 +126,7 @@ struct ChoreCardListStyle: View {
                                 Text(room?.name.localizedDefault ?? L10n.tr("Sem cômodo"))
                                     .font(.system(size: 12))
                                 
-                                Text(chore.name.localizedDefault)
+                                Text(chore.localizedName)
                                     .font(.system(size: 22))
                                     .bold()
                             }

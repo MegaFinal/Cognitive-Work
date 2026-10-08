@@ -183,7 +183,7 @@ private struct DailyChoreCard: View {
                 .fontWeight(.medium)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(chore.name.localizedDefault)
+            Text(chore.localizedName)
                 .font(.headline)
                 .fontWeight(.bold)
                 // No line limit: long names (mostly in English) wrap onto as many lines as
