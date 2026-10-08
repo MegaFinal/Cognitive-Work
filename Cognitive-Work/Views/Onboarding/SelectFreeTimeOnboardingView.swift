@@ -65,14 +65,14 @@ struct SelectFreeTimeOnboardingView: View {
             showSyncWarning = true
             return
         }
-        continueAfterSaving()
+        await continueAfterSaving()
     }
 
-    private func continueAfterSaving() {
+    private func continueAfterSaving() async {
         if isFromSettings {
             dismiss()
         } else {
-            viewModel.advanceAfterFreeTime()
+            await viewModel.advanceAfterFreeTime()
         }
     }
     
@@ -153,7 +153,11 @@ struct SelectFreeTimeOnboardingView: View {
         .alert("Salvo no seu perfil", isPresented: $showSyncWarning) {
             Button("OK") {
                 viewModel.freeTimeSyncWarning = nil
-                continueAfterSaving()
+                Task {
+                    viewModel.isLoading = true
+                    defer { viewModel.isLoading = false }
+                    await continueAfterSaving()
+                }
             }
         } message: {
             Text(viewModel.freeTimeSyncWarning ?? "")

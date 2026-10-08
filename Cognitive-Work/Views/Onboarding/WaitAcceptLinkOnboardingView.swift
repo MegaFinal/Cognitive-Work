@@ -102,7 +102,7 @@ struct WaitAcceptLinkOnboardingView: View {
                 
                 viewModel.stateMachine.flow = .invitedWithProfile
                 guard await viewModel.joinHouse() else { return }
-                viewModel.advanceAfterJoiningHouse()
+                await viewModel.advanceAfterJoiningHouse()
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

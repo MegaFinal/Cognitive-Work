@@ -68,7 +68,7 @@ struct Onboarding: View {
                         if viewModel.currentUser != nil {
                             viewModel.stateMachine.flow = .invitedWithProfile
                             if await viewModel.joinHouse() {
-                                viewModel.advanceAfterJoiningHouse()
+                                await viewModel.advanceAfterJoiningHouse()
                             }
                         } else {
                             viewModel.stateMachine.flow = .invitedWithoutProfile
