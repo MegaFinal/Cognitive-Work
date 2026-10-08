@@ -40,7 +40,7 @@ struct ChoreCard: View {
             Text(room?.name.localizedDefault ?? L10n.tr("Cômodo"))
                 .fontWeight(.regular)
                 .font(.system(size: 17, weight: .semibold))
-            Text(chore.name.localizedDefault)
+            Text(chore.localizedName)
                 .bold()
                 .font(.system(size: 28))
         }

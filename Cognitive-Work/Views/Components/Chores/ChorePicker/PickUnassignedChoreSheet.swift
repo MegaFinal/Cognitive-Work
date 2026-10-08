@@ -175,7 +175,7 @@ struct PickUnassignedChoreCard: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.black)
             
-            Text(chore.name.localizedDefault)
+            Text(chore.localizedName)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.black)
             

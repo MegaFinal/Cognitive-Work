@@ -153,7 +153,7 @@ struct ChoreDetailsCard: View {
                 .frame(width: width * 0.19, height: height * 0.09)
                 .fontWeight(.thin)
             
-            Text(chore.name.localizedDefault)
+            Text(chore.localizedName)
                 .font(.system(size: 25))
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
@@ -190,7 +190,7 @@ struct ChoreDetailsCard: View {
     private var info: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(chore.description.localizedDefault)
+                Text(chore.localizedDescription)
                     .font(.system(size: 14))
                     .frame(width: width * 0.75, alignment: .leading)
                 

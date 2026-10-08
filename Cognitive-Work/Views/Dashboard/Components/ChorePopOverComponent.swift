@@ -32,7 +32,7 @@ struct ChorePopOverComponent: View {
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)
             
-            Text(chore.name.localizedDefault)
+            Text(chore.localizedName)
                 .bold()
                 .font(.title2)
                 .multilineTextAlignment(.leading)

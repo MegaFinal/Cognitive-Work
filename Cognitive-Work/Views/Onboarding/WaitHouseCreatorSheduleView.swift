@@ -24,7 +24,7 @@ struct WaitHouseCreatorSheduleView: View {
     let description2: LocalizedStringKey = "Enviaremos uma notificação quando a divisão estiver pronta"
     
     /// Scrolling chore cards behind the card, same as ``WaitingAlgorithmView``.
-    private let columns = ChoreDTO.colunasMock
+    private let columns = ChoreDTO.columnsMock
     @State private var isRotating = 0.0
     
     var body: some View {

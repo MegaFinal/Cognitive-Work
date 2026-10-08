@@ -335,7 +335,7 @@ private struct ChoreSelectionRow: View {
                     .font(.system(size: 24))
                     .foregroundStyle(isSelected ? color.uiColor : .black)
                 
-                Text(chore.name.localizedDefault)
+                Text(chore.localizedName)
                     .font(.system(size: 19))
                     .foregroundStyle(.black)
                     .multilineTextAlignment(.leading)
