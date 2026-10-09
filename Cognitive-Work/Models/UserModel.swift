@@ -74,8 +74,9 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Maximum number of coupons the user may hold at once.
     var couponLimit: Int
     
-    /// When this user's record was created. Used as the "joined the house" date.
-    var joinedAt: Date?
+    // [newUser] Disabled until we define what tapping it should do.
+    // /// When this user's record was created. Used as the "joined the house" date.
+    // var joinedAt: Date?
     
     var isTheHouseOwner: Bool {
         return ownerRecordName == id
@@ -144,7 +145,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.couponsReference = record["coupons"] as? [CKRecord.Reference]
         self.houseReference = record["house"] as? CKRecord.Reference
         self.ownerRecordName = ownerRecordName
-        self.joinedAt = record.creationDate
+        // [newUser] self.joinedAt = record.creationDate
     }
     
     /// Creates a new, unsaved user.

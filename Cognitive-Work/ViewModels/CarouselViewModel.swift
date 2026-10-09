@@ -475,6 +475,15 @@ class CarouselViewModel {
         // Restore focus index to the currently focused chore's index if still present; otherwise clear focus.
         if let recID = focusedChoreRecordID, let idx = visibleChores.firstIndex(where: { $0.recordID == recID }) {
             focusedIndex = idx
+            
+            // The focused card may have moved to another index (a finished chore is re-sorted).
+            // Keep the carousel centered on it; otherwise it is left flipped off to the side
+            // while another card takes the center.
+            if layoutMode == .grid {
+                snappedItem = Double(idx)
+                draggingItem = Double(idx)
+                activeIndex = idx
+            }
         } else {
             focusedIndex = nil
             focusedChoreRecordID = nil

@@ -231,6 +231,9 @@ struct ChoresView: View {
             Text(headerTitle)
                 .font(.system(size: 34))
                 .fontWeight(.bold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .layoutPriority(1)
                 .padding(.horizontal, 30)
                 .padding(.top, 20)
             

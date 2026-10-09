@@ -842,6 +842,7 @@
       }
     },
     "Buscando tarefas, moradores e cômodos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -14,12 +14,12 @@ enum NotificationDestination {
     case pickChores
     case retrospective
     case dashboard
-    case userProfile(UserModel)
+    // [newUser] Disabled until we define what tapping it should do.
+    // case userProfile(UserModel)
     case chore(ChoreModel, RecurrentAssignmentModel?)
 }
 
 struct NotificationModel: Identifiable {
-    /// STABLE id (not UUID()): the same notification gets the same id on every rebuild.
     let id: String
     let kind: Notifications
     let title: String
@@ -48,37 +48,51 @@ class NotificationsViewModel {
     private let calendar = Calendar.current
     private let defaults = UserDefaults.standard
 
+    /// The snapshot and day the current `sections` were built for.
+    @ObservationIgnored private var builtSnapshotID: UUID?
+    @ObservationIgnored private var builtDay: Date?
+
     // MARK: - Loading
 
-    func load(now: Date = Date()) async {
-        if sections.isEmpty { isLoading = true }
+    /// Reads the house data from `HouseDataStore`. The store only hits CloudKit when its
+    /// data is missing or stale, so opening this screen usually costs no request at all.
+    /// - Parameter force: `true` for pull-to-refresh, to bypass the store's cache.
+    func load(force: Bool = false, now: Date = Date()) async {
+        let store = HouseDataStore.shared
+        if sections.isEmpty && !store.isUpToDate { isLoading = true }
         defer { isLoading = false }
 
-        // The 5 fetches run in parallel; the `await` below waits for all of them.
-        async let choresTask = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        async let assignmentsTask = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
-        async let roomsTask = CloudKitManager.shared.fetchAll(RoomModel.self)
-        async let membersTask = CloudKitManager.shared.fetchHouseUsers()
-        async let meTask = CloudKitManager.shared.currentHouseUser()
+        let snapshot = await store.load(force: force)
+        guard !Task.isCancelled else { return }
 
-        let (chores, assignments, rooms, members, me) =
-            await (choresTask, assignmentsTask, roomsTask, membersTask, meTask)
+        // Same data and same day: the list we already have is still correct.
+        if snapshot.id == builtSnapshotID,
+           let builtDay, calendar.isDate(builtDay, inSameDayAs: now) {
+            return
+        }
 
-        guard !Task.isCancelled, let me else { return }
+        rebuild(from: snapshot, now: now)
+        builtSnapshotID = snapshot.id
+        builtDay = now
+    }
+
+    /// Builds every notification from data already in memory. No CloudKit calls.
+    private func rebuild(from snapshot: HouseSnapshot, now: Date) {
+        guard let me = snapshot.houseUser else { return }
 
         // Fast lookup tables: recordID → object.
         let choresByID = Dictionary(
-            chores.compactMap { chore in chore.recordID.map { ($0, chore) } },
+            snapshot.chores.compactMap { chore in chore.recordID.map { ($0, chore) } },
             uniquingKeysWith: { first, _ in first }
         )
         let roomNameByID = Dictionary(
-            rooms.compactMap { room in room.recordID.map { ($0, room.name) } },
+            snapshot.rooms.compactMap { room in room.recordID.map { ($0, room.name) } },
             uniquingKeysWith: { first, _ in first }
         )
         // The same person may have more than one UserModel (same ownerRecordName).
         let myIDs = Set(
-            ([me] + members.filter { $0.ownerRecordName == me.ownerRecordName })
-                .compactMap(\.recordID)
+            ([me] + snapshot.users.filter { $0.ownerRecordName == me.ownerRecordName })
+                .compactMap{ $0.recordID}
         )
 
         let windowStart = calendar.date(
@@ -86,11 +100,15 @@ class NotificationsViewModel {
         ) ?? now
 
         var all: [NotificationModel] = []
-        all += grabChoreNotifications(assignments, choresByID: choresByID, from: windowStart, now: now)
-        all += lateChoreNotifications(assignments, choresByID: choresByID, roomNameByID: roomNameByID,
-                                      myIDs: myIDs, from: windowStart, now: now)
-        all += divisionNotifications(assignments)
-        all += newUserNotifications(members, myIDs: myIDs)
+        // Recurring days and one-off chores, in a single shape (see `Occurrence`).
+        let occurrences = makeOccurrences(chores: snapshot.chores, assignments: snapshot.assignments,
+                                          choresByID: choresByID)
+
+        all += grabChoreNotifications(occurrences, from: windowStart, now: now)
+        all += lateChoreNotifications(occurrences, roomNameByID: roomNameByID, myIDs: myIDs, now: now)
+        all += divisionNotifications(snapshot.assignments)
+        // [newUser] Disabled until we define what tapping it should do.
+        // all += newUserNotifications(snapshot.users, myIDs: myIDs)
 
         // The 14-day rule lives in a single place (and nothing from the future shows up).
         all = all.filter { $0.date >= windowStart && $0.date <= now }
@@ -99,24 +117,82 @@ class NotificationsViewModel {
         newCount = all.filter { $0.date > lastSeenDate }.count
     }
 
+    // MARK: - Occurrences
+
+    /// One scheduled instance of a chore, whatever kind of chore it is:
+    /// - a recurring chore → one per assignment (each day has its own users and done state);
+    /// - a one-off chore → the chore itself (no assignments: it uses its own `dueDate`,
+    ///   responsible users and `isDone`).
+    /// The builders below only deal with this type, so they don't care which kind it is.
+    private struct Occurrence {
+        let chore: ChoreModel
+        /// `nil` for one-off chores.
+        let assignment: RecurrentAssignmentModel?
+        /// Start of the day this instance is scheduled for.
+        let day: Date
+        let userIDs: [CKRecord.ID]
+        let isDone: Bool
+
+        var isUnassigned: Bool { userIDs.isEmpty }
+    }
+
+    /// Turns assignments and one-off chores into ``Occurrence``s.
+    /// Same rules as `CarouselViewModel.rebuildUnassignedItems` for one-off chores.
+    private func makeOccurrences(
+        chores: [ChoreModel],
+        assignments: [RecurrentAssignmentModel],
+        choresByID: [CKRecord.ID: ChoreModel]
+    ) -> [Occurrence] {
+        // Recurring chores: one occurrence per assignment whose chore still exists.
+        var result: [Occurrence] = assignments.compactMap { assignment -> Occurrence? in
+            guard let chore = assignment.choreReference.flatMap({ choresByID[$0.recordID] }) else { return nil }
+            return Occurrence(
+                chore: chore,
+                assignment: assignment,
+                day: calendar.startOfDay(for: assignment.day),
+                userIDs: (assignment.userReferences ?? []).map(\.recordID),
+                isDone: assignment.isCompleted
+            )
+        }
+
+        // One-off chores: no assignments, so the chore is its own occurrence.
+        for chore in chores where (chore.dailyAssignmentsReference ?? []).isEmpty {
+            // Without a date it is never "today" nor "late", so it can't become a notification.
+            guard let dueDate = chore.dueDate else { continue }
+
+            var userIDs = (chore.allResponsibleUsersReference ?? []).map(\.recordID)
+            if let current = chore.currentResponsibleReference?.recordID, !userIDs.contains(current) {
+                userIDs.append(current)
+            }
+
+            result.append(
+                Occurrence(
+                    chore: chore,
+                    assignment: nil,
+                    day: calendar.startOfDay(for: dueDate),
+                    userIDs: userIDs,
+                    isDone: chore.isDone
+                )
+            )
+        }
+        return result
+    }
+
     // MARK: - Notification builders
 
-    /// "N tarefas a pegar hoje": one item per day that has unclaimed slots.
+    /// "N tarefas a pegar hoje": one item per day that has unclaimed occurrences.
     private func grabChoreNotifications(
-        _ assignments: [RecurrentAssignmentModel],
-        choresByID: [CKRecord.ID: ChoreModel],
+        _ occurrences: [Occurrence],
         from start: Date, now: Date
     ) -> [NotificationModel] {
         let today = calendar.startOfDay(for: now)
 
-        let open = assignments.filter { assignment in
-            let nobody = assignment.userReferences?.isEmpty ?? true
-            let choreExists = assignment.choreReference.flatMap { choresByID[$0.recordID] } != nil
-            return nobody && !assignment.isCompleted && choreExists
-                && assignment.day >= start && assignment.day <= today
+        let open = occurrences.filter { occurrence in
+            occurrence.isUnassigned && !occurrence.isDone
+                && occurrence.day >= start && occurrence.day <= today
         }
 
-        let byDay = Dictionary(grouping: open) { calendar.startOfDay(for: $0.day) }
+        let byDay = Dictionary(grouping: open) { $0.day }
 
         return byDay.map { day, list in
             NotificationModel(
@@ -132,31 +208,28 @@ class NotificationsViewModel {
 
     /// "X está atrasado" (mine) and "Ninguém pegou X" (unclaimed).
     private func lateChoreNotifications(
-        _ assignments: [RecurrentAssignmentModel],
-        choresByID: [CKRecord.ID: ChoreModel],
+        _ occurrences: [Occurrence],
         roomNameByID: [CKRecord.ID: String],
         myIDs: Set<CKRecord.ID>,
-        from start: Date, now: Date
+        now: Date
     ) -> [NotificationModel] {
         let today = calendar.startOfDay(for: now)
 
-        return assignments.compactMap { assignment -> NotificationModel? in
-            guard !assignment.isCompleted,
-                  assignment.day < today,
-                  let chore = assignment.choreReference.flatMap({ choresByID[$0.recordID] }),
+        return occurrences.compactMap { occurrence -> NotificationModel? in
+            guard !occurrence.isDone,
+                  occurrence.day < today,
                   // A chore becomes late on the day AFTER its scheduled day.
-                  let lateSince = calendar.date(byAdding: .day, value: 1,
-                                                to: calendar.startOfDay(for: assignment.day))
+                  let lateSince = calendar.date(byAdding: .day, value: 1, to: occurrence.day)
             else { return nil }
 
-            let users = assignment.userReferences ?? []
+            let chore = occurrence.chore
             let kind: Notifications
             let title: String
 
-            if users.isEmpty {
+            if occurrence.isUnassigned {
                 kind = .noUserDelayedChore
                 title = kind.rawValue + chore.name.prefix(1).lowercased() + chore.name.dropFirst()
-            } else if users.contains(where: { myIDs.contains($0.recordID) }) {
+            } else if occurrence.userIDs.contains(where: { myIDs.contains($0) }) {
                 kind = .yourDelayedChore
                 title = chore.name + kind.rawValue
             } else {
@@ -164,14 +237,18 @@ class NotificationsViewModel {
             }
 
             let room = chore.roomReference.flatMap { roomNameByID[$0.recordID] } ?? "Sem cômodo"
+            // Assignment id for recurring days, chore id for one-off chores.
+            let recordName = occurrence.assignment?.recordID?.recordName
+                ?? chore.recordID?.recordName
+                ?? "\(chore.name)-\(lateSince)"
 
             return NotificationModel(
-                id: "late-\(assignment.recordID?.recordName ?? "\(chore.name)-\(lateSince)")",
+                id: "late-\(recordName)",
                 kind: kind,
                 title: title,
                 subtitle: "\(room) · cerca de \(Int(chore.duration.rounded())) min",
                 date: lateSince,
-                destination: .chore(chore, assignment)
+                destination: .chore(chore, occurrence.assignment)
             )
         }
     }
@@ -211,22 +288,23 @@ class NotificationsViewModel {
         return result
     }
 
-    /// "Fulano entrou na casa": everyone except me.
-    private func newUserNotifications(_ members: [UserModel], myIDs: Set<CKRecord.ID>) -> [NotificationModel] {
-        members.compactMap { user -> NotificationModel? in
-            guard let id = user.recordID, !myIDs.contains(id),
-                  let joined = user.joinedAt else { return nil }
+    // [newUser] Disabled until we define what tapping it should do.
+//    /// "Fulano entrou na casa": everyone except me.
+//    private func newUserNotifications(_ members: [UserModel], myIDs: Set<CKRecord.ID>) -> [NotificationModel] {
+//        members.compactMap { user -> NotificationModel? in
+//            guard let id = user.recordID, !myIDs.contains(id),
+//                  let joined = user.joinedAt else { return nil }
 
-            return NotificationModel(
-                id: "user-\(id.recordName)",
-                kind: .newUser,
-                title: user.name + Notifications.newUser.rawValue,
-                subtitle: Notifications.newUser.subTitle,
-                date: joined,
-                destination: .userProfile(user)
-            )
-        }
-    }
+//            return NotificationModel(
+//                id: "user-\(id.recordName)",
+//                kind: .newUser,
+//                title: user.name + Notifications.newUser.rawValue,
+//                subtitle: Notifications.newUser.subTitle,
+//                date: joined,
+//                destination: .userProfile(user)
+//            )
+//        }
+//    }
 
     // MARK: - Grouping and "seen" state
 

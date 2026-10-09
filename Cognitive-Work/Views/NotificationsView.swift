@@ -38,7 +38,7 @@ struct NotificationsView: View {
             .padding(.top, 20)
         }
         .task { await viewModel.load() }
-        .refreshable { await viewModel.load() }
+        .refreshable { await viewModel.load(force: true) }
         .onDisappear { viewModel.markAllAsSeen() }
         .navigationDestination(isPresented: $isShowingDashboard) {
             DashboardView()
@@ -98,8 +98,9 @@ struct NotificationsView: View {
         case .chore(let chore, let assignment):
             dismiss()
             onOpenChore(chore, assignment)
-        case .userProfile:
-            break // TODO: there is no screen for ANOTHER user's profile yet
+        // [newUser] Disabled until we define what tapping it should do.
+        // case .userProfile:
+        //     break // TODO: there is no screen for ANOTHER user's profile yet
         }
     }
 }

@@ -27,6 +27,16 @@ struct CreateAndEditChoreView: View {
     
     @State private var showDeleteConfirmation = false
     
+    /// `true` from the moment the confirm button is tapped until the screen is dismissed
+    /// (or the save fails). Unlike `viewModel.isSaving`, it doesn't drop back to `false`
+    /// right before `dismiss()`, so the form stays locked during the closing animation too.
+    @State private var isSubmitting = false
+    
+    /// Whether the form must ignore edits: still loading, saving or deleting.
+    private var isFormLocked: Bool {
+        !viewModel.isLoaded || isSubmitting || viewModel.isSaving || viewModel.isDeleting
+    }
+    
     @Environment(\.dismiss) private var dismiss
     
     // MARK: - Main Body
@@ -106,8 +116,9 @@ struct CreateAndEditChoreView: View {
             .padding(.vertical)
             .frame(width: width * 0.9)
             // `load()` rebuilds the draft, so anything typed before it finishes would be lost.
-            .disabled(!viewModel.isLoaded)
-            .opacity(viewModel.isLoaded ? 1 : 0.5)
+            // While saving or deleting, edits would be ignored (the draft was already sent).
+            .disabled(isFormLocked)
+            .opacity(isFormLocked ? 0.5 : 1)
         }
         .hidesTabBar()
         .overlay {
@@ -116,18 +127,23 @@ struct CreateAndEditChoreView: View {
                     .controlSize(.large)
             }
         }
-        .navigationBarBackButtonHidden(viewModel.isSaving || viewModel.isDeleting)
+        .navigationBarBackButtonHidden(isSubmitting || viewModel.isSaving || viewModel.isDeleting)
         .toolbar {
             // MARK: - Confirmation Button
             ToolbarItem(placement: .confirmationAction) {
-                if viewModel.isSaving {
+                if isSubmitting || viewModel.isSaving {
                     ProgressView()
                 } else {
                     Button {
+                        // Lock the form right away, before the first `await`.
+                        isSubmitting = true
                         Task {
                             if await viewModel.confirm() {
                                 HapticsManager.notify(.success)
                                 dismiss()
+                            } else {
+                                // Save failed or was refused: let the user fix the form.
+                                isSubmitting = false
                             }
                         }
                     } label: {
@@ -353,7 +369,7 @@ struct CreateAndEditChoreView: View {
             .frame(height: height * 0.03)
         }
         .foregroundColor(.red)
-        .disabled(viewModel.isSaving || viewModel.isDeleting)
+        .disabled(isSubmitting || viewModel.isSaving || viewModel.isDeleting)
         .frame(maxWidth: .infinity)
         .padding(.top, 4)
     }
