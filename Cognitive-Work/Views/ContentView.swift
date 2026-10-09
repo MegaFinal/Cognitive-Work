@@ -92,10 +92,10 @@ struct ContentView: View {
                     Label("Tarefas", systemImage: "checklist")
                 }
              
-            ShopListView()
-                .tabItem {
-                    Label("Compras", systemImage: "basket")
-                }
+//            ShopListView()
+//                .tabItem {
+//                    Label("Compras", systemImage: "basket")
+//                }
             
             DashboardView()
                 .tabItem {
