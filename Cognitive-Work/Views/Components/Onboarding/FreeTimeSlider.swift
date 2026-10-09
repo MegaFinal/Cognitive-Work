@@ -97,6 +97,16 @@ struct FreeTimeSlider: View {
             @unknown default: break
             }
         }
+        // Voice Control can't swipe-adjust: "Mostrar ações para Tempo livre" offers these instead.
+        .voiceControlNames([L10n.tr("Tempo livre"), L10n.tr("Horas"), L10n.tr("Controle de tempo")])
+        .accessibilityAction(named: Text(L10n.tr("Aumentar"))) {
+            guard !isLoading else { return }
+            rating = min(maxRating, rating + 1)
+        }
+        .accessibilityAction(named: Text(L10n.tr("Diminuir"))) {
+            guard !isLoading else { return }
+            rating = max(0, rating - 1)
+        }
     }
 
     /// Spoken value for a slider level ("2 horas", or "Nenhum tempo livre" at zero).

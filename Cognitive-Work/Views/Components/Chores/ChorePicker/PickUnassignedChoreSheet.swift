@@ -86,6 +86,7 @@ struct PickUnassignedChoreCard: View {
                                 .foregroundStyle(.black)
                         }
                         .toggleStyle(.switch)
+                        .voiceControlNames([L10n.tr("Pegar todas as tarefas diárias"), L10n.tr("Pegar todas")])
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -252,7 +253,8 @@ struct PickUnassignedChoreCard: View {
                 .glassEffect(in: .circle)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(L10n.tr("Fechar"))
+        .voiceOverLabel(L10n.tr("Fechar"))
+        .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
     }
     
     private var confirmButton: some View {
@@ -292,7 +294,8 @@ struct PickUnassignedChoreCard: View {
         .buttonStyle(.plain)
         .disabled(!canConfirm || isSaving)
         .opacity(canConfirm ? 1.0 : 0.5)
-        .accessibilityLabel(isSaving ? L10n.tr("Salvando") : L10n.tr("Confirmar"))
-        .accessibilityHint(canConfirm ? "" : L10n.tr("Escolha pelo menos um dia para confirmar."))
+        .voiceOverLabel(isSaving ? L10n.tr("Salvando") : L10n.tr("Confirmar"))
+        .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
+        .voiceOverHint(canConfirm ? "" : L10n.tr("Escolha pelo menos um dia para confirmar."))
     }
 }

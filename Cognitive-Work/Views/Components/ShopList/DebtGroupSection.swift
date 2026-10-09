@@ -89,7 +89,7 @@ struct DebtGroupSection: View {
                 .font(.system(size: 18, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .accessibilityLabel(headerAccessibilityText ?? "\(title), \(L10n.tr("Total")) \(totalText)")
+                .voiceOverLabel(headerAccessibilityText ?? "\(title), \(L10n.tr("Total")) \(totalText)")
                 .accessibilityAddTraits(.isHeader)
 
             Spacer(minLength: 8)
@@ -142,8 +142,15 @@ struct DebtGroupSection: View {
         .disabled(isPaid || isSettling)
         .opacity(isSettling && !isPaid ? 0.5 : 1)
         .animation(.snappy, value: isPaid)
-        .accessibilityLabel(settleAccessibilityLabel ?? settleTitle)
-        .accessibilityValue(settleAccessibilityValue)
+        .voiceOverLabel(settleAccessibilityLabel ?? settleTitle)
+        .voiceOverValue(settleAccessibilityValue)
+        // Voice Control: "Toque em Pagar" (numbered when there are several) or "Toque em Pagar Isabela".
+        .voiceControlNames(settleInputLabels)
+    }
+
+    /// Speakable names for the settle button: what it shows, then one naming the person.
+    private var settleInputLabels: [String] {
+        isPaid ? [settleTitle] : [settleTitle, L10n.tr("Pagar %@", title)]
     }
 
     private struct Line: Shape {

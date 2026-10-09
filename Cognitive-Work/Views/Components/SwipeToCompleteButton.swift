@@ -121,9 +121,13 @@ struct SwipeToCompleteButton: View {
         // MARK: - VoiceOver
         // The swipe is replaced by a plain double tap.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(isDone ? L10n.tr("Tarefa concluída") : L10n.tr("Concluir tarefa"))
-        .accessibilityHint(isDone ? "" : L10n.tr("Toque duas vezes para marcar a tarefa como concluída."))
-        .accessibilityAddTraits(isDone ? [] : .isButton)
+        .voiceOverLabel(isDone ? L10n.tr("Tarefa concluída") : L10n.tr("Concluir tarefa"))
+        .voiceOverHint(isDone ? "" : L10n.tr("Toque duas vezes para marcar a tarefa como concluída."))
+        .voiceOverTraits(.isButton, when: !(isDone))
+        // Voice Control: "Toque em Concluir" replaces the swipe.
+        .voiceControlNames(isDone
+            ? [L10n.tr("Tarefa concluída")]
+            : [L10n.tr("Concluir"), L10n.tr("Concluir tarefa"), L10n.tr("Deslize para concluir")])
         .accessibilityAction {
             completeFromAccessibility()
         }

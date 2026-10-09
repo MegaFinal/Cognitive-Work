@@ -81,6 +81,8 @@ struct WelcomeAnimatedOnboardingView: View{
                     // Where "Continuar" leads depends on the account check that runs when this
                     // screen opens.
                     .disabled(viewModel.isCheckingAccount)
+                    // Voice Control: short names for the icon-only chevron.
+                    .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próximo"), L10n.tr("Avançar")])
                     .bold()
                     .labelStyle(.iconOnly)
                     .buttonStyle(.glassProminent)

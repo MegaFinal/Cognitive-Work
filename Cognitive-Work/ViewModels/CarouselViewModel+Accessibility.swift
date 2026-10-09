@@ -108,6 +108,26 @@ extension CarouselViewModel {
         return "\(summary). \(position)"
     }
 
+    // MARK: - Voice Control
+
+    /// Names Voice Control accepts for the closed carousel: the centred chore's visible name
+    /// first ("Toque em Lavar louça" opens it), then the carousel's own name.
+    var voiceControlCarouselInputLabels: [String] {
+        var labels: [String] = []
+        if let chore = accessibilityActiveChore, !chore.localizedName.isEmpty {
+            labels.append(chore.localizedName)
+        }
+        labels.append(L10n.tr("Tarefas do dia"))
+        labels.append(L10n.tr("Carrossel"))
+        return labels
+    }
+
+    /// Short names for a chore card: the name shown on the card first.
+    func voiceControlInputLabels(for chore: ChoreModel) -> [String] {
+        let name = chore.localizedName
+        return name.isEmpty ? [L10n.tr("Tarefa")] : [name, L10n.tr("Tarefa %@", name)]
+    }
+
     /// Moves the carousel one card forward (`step` = 1) or back (`step` = -1), the same way a
     /// swipe does, so VoiceOver users can browse it with the adjustable gesture.
     func accessibilityMoveCarousel(by step: Int) {

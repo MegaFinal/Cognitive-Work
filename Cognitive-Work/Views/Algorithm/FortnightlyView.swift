@@ -137,7 +137,7 @@ struct FortnightlyView: View {
         }
         // Colors only matter visually: every bar already reads its resident's name.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.tr("Moradores na legenda: %@", ChartA11y.list(viewModel.users.map(\.name))))
+        .voiceOverLabel(L10n.tr("Moradores na legenda: %@", ChartA11y.list(viewModel.users.map(\.name))))
     }
 }
 

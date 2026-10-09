@@ -50,7 +50,8 @@ struct ProfileBannerSheet: View {
                     } label: {
                         Image(systemName: "xmark")
                     }
-                    .accessibilityLabel(L10n.tr("Cancelar"))
+                    .voiceOverLabel(L10n.tr("Cancelar"))
+                    .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -61,7 +62,8 @@ struct ProfileBannerSheet: View {
                     } label: {
                         Image(systemName: "checkmark")
                     }
-                    .accessibilityLabel(L10n.tr("Confirmar"))
+                    .voiceOverLabel(L10n.tr("Confirmar"))
+                    .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
                 }
             }
         }

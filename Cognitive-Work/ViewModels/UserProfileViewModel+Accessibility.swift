@@ -19,4 +19,10 @@ extension UserProfileViewModel {
             .filter { !$0.isEmpty }
             .joined(separator: ", ")
     }
+
+    /// Short names Voice Control users can say for the profile header ("Dayô", "Perfil"),
+    /// instead of the whole VoiceOver sentence.
+    var accessibilityProfileInputLabels: [String] {
+        [user?.name ?? "", L10n.tr("Perfil")].filter { !$0.isEmpty }
+    }
 }

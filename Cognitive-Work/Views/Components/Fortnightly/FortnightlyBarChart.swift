@@ -40,7 +40,7 @@ struct FortnightlyBarChart: View {
         }
         // VoiceOver: days in order, bars as buttons, plus an audio graph of minutes per resident.
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(L10n.tr("Gráfico da escala quinzenal, %lld tarefas em %lld dias", entries.count, daysToShow))
+        .voiceOverLabel(L10n.tr("Gráfico da escala quinzenal, %lld tarefas em %lld dias", entries.count, daysToShow))
         .accessibilityChartDescriptor(chartDescriptor)
         
         let paddedContent = content.padding(selectionInset)
@@ -108,7 +108,7 @@ private struct FortnightlyDayUserBar: View {
             Text(weekdayText(for: day))
                 .font(.system(size: 16.35))
                 .fontWeight(.medium)
-                .accessibilityLabel(ChartA11y.weekdayDayMonth(day))
+                .voiceOverLabel(ChartA11y.weekdayDayMonth(day))
                 .accessibilityValue(
                     entries.isEmpty
                         ? L10n.tr("Sem tarefas")
@@ -132,17 +132,26 @@ private struct FortnightlyDayUserBar: View {
                             }
                             // "Ana, Lavar a louça, tarefa curta, 15 minutos", selectable.
                             .accessibilityElement()
-                            .accessibilityLabel(accessibilityLabel(for: entry))
-                            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-                            .accessibilityHint(L10n.tr("Mostra os detalhes abaixo do gráfico"))
+                            .voiceOverLabel(accessibilityLabel(for: entry))
+                            .accessibilityAddTraits(.isButton)
+                            .voiceOverTraits(.isSelected, when: isSelected)
+                            .voiceOverHint(L10n.tr("Mostra os detalhes abaixo do gráfico"))
                             .accessibilityAction {
                                 onSelect(entry)
                             }
+                            // Voice Control: "Toque em Lavar a louça" or "Toque em Ana".
+                            .voiceControlNames(inputLabels(for: entry))
                     }
                 }
             }
         }
         .frame(width: 55)
+    }
+    
+    /// Short speakable names for Voice Control: the chore, then the resident.
+    private func inputLabels(for entry: DailyUsageEntry) -> [String] {
+        let user = users.first(where: { $0.recordID == entry.userID })
+        return [entry.choreName.localizedDefault, user?.name].compactMap { $0 }
     }
     
     /// Resident first, then the chore: who does what is the point of this chart.

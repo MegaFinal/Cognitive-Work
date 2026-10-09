@@ -25,7 +25,7 @@ struct ChorePopOverComponent: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
         // Room, chore name and the three tags read as one sentence.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText)
+        .voiceOverLabel(accessibilityText)
     }
     
     /// "Cozinha: Lavar a louça. Semanal, prioridade alta, duração curta".

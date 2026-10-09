@@ -188,7 +188,7 @@ struct ChoreDetailsCard: View {
                 )
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(carouselViewModel.accessibilityTagsText(for: chore))
+            .voiceOverLabel(carouselViewModel.accessibilityTagsText(for: chore))
         }
         .foregroundColor(.black)
     }
@@ -216,7 +216,7 @@ struct ChoreDetailsCard: View {
                     )
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(L10n.tr("Cômodo: %@", carouselViewModel.accessibilityRoomName(for: chore)))
+                .voiceOverLabel(L10n.tr("Cômodo: %@", carouselViewModel.accessibilityRoomName(for: chore)))
                 
                 HStack {
                     Text("Checklist")
@@ -227,14 +227,14 @@ struct ChoreDetailsCard: View {
                         .font(.system(size: 12))
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(checklistHeaderAccessibilityLabel)
+                .voiceOverLabel(checklistHeaderAccessibilityLabel)
                 .accessibilityAddTraits(.isHeader)
                 
                 VStack(alignment: .leading, spacing: 5) {
                     if isLoadingChecklist {
                         ProgressView()
                             .frame(maxWidth: .infinity)
-                            .accessibilityLabel(L10n.tr("Carregando checklist"))
+                            .voiceOverLabel(L10n.tr("Carregando checklist"))
                     }
                     ForEach($checkList, id: \.id) {$item in
                         ChecklistItemButton(item: $item)
@@ -342,7 +342,8 @@ struct ChoreDetailsCard: View {
                 Image(systemName: "xmark")
                     .foregroundColor(.black)
             }
-            .accessibilityLabel(L10n.tr("Fechar"))
+            .voiceOverLabel(L10n.tr("Fechar"))
+            .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar"), L10n.tr("Voltar")])
             .padding(12)
             .clipShape(Circle())
             .glassEffect()
@@ -353,11 +354,11 @@ struct ChoreDetailsCard: View {
             if occurrenceResponsibleUsers.count == 1 {
                 UserProfilePictureTag(user: occurrenceResponsibleUsers.first, widthMultiplier: 0.08)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(carouselViewModel.accessibilityResponsibleText(for: occurrenceResponsibleUsers))
+                    .voiceOverLabel(carouselViewModel.accessibilityResponsibleText(for: occurrenceResponsibleUsers))
             } else {
                 UserProfilePictureList(users: occurrenceResponsibleUsers, widthMultiplier: 0.08)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(carouselViewModel.accessibilityResponsibleText(for: occurrenceResponsibleUsers))
+                    .voiceOverLabel(carouselViewModel.accessibilityResponsibleText(for: occurrenceResponsibleUsers))
             }
             
             NavigationLink {
@@ -371,8 +372,9 @@ struct ChoreDetailsCard: View {
                 Image(systemName: "pencil")
                     .foregroundColor(.white)
             }
-            .accessibilityLabel(L10n.tr("Editar tarefa"))
-            .accessibilityHint(isOccurrenceDone ? L10n.tr("Tarefas concluídas não podem ser editadas.") : "")
+            .voiceOverLabel(L10n.tr("Editar tarefa"))
+            .voiceControlNames([L10n.tr("Editar"), L10n.tr("Editar tarefa"), L10n.tr("Lápis")])
+            .voiceOverHint(isOccurrenceDone ? L10n.tr("Tarefas concluídas não podem ser editadas.") : "")
             .disabled(isOccurrenceDone)
             .padding(12)
             .background(isOccurrenceDone ? Color.gray : Color.blue)
@@ -416,9 +418,9 @@ private struct ChecklistItemButton: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(item.name.localizedDefault)
-        .accessibilityValue(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
-        .accessibilityHint(L10n.tr("Toque duas vezes para alternar."))
+        .voiceOverLabel(item.name.localizedDefault)
+        .voiceOverValue(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
+        .voiceOverHint(L10n.tr("Toque duas vezes para alternar."))
     }
 }
 

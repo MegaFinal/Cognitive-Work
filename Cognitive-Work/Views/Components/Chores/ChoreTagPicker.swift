@@ -67,8 +67,10 @@ struct ChoreTagPicker: View {
             .fixedSize()
         }
         // "Prioridade, média, pop-up button"
-        .accessibilityLabel(accessibilityTitle)
-        .accessibilityValue(type.labelName(for: chore, currentRoom: currentRoom))
+        .voiceOverLabel(accessibilityTitle)
+        .voiceOverValue(type.labelName(for: chore, currentRoom: currentRoom))
+        // Voice Control: the title shown beside the menu, then the value shown on the tag.
+        .voiceControlNames([accessibilityTitle, type.labelName(for: chore, currentRoom: currentRoom)])
         .id(type.labelName(for: chore, currentRoom: currentRoom))
         .onChange(of: currentRoom) { _, newRoom in
             if let recordID = newRoom?.recordID {

@@ -67,6 +67,9 @@ struct RoomsManagementView: View {
                             : L10n.tr("Toque em um cômodo para editá-lo ou no + para criar um novo."))
                     }
                     .fontWeight(isEditing ? .semibold : .regular)
+                    .voiceControlNames(isEditing
+                        ? [L10n.tr("OK"), L10n.tr("Concluído")]
+                        : [L10n.tr("Editar"), L10n.tr("Editar cômodos")])
                 }
             }
         }
@@ -205,7 +208,7 @@ struct RoomsManagementView: View {
         }
         .padding(.horizontal)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.tr("Carregando cômodos"))
+        .voiceOverLabel(L10n.tr("Carregando cômodos"))
     }
     
     // MARK: - Deletion
@@ -281,7 +284,8 @@ private struct RoomCard: View {
                 .buttonStyle(.plain)
                 .offset(x: -8, y: -8)
                 .transition(.scale.combined(with: .opacity))
-                .accessibilityLabel(L10n.tr("Excluir %@", room.name.localizedDefault))
+                .voiceOverLabel(L10n.tr("Excluir %@", room.name.localizedDefault))
+                .voiceControlNames([L10n.tr("Excluir %@", room.name.localizedDefault), L10n.tr("Excluir"), L10n.tr("Apagar")])
             }
         }
     }
@@ -331,6 +335,8 @@ private struct RoomCard: View {
         .accessibilityAction(named: Text(L10n.tr("Excluir"))) {
             onDelete()
         }
+        // Voice Control: "Toque em Quarto" / "Mostrar ações para Quarto", not the chore count.
+        .voiceControlNames([room.name.localizedDefault, L10n.tr("Editar %@", room.name.localizedDefault)])
     }
     
     private var choreCountText: String {
@@ -370,6 +376,7 @@ private struct AddRoomCard: View {
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
+        .voiceControlNames([L10n.tr("Novo cômodo"), L10n.tr("Adicionar"), L10n.tr("Mais")])
     }
 }
 
@@ -483,21 +490,23 @@ struct RoomFormSheet: View {
                     } label: {
                         Image(systemName: "xmark")
                     }
-                    .accessibilityLabel(L10n.tr("Cancelar"))
+                    .voiceOverLabel(L10n.tr("Cancelar"))
+                    .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                     .disabled(isSaving)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
-                            .accessibilityLabel(L10n.tr("Salvando"))
+                            .voiceOverLabel(L10n.tr("Salvando"))
                     } else {
                         Button {
                             save()
                         } label: {
                             Image(systemName: "checkmark")
                         }
-                        .accessibilityLabel(L10n.tr("Salvar"))
+                        .voiceOverLabel(L10n.tr("Salvar"))
+                        .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
                         .disabled(!canSave)
                     }
                 }
@@ -561,6 +570,7 @@ struct RoomFormSheet: View {
                 .characterLimit(TextLimits.roomName, text: $name)
                 .focused($isNameFocused)
                 .submitLabel(.done)
+                .voiceControlNames([L10n.tr("Nome do Cômodo"), L10n.tr("Nome")])
                 .font(.system(size: 34))
                 .bold()
                 .multilineTextAlignment(.center)
@@ -678,8 +688,10 @@ struct RoomFormSheet: View {
                             }
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(ProfileAccessibility.symbolName(symbol))
-                        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+                        .voiceOverLabel(ProfileAccessibility.symbolName(symbol))
+                        .voiceControlNames([ProfileAccessibility.symbolName(symbol)])
+                        .accessibilityAddTraits(.isButton)
+                        .voiceOverTraits(.isSelected, when: isSelected)
                         .accessibilityAction {
                             HapticsManager.selection()
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) {
@@ -793,8 +805,10 @@ struct ColorSwatch: View {
             .contentShape(Circle())
             .onTapGesture(perform: action)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(color.voiceOverName)
-            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+            .voiceOverLabel(color.voiceOverName)
+            .voiceControlNames([color.voiceOverName])
+            .accessibilityAddTraits(.isButton)
+            .voiceOverTraits(.isSelected, when: isSelected)
             .accessibilityAction { action() }
     }
 }
@@ -843,8 +857,10 @@ struct PatternSwatch: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(pattern.displayName))
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityHint(isAvailable ? Text("") : Text(L10n.tr("Indisponível nesta cor")))
+        .voiceControlNames([pattern.displayName])
+        .accessibilityAddTraits(.isButton)
+        .voiceOverTraits(.isSelected, when: isSelected)
+        .voiceOverHint(isAvailable ? "" : L10n.tr("Indisponível nesta cor"))
         .accessibilityAction {
             guard isAvailable else { return }
             action()

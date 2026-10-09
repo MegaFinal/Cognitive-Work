@@ -811,6 +811,17 @@
         }
       }
     },
+    "Aceitar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accept"
+          }
+        }
+      }
+    },
     "acima do ideal" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -849,6 +860,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recently added"
+          }
+        }
+      }
+    },
+    "Adicionar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
           }
         }
       }
@@ -912,6 +934,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add responsible person"
+          }
+        }
+      }
+    },
+    "Adicionar tarefa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add task"
           }
         }
       }
@@ -1022,6 +1055,17 @@
         }
       }
     },
+    "Ajustes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
     "Ajustes da Casa" : {
       "localizations" : {
         "en" : {
@@ -1060,6 +1104,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change banner"
+          }
+        }
+      }
+    },
+    "Alterar foto" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change photo"
           }
         }
       }
@@ -1129,6 +1184,17 @@
         }
       }
     },
+    "Anterior" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous"
+          }
+        }
+      }
+    },
     "Ao apagar seu perfil, você também sairá da casa e perderá o acesso às tarefas e ao histórico. A casa continuará existindo para os outros moradores. Essa ação não pode ser desfeita." : {
       "localizations" : {
         "en" : {
@@ -1156,6 +1222,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "By tapping Agree, you accept the %@ Terms of Use."
+          }
+        }
+      }
+    },
+    "Apagar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase"
           }
         }
       }
@@ -1392,12 +1469,46 @@
         }
       }
     },
+    "Aumentar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Increase"
+          }
+        }
+      }
+    },
     "Aumentar quantidade" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Increase quantity"
+          }
+        }
+      }
+    },
+    "Avançar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forward"
+          }
+        }
+      }
+    },
+    "Avisos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alerts"
           }
         }
       }
@@ -1442,6 +1553,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bathroom"
+          }
+        }
+      }
+    },
+    "Banner" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Banner"
           }
         }
       }
@@ -1538,6 +1660,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Box"
+          }
+        }
+      }
+    },
+    "Calendário" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
           }
         }
       }
@@ -1677,6 +1810,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Car"
+          }
+        }
+      }
+    },
+    "Carrossel" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carousel"
           }
         }
       }
@@ -1928,6 +2072,17 @@
         }
       }
     },
+    "Compartilhar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
+    },
     "Compartilhar Convite" : {
       "localizations" : {
         "en" : {
@@ -1967,6 +2122,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bought"
+          }
+        }
+      }
+    },
+    "Comprar %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy %@"
           }
         }
       }
@@ -2022,6 +2188,17 @@
         }
       }
     },
+    "Concluir %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete %@"
+          }
+        }
+      }
+    },
     "Concluir tarefa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2039,6 +2216,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Agree"
+          }
+        }
+      }
+    },
+    "Conectar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect"
           }
         }
       }
@@ -2129,6 +2317,17 @@
         }
       }
     },
+    "Configurações" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preferences"
+          }
+        }
+      }
+    },
     "Configurações Gerais" : {
       "localizations" : {
         "en" : {
@@ -2191,6 +2390,28 @@
         }
       }
     },
+    "Controle de tempo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time control"
+          }
+        }
+      }
+    },
+    "Convidar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invite"
+          }
+        }
+      }
+    },
     "Copiado" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2209,6 +2430,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy"
+          }
+        }
+      }
+    },
+    "Copiar link" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy link"
           }
         }
       }
@@ -2285,6 +2517,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create"
+          }
+        }
+      }
+    },
+    "Criar casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create house"
           }
         }
       }
@@ -2457,6 +2700,17 @@
         }
       }
     },
+    "Desconectar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disconnect"
+          }
+        }
+      }
+    },
     "Desconectar este celular" : {
       "localizations" : {
         "en" : {
@@ -2493,6 +2747,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restart the chore split?"
+          }
+        }
+      }
+    },
+    "Deslizar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe"
           }
         }
       }
@@ -2535,6 +2800,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "swipe to continue!"
+          }
+        }
+      }
+    },
+    "Desmarcar %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uncheck %@"
           }
         }
       }
@@ -2637,12 +2913,35 @@
         }
       }
     },
+    "Diminuir" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decrease"
+          }
+        }
+      }
+    },
     "Diminuir quantidade" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Decrease quantity"
+          }
+        }
+      }
+    },
+    "Dinheiro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Money"
           }
         }
       }
@@ -2845,6 +3144,17 @@
         }
       }
     },
+    "Editar %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit %@"
+          }
+        }
+      }
+    },
     "Editar banner" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2862,6 +3172,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Room"
+          }
+        }
+      }
+    },
+    "Editar cômodos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit rooms"
           }
         }
       }
@@ -3003,6 +3324,17 @@
         }
       }
     },
+    "Entrar na casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join house"
+          }
+        }
+      }
+    },
     "Entre na sua conta do iCloud para continuar." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3054,6 +3386,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sending image to Harvi…"
+          }
+        }
+      }
+    },
+    "Enviar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
           }
         }
       }
@@ -3281,6 +3624,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stairs"
+          }
+        }
+      }
+    },
+    "Escala" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schedule"
           }
         }
       }
@@ -4002,6 +4356,17 @@
         }
       }
     },
+    "Fecha os detalhes da tarefa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Closes the chore details"
+          }
+        }
+      }
+    },
     "Fechar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4035,6 +4400,17 @@
         }
       }
     },
+    "Filtro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter"
+          }
+        }
+      }
+    },
     "Filtro ativo" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4052,6 +4428,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filters"
+          }
+        }
+      }
+    },
+    "Foto" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo"
           }
         }
       }
@@ -4282,6 +4669,17 @@
         }
       }
     },
+    "Horas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hours"
+          }
+        }
+      }
+    },
     "Hortifruti" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4422,6 +4820,17 @@
         }
       }
     },
+    "Ir para o pareamento" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to pairing"
+          }
+        }
+      }
+    },
     "Isso acontecerá de forma automática assim que todos os membros entrarem na casa e definirem seus horários de tempo livre." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4462,6 +4871,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This marks that you already paid. It can't be undone."
+          }
+        }
+      }
+    },
+    "Item" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item"
           }
         }
       }
@@ -4527,6 +4947,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Garden"
+          }
+        }
+      }
+    },
+    "Lápis" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pencil"
           }
         }
       }
@@ -4648,6 +5079,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wash, dry and put away plates, pans and cutlery."
+          }
+        }
+      }
+    },
+    "Layout" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Layout"
           }
         }
       }
@@ -4925,6 +5367,28 @@
         }
       }
     },
+    "Língua" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
+          }
+        }
+      }
+    },
+    "Lista" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List"
+          }
+        }
+      }
+    },
     "Lista de compras ainda não carregada." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4942,6 +5406,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Empty shopping list"
+          }
+        }
+      }
+    },
+    "Lista de itens" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item list"
           }
         }
       }
@@ -4990,6 +5465,17 @@
         }
       }
     },
+    "Logo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logo"
+          }
+        }
+      }
+    },
     "longa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4997,6 +5483,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "long"
+          }
+        }
+      }
+    },
+    "Mais" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus"
+          }
+        }
+      }
+    },
+    "Marcar %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check %@"
           }
         }
       }
@@ -5013,6 +5521,7 @@
       }
     },
     "Marcar como comprado" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5034,6 +5543,7 @@
       }
     },
     "Marcar como não comprado" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5093,6 +5603,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "medium"
+          }
+        }
+      }
+    },
+    "Menos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minus"
           }
         }
       }
@@ -5181,6 +5702,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Resident"
+          }
+        }
+      }
+    },
+    "Moradores" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Roommates"
           }
         }
       }
@@ -5940,6 +6472,17 @@
         }
       }
     },
+    "Nome da rede" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network name"
+          }
+        }
+      }
+    },
     "Nome da tarefa" : {
       "localizations" : {
         "en" : {
@@ -6318,6 +6861,17 @@
         }
       }
     },
+    "Ordenar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort"
+          }
+        }
+      }
+    },
     "Ordenar por" : {
       "localizations" : {
         "en" : {
@@ -6427,6 +6981,17 @@
         }
       }
     },
+    "Outro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
     "Outro Cômodo" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6471,12 +7036,34 @@
         }
       }
     },
+    "Pagamentos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payments"
+          }
+        }
+      }
+    },
     "Pagar" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pay"
+          }
+        }
+      }
+    },
+    "Pagar %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay %@"
           }
         }
       }
@@ -6532,6 +7119,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "for %@"
+          }
+        }
+      }
+    },
+    "Para a casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For the house"
           }
         }
       }
@@ -6596,6 +7194,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "To use %@ you need to accept the Terms of Use. If you change your mind, just review them again: the house will be waiting for you."
+          }
+        }
+      }
+    },
+    "Pareamento" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pairing"
           }
         }
       }
@@ -6719,12 +7328,56 @@
         }
       }
     },
+    "Pedir convite" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask for invite"
+          }
+        }
+      }
+    },
     "Pedir o convite por mensagem" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ask for the invite by message"
+          }
+        }
+      }
+    },
+    "Pegar %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take %@"
+          }
+        }
+      }
+    },
+    "Pegar tarefa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take task"
+          }
+        }
+      }
+    },
+    "Pegar todas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take all"
           }
         }
       }
@@ -6910,6 +7563,17 @@
         }
       }
     },
+    "Preço" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price"
+          }
+        }
+      }
+    },
     "Preço por unidade" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6991,6 +7655,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Today's progress"
+          }
+        }
+      }
+    },
+    "Próxima" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
+    "Próxima tarefa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next task"
+          }
+        }
+      }
+    },
+    "Próximo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        }
+      }
+    },
+    "Pular" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
           }
         }
       }
@@ -7263,6 +7971,17 @@
         }
       }
     },
+    "Recarregar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reload"
+          }
+        }
+      }
+    },
     "Recolher a toalha de rosto usada e pendurar uma limpa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7314,6 +8033,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Declines the terms and blocks access to the app"
+          }
+        }
+      }
+    },
+    "Recusar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decline"
+          }
+        }
+      }
+    },
+    "Rede" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network"
           }
         }
       }
@@ -7383,12 +8124,34 @@
         }
       }
     },
+    "Reiniciar divisão" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart division"
+          }
+        }
+      }
+    },
     "Reiniciar divisão de tarefas" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restart chore split"
+          }
+        }
+      }
+    },
+    "Remover" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
           }
         }
       }
@@ -7559,6 +8322,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Review the Terms of Use"
+          }
+        }
+      }
+    },
+    "Rever termos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review terms"
           }
         }
       }
@@ -7883,6 +8657,17 @@
         }
       }
     },
+    "Senha" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        }
+      }
+    },
     "Senha do Wi-Fi" : {
       "localizations" : {
         "en" : {
@@ -7942,6 +8727,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your household organization helper!"
+          }
+        }
+      }
+    },
+    "Seu nome" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your name"
           }
         }
       }
@@ -8156,6 +8952,17 @@
         }
       }
     },
+    "Tarefa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task"
+          }
+        }
+      }
+    },
     "tarefa %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8163,6 +8970,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ chore"
+          }
+        }
+      }
+    },
+    "Tarefa %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task %@"
           }
         }
       }
@@ -8200,6 +9018,17 @@
         }
       }
     },
+    "Tarefa anterior" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous task"
+          }
+        }
+      }
+    },
     "Tarefa concluída" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8217,6 +9046,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chore done!"
+          }
+        }
+      }
+    },
+    "Tarefa da casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "House task"
           }
         }
       }
@@ -8337,6 +9177,17 @@
         }
       }
     },
+    "Tarefas sem responsável" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unassigned tasks"
+          }
+        }
+      }
+    },
     "Te devem" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8419,6 +9270,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tuesday"
+          }
+        }
+      }
+    },
+    "Termos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms"
           }
         }
       }
@@ -8887,6 +9749,17 @@
         }
       }
     },
+    "Valor" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amount"
+          }
+        }
+      }
+    },
     "Valor (opcional)" : {
       "localizations" : {
         "en" : {
@@ -9048,6 +9921,17 @@
         }
       }
     },
+    "Ver escala" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View schedule"
+          }
+        }
+      }
+    },
     "Ver minha escala" : {
       "localizations" : {
         "en" : {
@@ -9107,6 +9991,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Version %@ · Last updated: %@"
+          }
+        }
+      }
+    },
+    "Vibração" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vibration"
           }
         }
       }

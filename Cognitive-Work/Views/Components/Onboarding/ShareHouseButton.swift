@@ -59,8 +59,9 @@ struct ShareHouseButton: View {
         }
         .disabled(share == nil || isLoading)
         .accessibilityLabel(Text(L10n.tr("Compartilhar Convite")))
-        .accessibilityValue(isLoading ? Text(L10n.tr("Gerando link")) : Text(""))
-        .accessibilityHint(share == nil ? Text(L10n.tr("Aguarde, o convite ainda está sendo preparado")) : Text(L10n.tr("Abre as opções para enviar o link da casa")))
+        .voiceControlNames([L10n.tr("Compartilhar Convite"), L10n.tr("Compartilhar"), L10n.tr("Convidar")])
+        .voiceOverValue(isLoading ? L10n.tr("Gerando link") : "")
+        .voiceOverHint(share == nil ? L10n.tr("Aguarde, o convite ainda está sendo preparado") : L10n.tr("Abre as opções para enviar o link da casa"))
     }
 }
 

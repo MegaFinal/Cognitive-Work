@@ -87,6 +87,7 @@ struct CreateAndEditChoreView: View {
                         .accessibilityAddTraits(.isHeader)
                     
                     TextField("Descrição da Tarefa", text: $viewModel.draft.description, axis: .vertical)
+                        .voiceControlNames([L10n.tr("Descrição da Tarefa"), L10n.tr("Descrição")])
                         .font(.system(size: 17))
                         .foregroundColor(.gray)
                         .characterLimit(TextLimits.choreDescription, text: $viewModel.draft.description)
@@ -130,7 +131,7 @@ struct CreateAndEditChoreView: View {
             if !viewModel.isLoaded {
                 ProgressView()
                     .controlSize(.large)
-                    .accessibilityLabel(L10n.tr("Carregando"))
+                    .voiceOverLabel(L10n.tr("Carregando"))
             }
         }
         .navigationBarBackButtonHidden(isSubmitting || viewModel.isSaving || viewModel.isDeleting)
@@ -139,7 +140,7 @@ struct CreateAndEditChoreView: View {
             ToolbarItem(placement: .confirmationAction) {
                 if isSubmitting || viewModel.isSaving {
                     ProgressView()
-                        .accessibilityLabel(L10n.tr("Salvando"))
+                        .voiceOverLabel(L10n.tr("Salvando"))
                 } else {
                     Button {
                         // Lock the form right away, before the first `await`.
@@ -162,7 +163,8 @@ struct CreateAndEditChoreView: View {
                     .tint(.blue)
                     .buttonStyle(.glassProminent)
                     .disabled(!viewModel.canConfirm)
-                    .accessibilityLabel(L10n.tr("Confirmar"))
+                    .voiceOverLabel(L10n.tr("Confirmar"))
+                    .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
                 }
             }
         }
@@ -234,7 +236,8 @@ struct CreateAndEditChoreView: View {
                     .bold()
                     .characterLimit(TextLimits.choreName, text: $viewModel.draft.name)
                     .submitLabel(.done)
-                    .accessibilityLabel(L10n.tr("Nome da Tarefa"))
+                    .voiceOverLabel(L10n.tr("Nome da Tarefa"))
+                    .voiceControlNames([L10n.tr("Nome da Tarefa"), L10n.tr("Nome")])
                     
                     Capsule()
                         .frame(height: height * 0.0015)
@@ -271,8 +274,12 @@ struct CreateAndEditChoreView: View {
                         }
                         .fixedSize()
                     }
-                    .accessibilityLabel(L10n.tr("Cômodo"))
-                    .accessibilityValue(viewModel.draft.room?.name.localizedDefault ?? L10n.tr("Sem Cômodo"))
+                    .voiceOverLabel(L10n.tr("Cômodo"))
+                    .voiceOverValue(viewModel.draft.room?.name.localizedDefault ?? L10n.tr("Sem Cômodo"))
+                    .voiceControlNames([
+                        L10n.tr("Cômodo"),
+                        viewModel.draft.room?.name.localizedDefault.capitalized(with: L10n.locale) ?? L10n.tr("Sem Cômodo")
+                    ])
                     .id(viewModel.draft.room?.recordID)
                 }
             }
@@ -311,7 +318,8 @@ struct CreateAndEditChoreView: View {
                 
                 Toggle("", isOn: $viewModel.draft.hasChecklist)
                     .toggleStyle(.switch)
-                    .accessibilityLabel(L10n.tr("Checklist"))
+                    .voiceOverLabel(L10n.tr("Checklist"))
+                    .voiceControlNames([L10n.tr("Checklist"), L10n.tr("Lista de itens")])
                     .onChange(of: viewModel.draft.hasChecklist) { _, isOn in
                         viewModel.checklistToggleDidChange(isOn: isOn)
                     }
@@ -341,7 +349,8 @@ struct CreateAndEditChoreView: View {
                 
                 Toggle("", isOn: $viewModel.draft.isPublic)
                     .toggleStyle(.switch)
-                    .accessibilityLabel(L10n.tr("Essa tarefa é para a casa?"))
+                    .voiceOverLabel(L10n.tr("Essa tarefa é para a casa?"))
+                    .voiceControlNames([L10n.tr("Essa tarefa é para a casa?"), L10n.tr("Para a casa"), L10n.tr("Tarefa da casa")])
                     .padding(.trailing, 7)
                     .frame(width: width * 0.37)
             }
@@ -382,7 +391,7 @@ struct CreateAndEditChoreView: View {
                 if viewModel.isDeleting {
                     ProgressView()
                         .tint(.red)
-                        .accessibilityLabel(L10n.tr("Excluindo tarefa..."))
+                        .voiceOverLabel(L10n.tr("Excluindo tarefa..."))
                 } else {
                     Text("Excluir Tarefa")
                         .fontWeight(.semibold)
@@ -391,6 +400,7 @@ struct CreateAndEditChoreView: View {
             .frame(height: height * 0.03)
         }
         .foregroundColor(.red)
+        .voiceControlNames([L10n.tr("Excluir Tarefa"), L10n.tr("Excluir")])
         .disabled(isSubmitting || viewModel.isSaving || viewModel.isDeleting)
         .frame(maxWidth: .infinity)
         .padding(.top, 4)

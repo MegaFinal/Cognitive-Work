@@ -109,7 +109,8 @@ struct ShopListItemFormView: View {
                         Image(systemName: "xmark")
                     }
                     .disabled(isSaving)
-                    .accessibilityLabel(L10n.tr("Cancelar"))
+                    .voiceOverLabel(L10n.tr("Cancelar"))
+                    .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -127,8 +128,11 @@ struct ShopListItemFormView: View {
                         .tint(.blue)
                         .buttonStyle(.glassProminent)
                         .disabled(!missingFields.isEmpty)
-                        .accessibilityLabel(isEditing ? L10n.tr("Salvar") : L10n.tr("Adicionar item"))
-                        .accessibilityHint(missingFields.first?.warning ?? "")
+                        .voiceOverLabel(isEditing ? L10n.tr("Salvar") : L10n.tr("Adicionar item"))
+                        .voiceControlNames(isEditing
+                            ? [L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")]
+                            : [L10n.tr("Confirmar"), L10n.tr("Adicionar item"), L10n.tr("OK")])
+                        .voiceOverHint(missingFields.first?.warning ?? "")
                     }
                 }
             }
@@ -191,7 +195,8 @@ struct ShopListItemFormView: View {
                 .characterLimit(TextLimits.shopItemName, text: $name)
                 .submitLabel(.done)
                 .focused($isNameFocused)
-                .accessibilityLabel(L10n.tr("Nome do item"))
+                .voiceOverLabel(L10n.tr("Nome do item"))
+                .voiceControlNames([L10n.tr("Nome do item"), L10n.tr("Nome")])
 
                 Capsule()
                     .frame(height: 1.5)
@@ -273,8 +278,12 @@ struct ShopListItemFormView: View {
                     }
                     .fixedSize()
                 }
-                .accessibilityLabel(L10n.tr("Unidade"))
-                .accessibilityValue(unitMeasurement.getDisplayName(for: Double(quantity)))
+                .voiceOverLabel(L10n.tr("Unidade"))
+                .voiceOverValue(unitMeasurement.getDisplayName(for: Double(quantity)))
+                .voiceControlNames([
+                    L10n.tr("Unidade"),
+                    unitMeasurement.getDisplayName(for: Double(quantity)).capitalized(with: L10n.locale)
+                ])
             }
         }
         .padding(16)
@@ -294,8 +303,10 @@ struct ShopListItemFormView: View {
             TextField(pricePlaceholder, text: $valueText)
                 .priceInput(text: $valueText)
                 .font(.system(size: 17))
-                .accessibilityLabel(L10n.tr("Preço por unidade"))
-                .accessibilityValue(ShopListViewModel.accessibilityPrice(valueText))
+                .voiceOverLabel(L10n.tr("Preço por unidade"))
+                .voiceOverValue(ShopListViewModel.accessibilityPrice(valueText))
+                // Voice Control: "Toque em Preço", then dictate the value.
+                .voiceControlNames([L10n.tr("Preço por unidade"), L10n.tr("Preço"), L10n.tr("Valor")])
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -314,6 +325,7 @@ struct ShopListItemFormView: View {
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
+        .voiceControlNames([L10n.tr("Excluir item"), L10n.tr("Excluir")])
         .disabled(isSaving)
     }
 

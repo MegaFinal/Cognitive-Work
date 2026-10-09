@@ -122,6 +122,7 @@ struct InviteUsersOnboardingView: View {
                     Text("Compartilhar Convite")
                 }
             }
+            .voiceControlNames([L10n.tr("Compartilhar Convite"), L10n.tr("Compartilhar"), L10n.tr("Convidar")])
         } else if didFailToPrepareInvite && !resolvendoShare {
             Button {
                 Task { await prepareInvite() }
@@ -130,6 +131,7 @@ struct InviteUsersOnboardingView: View {
                     Label("Tentar novamente", systemImage: "arrow.clockwise")
                 }
             }
+            .voiceControlNames([L10n.tr("Tentar novamente"), L10n.tr("Recarregar")])
         } else {
             inviteCapsule(color: .gray) {
                 ProgressView()

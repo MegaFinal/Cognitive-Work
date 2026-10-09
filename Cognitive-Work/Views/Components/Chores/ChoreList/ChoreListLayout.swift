@@ -150,9 +150,10 @@ struct ChoreListLayout: View {
         .buttonStyle(.plain)
         .frame(width: width * 0.92, alignment: .leading)
         // "Hoje, quinta-feira, 25 de setembro" — header — "expandido, 3 tarefas"
-        .accessibilityLabel(group.accessibilityTitle)
+        .voiceOverLabel(group.accessibilityTitle)
+        .voiceControlNames([group.title])
         .accessibilityValue(Text(verbatim: "\(isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")), \(L10n.tr("%lld tarefas", group.occurrences.count))"))
-        .accessibilityHint(isCollapsed ? L10n.tr("Toque duas vezes para expandir.") : L10n.tr("Toque duas vezes para recolher."))
+        .voiceOverHint(isCollapsed ? L10n.tr("Toque duas vezes para expandir.") : L10n.tr("Toque duas vezes para recolher."))
         .accessibilityAddTraits(.isHeader)
     }
     

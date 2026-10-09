@@ -41,6 +41,8 @@ struct WelcomeOnboardingView: View {
                     .accessibilityLabel(Text(verbatim: "Pipa"))
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityAction(named: Text(L10n.tr("Continuar"))) { expand() }
+                    // Voice Control: "Mostrar ações para Pipa" lists the swipe-up replacement.
+                    .voiceControlNames(["Pipa", L10n.tr("Logo")])
                 
             }
             .frame(maxHeight: .infinity, alignment: isExpanded ? .top : .center)
@@ -118,6 +120,8 @@ struct WelcomeOnboardingView: View {
         .accessibilityHint(Text(L10n.tr("Mostra a apresentação do Pipa")))
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { expand() }
+        // Voice Control: the visible hint first, then the short action name.
+        .voiceControlNames([L10n.tr("deslize para continuar!"), L10n.tr("Continuar"), L10n.tr("Deslizar")])
     }
 }
 

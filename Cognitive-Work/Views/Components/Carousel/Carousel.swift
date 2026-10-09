@@ -79,10 +79,13 @@ struct Carousel: View {
         // Closed: one adjustable element (swipe up/down to change card, double tap to open).
         // Open (or empty): a container exposing the details card / empty state, which traps focus.
         .accessibilityElement(children: exposesChildren ? .contain : .ignore)
-        .accessibilityLabel(exposesChildren ? "" : L10n.tr("Tarefas do dia"))
-        .accessibilityValue(exposesChildren ? "" : viewModel.accessibilityCarouselValue)
-        .accessibilityHint(exposesChildren ? "" : L10n.tr("Deslize para cima ou para baixo para trocar de tarefa. Toque duas vezes para ver os detalhes."))
-        .accessibilityAddTraits(viewModel.hasFocusedCard ? .isModal : [])
+        .voiceOverLabel(exposesChildren ? "" : L10n.tr("Tarefas do dia"))
+        .voiceOverValue(exposesChildren ? "" : viewModel.accessibilityCarouselValue)
+        .voiceOverHint(exposesChildren ? "" : L10n.tr("Deslize para cima ou para baixo para trocar de tarefa. Toque duas vezes para ver os detalhes."))
+        .voiceOverTraits(.isModal, when: viewModel.hasFocusedCard)
+        // Voice Control: the closed carousel is tappable ("Toque em <tarefa>" opens the centred card).
+        .voiceOverTraits(.isButton, when: !(exposesChildren))
+        .voiceControlNames(exposesChildren ? [] : viewModel.voiceControlCarouselInputLabels)
         .accessibilityAction {
             guard !viewModel.visibleChores.isEmpty else { return }
             if viewModel.hasFocusedCard {
@@ -98,6 +101,15 @@ struct Carousel: View {
             case .decrement: viewModel.accessibilityMoveCarousel(by: -1)
             @unknown default: break
             }
+        }
+        // Voice Control has no adjustable gesture: offer the card change as named actions.
+        .accessibilityAction(named: Text(L10n.tr("Próxima tarefa"))) {
+            guard !viewModel.hasFocusedCard else { return }
+            viewModel.accessibilityMoveCarousel(by: 1)
+        }
+        .accessibilityAction(named: Text(L10n.tr("Tarefa anterior"))) {
+            guard !viewModel.hasFocusedCard else { return }
+            viewModel.accessibilityMoveCarousel(by: -1)
         }
         .accessibilityAction(named: Text(L10n.tr("Ver como lista"))) {
             onSwipeDown()

@@ -45,7 +45,8 @@ struct QuantityStepper: View {
                 .frame(width: 110)
                 .focused($isFocused)
                 .accessibilityLabel("Quantidade")
-                .accessibilityValue(valueDescription?(value) ?? String(value))
+                .voiceControlNames([L10n.tr("Quantidade")])
+                .voiceOverValue(valueDescription?(value) ?? String(value))
                 .accessibilityAdjustableAction { direction in
                     switch direction {
                     case .increment: change(by: 1)
@@ -85,7 +86,10 @@ struct QuantityStepper: View {
         .glassEffect(.regular.interactive(), in: .circle)
         .opacity(isEnabled ? 1 : 0.35)
         .disabled(!isEnabled)
-        .accessibilityLabel(delta > 0 ? "Aumentar quantidade" : "Diminuir quantidade")
+        .voiceOverLabel(delta > 0 ? L10n.tr("Aumentar quantidade") : L10n.tr("Diminuir quantidade"))
+        .voiceControlNames(delta > 0
+            ? [L10n.tr("Mais"), L10n.tr("Aumentar"), L10n.tr("Aumentar quantidade")]
+            : [L10n.tr("Menos"), L10n.tr("Diminuir"), L10n.tr("Diminuir quantidade")])
     }
 
     private func change(by delta: Int) {

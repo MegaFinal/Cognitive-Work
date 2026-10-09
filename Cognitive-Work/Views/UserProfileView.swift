@@ -56,6 +56,7 @@ struct UserProfileView: View {
                             .foregroundColor(.black)
                     }
                     .accessibilityLabel(Text("Editar Perfil"))
+                    .voiceControlNames([L10n.tr("Editar"), L10n.tr("Editar Perfil")])
                     .disabled(viewModelUser.user == nil)
                 }
             }
@@ -87,7 +88,7 @@ struct UserProfileView: View {
         .overlay {
             if viewModelUser.isSaving {
                 ProgressView()
-                    .accessibilityLabel(L10n.tr("Salvando"))
+                    .voiceOverLabel(L10n.tr("Salvando"))
             }
         }
     }
@@ -124,7 +125,8 @@ struct UserProfileView: View {
         }
         // Read the header as one sentence: name, level, points and coins.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(viewModelUser.accessibilityProfileSummary)
+        .voiceOverLabel(viewModelUser.accessibilityProfileSummary)
+        .voiceControlNames(viewModelUser.accessibilityProfileInputLabels)
         .accessibilityAddTraits(.isHeader)
     }
 }
@@ -149,6 +151,7 @@ private struct SettingsButtonsSection: View {
                         .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Configurações Gerais"), L10n.tr("Configurações"), L10n.tr("Ajustes")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
@@ -162,6 +165,7 @@ private struct SettingsButtonsSection: View {
                         .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Ajustes da Casa"), L10n.tr("Casa")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
@@ -175,6 +179,7 @@ private struct SettingsButtonsSection: View {
                         .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Alterar Tempo Livre"), L10n.tr("Tempo livre")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
