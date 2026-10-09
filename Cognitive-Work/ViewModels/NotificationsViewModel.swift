@@ -198,8 +198,9 @@ class NotificationsViewModel {
             NotificationModel(
                 id: "grab-\(day.timeIntervalSince1970)",
                 kind: .grabChore,
-                title: "\(list.count)" + Notifications.grabChore.rawValue,
-                subtitle: Notifications.grabChore.subTitle,
+                // Plural rules ("1 tarefa" / "3 tarefas") live in Localizable.xcstrings.
+                title: L10n.tr("%lld tarefas a pegar hoje", list.count),
+                subtitle: L10n.tr(Notifications.grabChore.subTitle),
                 date: day,
                 destination: .pickChores
             )
@@ -223,20 +224,25 @@ class NotificationsViewModel {
             else { return nil }
 
             let chore = occurrence.chore
+            // Default chores are stored in Portuguese; `localizedDefault` translates them.
+            let choreName = chore.name.localizedDefault
             let kind: Notifications
             let title: String
 
             if occurrence.isUnassigned {
                 kind = .noUserDelayedChore
-                title = kind.rawValue + chore.name.prefix(1).lowercased() + chore.name.dropFirst()
+                // Lowercase first letter so it reads well mid-sentence ("Ninguém pegou limpar...").
+                let midSentenceName: String = choreName.prefix(1).lowercased() + choreName.dropFirst()
+                title = L10n.tr("Ninguém pegou %@", midSentenceName)
             } else if occurrence.userIDs.contains(where: { myIDs.contains($0) }) {
                 kind = .yourDelayedChore
-                title = chore.name + kind.rawValue
+                title = L10n.tr("%@ está atrasado", choreName)
             } else {
                 return nil // someone else's late chore: don't notify me
             }
 
-            let room = chore.roomReference.flatMap { roomNameByID[$0.recordID] } ?? "Sem cômodo"
+            let room = chore.roomReference.flatMap { roomNameByID[$0.recordID]?.localizedDefault }
+                ?? L10n.tr("Sem Cômodo")
             // Assignment id for recurring days, chore id for one-off chores.
             let recordName = occurrence.assignment?.recordID?.recordName
                 ?? chore.recordID?.recordName
@@ -246,7 +252,7 @@ class NotificationsViewModel {
                 id: "late-\(recordName)",
                 kind: kind,
                 title: title,
-                subtitle: "\(room) · cerca de \(Int(chore.duration.rounded())) min",
+                subtitle: L10n.tr("%@ · cerca de %lld min", room, Int(chore.duration.rounded())),
                 date: lateSince,
                 destination: .chore(chore, occurrence.assignment)
             )
@@ -264,8 +270,8 @@ class NotificationsViewModel {
             NotificationModel(
                 id: "division-\(cycleStart.timeIntervalSince1970)",
                 kind: .newDivision,
-                title: Notifications.newDivision.rawValue,
-                subtitle: Notifications.newDivision.subTitle,
+                title: L10n.tr(Notifications.newDivision.rawValue),
+                subtitle: L10n.tr(Notifications.newDivision.subTitle),
                 date: cycleStart,
                 destination: .dashboard
             )
@@ -278,8 +284,8 @@ class NotificationsViewModel {
                 NotificationModel(
                     id: "retro-\(cycleStart.timeIntervalSince1970)",
                     kind: .retrospective,
-                    title: Notifications.retrospective.rawValue,
-                    subtitle: Notifications.retrospective.subTitle,
+                    title: L10n.tr(Notifications.retrospective.rawValue),
+                    subtitle: L10n.tr(Notifications.retrospective.subTitle),
                     date: cycleStart,
                     destination: .retrospective
                 )
@@ -315,19 +321,17 @@ class NotificationsViewModel {
     }
 
     func title(for section: NotificationSection) -> String {
-        if calendar.isDateInToday(section.day) { return "hoje" }
-        if calendar.isDateInYesterday(section.day) { return "ontem" }
-        return section.day.formatted(
-            .dateTime.day().month(.wide).locale(Locale(identifier: "pt_BR"))
-        ) // "23 de setembro"
+        if calendar.isDateInToday(section.day) { return L10n.tr("hoje") }
+        if calendar.isDateInYesterday(section.day) { return L10n.tr("ontem") }
+        // Follows the app language: "23 de setembro" / "September 23".
+        return section.day.formatted(.dateTime.day().month(.wide).locale(L10n.locale))
     }
 
     var newCountText: String {
-        switch newCount {
-        case 0: "Nenhuma notificação nova"
-        case 1: "1 nova notificação"
-        default: "\(newCount) novas notificações"
-        }
+        // Singular/plural ("1 nova notificação" / "3 novas notificações") come from Localizable.xcstrings.
+        newCount == 0
+            ? L10n.tr("Nenhuma notificação nova")
+            : L10n.tr("%lld novas notificações", newCount)
     }
 
     private var lastSeenDate: Date {
