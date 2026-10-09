@@ -396,6 +396,17 @@
         }
       }
     },
+    "A casa te deve" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The house owes you"
+          }
+        }
+      }
+    },
     "A comprar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -694,6 +705,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tapping \"Restart\" will delete the current chore split."
+          }
+        }
+      }
+    },
+    "Ao tocar em Concordar, você aceita os Termos de Uso do %@." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By tapping Agree, you accept the %@ Terms of Use."
           }
         }
       }
@@ -1329,6 +1351,16 @@
         }
       }
     },
+    "Concordar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agree"
+          }
+        }
+      }
+    },
     "Conectar com meu Hardware" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1856,6 +1888,16 @@
         }
       }
     },
+    "Discordar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disagree"
+          }
+        }
+      }
+    },
     "Dividimos as tarefas de acordo com o tempo livre de cada morador." : {
       "localizations" : {
         "en" : {
@@ -2110,6 +2152,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Join a home"
+          }
+        }
+      }
+    },
+    "Entre na sua conta do iCloud para continuar." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in to your iCloud account to continue."
           }
         }
       }
@@ -2662,6 +2715,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Is this chore for the home?"
+          }
+        }
+      }
+    },
+    "Esse item não foi encontrado. Ele pode ter sido removido." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This item wasn't found. It may have been removed."
           }
         }
       }
@@ -3230,6 +3294,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This will happen automatically once all members join the home and set their free time."
+          }
+        }
+      }
+    },
+    "Isso foi alterado em outro aparelho. Atualize a tela e tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This was changed on another device. Refresh and try again."
           }
         }
       }
@@ -3976,6 +4051,17 @@
         }
       }
     },
+    "Não encontramos esses dados. Eles podem ter sido removidos." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find this data. It may have been removed."
+          }
+        }
+      }
+    },
     "Não foi possível acessar sua conta do iCloud. Verifique se você está conectado e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3997,12 +4083,45 @@
         }
       }
     },
+    "Não foi possível carregar os dados. Tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load the data. Please try again."
+          }
+        }
+      }
+    },
+    "Não foi possível compartilhar. Tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't share. Please try again."
+          }
+        }
+      }
+    },
     "Não foi possível concluir" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't complete"
+          }
+        }
+      }
+    },
+    "Não foi possível criar. Tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't create. Please try again."
           }
         }
       }
@@ -4025,6 +4144,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't find the external device. Check the IP."
+          }
+        }
+      }
+    },
+    "Não foi possível enviar a imagem para o dispositivo. Verifique a conexão e tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't send the image to the device. Check the connection and try again."
           }
         }
       }
@@ -4068,6 +4198,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't delete the profile. Try again."
+          }
+        }
+      }
+    },
+    "Não foi possível excluir. Tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't delete. Please try again."
           }
         }
       }
@@ -4122,6 +4263,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't leave"
+          }
+        }
+      }
+    },
+    "Não foi possível sair da casa. Tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't leave the house. Please try again."
           }
         }
       }
@@ -4194,7 +4346,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't save. Try again."
+            "value" : "Couldn't save. Please try again."
           }
         }
       }
@@ -4511,6 +4663,17 @@
         }
       }
     },
+    "O armazenamento do iCloud está cheio. Libere espaço para continuar." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your iCloud storage is full. Free up space to continue."
+          }
+        }
+      }
+    },
     "O criador da casa vai gerar a divisão assim que todos definirem seu tempo livre" : {
       "localizations" : {
         "en" : {
@@ -4587,12 +4750,34 @@
         }
       }
     },
+    "O preço é por unidade. O total é dividido entre quem vai consumir e aparece em Pendências." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The price is per unit. The total is split among whoever will use it and shows up in Pending payments."
+          }
+        }
+      }
+    },
     "O que a casa divide?" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "What does the house share?"
+          }
+        }
+      }
+    },
+    "O serviço está ocupado agora. Tente novamente em instantes." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The service is busy right now. Please try again in a moment."
           }
         }
       }
@@ -4618,6 +4803,7 @@
       }
     },
     "O valor é dividido entre quem vai consumir e aparece em Pendências." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4938,6 +5124,17 @@
         }
       }
     },
+    "Para usar o %@ é preciso aceitar os Termos de Uso. Se mudar de ideia, é só rever os termos: a casa vai estar te esperando." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To use %@ you need to accept the Terms of Use. If you change your mind, just review them again: the house will be waiting for you."
+          }
+        }
+      }
+    },
     "Pareamento completo!" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5182,6 +5379,17 @@
         }
       }
     },
+    "Preço por unidade (R$ 0,00)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price per unit (R$ 0.00)"
+          }
+        }
+      }
+    },
     "Prender os cabos soltos e conferir as tomadas e o filtro de linha." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5305,7 +5513,18 @@
         }
       }
     },
+    "Quanto custou cada um?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How much was each one?"
+          }
+        }
+      }
+    },
     "Quanto custou?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5343,6 +5562,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bedroom"
+          }
+        }
+      }
+    },
+    "Quem criou a casa não pode sair dela." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The person who created the house can't leave it."
           }
         }
       }
@@ -5660,6 +5890,16 @@
         }
       }
     },
+    "Rever os Termos de Uso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the Terms of Use"
+          }
+        }
+      }
+    },
     "Sáb" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5730,6 +5970,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Living Room"
+          }
+        }
+      }
+    },
+    "Saldo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balance"
           }
         }
       }
@@ -5856,6 +6107,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No internet connection."
+          }
+        }
+      }
+    },
+    "Sem conexão com a internet. Verifique sua rede e tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet connection. Check your network and try again."
           }
         }
       }
@@ -6289,6 +6551,17 @@
         }
       }
     },
+    "Termos de Uso" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Use"
+          }
+        }
+      }
+    },
     "Tirar as ervas daninhas dos canteiros." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6526,6 +6799,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change the towels"
+          }
+        }
+      }
+    },
+    "Tudo bem, até logo!" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That's okay, see you soon!"
+          }
+        }
+      }
+    },
+    "Tudo certo por aqui" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All square"
           }
         }
       }
@@ -6794,6 +7089,17 @@
         }
       }
     },
+    "Versão %@ · Última atualização: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@ · Last updated: %@"
+          }
+        }
+      }
+    },
     "Vibrações ao concluir uma tarefa e em outras interações." : {
       "localizations" : {
         "en" : {
@@ -6835,6 +7141,17 @@
         }
       }
     },
+    "Você deve à casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe the house"
+          }
+        }
+      }
+    },
     "Você é o administrador desta casa. Ao apagar seu perfil, a casa também será apagada para todos os moradores, junto com as tarefas. Essa ação não pode ser desfeita." : {
       "localizations" : {
         "en" : {
@@ -6863,6 +7180,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You don't owe anything"
+          }
+        }
+      }
+    },
+    "Você não tem permissão para fazer isso." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have permission to do this."
           }
         }
       }

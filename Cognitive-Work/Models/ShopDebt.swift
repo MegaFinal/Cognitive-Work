@@ -69,7 +69,12 @@ enum DebtCalculator {
     ///   - items: Every item of the list.
     ///   - users: Every house member, used to resolve names and avatars.
     ///   - me: The signed-in user's house record id. Without it the ledger is empty.
-    static func ledger(items: [ShopListItem], users: [UserModel], me: CKRecord.ID?) -> DebtLedger {
+    static func ledger(
+        items: [ShopListItem],
+        users: [UserModel],
+        me: CKRecord.ID?,
+        settledOverrides: Set<String> = []
+    ) -> DebtLedger {
         guard let me else { return DebtLedger() }
 
         var youOwe: [CKRecord.ID: [DebtEntry]] = [:]
@@ -79,7 +84,7 @@ enum DebtCalculator {
             guard
                 item.isBought,
                 item.hasPrice,
-                let price = item.value,
+                let price = item.totalValue,
                 let buyer = item.buyerRecordID
             else { continue }
 
@@ -90,7 +95,10 @@ enum DebtCalculator {
             let settled = item.settledUserIDs
             let entry = DebtEntry(item: item, amount: share)
 
-            for consumer in consumers where consumer != buyer && !settled.contains(consumer) {
+            for consumer in consumers
+        where consumer != buyer
+            && !settled.contains(consumer)
+            && !settledOverrides.contains(settlementKey(item: item, debtor: consumer)) {
                 if buyer == me {
                     owedToYou[consumer, default: []].append(entry)
                 } else if consumer == me {
@@ -103,6 +111,11 @@ enum DebtCalculator {
             youOwe: groups(from: youOwe, direction: .youOwe, users: users),
             owedToYou: groups(from: owedToYou, direction: .owedToYou, users: users)
         )
+    }
+
+    /// Identifies "`debtor` paid their share of `item`" for the screen's own bookkeeping.
+    static func settlementKey(item: ShopListItem, debtor: CKRecord.ID) -> String {
+        "\(item.id)|\(debtor.recordName)"
     }
 
     /// Turns the per-housemate entries into groups, in the order of `users`.

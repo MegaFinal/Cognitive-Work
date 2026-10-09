@@ -107,6 +107,7 @@ struct ShopListView: View {
 
                 PurchasePricePopUp(
                     itemName: prompt.item.name,
+                    quantity: prompt.item.quantity,
                     onConfirm: { text in
                         Task { await viewModel.confirmPurchase(of: prompt.item, valueText: text) }
                     },

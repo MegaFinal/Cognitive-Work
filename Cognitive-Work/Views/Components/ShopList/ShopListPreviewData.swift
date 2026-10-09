@@ -97,10 +97,10 @@ enum ShopListPreviewData {
     /// Bought, priced items split among housemates: Jones owes Isabela and Carol, and is owed by Anshu.
     static var debtItems: [ShopListItem] {
         [
-            makeItem("Pizza", quantity: 2, value: 90, category: .food, isBought: true, buyer: isabela, users: [jones, isabela, carol]),
+            makeItem("Pizza", quantity: 2, value: 45, category: .food, isBought: true, buyer: isabela, users: [jones, isabela, carol]),
             makeItem("Sabão em pó", quantity: 1, unit: .package, value: 42, category: .cleaning, isBought: true, buyer: isabela, users: [jones, isabela]),
-            makeItem("Cerveja", quantity: 12, value: 66, category: .drinks, isBought: true, buyer: carol, users: [jones, carol]),
-            makeItem("Pão", quantity: 6, value: 18, category: .food, isBought: true, buyer: jones, users: [jones, anshu, carol]),
+            makeItem("Cerveja", quantity: 12, value: 5.5, category: .drinks, isBought: true, buyer: carol, users: [jones, carol]),
+            makeItem("Pão", quantity: 6, value: 3, category: .food, isBought: true, buyer: jones, users: [jones, anshu, carol]),
             makeItem("Queijo", quantity: 1, unit: .kilogram, value: 55, category: .food, isBought: true, buyer: jones, users: [jones, anshu])
         ]
     }

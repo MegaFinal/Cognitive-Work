@@ -11,6 +11,7 @@ import SwiftUI
 struct PurchasePricePopUp: View {
 
     let itemName: String
+    let quantity: Int
     let onConfirm: (String) -> Void
     let onSkip: () -> Void
     let onCancel: () -> Void
@@ -20,12 +21,21 @@ struct PurchasePricePopUp: View {
 
     private var isValid: Bool { ShopListViewModel.isValidPrice(text) }
 
+    /// "3 × R$5,00 = R$15,00" once a price is typed; otherwise how the price is used.
+    private var totalCaption: String {
+        guard let unit = ShopListViewModel.parsePrice(text), unit > 0 else {
+            return L10n.tr("O preço é por unidade. O total é dividido entre quem vai consumir e aparece em Pendências.")
+        }
+        let format = FloatingPointFormatStyle<Double>.Currency(code: "BRL").locale(L10n.locale)
+        return "\(quantity) × \(unit.formatted(format)) = \((unit * Double(quantity)).formatted(format))"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             toolbar
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Quanto custou?")
+                Text("Quanto custou cada um?")
                     .font(.system(size: 28))
                     .bold()
 
@@ -42,7 +52,7 @@ struct PurchasePricePopUp: View {
 
                 TextField("0,00", text: $text)
                     .font(.system(size: 32, weight: .bold))
-                    .keyboardType(.decimalPad)
+                    .priceInput(text: $text)
                     .focused($isFocused)
             }
             .padding(.horizontal, 18)
@@ -52,7 +62,7 @@ struct PurchasePricePopUp: View {
                     .fill(Color(.systemGray6))
             )
 
-            Text("O valor é dividido entre quem vai consumir e aparece em Pendências.")
+            Text(totalCaption)
                 .font(.system(size: 14))
                 .foregroundStyle(.subTitleGray)
                 .fixedSize(horizontal: false, vertical: true)
@@ -114,6 +124,6 @@ struct PurchasePricePopUp: View {
 #Preview("Preço") {
     ZStack {
         Color.black.opacity(0.45).ignoresSafeArea()
-        PurchasePricePopUp(itemName: "Amaciante", onConfirm: { _ in }, onSkip: {}, onCancel: {})
+        PurchasePricePopUp(itemName: "Amaciante", quantity: 3, onConfirm: { _ in }, onSkip: {}, onCancel: {})
     }
 }

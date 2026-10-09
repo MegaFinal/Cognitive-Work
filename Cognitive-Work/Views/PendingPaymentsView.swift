@@ -26,9 +26,17 @@ struct PendingPaymentsView: View {
         let groups = viewModel.groups
 
         VStack(alignment: .leading, spacing: 22) {
-            summaryCards
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+            VStack(spacing: 12) {
+                DebtBalanceCard(
+                    title: viewModel.balanceTitle,
+                    caption: viewModel.balanceCaption,
+                    amountText: viewModel.balanceText,
+                    color: viewModel.balanceColor
+                )
+                summaryCards
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
 
             if groups.isEmpty {
                 // Centered in the space under the cards.
@@ -40,6 +48,7 @@ struct PendingPaymentsView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         ForEach(groups) { group in
                             section(for: group)
+                                .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
                     }
                     .padding(.horizontal, 20)
@@ -51,6 +60,7 @@ struct PendingPaymentsView: View {
         .navigationTitle("Pendências")
         .navigationBarTitleDisplayMode(.inline)
         .animation(.snappy, value: viewModel.selectedDirection)
+        .animation(.snappy, value: viewModel.groups.map(\.id))
         .confirmationDialog(
             viewModel.confirmationTitle,
             isPresented: Binding(

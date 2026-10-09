@@ -258,6 +258,22 @@ final class ShopListViewModel {
         Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: "."))
     }
 
+    /// Most digits a price can have (R$ 9.999.999,99).
+    static let maxPriceDigits = 9
+
+    /// Bank-style price entry: the user types only digits and they fill in from the cents, so
+    /// `1`, `5`, `0` reads "0,01", "0,15", "1,50". Anything that isn't a digit is ignored.
+    static func formatPriceInput(_ text: String) -> String {
+        let digits = text.filter(\.isNumber).prefix(maxPriceDigits)
+        guard let cents = Int(digits), cents > 0 else { return "" }
+        return "\(cents / 100),\(String(format: "%02d", cents % 100))"
+    }
+
+    /// The text field content for an already known price.
+    static func priceInputText(for value: Double) -> String {
+        formatPriceInput(String(Int((value * 100).rounded())))
+    }
+
     /// The required fields that are still empty or invalid. The form disables its confirm
     /// button while this isn't empty, and ``saveItem(_:name:valueText:quantity:unitMeasurement:category:relatedUsers:addedBy:)``
     /// refuses to save, so an item can never be created without all of them.

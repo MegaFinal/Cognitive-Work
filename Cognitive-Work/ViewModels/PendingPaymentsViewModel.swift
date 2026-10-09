@@ -43,16 +43,48 @@ final class PendingPaymentsViewModel {
 
     // MARK: - Reading
 
+    /// Shares settled during this visit, remembered here too so the totals drop right away and a
+    /// refresh that still carries the old record can't bring a paid debt back.
+    private var settledKeys: Set<String> = []
+
     private var ledger: DebtLedger {
         DebtCalculator.ledger(
             items: shopList.items,
             users: shopList.houseUsers,
-            me: shopList.currentUser?.recordID
+            me: shopList.currentUser?.recordID,
+            settledOverrides: settledKeys
         )
     }
 
-    /// Debts settled during this visit. A settled debt leaves the ledger, so its last state is kept
-    /// here to keep showing the card, with a "Pago!" button, until the screen closes.
+    /// What the house owes you minus what you owe: positive when you are ahead.
+    var balance: Double {
+        let value = total(for: .owedToYou) - total(for: .youOwe)
+        return (value * 100).rounded() / 100
+    }
+
+    var balanceTitle: String { L10n.tr("Saldo") }
+
+    var balanceCaption: String {
+        if balance > 0 { return L10n.tr("A casa te deve") }
+        if balance < 0 { return L10n.tr("Você deve à casa") }
+        return L10n.tr("Tudo certo por aqui")
+    }
+
+    /// "+R$12,00", "-R$12,00" or "R$0,00".
+    var balanceText: String {
+        let sign = balance > 0 ? "+" : (balance < 0 ? "-" : "")
+        return sign + currencyText(abs(balance))
+    }
+
+    /// Green when you are ahead, orange when you are behind, yellow when even.
+    var balanceColor: RoomColor {
+        if balance > 0 { return .green }
+        if balance < 0 { return .orange }
+        return .yellow
+    }
+
+    /// Debts settled a moment ago. A settled debt leaves the ledger, so its last state is kept here
+    /// to keep showing the card, with a "Pago!" button, until ``markPaid(_:debtorID:)`` removes it.
     private var paidGroups: [String: DebtGroup] = [:]
 
     /// The debts of the selected side, one group per housemate: the open ones, plus the ones just
@@ -178,7 +210,7 @@ final class PendingPaymentsViewModel {
 
         if isPreview {
             group.entries.forEach { $0.item.settleLocally(for: debtorID) }
-            paidGroups[group.id] = group
+            markPaid(group, debtorID: debtorID)
             return
         }
 
@@ -187,7 +219,24 @@ final class PendingPaymentsViewModel {
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Não foi possível quitar. Tente novamente.")
                 return
             }
+            settledKeys.insert(DebtCalculator.settlementKey(item: entry.item, debtor: debtorID))
+        }
+        markPaid(group, debtorID: debtorID)
+    }
+
+    /// How long the card says "Pago!" before it leaves the screen.
+    private let paidDisplayDuration: Duration = .milliseconds(1400)
+
+    /// Updates the totals now, keeps the card with a "Pago!" button for a moment, then removes it.
+    private func markPaid(_ group: DebtGroup, debtorID: CKRecord.ID) {
+        for entry in group.entries {
+            settledKeys.insert(DebtCalculator.settlementKey(item: entry.item, debtor: debtorID))
         }
         paidGroups[group.id] = group
+
+        Task { [weak self, paidDisplayDuration] in
+            try? await Task.sleep(for: paidDisplayDuration)
+            self?.paidGroups[group.id] = nil
+        }
     }
 }

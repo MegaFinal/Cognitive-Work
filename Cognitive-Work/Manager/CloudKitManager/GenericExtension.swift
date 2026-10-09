@@ -59,7 +59,7 @@ extension CloudKitManager {
             markDataChanged()
             return saved
         } catch {
-            errorMessage = "Failed to create \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .create)
             return nil
         }
     }
@@ -92,7 +92,7 @@ extension CloudKitManager {
     ///   fails.
     func fetchRecord<T: CloudKitSyncable>(for item: T) async -> CKRecord? {
         guard let recordID = item.recordID else {
-            errorMessage = "Failed to fetch \(T.recordType): missing recordID"
+            errorMessage = UserFacingError.friendly(technical: "Failed to fetch \(T.recordType): missing recordID")
             return nil
         }
         
@@ -101,7 +101,7 @@ extension CloudKitManager {
         do {
             return try await database.record(for: recordID)
         } catch {
-            errorMessage = "Failed to fetch \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .load)
             return nil
         }
     }
@@ -142,7 +142,7 @@ extension CloudKitManager {
                 fetchedRecords.append(contentsOf: result.values.compactMap { try? $0.get() })
             }
         } catch {
-            errorMessage = "Failed to fetch batch records: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .load)
             return nil
         }
         
@@ -261,7 +261,7 @@ extension CloudKitManager {
                 
                 token = changes.moreComing ? changes.changeToken : nil
             } catch {
-                errorMessage = "Failed to scan zone \(zoneID.zoneName): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .load)
                 return []
             }
         } while token != nil
@@ -285,7 +285,7 @@ extension CloudKitManager {
                 desiredKeys: desiredKeys.resolve(for: T.self)
             ).compactMap(T.init(record:))
         } catch {
-            errorMessage = "Failed to fetch \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .load)
             return []
         }
     }
@@ -317,7 +317,7 @@ extension CloudKitManager {
                 return all
             }
         } catch {
-            errorMessage = "Failed to fetch shared \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .share)
             return []
         }
     }
@@ -366,7 +366,7 @@ extension CloudKitManager {
     @discardableResult
     func update<T: CloudKitSyncable>(_ item: T) async -> Bool {
         guard let recordID = item.recordID else {
-            errorMessage = "Failed to update \(T.recordType): missing recordID"
+            errorMessage = UserFacingError.friendly(technical: "Failed to update \(T.recordType): missing recordID")
             return false
         }
         
@@ -381,7 +381,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to update \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .save)
             return false
         }
     }
@@ -396,7 +396,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to update \(record.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .save)
             return false
         }
     }
@@ -411,7 +411,7 @@ extension CloudKitManager {
     @discardableResult
     func delete<T: CloudKitSyncable>(_ item: T) async -> Bool {
         guard let recordID = item.recordID else {
-            errorMessage = "Failed to delete \(T.recordType): missing recordID"
+            errorMessage = UserFacingError.friendly(technical: "Failed to delete \(T.recordType): missing recordID")
             return false
         }
         
@@ -425,7 +425,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
     }
@@ -441,7 +441,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
     }
@@ -472,7 +472,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to delete records: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
     }
@@ -558,7 +558,7 @@ extension CloudKitManager {
                 
                 token = changes.moreComing ? changes.changeToken : nil
             } catch {
-                errorMessage = "Failed to scan zone \(zoneID.zoneName): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .load)
                 return nil
             }
         } while token != nil
@@ -624,7 +624,7 @@ extension CloudKitManager {
                 
                 token = changes.moreComing ? changes.changeToken : nil
             } catch {
-                errorMessage = "Failed to scan zone \(zoneID.zoneName): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .load)
                 return nil
             }
         } while token != nil
