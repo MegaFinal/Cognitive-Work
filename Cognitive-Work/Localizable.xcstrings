@@ -841,6 +841,16 @@
         }
       }
     },
+    "Buscando tarefas, moradores e cômodos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fetching chores, residents and rooms"
+          }
+        }
+      }
+    },
     "Cada coisa que você reparou conta!" : {
       "localizations" : {
         "en" : {
@@ -892,7 +902,18 @@
         }
       }
     },
+    "Carregando sua casa..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading your home..."
+          }
+        }
+      }
+    },
     "Carregando tarefas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

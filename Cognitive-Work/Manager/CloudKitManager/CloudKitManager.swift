@@ -85,10 +85,17 @@ class CloudKitManager {
     /// Counter that changes whenever house data changes, locally or remotely.
     private(set) var dataRevision: Int = 0
     
-    /// Records that house data changed
+    /// Records that house data changed, locally or remotely.
+    ///
+    /// Also invalidates ``HouseDataStore``, so the next tab that asks for the house data
+    /// fetches it again. For changes pushed from another device the store is invalidated a
+    /// second time by ``HouseDataStore/refreshAfterRemoteChange()``: this method runs a
+    /// moment after the notification, so the second call is what guarantees that the screen
+    /// reacting to the notification never gets the old snapshot.
     func markDataChanged() {
         Task { @MainActor in
             self.dataRevision &+= 1
+            HouseDataStore.shared.invalidate()
         }
     }
     

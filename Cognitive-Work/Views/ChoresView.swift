@@ -202,7 +202,7 @@ struct ChoresView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
-                await carouselVM.fetchAllData()
+                await carouselVM.fetchAllData(afterRemoteChange: true)
             }
         }
         .alert(
@@ -296,21 +296,18 @@ struct ChoresView: View {
             ProgressIndicatorCard(
                 title: "Tempo médio",
                 data: dashboard?.totalTimeFormatted ?? "0h00",
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
             ProgressIndicatorCard(
                 title: "A fazer",
                 data: L10n.tr("%lld tarefas", dashboard?.toDo ?? 0),
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
             ProgressIndicatorCard(
                 title: "Concluído",
                 data: (dashboard?.completionPercentage ?? 0)
                     .formatted(.percent.precision(.fractionLength(0)).locale(L10n.locale)),
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
         }
         .padding(.horizontal, 30)
@@ -349,11 +346,6 @@ struct ChoresView: View {
     private var dashboard: DashboardModel? {
         carouselVM.dashboard
     }
-    
-    /// The progress cards show a spinner instead of "0" while the first fetch is in flight.
-    private var isLoadingDashboard: Bool {
-        carouselVM.isLoading && dashboard == nil
-    }
 }
 
 // MARK: - Private subviews
@@ -370,9 +362,6 @@ private struct ProgressIndicatorCard: View {
     /// Visual thematic backdrop color applying depth over UI layouts.
     var color: Color = .gray
     
-    /// Shows a spinner in place of ``data`` while the statistics are being fetched.
-    var isLoading: Bool = false
-    
     
     var body: some View {
         VStack {
@@ -384,19 +373,11 @@ private struct ProgressIndicatorCard: View {
             
             Spacer()
             
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .tint(.white)
-                        .controlSize(.small)
-                } else {
-                    Text(data)
-                        .font(.system(size: 15))
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                }
-            }
-            .padding(.bottom, 25)
+            Text(data)
+                .font(.system(size: 15))
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .padding(.bottom, 25)
         }
         .frame(width: width * 0.28, height: height * 0.088)
         .background(color)
