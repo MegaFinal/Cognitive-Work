@@ -1,0 +1,193 @@
+//
+//  PendingPaymentsViewModel.swift
+//  Cognitive-Work
+//
+//  Created by Dayô Araújo on 08/10/26.
+//
+
+import Foundation
+import CloudKit
+
+/// Drives the "Pendências" screen: who owes whom for the things bought for the house.
+@MainActor
+@Observable
+final class PendingPaymentsViewModel {
+
+    /// An amount split for the big summary cards: "R$" "350" ",00".
+    struct AmountParts {
+        let currency: String
+        let whole: String
+        let cents: String
+    }
+
+    private let shopList: ShopListViewModel
+
+    /// Which side of the debts is listed. The matching summary card is highlighted.
+    var selectedDirection: DebtDirection = .youOwe
+
+    /// The debt waiting for the user to confirm settling it, or `nil`.
+    private(set) var settlementRequest: DebtGroup?
+
+    /// True while a settlement is being saved.
+    private(set) var isSettling = false
+
+    private(set) var errorMessage: String?
+
+    /// See ``ShopListViewModel``: previews can't reach CloudKit.
+    @ObservationIgnored
+    private let isPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+
+    init(shopList: ShopListViewModel) {
+        self.shopList = shopList
+    }
+
+    // MARK: - Reading
+
+    private var ledger: DebtLedger {
+        DebtCalculator.ledger(
+            items: shopList.items,
+            users: shopList.houseUsers,
+            me: shopList.currentUser?.recordID
+        )
+    }
+
+    /// Debts settled during this visit. A settled debt leaves the ledger, so its last state is kept
+    /// here to keep showing the card, with a "Pago!" button, until the screen closes.
+    private var paidGroups: [String: DebtGroup] = [:]
+
+    /// The debts of the selected side, one group per housemate: the open ones, plus the ones just
+    /// settled, in the order of the house members.
+    var groups: [DebtGroup] {
+        let open = ledger.groups(for: selectedDirection)
+        let openIDs = Set(open.map(\.id))
+        let paid = paidGroups.values.filter { $0.direction == selectedDirection && !openIDs.contains($0.id) }
+
+        let order = shopList.houseUsers.compactMap(\.recordID)
+        func position(_ group: DebtGroup) -> Int {
+            group.counterparty.recordID.flatMap(order.firstIndex(of:)) ?? .max
+        }
+        return (open + paid).sorted { position($0) < position($1) }
+    }
+
+    func isPaid(_ group: DebtGroup) -> Bool {
+        paidGroups[group.id] != nil
+    }
+
+    func total(for direction: DebtDirection) -> Double {
+        ledger.total(for: direction)
+    }
+
+    /// The signed-in user's profile banner (color and texture), used to highlight the selected card.
+    var banner: ProfileBanner {
+        shopList.currentUser?.banner ?? .default
+    }
+
+    // MARK: - Texts
+
+    func title(for direction: DebtDirection) -> String {
+        switch direction {
+        case .youOwe: return L10n.tr("Você deve")
+        case .owedToYou: return L10n.tr("Te devem")
+        }
+    }
+
+    /// Just the person's name: the selected card already says which way the money goes.
+    func title(for group: DebtGroup) -> String {
+        group.counterparty.name
+    }
+
+    var emptyTitle: String {
+        switch selectedDirection {
+        case .youOwe: return L10n.tr("Você não deve nada")
+        case .owedToYou: return L10n.tr("Ninguém te deve")
+        }
+    }
+
+    var emptyMessage: String {
+        L10n.tr("Quando uma compra com valor for dividida entre os moradores, ela aparece aqui.")
+    }
+
+    // MARK: - Formatting
+
+    /// "R$55,50", in the app's language.
+    func currencyText(_ value: Double) -> String {
+        "R$" + value.formatted(.number.precision(.fractionLength(2)).locale(L10n.locale))
+    }
+
+    /// The pieces of an amount for the big summary cards.
+    func amountParts(_ value: Double) -> AmountParts {
+        let totalCents = Int((max(value, 0) * 100).rounded())
+        let separator = L10n.locale.decimalSeparator ?? ","
+
+        return AmountParts(
+            currency: "R$",
+            whole: (totalCents / 100).formatted(.number.locale(L10n.locale)),
+            cents: separator + String(format: "%02d", totalCents % 100)
+        )
+    }
+
+    func settleButtonTitle(for group: DebtGroup) -> String {
+        isPaid(group) ? L10n.tr("Pago!") : L10n.tr("Pagar")
+    }
+
+    var confirmationTitle: String {
+        guard let group = settlementRequest else { return "" }
+        return L10n.tr("Marcar %@ de %@ como pago?", currencyText(group.total), group.counterparty.name)
+    }
+
+    var confirmationMessage: String {
+        switch settlementRequest?.direction {
+        case .owedToYou: return L10n.tr("Isso marca que a pessoa já te pagou. Não dá para desfazer.")
+        default: return L10n.tr("Isso marca que você já pagou. Não dá para desfazer.")
+        }
+    }
+
+    // MARK: - Settling
+
+    func requestSettlement(of group: DebtGroup) {
+        guard !isPaid(group) else { return }
+        settlementRequest = group
+    }
+
+    func cancelSettlement() {
+        settlementRequest = nil
+    }
+
+    func clearError() {
+        errorMessage = nil
+    }
+
+    /// Marks every item of the requested debt as paid by the debtor.
+    func confirmSettlement() async {
+        guard let group = settlementRequest, let me = shopList.currentUser?.recordID else {
+            settlementRequest = nil
+            return
+        }
+
+        let debtorID = group.direction == .youOwe ? me : group.counterparty.recordID
+        guard let debtorID else {
+            settlementRequest = nil
+            return
+        }
+
+        isSettling = true
+        defer {
+            isSettling = false
+            settlementRequest = nil
+        }
+
+        if isPreview {
+            group.entries.forEach { $0.item.settleLocally(for: debtorID) }
+            paidGroups[group.id] = group
+            return
+        }
+
+        for entry in group.entries {
+            guard await entry.item.markSettled(for: debtorID) else {
+                errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Não foi possível quitar. Tente novamente.")
+                return
+            }
+        }
+        paidGroups[group.id] = group
+    }
+}

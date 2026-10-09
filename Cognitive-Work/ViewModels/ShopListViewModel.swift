@@ -251,6 +251,13 @@ final class ShopListViewModel {
 
     // MARK: - Items
 
+    /// Reads a price typed by the user (`,` or `.` as the decimal separator).
+    ///
+    /// - Returns: The price, or `nil` when the text is empty or isn't a number.
+    static func parsePrice(_ text: String) -> Double? {
+        Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: "."))
+    }
+
     /// The required fields that are still empty or invalid. The form disables its confirm
     /// button while this isn't empty, and ``saveItem(_:name:valueText:quantity:unitMeasurement:category:relatedUsers:addedBy:)``
     /// refuses to save, so an item can never be created without all of them.
@@ -297,7 +304,7 @@ final class ShopListViewModel {
             return false
         }
 
-        let value = Double(valueText.replacingOccurrences(of: ",", with: "."))
+        let value = Self.parsePrice(valueText)
 
         if isPreview {
             previewSave(existingItem, name: name, value: value, quantity: quantity,
@@ -422,10 +429,48 @@ final class ShopListViewModel {
         return true
     }
 
-    /// Checks an item off (crediting the buyer with points) or puts it back on the list
-    /// (taking those points back from whoever bought it, so toggling can't farm points).
+    // MARK: - Buying
+
+    /// An item the user is checking off that has no price yet; the view asks for it first.
+    struct PurchasePrompt: Identifiable {
+        let item: ShopListItem
+        var id: String { item.id }
+    }
+
+    /// Set while the "how much was it?" popup should be on screen.
+    private(set) var purchasePrompt: PurchasePrompt?
+
+    func dismissPurchasePrompt() {
+        purchasePrompt = nil
+    }
+
+    /// Whether `text` is a price the popup can confirm.
+    static func isValidPrice(_ text: String) -> Bool {
+        (parsePrice(text) ?? 0) > 0
+    }
+
+    /// Checks an item off, or puts it back on the list.
     func toggleBought(_ item: ShopListItem) async {
+        if !item.isBought, !item.hasPrice {
+            purchasePrompt = PurchasePrompt(item: item)
+            return
+        }
+        await setBought(item, price: nil)
+    }
+
+    /// Finishes a purchase started from the price popup.
+    ///
+    /// - Parameter valueText: The typed price, or `nil` to buy without informing it.
+    func confirmPurchase(of item: ShopListItem, valueText: String?) async {
+        purchasePrompt = nil
+
+        let price = valueText.flatMap(Self.parsePrice).flatMap { $0 > 0 ? $0 : nil }
+        await setBought(item, price: price)
+    }
+
+    private func setBought(_ item: ShopListItem, price: Double?) async {
         if isPreview {
+            if let price { item.value = price }
             item.isBought.toggle()
             return
         }
@@ -441,12 +486,14 @@ final class ShopListViewModel {
                 await ScoreManager.shared.removeScore(score: points, for: buyer)
             }
         } else if let currentUser {
-            let didSave = await item.markBought(by: currentUser)
+            let didSave = await item.markBought(by: currentUser, value: price)
             guard didSave else {
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao editar item.")
                 return
             }
-            let points = ScoreValues.shoppingItemBought.points
+
+            var points = ScoreValues.shoppingItemBought.points
+            if price != nil { points += ScoreValues.receiptScanned(itemCount: 1).points }
             await ScoreManager.shared.assignScoreForMyUser(score: points)
         } else if await item.toggle() == false {
             errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro ao editar item.")

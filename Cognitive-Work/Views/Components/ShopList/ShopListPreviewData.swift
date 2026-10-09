@@ -36,6 +36,7 @@ enum ShopListPreviewData {
         value: Double? = nil,
         category: ShopItemCategory = .other,
         isBought: Bool = false,
+        buyer: UserModel? = nil,
         users: [UserModel] = []
     ) -> ShopListItem {
         let item = ShopListItem(
@@ -47,7 +48,8 @@ enum ShopListPreviewData {
             category: category,
             relatedUsers: users.compactMap { user in
                 user.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
-            }
+            },
+            buyerUser: buyer?.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
         )
         item.recordID = CKRecord.ID(recordName: "preview-item-\(UUID().uuidString)")
         return item
@@ -89,6 +91,17 @@ enum ShopListPreviewData {
             makeItem("Ração", quantity: 1, unit: .package, value: 89.9, category: .pets, users: [jones]),
             makeItem("Veja multiuso", quantity: 1, value: 12.9, category: .cleaning, isBought: true, users: [jones, isabela, carol]),
             makeItem("Café", quantity: 500, unit: .gram, category: .food, isBought: true, users: [jones])
+        ] + debtItems
+    }
+
+    /// Bought, priced items split among housemates: Jones owes Isabela and Carol, and is owed by Anshu.
+    static var debtItems: [ShopListItem] {
+        [
+            makeItem("Pizza", quantity: 2, value: 90, category: .food, isBought: true, buyer: isabela, users: [jones, isabela, carol]),
+            makeItem("Sabão em pó", quantity: 1, unit: .package, value: 42, category: .cleaning, isBought: true, buyer: isabela, users: [jones, isabela]),
+            makeItem("Cerveja", quantity: 12, value: 66, category: .drinks, isBought: true, buyer: carol, users: [jones, carol]),
+            makeItem("Pão", quantity: 6, value: 18, category: .food, isBought: true, buyer: jones, users: [jones, anshu, carol]),
+            makeItem("Queijo", quantity: 1, unit: .kilogram, value: 55, category: .food, isBought: true, buyer: jones, users: [jones, anshu])
         ]
     }
 
@@ -97,6 +110,16 @@ enum ShopListPreviewData {
     /// A view model already loaded with ``items``.
     static var populatedViewModel: ShopListViewModel {
         ShopListViewModel(previewItems: items, houseUsers: users, currentUser: jones)
+    }
+
+    /// A view model for the pending payments screen, with debts in both directions.
+    static var debtsViewModel: PendingPaymentsViewModel {
+        PendingPaymentsViewModel(shopList: populatedViewModel)
+    }
+
+    /// A pending payments screen where nobody owes anything.
+    static var noDebtsViewModel: PendingPaymentsViewModel {
+        PendingPaymentsViewModel(shopList: emptyViewModel)
     }
 
     /// A view model already loaded with no items.

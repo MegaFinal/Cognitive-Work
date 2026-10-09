@@ -15,6 +15,7 @@ struct ShopListView: View {
 
     @State private var isPresentingAddItem = false
     @State private var editingItem: ShopListItem?
+    @State private var isShowingPendingPayments = false
 
     /// Which card is swiped open; shared so only one can be open at a time.
     @State private var revealedItemID: String?
@@ -27,6 +28,16 @@ struct ShopListView: View {
     }
 
     var body: some View {
+        NavigationStack {
+            content
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(isPresented: $isShowingPendingPayments) {
+                    PendingPaymentsView(shopList: viewModel)
+                }
+        }
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 20) {
             header
 
@@ -41,6 +52,8 @@ struct ShopListView: View {
             addButton
         }
         .background(Color(.white).ignoresSafeArea())
+        .overlay { purchasePriceOverlay }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.purchasePrompt?.id)
         .task {
             guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
@@ -80,9 +93,38 @@ struct ShopListView: View {
         }
     }
 
+    // MARK: - Price pop-up
+
+    /// "How much was it?", over a dimmed backdrop, when an item without a price is checked off.
+    @ViewBuilder
+    private var purchasePriceOverlay: some View {
+        if let prompt = viewModel.purchasePrompt {
+            ZStack {
+                Color.black.opacity(0.45)
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { viewModel.dismissPurchasePrompt() }
+
+                PurchasePricePopUp(
+                    itemName: prompt.item.name,
+                    onConfirm: { text in
+                        Task { await viewModel.confirmPurchase(of: prompt.item, valueText: text) }
+                    },
+                    onSkip: {
+                        Task { await viewModel.confirmPurchase(of: prompt.item, valueText: nil) }
+                    },
+                    onCancel: { viewModel.dismissPurchasePrompt() }
+                )
+                .id(prompt.id)
+                .transition(.scale(scale: 0.92).combined(with: .opacity))
+            }
+            .transition(.opacity)
+        }
+    }
+
     // MARK: - Header
 
-    /// Page title alongside the sort control
+    /// Page title alongside the controls, laid out like the header of ``ChoresView``.
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
@@ -102,17 +144,31 @@ struct ShopListView: View {
 
             Spacer()
 
-            Menu {
-                Picker("Ordenar por", selection: $viewModel.sortOption) {
-                    ForEach(ShopListSortOption.allCases) { option in
-                        Label(option.label, systemImage: option.symbol).tag(option)
-                    }
+            HStack(spacing: 4) {
+                Button {
+                    HapticsManager.selection()
+                    isShowingPendingPayments = true
+                } label: {
+                    Image(systemName: "banknote")
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(8)
                 }
-            } label: {
-                Image(systemName: "line.3.horizontal.decrease")
-                    .font(.system(size: 22))
-                    .foregroundColor(.black)
-                    .padding(12)
+                .accessibilityLabel("Pendências")
+
+                Menu {
+                    Picker("Ordenar por", selection: $viewModel.sortOption) {
+                        ForEach(ShopListSortOption.allCases) { option in
+                            Label(option.label, systemImage: option.symbol).tag(option)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(12)
+                }
+                .accessibilityLabel("Ordenar por")
             }
             .glassEffect(
                 .regular.interactive(),

@@ -53,6 +53,23 @@ class ShopListItem: CloudKitSyncable, Identifiable {
 
     private var tagsReference: [CKRecord.Reference]?
 
+    /// Housemates who already paid the buyer their share of this item (see ``DebtCalculator``).
+    private var settledUsersReference: [CKRecord.Reference]?
+
+    /// Whether a price was informed (an item without one can't be split between housemates).
+    var hasPrice: Bool { (value ?? 0) > 0 }
+
+    /// The housemates the item is for, as record ids.
+    var consumerRecordIDs: [CKRecord.ID] {
+        var seen = Set<CKRecord.ID>()
+        return (relatedUsersReference ?? []).map(\.recordID).filter { seen.insert($0).inserted }
+    }
+
+    /// The housemates who already paid their share of this item.
+    var settledUserIDs: Set<CKRecord.ID> {
+        Set((settledUsersReference ?? []).map(\.recordID))
+    }
+
     /// Who bought the item, as a record id (for resolving against an already-fetched pool).
     var buyerRecordID: CKRecord.ID? { buyerUserReference?.recordID }
 
@@ -140,6 +157,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         self.relatedUsersReference = record["relatedUsers"] as? [CKRecord.Reference]
         self.addedByUserReference = record["addedByUser"] as? CKRecord.Reference
         self.tagsReference = record["tags"] as? [CKRecord.Reference]
+        self.settledUsersReference = record["settledUsers"] as? [CKRecord.Reference]
     }
 
     /// Creates a new, unsaved shopping list item.
@@ -161,6 +179,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         category: ShopItemCategory = .other,
         relatedUsers: [CKRecord.Reference]? = nil,
         addedByUser: CKRecord.Reference? = nil,
+        buyerUser: CKRecord.Reference? = nil,
         recordID: CKRecord.ID? = nil
     ) {
         self.recordID = recordID
@@ -173,6 +192,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         self.createdAt = Date()
         self.relatedUsersReference = relatedUsers
         self.addedByUserReference = addedByUser
+        self.buyerUserReference = buyerUser
     }
 
     /// Writes this model's values into a CloudKit record.
@@ -201,6 +221,9 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         if let tagsReference {
             record["tags"] = tagsReference
         }
+        if let settledUsersReference {
+            record["settledUsers"] = settledUsersReference
+        }
     }
 
     /// Flips ``isBought`` and persists the change
@@ -216,19 +239,49 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         return true
     }
 
-    /// Marks the item bought by `user`, recording both ``isBought`` and ``buyerUserReference``
-    /// in a single update instead of two separate writes.
+    /// Marks the item bought by `user`, recording ``isBought``, ``buyerUserReference`` and, when
+    /// given, the price paid, in a single update instead of separate writes.
     ///
-    /// - Parameter user: The user who bought the item.
+    /// - Parameters:
+    ///   - user: The user who bought the item.
+    ///   - value: The price paid, when it wasn't known before.
     @discardableResult
-    func markBought(by user: UserModel) async -> Bool {
+    func markBought(by user: UserModel, value paid: Double? = nil) async -> Bool {
         guard let buyerID = user.recordID else { return false }
         let previousBuyer = buyerUserReference
+        let previousValue = value
+
         isBought = true
         buyerUserReference = CKRecord.Reference(recordID: buyerID, action: .none)
+        if let paid { value = paid }
+
         guard await CloudKitManager.shared.update(self) else {
             isBought = false
             buyerUserReference = previousBuyer
+            value = previousValue
+            return false
+        }
+        return true
+    }
+
+    /// Records, in memory only, that `debtorID` paid their share (used by previews and as the
+    /// first step of ``markSettled(for:)``).
+    func settleLocally(for debtorID: CKRecord.ID) {
+        guard !settledUserIDs.contains(debtorID) else { return }
+        settledUsersReference = (settledUsersReference ?? []) + [CKRecord.Reference(recordID: debtorID, action: .none)]
+    }
+
+    /// Records that `debtorID` paid their share of this item, and persists it. Rolled back if
+    /// CloudKit rejects the update.
+    @discardableResult
+    func markSettled(for debtorID: CKRecord.ID) async -> Bool {
+        guard !settledUserIDs.contains(debtorID) else { return true }
+        let previous = settledUsersReference
+
+        settleLocally(for: debtorID)
+
+        guard await CloudKitManager.shared.update(self) else {
+            settledUsersReference = previous
             return false
         }
         return true

@@ -7,6 +7,28 @@
     "%@" : {
 
     },
+    "%@ comprou" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bought"
+          }
+        }
+      }
+    },
+    "%@ deve" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ owes"
+          }
+        }
+      }
+    },
     "%@%%" : {
 
     },
@@ -239,6 +261,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "0 days"
+          }
+        }
+      }
+    },
+    "0,00" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0.00"
           }
         }
       }
@@ -1257,6 +1289,16 @@
         }
       }
     },
+    "Comprar sem valor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy without a price"
+          }
+        }
+      }
+    },
     "Compras" : {
       "localizations" : {
         "en" : {
@@ -1384,7 +1426,6 @@
       }
     },
     "Confirmar" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3182,6 +3223,28 @@
         }
       }
     },
+    "Isso marca que a pessoa já te pagou. Não dá para desfazer." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This marks that they already paid you. It can't be undone."
+          }
+        }
+      }
+    },
+    "Isso marca que você já pagou. Não dá para desfazer." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This marks that you already paid. It can't be undone."
+          }
+        }
+      }
+    },
     "Item adicionado" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3662,6 +3725,17 @@
         }
       }
     },
+    "Marcar %@ de %@ como pago?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark %@ from %@ as paid?"
+          }
+        }
+      }
+    },
     "Marcar como comprado" : {
       "localizations" : {
         "en" : {
@@ -4010,6 +4084,17 @@
         }
       }
     },
+    "Não foi possível quitar. Tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't settle. Please try again."
+          }
+        }
+      }
+    },
     "Não foi possível sair" : {
       "localizations" : {
         "en" : {
@@ -4193,6 +4278,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No chores right now"
+          }
+        }
+      }
+    },
+    "Ninguém te deve" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nobody owes you"
           }
         }
       }
@@ -4468,6 +4564,16 @@
         }
       }
     },
+    "O valor é dividido entre quem vai consumir e aparece em Pendências." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The price is split among whoever will use it and shows up in Pending payments."
+          }
+        }
+      }
+    },
     "Ocorreu um erro." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4694,6 +4800,27 @@
         }
       }
     },
+    "Pagar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay"
+          }
+        }
+      }
+    },
+    "Pago!" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paid!"
+          }
+        }
+      }
+    },
     "Para começarmos" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4871,6 +4998,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pick up a chore nobody owns yet"
+          }
+        }
+      }
+    },
+    "Pendências" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pending payments"
           }
         }
       }
@@ -5073,6 +5210,17 @@
         }
       }
     },
+    "Quando uma compra com valor for dividida entre os moradores, ela aparece aqui." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When a priced purchase is split among housemates, it shows up here."
+          }
+        }
+      }
+    },
     "Quando você deseja realizar esta tarefa?" : {
       "localizations" : {
         "en" : {
@@ -5089,6 +5237,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quantity"
+          }
+        }
+      }
+    },
+    "Quanto custou?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How much was it?"
           }
         }
       }
@@ -5199,6 +5357,31 @@
           }
         }
       }
+    },
+    "Quitar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settle"
+          }
+        }
+      }
+    },
+    "Quitar %@ com %@?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settle %@ with %@?"
+          }
+        }
+      }
+    },
+    "R$" : {
+
     },
     "Ranking" : {
       "extractionState" : "stale",
@@ -5956,6 +6139,17 @@
         }
       }
     },
+    "Te devem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're owed"
+          }
+        }
+      }
+    },
     "Tempo médio" : {
       "localizations" : {
         "en" : {
@@ -6170,6 +6364,9 @@
           }
         }
       }
+    },
+    "Total" : {
+
     },
     "Trocando de casa..." : {
       "extractionState" : "stale",
@@ -6530,6 +6727,17 @@
         }
       }
     },
+    "Você deve" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe"
+          }
+        }
+      }
+    },
     "Você é o administrador desta casa. Ao apagar seu perfil, a casa também será apagada para todos os moradores, junto com as tarefas. Essa ação não pode ser desfeita." : {
       "localizations" : {
         "en" : {
@@ -6547,6 +6755,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You'll be responsible for every day of the period."
+          }
+        }
+      }
+    },
+    "Você não deve nada" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't owe anything"
           }
         }
       }

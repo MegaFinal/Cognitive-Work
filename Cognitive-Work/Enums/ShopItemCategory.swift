@@ -41,10 +41,10 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
     var symbol: String {
         switch self {
         case .food: return "fork.knife"
-        case .produce: return "leaf"
-        case .drinks: return "cup.and.saucer"
+        case .produce: return "carrot.fill"
+        case .drinks: return "mug.fill"
         case .cleaning: return "sparkles"
-        case .hygiene: return "shower"
+        case .hygiene: return "shower.fill"
         case .home: return "house"
         case .pets: return "pawprint"
         case .other: return "basket"
