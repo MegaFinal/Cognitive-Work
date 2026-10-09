@@ -424,8 +424,9 @@ extension CloudKitManager {
     /// the occurrences and one-off chores stayed assigned to nobody-in-particular, never showed
     /// in the unassigned list, and nobody could take them over.
     ///
-    /// - Recurring occurrences not yet completed lose their `user` (and the calendar event id,
-    ///   which belonged to the leaving member's device). Completed ones keep it, as history.
+    /// - Recurring occurrences not yet completed drop the member from `users` (and lose the
+    ///   calendar event id, which belonged to the leaving member's device). Once nobody is left
+    ///   they count as unassigned. Completed ones keep their users, as history.
     /// - One-off chores not yet done drop the member from `currentResponsible` and
     ///   `allResponsibleUsers`; once nobody is left they count as unassigned.
     private func releaseAssignments(of userIDs: Set<CKRecord.ID>, in records: [CKRecord]) async {
@@ -437,10 +438,13 @@ extension CloudKitManager {
             switch record.recordType {
             case RecurrentAssignmentModel.recordType:
                 guard record["isCompleted"] as? Bool == false,
-                      let user = record["user"] as? CKRecord.Reference,
-                      userIDs.contains(user.recordID)
+                      let users = record["users"] as? [CKRecord.Reference]
                 else { continue }
-                record["user"] = nil
+                
+                let kept = users.filter { !userIDs.contains($0.recordID) }
+                guard kept.count != users.count else { continue }
+                
+                record["users"] = kept
                 record["calendarEventIdentifier"] = nil
                 toSave.append(record)
                 

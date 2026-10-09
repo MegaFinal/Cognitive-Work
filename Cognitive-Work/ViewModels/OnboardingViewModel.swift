@@ -759,7 +759,11 @@ class OnboardingViewModel {
     /// notification and ``WaitAcceptLinkOnboardingView``'s own check, and a plain
     /// ``goToNextView()`` from each would skip ``OnboardingNavigationSteps/waitAdminScheduling``.
     /// It also covers the share being accepted *before* free time was chosen.
-    func advanceAfterJoiningHouse() {
+    ///
+    /// A house that was already divided has nothing to wait for, so the guest finishes
+    /// onboarding and goes straight to the main screen instead of the waiting screen.
+    @MainActor
+    func advanceAfterJoiningHouse() async {
         let steps = stateMachine.steps
         guard let target = steps.firstIndex(of: .waitAdminScheduling) else {
             goToNextView()
@@ -773,17 +777,42 @@ class OnboardingViewModel {
             return
         }
         
-        if stateMachine.index < target {
+        guard stateMachine.index < target else { return }
+        
+        // Keeps the "entering the house" loading state on screen while this is checked.
+        isJoiningHouse = true
+        let isAlreadyDivided = await joinedHouseIsAlreadyDivided()
+        isJoiningHouse = false
+        
+        if isAlreadyDivided {
+            finishOnboarding()
+        } else if stateMachine.index < target {
             stateMachine.jumpToStep(index: target)
+        }
+    }
+    
+    /// `true` when the house already has a division and none of it belongs to this user,
+    /// which is the case for a guest who joins a house that was divided before they arrived.
+    @MainActor
+    private func joinedHouseIsAlreadyDivided() async -> Bool {
+        let assignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        guard !assignments.isEmpty,
+              let myName = await CloudKitManager.shared.fetchMyHouseUser()?.recordID?.recordName
+        else { return false }
+        
+        // Compared by record name so a different zone ID can't make the match fail.
+        return !assignments.contains { assignment in
+            (assignment.userReferences ?? []).contains { $0.recordID.recordName == myName }
         }
     }
     
     /// Leaves the free-time step. A user who already joined a house through an invite skips
     /// the create/enter/wait-link steps instead of being sent back to them.
-    func advanceAfterFreeTime() {
+    @MainActor
+    func advanceAfterFreeTime() async {
         if stateMachine.flow == .invitedWithProfile,
            let user = currentUser, CloudKitManager.shared.isHouseUser(user) {
-            advanceAfterJoiningHouse()
+            await advanceAfterJoiningHouse()
         } else {
             // A returning user who had to fill in free time on the way (none was saved) still
             // goes back to the welcome screen from "create or enter", not to this screen.
@@ -1113,6 +1142,10 @@ class OnboardingViewModel {
     // MARK: - Algorithm
 
     /// Advances the guest past the waiting screen once the admin's division exists.
+    ///
+    /// A guest who joins a house that was already divided has no occurrences of their own yet,
+    /// so the division screen would only show everyone else's chores. That guest finishes
+    /// onboarding and goes straight to the main screen instead.
     @MainActor
     func checkAndAdvanceIfScheduleReady() async {
         guard !isCheckingSchedule else { return }
@@ -1124,6 +1157,21 @@ class OnboardingViewModel {
         guard scheduleIsReady else { return }
 
         isScheduleReady = true
+        guard stateMachine.current == .waitAdminScheduling else { return }
+        
+        if let myHouseUser = await CloudKitManager.shared.fetchMyHouseUser(),
+           let myName = myHouseUser.recordID?.recordName {
+            // Compared by record name so a different zone ID can't make the match fail.
+            let hasOwnAssignments = assignments.contains { assignment in
+                (assignment.userReferences ?? []).contains { $0.recordID.recordName == myName }
+            }
+            guard hasOwnAssignments else {
+                finishOnboarding()
+                return
+            }
+        }
+        
+        // The state may have changed while the house user was being fetched.
         guard stateMachine.current == .waitAdminScheduling else { return }
         goToNextView()
     }
@@ -1151,7 +1199,7 @@ class OnboardingViewModel {
         // may have set (`.invitedWithoutProfile` when `currentUser` wasn't loaded yet).
         stateMachine.flow = .invitedWithProfile
         if await joinHouse() {
-            advanceAfterJoiningHouse()
+            await advanceAfterJoiningHouse()
         }
     }
     
