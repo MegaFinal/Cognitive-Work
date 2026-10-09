@@ -11,18 +11,18 @@ struct NotificationsView: View {
     /// ChoresView decides what to do with these actions (it owns carouselVM).
     var onPickChores: () -> Void = {}
     var onOpenChore: (ChoreModel, RecurrentAssignmentModel?) -> Void = { _, _ in }
-
+    
     @State private var viewModel = NotificationsViewModel()
     @State private var isShowingRetro = false
     @State private var isShowingDashboard = false
     @Environment(\.dismiss) private var dismiss
-
+    
     var body: some View {
         // No NavigationStack here: we are already inside ChoresView's stack.
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 header
-
+                
                 if viewModel.isLoading {
                     ProgressView().frame(maxWidth: .infinity)
                 } else if viewModel.sections.isEmpty {
@@ -48,9 +48,9 @@ struct NotificationsView: View {
                 .presentationBackground(.clear)
         }
     }
-
+    
     // MARK: - Subviews
-
+    
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Notificações")
@@ -61,13 +61,13 @@ struct NotificationsView: View {
                 .foregroundStyle(.subTitleGray)
         }
     }
-
+    
     private func sectionView(_ section: NotificationSection) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             Text(viewModel.title(for: section))
                 .font(.system(size: 17))
                 .foregroundStyle(.subTitleGray)
-
+            
             ForEach(section.items) { notification in
                 Button {
                     handleTap(notification.destination)
@@ -83,9 +83,9 @@ struct NotificationsView: View {
             }
         }
     }
-
+    
     // MARK: - Actions
-
+    
     private func handleTap(_ destination: NotificationDestination) {
         switch destination {
         case .pickChores:
@@ -98,9 +98,8 @@ struct NotificationsView: View {
         case .chore(let chore, let assignment):
             dismiss()
             onOpenChore(chore, assignment)
-        // [newUser] Disabled until we define what tapping it should do.
-        // case .userProfile:
-        //     break // TODO: there is no screen for ANOTHER user's profile yet
+        case .userProfile(_):
+            break // TODO: there is no screen for ANOTHER user's profile yet
         }
     }
 }

@@ -14,8 +14,7 @@ enum NotificationDestination {
     case pickChores
     case retrospective
     case dashboard
-    // [newUser] Disabled until we define what tapping it should do.
-    // case userProfile(UserModel)
+    case userProfile(UserModel)
     case chore(ChoreModel, RecurrentAssignmentModel?)
 }
 
@@ -92,7 +91,7 @@ class NotificationsViewModel {
         // The same person may have more than one UserModel (same ownerRecordName).
         let myIDs = Set(
             ([me] + snapshot.users.filter { $0.ownerRecordName == me.ownerRecordName })
-                .compactMap{ $0.recordID}
+                .compactMap{ $0.recordID }
         )
 
         let windowStart = calendar.date(
@@ -107,8 +106,7 @@ class NotificationsViewModel {
         all += grabChoreNotifications(occurrences, from: windowStart, now: now)
         all += lateChoreNotifications(occurrences, roomNameByID: roomNameByID, myIDs: myIDs, now: now)
         all += divisionNotifications(snapshot.assignments)
-        // [newUser] Disabled until we define what tapping it should do.
-        // all += newUserNotifications(snapshot.users, myIDs: myIDs)
+        all += newUserNotifications(snapshot.users, myIDs: myIDs)
 
         // The 14-day rule lives in a single place (and nothing from the future shows up).
         all = all.filter { $0.date >= windowStart && $0.date <= now }
@@ -294,23 +292,22 @@ class NotificationsViewModel {
         return result
     }
 
-    // [newUser] Disabled until we define what tapping it should do.
-//    /// "Fulano entrou na casa": everyone except me.
-//    private func newUserNotifications(_ members: [UserModel], myIDs: Set<CKRecord.ID>) -> [NotificationModel] {
-//        members.compactMap { user -> NotificationModel? in
-//            guard let id = user.recordID, !myIDs.contains(id),
-//                  let joined = user.joinedAt else { return nil }
+    /// "Fulano entrou na casa": everyone except me.
+    private func newUserNotifications(_ members: [UserModel], myIDs: Set<CKRecord.ID>) -> [NotificationModel] {
+        members.compactMap { user -> NotificationModel? in
+            guard let id = user.recordID, !myIDs.contains(id),
+                  let joined = user.joinedAt else { return nil }
 
-//            return NotificationModel(
-//                id: "user-\(id.recordName)",
-//                kind: .newUser,
-//                title: user.name + Notifications.newUser.rawValue,
-//                subtitle: Notifications.newUser.subTitle,
-//                date: joined,
-//                destination: .userProfile(user)
-//            )
-//        }
-//    }
+            return NotificationModel(
+                id: "user-\(id.recordName)",
+                kind: .newUser,
+                title: user.name + Notifications.newUser.rawValue,
+                subtitle: Notifications.newUser.subTitle,
+                date: joined,
+                destination: .userProfile(user)
+            )
+        }
+    }
 
     // MARK: - Grouping and "seen" state
 

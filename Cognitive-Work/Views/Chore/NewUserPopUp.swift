@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct NewUserPopUp: View {
-    @Environment(\.dismiss) private var dismiss
+    var onPress: () -> Void
+    var onDismiss: () -> Void
     
     var body: some View {
         VStack (alignment: .leading) {
@@ -37,7 +38,7 @@ struct NewUserPopUp: View {
                     .padding(.bottom, 32)
             
             Button {
-                
+                onPress()
             } label: {
                 Text("Divisão automática de tarefas")
                     .frame(width: width * 0.69, height: height * 0.037)
@@ -51,7 +52,7 @@ struct NewUserPopUp: View {
             HStack {
                 Spacer()
                 Button {
-                    dismiss()
+                    onDismiss()
                 } label: {
                     Text("Dividir mais tarde")
                         .fontWeight(.semibold)
@@ -73,5 +74,5 @@ struct NewUserPopUp: View {
 }
 
 #Preview {
-    NewUserPopUp()
+    NewUserPopUp(onPress: {}, onDismiss: {})
 }
