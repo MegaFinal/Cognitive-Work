@@ -3454,6 +3454,9 @@
         }
       }
     },
+    "Nada por aqui nos últimos 14 dias" : {
+
+    },
     "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3955,6 +3958,9 @@
           }
         }
       }
+    },
+    "Notificações" : {
+
     },
     "Nova tarefa" : {
       "localizations" : {
