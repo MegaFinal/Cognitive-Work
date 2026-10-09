@@ -7,6 +7,28 @@
     "%@" : {
 
     },
+    "%@ comprou" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bought"
+          }
+        }
+      }
+    },
+    "%@ deve" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ owes"
+          }
+        }
+      }
+    },
     "%@%%" : {
 
     },
@@ -47,6 +69,47 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld ativos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld itens para comprar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld item to buy"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld items to buy"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld item para comprar"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld itens para comprar"
                 }
               }
             }
@@ -175,7 +238,21 @@
         }
       }
     },
+    "+%lld pontos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld points"
+          }
+        }
+      }
+    },
     "×%lld" : {
+
+    },
+    "0" : {
 
     },
     "0 dias" : {
@@ -184,6 +261,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "0 days"
+          }
+        }
+      }
+    },
+    "0,00" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0.00"
           }
         }
       }
@@ -305,6 +392,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The home you belonged to was deleted."
+          }
+        }
+      }
+    },
+    "A comprar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To buy"
           }
         }
       }
@@ -522,6 +620,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Something went wrong"
+          }
+        }
+      }
+    },
+    "Alimentos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Food"
           }
         }
       }
@@ -799,6 +908,16 @@
         }
       }
     },
+    "Aumentar quantidade" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Increase quantity"
+          }
+        }
+      }
+    },
     "baixa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -831,12 +950,34 @@
         }
       }
     },
+    "Bebidas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drinks"
+          }
+        }
+      }
+    },
     "Bem vindo, %@!" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Welcome, %@!"
+          }
+        }
+      }
+    },
+    "Buscando tarefas, moradores e cômodos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fetching chores, residents and rooms"
           }
         }
       }
@@ -892,12 +1033,34 @@
         }
       }
     },
+    "Carregando sua casa..." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading your home..."
+          }
+        }
+      }
+    },
     "Carregando tarefas" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading chores"
+          }
+        }
+      }
+    },
+    "Casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
           }
         }
       }
@@ -920,6 +1083,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "If this chore is for your home, it will be visible to all housemates."
+          }
+        }
+      }
+    },
+    "Categoria" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Category"
           }
         }
       }
@@ -1090,6 +1263,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share Invite"
+          }
+        }
+      }
+    },
+    "Comprado por %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bought by %@"
+          }
+        }
+      }
+    },
+    "Comprados" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bought"
+          }
+        }
+      }
+    },
+    "Comprar sem valor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy without a price"
           }
         }
       }
@@ -1630,6 +1835,27 @@
         }
       }
     },
+    "Digite o nome para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type the name to confirm the item."
+          }
+        }
+      }
+    },
+    "Diminuir quantidade" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decrease quantity"
+          }
+        }
+      }
+    },
     "Dividimos as tarefas de acordo com o tempo livre de cada morador." : {
       "localizations" : {
         "en" : {
@@ -2136,6 +2362,17 @@
         }
       }
     },
+    "Escolha as que couberem no seu tempo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the ones that fit your time"
+          }
+        }
+      }
+    },
     "Escolha as tarefas" : {
 
     },
@@ -2177,6 +2414,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose the rooms that exist in your home"
+          }
+        }
+      }
+    },
+    "Escolha quem vai consumir/pagar para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose who will use/pay to confirm the item."
           }
         }
       }
@@ -2224,6 +2472,17 @@
         }
       }
     },
+    "Escolha uma categoria para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a category to confirm the item."
+          }
+        }
+      }
+    },
     "Escolha uma data para a tarefa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2251,6 +2510,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose a photo and a name to use in the app"
+          }
+        }
+      }
+    },
+    "Escolha uma unidade para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a unit to confirm the item."
           }
         }
       }
@@ -2361,6 +2631,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Waiting for you to accept the invite..."
+          }
+        }
+      }
+    },
+    "Essa ação não pode ser desfeita." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This action can't be undone."
           }
         }
       }
@@ -2560,6 +2840,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete Home?"
+          }
+        }
+      }
+    },
+    "Excluir item" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete item"
+          }
+        }
+      }
+    },
+    "Excluir item?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete item?"
           }
         }
       }
@@ -2775,6 +3075,17 @@
         }
       }
     },
+    "Higiene" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hygiene"
+          }
+        }
+      }
+    },
     "Hoje" : {
       "localizations" : {
         "en" : {
@@ -2791,6 +3102,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Time to start the chore split"
+          }
+        }
+      }
+    },
+    "Hortifruti" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produce"
           }
         }
       }
@@ -2868,6 +3190,28 @@
         }
       }
     },
+    "Informe a quantidade para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the quantity to confirm the item."
+          }
+        }
+      }
+    },
+    "Informe o valor e quem consome para ganhar mais" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the price and who uses it to earn more"
+          }
+        }
+      }
+    },
     "Iniciar divisão" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2886,6 +3230,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This will happen automatically once all members join the home and set their free time."
+          }
+        }
+      }
+    },
+    "Isso marca que a pessoa já te pagou. Não dá para desfazer." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This marks that they already paid you. It can't be undone."
+          }
+        }
+      }
+    },
+    "Isso marca que você já pagou. Não dá para desfazer." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This marks that you already paid. It can't be undone."
+          }
+        }
+      }
+    },
+    "Item adicionado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item added"
+          }
+        }
+      }
+    },
+    "Item comprado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item bought"
           }
         }
       }
@@ -3272,6 +3660,17 @@
         }
       }
     },
+    "Limpeza" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaning"
+          }
+        }
+      }
+    },
     "Lista de compras ainda não carregada." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3333,6 +3732,37 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "long"
+          }
+        }
+      }
+    },
+    "Marcar %@ de %@ como pago?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark %@ from %@ as paid?"
+          }
+        }
+      }
+    },
+    "Marcar como comprado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as bought"
+          }
+        }
+      }
+    },
+    "Marcar como não comprado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as not bought"
           }
         }
       }
@@ -3454,6 +3884,16 @@
         }
       }
     },
+    "Nada por aqui nos últimos 14 dias" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing here in the last 14 days"
+          }
+        }
+      }
+    },
     "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3557,6 +3997,16 @@
         }
       }
     },
+    "Não foi possível concluir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't complete"
+          }
+        }
+      }
+    },
     "Não foi possível encontrar a casa do convite. Tente abrir o link novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3651,6 +4101,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't identify your profile to save the private chore."
+          }
+        }
+      }
+    },
+    "Não foi possível quitar. Tente novamente." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't settle. Please try again."
           }
         }
       }
@@ -3790,6 +4251,17 @@
         }
       }
     },
+    "Nenhuma notificação nova" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No new notifications"
+          }
+        }
+      }
+    },
     "Nenhuma tarefa ainda" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3838,6 +4310,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No chores right now"
+          }
+        }
+      }
+    },
+    "Ninguém te deve" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nobody owes you"
           }
         }
       }
@@ -3952,6 +4435,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Our goal is to take the mental load out of organizing chores, fairly and visually, for everyone in the home."
+          }
+        }
+      }
+    },
+    "Notificações" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "Nova divisão pronta" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New split is ready"
           }
         }
       }
@@ -4113,6 +4617,16 @@
         }
       }
     },
+    "O valor é dividido entre quem vai consumir e aparece em Pendências." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The price is split among whoever will use it and shows up in Pending payments."
+          }
+        }
+      }
+    },
     "Ocorreu um erro." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4162,6 +4676,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        }
+      }
+    },
+    "ontem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
           }
         }
       }
@@ -4306,6 +4831,17 @@
         }
       }
     },
+    "Outros" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
     "pacote" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4324,6 +4860,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "packages"
+          }
+        }
+      }
+    },
+    "Pagar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay"
+          }
+        }
+      }
+    },
+    "Pago!" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paid!"
           }
         }
       }
@@ -4509,6 +5066,16 @@
         }
       }
     },
+    "Pendências" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pending payments"
+          }
+        }
+      }
+    },
     "Pendente" : {
       "localizations" : {
         "en" : {
@@ -4579,6 +5146,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Allow Notifications"
+          }
+        }
+      }
+    },
+    "Pets" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pets"
           }
         }
       }
@@ -4696,6 +5274,17 @@
         }
       }
     },
+    "Quando uma compra com valor for dividida entre os moradores, ela aparece aqui." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When a priced purchase is split among housemates, it shows up here."
+          }
+        }
+      }
+    },
     "Quando você deseja realizar esta tarefa?" : {
       "localizations" : {
         "en" : {
@@ -4712,6 +5301,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quantity"
+          }
+        }
+      }
+    },
+    "Quanto custou?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How much was it?"
           }
         }
       }
@@ -4822,6 +5421,31 @@
           }
         }
       }
+    },
+    "Quitar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settle"
+          }
+        }
+      }
+    },
+    "Quitar %@ com %@?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settle %@ with %@?"
+          }
+        }
+      }
+    },
+    "R$" : {
+
     },
     "Ranking" : {
       "extractionState" : "stale",
@@ -5487,6 +6111,17 @@
         }
       }
     },
+    "Sua retrospectiva chegou" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recap is here"
+          }
+        }
+      }
+    },
     "Sua retrospectiva chegou!" : {
       "localizations" : {
         "en" : {
@@ -5504,6 +6139,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your Chores"
+          }
+        }
+      }
+    },
+    "Suas tarefas dos próximos 15 dias já estão na escala" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your chores for the next 15 days are on the schedule"
           }
         }
       }
@@ -5575,6 +6221,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unassigned chores"
+          }
+        }
+      }
+    },
+    "Te devem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're owed"
           }
         }
       }
@@ -5793,6 +6450,9 @@
           }
         }
       }
+    },
+    "Total" : {
+
     },
     "Trocando de casa..." : {
       "extractionState" : "stale",
@@ -6073,6 +6733,17 @@
         }
       }
     },
+    "Veja como foram os seus últimos 15 dias da casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See how your last 15 days at home went"
+          }
+        }
+      }
+    },
     "Veja como você se saiu durante os últimos 15 dias" : {
       "localizations" : {
         "en" : {
@@ -6153,6 +6824,17 @@
         }
       }
     },
+    "Você deve" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe"
+          }
+        }
+      }
+    },
     "Você é o administrador desta casa. Ao apagar seu perfil, a casa também será apagada para todos os moradores, junto com as tarefas. Essa ação não pode ser desfeita." : {
       "localizations" : {
         "en" : {
@@ -6170,6 +6852,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You'll be responsible for every day of the period."
+          }
+        }
+      }
+    },
+    "Você não deve nada" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't owe anything"
           }
         }
       }

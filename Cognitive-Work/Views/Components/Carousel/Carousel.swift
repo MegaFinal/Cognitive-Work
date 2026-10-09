@@ -25,14 +25,7 @@ struct Carousel: View {
                     }
             }
             
-            if viewModel.isLoading {
-                // Was `.foregroundStyle(.white)` over the white chores screen: the label was
-                // invisible, so the carousel looked empty while loading.
-                ProgressView("Carregando tarefas")
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            else if viewModel.visibleChores.isEmpty {
+            if viewModel.visibleChores.isEmpty {
                 ChoresEmptyState(kind: .today)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .contentShape(Rectangle())

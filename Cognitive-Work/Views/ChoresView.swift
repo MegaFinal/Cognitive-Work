@@ -20,6 +20,9 @@ struct ChoresView: View {
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .black
     
+    /// Chore opened from a notification. Shown on top of everything until dismissed.
+    @State private var choreFromNotification: ChoreOccurrence?
+    
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
@@ -109,6 +112,31 @@ struct ChoresView: View {
                     .transition(.scale)
                 }
                 
+                // MARK: - Chore opened from a notification
+                if let occurrence = choreFromNotification {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .zIndex(4)
+                        .transition(.opacity)
+                        .onTapGesture {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                choreFromNotification = nil
+                            }
+                        }
+                    
+                    CarouselCardFrame(
+                        chore: occurrence.chore,
+                        recurrentAssignment: occurrence.assignment,
+                        carouselViewModel: carouselVM,
+                        namespace: cardAnimation,
+                        isFocused: true,
+                        rotation: 180,
+                        isShowingBack: true
+                    )
+                    .zIndex(5)
+                    .transition(.scale)
+                }
+                
                 // MARK: - Unassigned chores popup, always on top of everything else
                 if carouselVM.isShowingUnassignedList {
                     
@@ -174,7 +202,7 @@ struct ChoresView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
-                await carouselVM.fetchAllData()
+                await carouselVM.fetchAllData(afterRemoteChange: true)
             }
         }
         .alert(
@@ -203,6 +231,9 @@ struct ChoresView: View {
             Text(headerTitle)
                 .font(.system(size: 34))
                 .fontWeight(.bold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .layoutPriority(1)
                 .padding(.horizontal, 30)
                 .padding(.top, 20)
             
@@ -213,6 +244,24 @@ struct ChoresView: View {
                     toggleLayout()
                 } label: {
                     Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(8)
+                }
+                
+                NavigationLink {
+                    NotificationsView(
+                        onPickChores: {
+                            withAnimation { carouselVM.isShowingUnassignedList = true }
+                        },
+                        onOpenChore: { chore, assignment in
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                choreFromNotification = ChoreOccurrence(chore: chore, assignment: assignment)
+                            }
+                        }
+                    )
+                } label: {
+                    Image(systemName: "bell")
                         .font(.system(size: 22))
                         .foregroundColor(.black)
                         .padding(8)
@@ -250,21 +299,18 @@ struct ChoresView: View {
             ProgressIndicatorCard(
                 title: "Tempo médio",
                 data: dashboard?.totalTimeFormatted ?? "0h00",
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
             ProgressIndicatorCard(
                 title: "A fazer",
                 data: L10n.tr("%lld tarefas", dashboard?.toDo ?? 0),
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
             ProgressIndicatorCard(
                 title: "Concluído",
                 data: (dashboard?.completionPercentage ?? 0)
                     .formatted(.percent.precision(.fractionLength(0)).locale(L10n.locale)),
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
         }
         .padding(.horizontal, 30)
@@ -303,11 +349,6 @@ struct ChoresView: View {
     private var dashboard: DashboardModel? {
         carouselVM.dashboard
     }
-    
-    /// The progress cards show a spinner instead of "0" while the first fetch is in flight.
-    private var isLoadingDashboard: Bool {
-        carouselVM.isLoading && dashboard == nil
-    }
 }
 
 // MARK: - Private subviews
@@ -324,9 +365,6 @@ private struct ProgressIndicatorCard: View {
     /// Visual thematic backdrop color applying depth over UI layouts.
     var color: Color = .gray
     
-    /// Shows a spinner in place of ``data`` while the statistics are being fetched.
-    var isLoading: Bool = false
-    
     
     var body: some View {
         VStack {
@@ -338,19 +376,11 @@ private struct ProgressIndicatorCard: View {
             
             Spacer()
             
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .tint(.white)
-                        .controlSize(.small)
-                } else {
-                    Text(data)
-                        .font(.system(size: 15))
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                }
-            }
-            .padding(.bottom, 25)
+            Text(data)
+                .font(.system(size: 15))
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .padding(.bottom, 25)
         }
         .frame(width: width * 0.28, height: height * 0.088)
         .background(color)

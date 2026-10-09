@@ -1,0 +1,119 @@
+//
+//  PurchasePricePopUp.swift
+//  Cognitive-Work
+//
+//  Created by Dayô Araújo on 08/10/26.
+//
+
+import SwiftUI
+
+/// Asks how much an item cost when it's checked off without a price.
+struct PurchasePricePopUp: View {
+
+    let itemName: String
+    let onConfirm: (String) -> Void
+    let onSkip: () -> Void
+    let onCancel: () -> Void
+
+    @State private var text = ""
+    @FocusState private var isFocused: Bool
+
+    private var isValid: Bool { ShopListViewModel.isValidPrice(text) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            toolbar
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Quanto custou?")
+                    .font(.system(size: 28))
+                    .bold()
+
+                Text(itemName)
+                    .font(.system(size: 22))
+                    .foregroundColor(.black)
+                    .lineLimit(2)
+            }
+
+            HStack(spacing: 8) {
+                Text("R$")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(.subTitleGray)
+
+                TextField("0,00", text: $text)
+                    .font(.system(size: 32, weight: .bold))
+                    .keyboardType(.decimalPad)
+                    .focused($isFocused)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color(.systemGray6))
+            )
+
+            Text("O valor é dividido entre quem vai consumir e aparece em Pendências.")
+                .font(.system(size: 14))
+                .foregroundStyle(.subTitleGray)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(action: onSkip) {
+                Text("Comprar sem valor")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.subTitleGray)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.vertical, 18)
+        .padding(.horizontal, 22)
+        .frame(width: width * 0.87)
+        .background(
+            RoundedRectangle(cornerRadius: 32)
+                .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.2), radius: 3.2, x: 0, y: 4)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 32))
+        .onTapGesture { isFocused = false }
+        .onAppear { isFocused = true }
+    }
+
+    private var toolbar: some View {
+        HStack {
+            Button(action: onCancel) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.black)
+                    .padding(12)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .capsule)
+            .accessibilityLabel("Cancelar")
+
+            Spacer()
+
+            Button {
+                onConfirm(text)
+            } label: {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(12)
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive().tint(.blue), in: .capsule)
+            .disabled(!isValid)
+            .opacity(isValid ? 1 : 0.4)
+            .accessibilityLabel("Confirmar")
+        }
+        .padding(.top, 5)
+    }
+}
+
+#Preview("Preço") {
+    ZStack {
+        Color.black.opacity(0.45).ignoresSafeArea()
+        PurchasePricePopUp(itemName: "Amaciante", onConfirm: { _ in }, onSkip: {}, onCancel: {})
+    }
+}

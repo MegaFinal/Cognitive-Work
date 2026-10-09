@@ -28,24 +28,40 @@ class ContentViewModel {
     
     var userHasNoHouse: Bool = false
     
-    private var hasFetchedInitially = false
+    /// `true` while the app opens and ``bootstrap()`` loads everything the tabs show. The root
+    /// view keeps ``LoadingScreen`` up for as long as this is set, and only builds the tabs
+    /// afterwards, so each of them finds its data ready.
+    var isLoading = true
     
-    var isLoading = false      // first loading
-    var isRefreshing = false   // others loadings
+    private let store = HouseDataStore.shared
+    
+    /// Opens the app: settles which house the user belongs to, then loads all of its data in
+    /// one go.
+    func bootstrap() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        store.reset()
+        
+        await leaveOrphanedHouses()
+        guard !Task.isCancelled, didOnboard else { return }
+        
+        await fetchHouse()
+        guard !Task.isCancelled, !userHasNoHouse else { return }
+        
+        await store.load(force: true)
+        
+        Task { await syncFreeTime() }
+    }
     
     /// Fetches the user house and verify if its exist
     func fetchHouse() async {
         print("fetchHouse")
         
-        let isFirstLoad = !hasFetchedInitially
-        if isFirstLoad { isLoading = true }
-        defer { if isFirstLoad { isLoading = false } }
-        
         do {
             let house = try await CloudKitManager.shared.currentHouse(forceRefresh: true)
             guard !Task.isCancelled else { return }
             userHasNoHouse = (house == nil)
-            hasFetchedInitially = true
         } catch let error as CKError where [.zoneNotFound, .userDeletedZone, .unknownItem].contains(error.code) {
             userHasNoHouse = true   // the house is really gone
         } catch {
@@ -74,6 +90,8 @@ class ContentViewModel {
     func switchHouse(to metadata: CKShare.Metadata) async {
         await CloudKitManager.shared.switchHouse(to: metadata)
         self.errorMessage = CloudKitManager.shared.errorMessage
+        
+        await bootstrap()
     }
     
     // MARK: - Free time

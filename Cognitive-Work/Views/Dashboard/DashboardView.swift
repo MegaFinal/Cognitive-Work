@@ -49,15 +49,8 @@ struct DashboardView: View {
                     }
                 }
             }
-            // Same pattern as the chore edit screen: dimmed and locked until everything is loaded.
             .disabled(viewModel.isLoading)
-            .opacity(viewModel.isLoading ? 0.5 : 1)
-        }
-        .overlay {
-            if viewModel.isLoading {
-                ProgressView()
-                    .controlSize(.large)
-            }
+            .opacity(viewModel.isLoading ? 0 : 1)
         }
         .task(id: CloudKitManager.shared.dataRevision) {
             await viewModel.loadIfNeeded()

@@ -67,6 +67,11 @@ class CarouselViewModel {
     var isLoading: Bool = false
     private var hasFetchedInitially = false
     
+    /// The snapshot of ``HouseDataStore`` this view model last showed, so reopening the tab
+    /// doesn't rebuild everything when nothing changed.
+    @ObservationIgnored
+    private var appliedSnapshotID: UUID?
+    
     /// Set when ``delete(chore:targetOccurrences:)`` fails, so a view can surface it in an
     /// alert. Left for the view to clear back to `nil` once shown.
     var errorMessage: String?
@@ -139,7 +144,7 @@ class CarouselViewModel {
     private(set) var visibleOccurrences: [ChoreOccurrence] = []
     
     /// How many future occurrences of the same chore the list shows.
-    private let occurrencesPerChore = 20
+    private let occurrencesPerChore = 15
     
     /// Everyone responsible for a one-off chore: its current responsible plus its responsible list.
     private func responsibleUserIDs(of chore: ChoreModel) -> Set<CKRecord.ID> {
@@ -470,6 +475,15 @@ class CarouselViewModel {
         // Restore focus index to the currently focused chore's index if still present; otherwise clear focus.
         if let recID = focusedChoreRecordID, let idx = visibleChores.firstIndex(where: { $0.recordID == recID }) {
             focusedIndex = idx
+            
+            // The focused card may have moved to another index (a finished chore is re-sorted).
+            // Keep the carousel centered on it; otherwise it is left flipped off to the side
+            // while another card takes the center.
+            if layoutMode == .grid {
+                snappedItem = Double(idx)
+                draggingItem = Double(idx)
+                activeIndex = idx
+            }
         } else {
             focusedIndex = nil
             focusedChoreRecordID = nil
@@ -518,37 +532,31 @@ class CarouselViewModel {
     @ObservationIgnored
     private var refreshTask: Task<Void, Never>?
     
-    /// Fetches all chores, users, rooms and assignments in parallel.
-    func fetchAllData() async {
-        if !hasFetchedInitially {
-            await MainActor.run { isLoading = true }
-        }
-        
-        async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        async let fetchUsers = CloudKitManager.shared.fetchHouseUsers()
-        async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
-        async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
-        async let fetchCurrentHouseUser = CloudKitManager.shared.currentHouseUser()
-        
-        let (chores, users, rooms, assignments, currentHouseUser) = await (fetchChores, fetchUsers, fetchRooms, fetchAssignments, fetchCurrentHouseUser)
+    /// Shows the house data held by ``HouseDataStore``.
+    func fetchAllData(afterRemoteChange: Bool = false) async {
+        let snapshot = afterRemoteChange
+            ? await HouseDataStore.shared.refreshAfterRemoteChange()
+            : await HouseDataStore.shared.load()
         
         guard !Task.isCancelled else { return }
+        guard snapshot.id != appliedSnapshotID else { return }
         
         await MainActor.run {
-            self.cardModels = self.choresVisible(chores, to: currentHouseUser, among: users)
-            self.userModels = users
-            self.roomModels = rooms
-            self.dailyAssignments = assignments
-            self.dashboardUser = currentHouseUser
+            self.cardModels = self.choresVisible(snapshot.chores, to: snapshot.houseUser, among: snapshot.users)
+            self.userModels = snapshot.users
+            self.roomModels = snapshot.rooms
+            self.dailyAssignments = snapshot.assignments
+            self.dashboardUser = snapshot.houseUser
             
             self.rebuildDerivedState()
             
+            self.appliedSnapshotID = snapshot.id
             self.hasFetchedInitially = true
             self.isLoading = false
         }
         
-        await RoomModel.migrateStoredColorsIfNeeded(rooms)
-        await ChoreModel.migrateDurationsToMinutesIfNeeded(chores)
+        await RoomModel.migrateStoredColorsIfNeeded(snapshot.rooms)
+        await ChoreModel.migrateDurationsToMinutesIfNeeded(snapshot.chores)
     }
     
     /// Refreshes the chores and recurrent assignments after a chore or its responsible user has been modified.

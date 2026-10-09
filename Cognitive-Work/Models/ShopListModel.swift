@@ -23,18 +23,27 @@ class ShopListModel: CloudKitSyncable, Identifiable {
 
     var name: String
 
-    /// References to this list's ``ShopListItem`` entries.
+    /// Legacy: the list used to keep an array of references to its items.
     private var itemsReference: [CKRecord.Reference]?
 
     /// The house this list belongs to.
     var houseReference: CKRecord.Reference?
 
-    /// This list's items, fetched from CloudKit.
+    /// This list's items, queried from CloudKit by parent and sorted by creation date.
     var items: [ShopListItem] {
         get async {
-            guard let itemsReference, !itemsReference.isEmpty else { return [] }
-            return await CloudKitManager.shared.fetchRecordsByRecordReference(for: ShopListItem.self, recordReferences: itemsReference) ?? []
+            let all = await CloudKitManager.shared.fetchAll(ShopListItem.self)
+            return belonging(to: all)
         }
+    }
+
+    /// Keeps the items whose parent is this list, without duplicates, oldest first.
+    func belonging(to candidates: [ShopListItem]) -> [ShopListItem] {
+        var seen = Set<String>()
+        return candidates
+            .filter { $0.listRecordID == nil || $0.listRecordID == recordID }
+            .filter { seen.insert($0.id).inserted }
+            .sorted { $0.createdAt < $1.createdAt }
     }
 
     var house: HouseModel? {
@@ -94,7 +103,7 @@ class ShopListModel: CloudKitSyncable, Identifiable {
 
     // MARK: - Items
 
-    /// Saves `item` as a child of this list and appends it to ``itemsReference``.
+    /// Saves `item` as a child of this list.
     ///
     /// - Parameter item: The item to save (not yet saved — no `recordID` of its own).
     /// - Returns: The saved item, with its `recordID` set, or `nil` on failure.
@@ -107,26 +116,17 @@ class ShopListModel: CloudKitSyncable, Identifiable {
 
         let parentReference = CKRecord.Reference(recordID: recordID, action: .none)
 
-        guard
-            let created = await CloudKitManager.shared.create(item, zoneID: recordID.zoneID, parent: parentReference),
-            let createdRecordID = created.recordID
-        else {
+        guard let created = await CloudKitManager.shared.create(item, zoneID: recordID.zoneID, parent: parentReference) else {
             return nil
         }
-
-        itemsReference = (itemsReference ?? []) + [CKRecord.Reference(recordID: createdRecordID, action: .none)]
-        guard await CloudKitManager.shared.update(self) else { return nil }
-
+        created.listRecordID = recordID
         return created
     }
 
-    /// Deletes `item` and removes it from ``itemsReference``.
+    /// Deletes `item`.
     @discardableResult
     func removeItem(_ item: ShopListItem) async -> Bool {
-        guard let itemRecordID = item.recordID else { return false }
-        guard await CloudKitManager.shared.delete(item) else { return false }
-
-        itemsReference = (itemsReference ?? []).filter { $0.recordID != itemRecordID }
-        return await CloudKitManager.shared.update(self)
+        guard item.recordID != nil else { return false }
+        return await CloudKitManager.shared.delete(item)
     }
 }
