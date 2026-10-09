@@ -90,13 +90,7 @@ struct ChoreListLayout: View {
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
         .overlay {
             if viewModel.visibleOccurrences.isEmpty {
-                if viewModel.isLoading {
-                    // Nothing was shown at all while the first fetch ran.
-                    ProgressView("Carregando tarefas")
-                        .controlSize(.large)
-                } else {
-                    emptyState
-                }
+                emptyState
             }
         }
     }

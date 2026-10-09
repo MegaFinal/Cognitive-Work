@@ -144,14 +144,11 @@ final class UserProfileViewModel {
         
         isLoading = true
         defer { isLoading = false }
+
+        let snapshot = await HouseDataStore.shared.current()
         
-        async let fetchPrivate = CloudKitManager.shared.fetchMyUser()
-        async let fetchHouse = CloudKitManager.shared.fetchMyHouseUser()
-        
-        let (fetchedPrivate, fetchedHouse) = await (fetchPrivate, fetchHouse)
-        
-        privateUser = fetchedPrivate
-        user = fetchedHouse
+        privateUser = snapshot.privateUser
+        user = snapshot.houseUser
         
         if privateUser == nil {
             errorMessage = CloudKitManager.shared.errorMessage
