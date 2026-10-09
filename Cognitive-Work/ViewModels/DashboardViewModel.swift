@@ -90,56 +90,49 @@ class DashboardViewModel {
     
     var isLoading: Bool = true
     
-    /// `CloudKitManager.dataRevision` the cached data was fetched at. `nil` until the first load.
-    private var loadedRevision: Int?
+    /// The ``HouseDataStore`` snapshot the cached data was built from. `nil` until the first load.
+    private var loadedSnapshotID: UUID?
     
     /// Day the cached data was built for. "Today" cards go stale at midnight
     private var loadedDay: Date?
     
-    /// Whether the cached data is out of date
-    var needsReload: Bool {
-        guard let loadedRevision, let loadedDay else { return true }
-        return loadedRevision != CloudKitManager.shared.dataRevision
+    /// Whether the cards were built from an older snapshot, or for another day.
+    private func needsRebuild(for snapshot: HouseSnapshot) -> Bool {
+        guard let loadedSnapshotID, let loadedDay else { return true }
+        return loadedSnapshotID != snapshot.id
             || !Calendar.current.isDateInToday(loadedDay)
     }
     
-    /// Loads only when ``needsReload`` says so.
+    /// Rebuilds the cards only when the house data changed or the day rolled over.
     func loadIfNeeded() async {
-        guard needsReload else { return }
         await load()
     }
     
+    /// Builds every card from ``HouseDataStore``. The store fetches only if it is stale, so
+    /// opening the tab (or reacting to a change that another tab already loaded) costs no
+    /// extra request.
     func load() async {
-        let revision = CloudKitManager.shared.dataRevision
-        
-        if loadedRevision == nil { isLoading = true }
-        
-        async let fetchUser = CloudKitManager.shared.fetchMyHouseUser()
-        async let fetchMembers = CloudKitManager.shared.fetchHouseUsers()
-        async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
-        async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
-        
-        let newUser = await fetchUser
-        let newMembers = await fetchMembers
-        let newChores = await fetchChores
-        let newAssignments = await fetchAssignments
-        let newRooms = await fetchRooms
-        
+        let snapshot = await HouseDataStore.shared.load()
         guard !Task.isCancelled else { return }
         
-        user = newUser
-        houseMembers = newMembers
-        chores = newChores
-        assignments = newAssignments
-        rooms = newRooms
+        guard needsRebuild(for: snapshot) else {
+            isLoading = false
+            return
+        }
+        
+        user = snapshot.houseUser
+        houseMembers = snapshot.users
+        chores = snapshot.chores
+        assignments = snapshot.assignments
+        rooms = snapshot.rooms
         
         refresh()
-        await schedule.setup(users: newMembers, chores: newChores,
-                             assignments: newAssignments, rooms: newRooms, me: newUser)
+        await schedule.setup(users: snapshot.users, chores: snapshot.chores,
+                             assignments: snapshot.assignments, rooms: snapshot.rooms,
+                             me: snapshot.houseUser)
         guard !Task.isCancelled else { return }
         
-        loadedRevision = revision
+        loadedSnapshotID = snapshot.id
         loadedDay = Calendar.current.startOfDay(for: .now)
         isLoading = false
     }

@@ -115,14 +115,9 @@ struct UserProfileView: View {
                         .clipShape(Circle())
                 }
                 
-                if viewModelUser.isLoading && viewModelUser.user == nil {
-                    ProgressView()
-                        .frame(height: 50)
-                } else {
-                    Text(viewModelUser.user?.name ?? "")
-                        .font(.system(size: 22))
-                        .bold()
-                }
+                Text(viewModelUser.user?.name ?? "")
+                    .font(.system(size: 22))
+                    .bold()
             }
             .padding(.top, (height * 0.25) - (width * 0.25))
         }
