@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 struct GeneralProfileSettingsView: View {
     @Bindable var viewModel: UserProfileViewModel
@@ -14,6 +15,11 @@ struct GeneralProfileSettingsView: View {
     /// Persisted and read by ``HapticsManager`` on every vibration, so the switch applies in
     /// real time. (It used to be a local `@State` that nothing read, reset on every visit.)
     @AppStorage(HapticsManager.storageKey) private var areHapticsEnabled = true
+    
+    /// User's in-app choice. Only effective while the system permission is also granted.
+    @AppStorage("notificationsEnabled") private var areNotificationsEnabled = false
+    @State private var showNotificationsDeniedAlert = false
+    @Environment(\.scenePhase) private var scenePhase
     
     @State private var showDeleteConfirmation = false
     @State private var showAdminDeleteConfirmation = false
@@ -28,6 +34,43 @@ struct GeneralProfileSettingsView: View {
             get: { languageManager.current },
             set: { languageManager.setLanguage($0) }
         )
+    }
+    
+    private var notificationsBinding: Binding<Bool> {
+        Binding(
+            get: { areNotificationsEnabled },
+            set: { isOn in
+                if isOn {
+                    enableNotifications()
+                } else {
+                    areNotificationsEnabled = false
+                }
+            }
+        )
+    }
+    
+    /// Asks for system permission; if the user already denied it, offers to open Settings.
+    private func enableNotifications() {
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let status = await center.notificationSettings().authorizationStatus
+            switch status {
+            case .authorized, .provisional, .ephemeral:
+                areNotificationsEnabled = true
+            case .notDetermined:
+                let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+                areNotificationsEnabled = granted
+            default:
+                areNotificationsEnabled = false
+                showNotificationsDeniedAlert = true
+            }
+        }
+    }
+    
+    /// Keeps the switch honest if the user revoked permission in iOS Settings.
+    private func syncNotificationsWithSystem() async {
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        if status == .denied { areNotificationsEnabled = false }
     }
     
     var body: some View {
@@ -72,6 +115,24 @@ struct GeneralProfileSettingsView: View {
                 }
                 
                 Text("Vibrações ao concluir uma tarefa e em outras interações.")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+            }
+            
+            // Notifications Toggle
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Notificações")
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: notificationsBinding)
+                        .toggleStyle(.switch)
+                        .padding(.trailing, 7)
+                        .frame(width: width * 0.37)
+                }
+                
+                Text("Receber avisos sobre as tarefas da casa.")
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
             }
@@ -125,7 +186,22 @@ struct GeneralProfileSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .hidesTabBar()
         
+        .task { await syncNotificationsWithSystem() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await syncNotificationsWithSystem() } }
+        }
+        
         // MARK: - Alerts
+        .alert("Notificações desativadas", isPresented: $showNotificationsDeniedAlert) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Abrir Ajustes") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } message: {
+            Text("Para receber notificações, permita-as nos Ajustes do iPhone.")
+        }
         .alert("Excluir Perfil?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {

@@ -159,6 +159,18 @@ private struct SettingsButtonsSection: View {
             .padding(.horizontal)
             
             NavigationLink {
+                PixKeySettingsView(viewModel: viewModelUser)
+            } label: {
+                HStack {
+                    Text("Chave Pix")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
+            NavigationLink {
                 SelectFreeTimeOnboardingView(viewModel: $viewModelOnboarding, isFromSettings: true)
             } label: {
                 HStack {

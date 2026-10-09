@@ -174,6 +174,46 @@ final class PendingPaymentsViewModel {
         }
     }
 
+    // MARK: - Paying with Pix
+
+    /// The Pix being paid, or `nil`. The view shows the payment sheet while it is set.
+    var pixPayment: PixPayment?
+
+    /// Name of the housemate who has no Pix key yet, or `nil`. The view explains it in an alert.
+    var missingPixKeyName: String?
+
+    var missingPixKeyMessage: String {
+        L10n.tr("%@ ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix.", missingPixKeyName ?? "")
+    }
+
+    /// What the "Pagar" / "Pago!" button does. When you owe, it opens the Pix payment sheet for
+    /// the housemate; when you are owed, it confirms that they paid you.
+    func settleTapped(for group: DebtGroup) {
+        guard !isPaid(group) else { return }
+
+        switch group.direction {
+        case .youOwe: startPixPayment(for: group)
+        case .owedToYou: requestSettlement(of: group)
+        }
+    }
+
+    private func startPixPayment(for group: DebtGroup) {
+        guard let key = group.counterparty.pixKey.flatMap(PixPayload.normalizedKey) else {
+            missingPixKeyName = group.counterparty.name
+            return
+        }
+
+        pixPayment = PixPayment(
+            code: PixPayload.copyAndPaste(
+                key: key,
+                amount: group.total,
+                receiverName: group.counterparty.name
+            ),
+            amount: amountParts(group.total),
+            receiver: group.counterparty
+        )
+    }
+
     // MARK: - Settling
 
     func requestSettlement(of group: DebtGroup) {

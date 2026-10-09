@@ -7,6 +7,17 @@
     "%@" : {
 
     },
+    "%@ ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hasn't registered a Pix key yet. Ask them to add one in Profile > Pix key."
+          }
+        }
+      }
+    },
     "%@ comprou" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -466,6 +477,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open the link you were sent and tap join. Once you accept, we'll bring you back here automatically."
+          }
+        }
+      }
+    },
+    "Abrir %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %@"
+          }
+        }
+      }
+    },
+    "Abrir Ajustes" : {
+
+    },
+    "Abrir no banco" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in bank"
           }
         }
       }
@@ -1150,6 +1185,47 @@
         }
       }
     },
+    "Chave Pix" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix key"
+          }
+        }
+      }
+    },
+    "Chave Pix inválida. Use CPF, CNPJ, e-mail, celular com +55 ou chave aleatória." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Pix key. Use a CPF, CNPJ, email, phone with +55 or a random key."
+          }
+        }
+      }
+    },
+    "Chave Pix não cadastrada" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix key not registered"
+          }
+        }
+      }
+    },
+    "Chave Pix salva" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix key saved"
+          }
+        }
+      }
+    },
     "Checar validades" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1509,6 +1585,26 @@
         }
       }
     },
+    "Copiado!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied!"
+          }
+        }
+      }
+    },
+    "Copiar código" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy code"
+          }
+        }
+      }
+    },
     "Cor" : {
       "localizations" : {
         "en" : {
@@ -1548,6 +1644,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kitchen"
+          }
+        }
+      }
+    },
+    "CPF, e-mail, celular ou chave aleatória" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CPF, email, phone or random key"
           }
         }
       }
@@ -2478,6 +2584,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose who will use/pay to confirm the item."
+          }
+        }
+      }
+    },
+    "Escolha seu banco: o código já vai copiado." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick your bank: the code is copied for you."
           }
         }
       }
@@ -3811,6 +3927,16 @@
         }
       }
     },
+    "Mais opções" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More options"
+          }
+        }
+      }
+    },
     "Marcar %@ de %@ como pago?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3965,6 +4091,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nothing here in the last 14 days"
+          }
+        }
+      }
+    },
+    "Não achamos seu banco sozinhos. Escolha ele abaixo: depois da primeira vez ele aparece aqui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find your bank on our own. Pick it below: after the first time it shows up here."
+          }
+        }
+      }
+    },
+    "Não conseguimos abrir o %@. O código já está copiado: abra o app e cole em Pix > Copia e Cola." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't open %@. The code is already copied: open the app and paste it in Pix > Copy and Paste."
           }
         }
       }
@@ -4601,6 +4748,9 @@
         }
       }
     },
+    "Notificações desativadas" : {
+
+    },
     "Nova divisão pronta" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5006,6 +5156,26 @@
         }
       }
     },
+    "Os moradores não vão conseguir te pagar pelo app até você cadastrar outra." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Housemates won't be able to pay you through the app until you add another one."
+          }
+        }
+      }
+    },
+    "Os moradores usam essa chave para pagar o que devem a você em Pendências." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Housemates use this key to pay what they owe you in Pending payments."
+          }
+        }
+      }
+    },
     "Outro Cômodo" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5024,6 +5194,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Other"
+          }
+        }
+      }
+    },
+    "Outros bancos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other banks"
           }
         }
       }
@@ -5060,6 +5240,16 @@
         }
       }
     },
+    "Pagar com Pix" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay with Pix"
+          }
+        }
+      }
+    },
     "Pago!" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5067,6 +5257,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paid!"
+          }
+        }
+      }
+    },
+    "Para celular, use o formato +5511999999999." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For phones, use the format +5511999999999."
           }
         }
       }
@@ -5123,6 +5323,9 @@
           }
         }
       }
+    },
+    "Para receber notificações, permita-as nos Ajustes do iPhone." : {
+
     },
     "Para usar o %@ é preciso aceitar os Termos de Uso. Se mudar de ideia, é só rever os termos: a casa vai estar te esperando." : {
       "extractionState" : "stale",
@@ -5364,6 +5567,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pipa. For those who notice."
+          }
+        }
+      }
+    },
+    "Pix copia e cola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix copy and paste"
           }
         }
       }
@@ -5688,6 +5901,19 @@
         }
       }
     },
+    "Receba pelo Pix" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get paid via Pix"
+          }
+        }
+      }
+    },
+    "Receber avisos sobre as tarefas da casa." : {
+
+    },
     "Recolher a toalha de rosto usada e pendurar uma limpa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5781,6 +6007,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restart chore split"
+          }
+        }
+      }
+    },
+    "Remover" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+    "Remover chave" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove key"
+          }
+        }
+      }
+    },
+    "Remover chave Pix?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Pix key?"
           }
         }
       }
@@ -6001,6 +6257,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "If this chore repeats, only this occurrence will be deleted — the others stay as they are. This can't be undone."
+          }
+        }
+      }
+    },
+    "Se o banco não oferecer colar sozinho, use Pix > Copia e Cola." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If your bank doesn't offer to paste it, use Pix > Copy and Paste."
           }
         }
       }
@@ -6343,6 +6609,16 @@
         }
       }
     },
+    "Sua chave" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your key"
+          }
+        }
+      }
+    },
     "Sua divisão" : {
       "localizations" : {
         "en" : {
@@ -6679,6 +6955,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove cobwebs"
+          }
+        }
+      }
+    },
+    "Todos os bancos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All banks"
           }
         }
       }

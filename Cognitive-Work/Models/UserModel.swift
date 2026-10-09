@@ -30,7 +30,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     static let listDesiredKeys: [CKRecord.FieldKey]? = [
         "name", "ownerRecordName", "tier", "coins", "points", "couponLimit",
         "badges", "chores", "availableTime", "coupons", "house",
-        "bannerColor", "bannerPattern"
+        "bannerColor", "bannerPattern", "pixKey"
     ]
     
     /// Identifier of the stored record, or `nil` before the user is saved.
@@ -46,6 +46,9 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     
     /// Color and texture of the banner behind the profile picture.
     var banner: ProfileBanner = .default
+    
+    /// The user's Pix key, so housemates can pay what they owe. `nil` until it is set.
+    var pixKey: String?
     
     /// Progression level reached by the user.
     var tier: Tier
@@ -139,6 +142,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
             storedColor: record["bannerColor"] as? String,
             storedPattern: record["bannerPattern"] as? String
         )
+        self.pixKey = record["pixKey"] as? String
         self.badgesReference = record["badges"] as? [CKRecord.Reference] ?? []
         self.choresReference = record["chores"] as? [CKRecord.Reference] ?? []
         self.availableTimeReference = record["availableTime"] as? [CKRecord.Reference]
@@ -155,6 +159,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         name: String,
         profilePicture: CKAsset? = nil,
         banner: ProfileBanner = .default,
+        pixKey: String? = nil,
         tier: Tier,
         coins: Int = 0,
         points: Int = 0,
@@ -171,6 +176,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.name = name
         self.profilePicture = profilePicture
         self.banner = banner
+        self.pixKey = pixKey
         self.tier = tier
         self.coins = coins
         self.points = points
@@ -196,6 +202,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         }
         record["bannerColor"] = banner.color.rawValue
         record["bannerPattern"] = banner.pattern.rawValue
+        // Written even when `nil`, so removing the key clears it on the record too.
+        record["pixKey"] = pixKey
         record["tier"] = tier.rawValue
         record["coins"] = coins
         record["points"] = points

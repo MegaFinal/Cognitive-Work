@@ -78,6 +78,20 @@ struct PendingPaymentsView: View {
         } message: {
             Text(viewModel.confirmationMessage)
         }
+        .sheet(item: $viewModel.pixPayment) { payment in
+            PixPaymentSheet(payment: payment)
+        }
+        .alert(
+            "Chave Pix não cadastrada",
+            isPresented: Binding(
+                get: { viewModel.missingPixKeyName != nil },
+                set: { if !$0 { viewModel.missingPixKeyName = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.missingPixKeyMessage)
+        }
         .alert(
             "Não foi possível concluir",
             isPresented: Binding(
@@ -121,7 +135,7 @@ struct PendingPaymentsView: View {
             settleTitle: viewModel.settleButtonTitle(for: group),
             isPaid: viewModel.isPaid(group),
             isSettling: viewModel.isSettling,
-            onSettle: { viewModel.requestSettlement(of: group) }
+            onSettle: { viewModel.settleTapped(for: group) }
         )
     }
 
