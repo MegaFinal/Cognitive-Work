@@ -51,6 +51,17 @@
         }
       }
     },
+    "%@ entrou na casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ joined the house"
+          }
+        }
+      }
+    },
     "%@ removido" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -997,6 +1008,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fertilize plants"
+          }
+        }
+      }
+    },
+    "Agora a casa tem mais um morador" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The house has a new housemate"
           }
         }
       }
@@ -1952,6 +1974,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap the button below to automatically split the chores among everyone in the home"
+          }
+        }
+      }
+    },
+    "Clique no botão abaixo para dividir as tarefas novamente ou divida depois acessando a tela de notificações." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the button below to split the chores again, or do it later from the notifications screen."
           }
         }
       }
@@ -9650,6 +9682,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All square"
+          }
+        }
+      }
+    },
+    "Um novo morador entrou na casa!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A new housemate joined the house!"
           }
         }
       }

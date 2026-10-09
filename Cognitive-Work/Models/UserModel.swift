@@ -82,6 +82,9 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         return ownerRecordName == id
     }
     
+    /// To verifies when new user joins the house
+    var joinedAt: Date?
+    
     var chores: [ChoreModel] {
         get async {
             if let choresReference {
@@ -145,7 +148,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.couponsReference = record["coupons"] as? [CKRecord.Reference]
         self.houseReference = record["house"] as? CKRecord.Reference
         self.ownerRecordName = ownerRecordName
-        // [newUser] self.joinedAt = record.creationDate
+        self.joinedAt = record.creationDate
     }
     
     /// Creates a new, unsaved user.

@@ -42,6 +42,8 @@ struct ChoresView: View {
         carouselVM.hasFocusedCard || choreFromNotification != nil || carouselVM.itemAwaitingDate != nil
     }
     
+    @State private var isResetting = false
+    
     /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
     init(carouselVM: CarouselViewModel = CarouselViewModel()) {
         self._carouselVM = State(initialValue: carouselVM)
@@ -213,6 +215,12 @@ struct ChoresView: View {
                     }
             )
             .tabBarVisibilityRoot()
+            // Must be inside the NavigationStack, otherwise SwiftUI ignores it.
+            .navigationDestination(isPresented: $isResetting) {
+                FortnightlyScheduleView(shouldGenerate: true) {
+                    isResetting = false
+                }
+            }
         }
         .task {
             await carouselVM.fetchAllData()
@@ -245,6 +253,7 @@ struct ChoresView: View {
         } message: {
             Text(carouselVM.errorMessage ?? "")
         }
+        .overlay { newUserPopUpOverlay }
     }
     
     // MARK: - Subviews
@@ -292,6 +301,9 @@ struct ChoresView: View {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 choreFromNotification = ChoreOccurrence(chore: chore, assignment: assignment)
                             }
+                        },
+                        onNewMember: {
+                            carouselVM.presentNewUserPopUp()
                         }
                     )
                 } label: {
@@ -310,9 +322,9 @@ struct ChoresView: View {
                         Image(systemName: carouselVM.isFilterOn
                               ? "line.3.horizontal.decrease.circle.fill"
                               : "line.3.horizontal.decrease")
-                            .font(.system(size: 22))
-                            .foregroundColor(.black)
-                            .padding(12)
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(12)
                     }
                     .voiceOverLabel(L10n.tr("Filtrar e ordenar"))
                     .voiceOverValue(carouselVM.isFilterOn ? L10n.tr("Filtro ativo") : "")
@@ -397,7 +409,32 @@ struct ChoresView: View {
     private var dashboard: DashboardModel? {
         carouselVM.dashboard
     }
+    
+    @ViewBuilder
+    private var newUserPopUpOverlay: some View {
+        // Only the house admin gets `showNewUserPopUp == true` (see `CarouselViewModel.checkNewUser`).
+        if carouselVM.showNewUserPopUp {
+            ZStack {
+                Color.black.opacity(0.45)
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { }
+                
+                NewUserPopUp {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        carouselVM.showNewUserPopUp = false
+                        isResetting = true
+                    }
+                } onDismiss: {
+                    carouselVM.showNewUserPopUp = false
+                }
+                .transition(.scale(scale: 0.92).combined(with: .opacity))
+            }
+            .transition(.opacity)
+        }
+    }
 }
+
 
 // MARK: - Private subviews
 
@@ -463,7 +500,7 @@ struct ChoreOccurrence: Identifiable {
     let vm: CarouselViewModel = {
         var cozinha = RoomModel(name: "Cozinha", symbol: "cooktop", color: .orange)
         cozinha.recordID = CKRecord.ID(recordName: "preview-cozinha")
-
+        
         var banheiro = RoomModel(name: "Banheiro", symbol: "toilet", color: .blue)
         banheiro.recordID = CKRecord.ID(recordName: "preview-banheiro")
         
