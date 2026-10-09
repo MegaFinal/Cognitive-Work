@@ -147,7 +147,7 @@ class CloudKitManager {
             didEnsureZone = true
             return true
         } catch {
-            errorMessage = "Failed to create zone: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .save)
             return false
         }
     }
@@ -215,7 +215,7 @@ class CloudKitManager {
             do {
                 return try await self.sharedDB.allRecordZones()
             } catch {
-                self.errorMessage = "Failed to list shared zones: \(error.localizedDescription)"
+                self.errorMessage = UserFacingError.message(for: error, doing: .share)
                 return nil
             }
         }
@@ -403,7 +403,7 @@ class CloudKitManager {
         } catch let error as CKError where error.code == .unknownItem {
             return nil
         } catch {
-            errorMessage = "Failed to fetch house user: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .load)
             return nil
         }
     }
@@ -445,7 +445,7 @@ class CloudKitManager {
                 .modifyRecords(saving: [house, share], deleting: [])
             return share
         } catch {
-            self.errorMessage = "Failed to create share: \(error.localizedDescription)"
+            self.errorMessage = UserFacingError.message(for: error, doing: .share)
             return nil
         }
     }
@@ -469,7 +469,7 @@ class CloudKitManager {
                 .modifyRecords(saving: [house, share], deleting: [])
             return share
         } catch {
-            self.errorMessage = "Failed to create share: \(error.localizedDescription)"
+            self.errorMessage = UserFacingError.message(for: error, doing: .share)
             return nil
         }
     }
@@ -495,7 +495,7 @@ class CloudKitManager {
                 for: shareReference.recordID
             ) as? CKShare
         } catch {
-            errorMessage = "Failed to fetch share: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .share)
             return nil
         }
     }
@@ -520,8 +520,7 @@ class CloudKitManager {
                     continuation.resume(returning: true)
                     
                 case .failure(let error):
-                    self.errorMessage =
-                    "Failed to accept share invitation: \(error.localizedDescription)"
+                    self.errorMessage = UserFacingError.message(for: error, doing: .share)
                     continuation.resume(returning: false)
                 }
             }
@@ -587,7 +586,7 @@ class CloudKitManager {
         
         // O dono não "sai": ele deleta ou para de compartilhar.
         guard share.recordID.zoneID.ownerName != CKCurrentUserDefaultName else {
-            errorMessage = "Failed to leave house: current user is the owner"
+            errorMessage = UserFacingError.friendly(technical: "Failed to leave house: current user is the owner")
             throw CloudKitErrors<Any>.currentHouseOwnerCannotLeaveTheHouse
         }
         
@@ -657,7 +656,7 @@ class CloudKitManager {
             do {
                 try await saveSubscriptionIfNeeded(subscription, in: database)
             } catch {
-                errorMessage = "Failed to save subscription \(subscription.subscriptionID): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .save)
                 if firstError == nil { firstError = error }
             }
         }
@@ -751,7 +750,7 @@ class CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            self.errorMessage = "Batch save failed: \(error.localizedDescription)"
+            self.errorMessage = UserFacingError.message(for: error, doing: .save)
             return false
         }
     }
@@ -792,7 +791,7 @@ class CloudKitManager {
                 await HardwareViewModel.notifyDataChanged()
                 markDataChanged()
             } catch {
-                errorMessage = "Batch update failed: \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .save)
                 print("    batchUpdate FAILED (\(T.recordType)): \(error)")
                 allSucceeded = false
             }
@@ -823,7 +822,7 @@ extension CloudKitManager {
             clearCurrentUser()
             await UserProfileCache.shared.removeAll()
         } catch {
-            errorMessage = "Failed to delete zone: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
         
@@ -859,7 +858,7 @@ extension CloudKitManager {
             do {
                 _ = try await sharedDB.deleteRecord(withID: share.recordID)
             } catch {
-                errorMessage = "Failed to leave house \(house.name): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .leave)
                 allSucceeded = false
             }
         }

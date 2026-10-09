@@ -307,7 +307,7 @@ class HardwareViewModel {
             hardwareHostName = try await CloudKitManager.shared.fetchFirst(HardwareHostNameModel.self)
             hostName = hardwareHostName?.hostName ?? ""
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, doing: .load)
         }
     }
     

@@ -271,9 +271,8 @@ struct ShopListItemFormView: View {
                 .foregroundStyle(.subTitleGray)
 
             TextField(pricePlaceholder, text: $valueText)
-                .keyboardType(.decimalPad)
+                .priceInput(text: $valueText)
                 .font(.system(size: 17))
-                .characterLimit(TextLimits.price, text: $valueText)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -299,7 +298,7 @@ struct ShopListItemFormView: View {
 
     /// Currency placeholder in the app's language/region format (e.g. "R$ 0,00").
     private var pricePlaceholder: String {
-        0.0.formatted(.currency(code: "BRL").locale(L10n.locale))
+        L10n.tr("Preço por unidade (R$ 0,00)")
     }
 
     /// Seeds the form's local state from the item being edited.
@@ -311,7 +310,7 @@ struct ShopListItemFormView: View {
         unitMeasurement = item.unitMeasurement == .undefined ? .unit : item.unitMeasurement
         relatedUsers = item.relatedUsers(in: availableUsers)
         if let value = item.value {
-            valueText = value.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(value)) : String(value)
+            valueText = ShopListViewModel.priceInputText(for: value)
         }
     }
 

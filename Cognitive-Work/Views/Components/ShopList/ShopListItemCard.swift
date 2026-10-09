@@ -31,7 +31,7 @@ struct ShopListItemCard: View {
     }
     
     private var priceText: String? {
-        guard let value = item.value, value > 0 else { return nil }
+        guard let value = item.totalValue else { return nil }
         return value.formatted(.currency(code: "BRL").locale(L10n.locale))
     }
     

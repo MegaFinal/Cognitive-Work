@@ -26,7 +26,7 @@ struct UserModelFreeTimeStore: FreeTimeProfileStore {
             recordReferences: references
         ) else {
             throw FreeTimeStoreError.transient(
-                CloudKitManager.shared.errorMessage ?? "Failed to fetch free time"
+                CloudKitManager.shared.errorMessage ?? UserFacingError.Action.load.message
             )
         }
 
@@ -45,7 +45,7 @@ struct UserModelFreeTimeStore: FreeTimeProfileStore {
 
         guard await user.setAvailableTimes(times) else {
             throw FreeTimeStoreError.transient(
-                CloudKitManager.shared.errorMessage ?? "Failed to save free time"
+                CloudKitManager.shared.errorMessage ?? UserFacingError.Action.save.message
             )
         }
     }

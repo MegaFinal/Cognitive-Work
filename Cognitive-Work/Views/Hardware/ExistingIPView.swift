@@ -35,7 +35,7 @@ struct ExistingIPView: View {
                         try await viewModelHardware.prepareImageForESP32(view: avatarForDevice)
                         HapticsManager.notify(.success)
                     } catch {
-                        errorMessage = error.localizedDescription
+                        errorMessage = L10n.tr("Não foi possível enviar a imagem para o dispositivo. Verifique a conexão e tente novamente.")
                     }
                     isSendingImage = false
                 }

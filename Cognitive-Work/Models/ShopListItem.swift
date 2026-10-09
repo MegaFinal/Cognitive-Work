@@ -23,6 +23,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
 
     var name: String
 
+    /// Price of ONE unit (see ``totalValue``).
     var value: Double?
 
     var quantity: Int
@@ -58,6 +59,12 @@ class ShopListItem: CloudKitSyncable, Identifiable {
 
     /// Whether a price was informed (an item without one can't be split between housemates).
     var hasPrice: Bool { (value ?? 0) > 0 }
+
+    /// ``value`` is the price of one unit, so the whole purchase costs `value × quantity`.
+    var totalValue: Double? {
+        guard let value, value > 0 else { return nil }
+        return value * Double(quantity)
+    }
 
     /// The housemates the item is for, as record ids.
     var consumerRecordIDs: [CKRecord.ID] {
@@ -222,7 +229,9 @@ class ShopListItem: CloudKitSyncable, Identifiable {
             record["tags"] = tagsReference
         }
         if let settledUsersReference {
-            record["settledUsers"] = settledUsersReference
+            // CloudKit refuses an empty list for a field it doesn't know yet, so "nobody" is
+            // stored as no value at all (which also clears an old list on a re-purchase).
+            record["settledUsers"] = settledUsersReference.isEmpty ? nil : settledUsersReference
         }
     }
 
@@ -250,15 +259,19 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         guard let buyerID = user.recordID else { return false }
         let previousBuyer = buyerUserReference
         let previousValue = value
+        let previousSettled = settledUsersReference
 
         isBought = true
         buyerUserReference = CKRecord.Reference(recordID: buyerID, action: .none)
+        // A new purchase starts with nobody having paid their share yet.
+        settledUsersReference = []
         if let paid { value = paid }
 
         guard await CloudKitManager.shared.update(self) else {
             isBought = false
             buyerUserReference = previousBuyer
             value = previousValue
+            settledUsersReference = previousSettled
             return false
         }
         return true
