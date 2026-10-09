@@ -33,6 +33,15 @@ class ShopListItem: CloudKitSyncable, Identifiable {
     /// Whether the item has already been purchased.
     var isBought: Bool
 
+    /// The aisle the item belongs to; the list groups by it.
+    var category: ShopItemCategory
+
+    /// When the item was added.
+    private(set) var createdAt: Date
+
+    /// The list this item belongs to (the record's `parent`).
+    var listRecordID: CKRecord.ID?
+
     /// The user who actually bought the item
     private var buyerUserReference: CKRecord.Reference?
 
@@ -43,6 +52,12 @@ class ShopListItem: CloudKitSyncable, Identifiable {
     private var addedByUserReference: CKRecord.Reference?
 
     private var tagsReference: [CKRecord.Reference]?
+
+    /// Who bought the item, as a record id (for resolving against an already-fetched pool).
+    var buyerRecordID: CKRecord.ID? { buyerUserReference?.recordID }
+
+    /// Who added the item, as a record id.
+    var addedByRecordID: CKRecord.ID? { addedByUserReference?.recordID }
 
     var buyerUser: UserModel? {
         get async {
@@ -65,10 +80,6 @@ class ShopListItem: CloudKitSyncable, Identifiable {
 
     /// Resolves ``relatedUsers`` against an already-fetched pool of users (e.g.
     /// ``ShopListViewModel/houseUsers``) instead of making a network request.
-    ///
-    /// Every related user is a house member, so filtering a pool that already contains every
-    /// house member is equivalent to the network fetch above — this is what list rows use to
-    /// avoid firing one CloudKit request per row.
     ///
     /// - Parameter pool: Users to search, typically every house member.
     /// - Returns: The subset of `pool` referenced by this item.
@@ -122,6 +133,9 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         self.quantity = quantity
         self.unitMeasurement = UnitMeasurement(rawValue: unitMeasurement) ?? .gram
         self.isBought = isBought
+        self.category = ShopItemCategory(rawValue: record["category"] as? String ?? "") ?? .other
+        self.createdAt = record.creationDate ?? Date()
+        self.listRecordID = record.parent?.recordID
         self.buyerUserReference = record["buyerUser"] as? CKRecord.Reference
         self.relatedUsersReference = record["relatedUsers"] as? [CKRecord.Reference]
         self.addedByUserReference = record["addedByUser"] as? CKRecord.Reference
@@ -144,6 +158,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         quantity: Int,
         unitMeasurement: UnitMeasurement,
         isBought: Bool = false,
+        category: ShopItemCategory = .other,
         relatedUsers: [CKRecord.Reference]? = nil,
         addedByUser: CKRecord.Reference? = nil,
         recordID: CKRecord.ID? = nil
@@ -154,6 +169,8 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         self.quantity = quantity
         self.unitMeasurement = unitMeasurement
         self.isBought = isBought
+        self.category = category
+        self.createdAt = Date()
         self.relatedUsersReference = relatedUsers
         self.addedByUserReference = addedByUser
     }
@@ -170,6 +187,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         record["quantity"] = quantity
         record["unitMeasurement"] = unitMeasurement.rawValue
         record["isBought"] = isBought
+        record["category"] = category.rawValue
         
         if let buyerUserReference {
             record["buyerUser"] = buyerUserReference
@@ -202,11 +220,18 @@ class ShopListItem: CloudKitSyncable, Identifiable {
     /// in a single update instead of two separate writes.
     ///
     /// - Parameter user: The user who bought the item.
-    func markBought(by user: UserModel) async {
-        guard let buyerID = user.recordID else { return }
+    @discardableResult
+    func markBought(by user: UserModel) async -> Bool {
+        guard let buyerID = user.recordID else { return false }
+        let previousBuyer = buyerUserReference
         isBought = true
         buyerUserReference = CKRecord.Reference(recordID: buyerID, action: .none)
-        await CloudKitManager.shared.update(self)
+        guard await CloudKitManager.shared.update(self) else {
+            isBought = false
+            buyerUserReference = previousBuyer
+            return false
+        }
+        return true
     }
 
     /// Applies edited field values and persists them in one update. Mirrors
@@ -226,8 +251,10 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         value: Double?,
         quantity: Int,
         unitMeasurement: UnitMeasurement,
+        category: ShopItemCategory,
         relatedUsers: [UserModel]
     ) async -> Bool {
+        self.category = category
         self.name = name
         self.value = value
         self.quantity = quantity

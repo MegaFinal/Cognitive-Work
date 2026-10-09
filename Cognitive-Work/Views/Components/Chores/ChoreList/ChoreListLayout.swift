@@ -232,7 +232,8 @@ struct SwipeToDeleteStyle {
 }
 
 /// Wraps a card with a left swipe that slides it aside to reveal a delete button.
-private struct SwipeToDeleteRow<Content: View>: View {
+/// Shared by the chore list and the shopping list.
+struct SwipeToDeleteRow<Content: View>: View {
     
     let id: String
     
@@ -387,7 +388,7 @@ private struct SwipeToDeleteRow<Content: View>: View {
 ///
 /// A vertical drag makes this recognizer fail right away (`gestureRecognizerShouldBegin`),
 /// so the enclosing `ScrollView` always gets vertical scrolling
-private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
+struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
     
     /// Called once, when a horizontal drag is recognized.
     var onBegan: () -> Void

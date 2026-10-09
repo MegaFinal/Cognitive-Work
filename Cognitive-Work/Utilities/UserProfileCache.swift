@@ -23,6 +23,9 @@ actor UserProfileCache {
 
     private init() {}
 
+    private static let isRunningForPreviews =
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+
     // MARK: - Reading
 
     /// The avatar for `user`, decoded off the main thread and cached for the rest of the session.
@@ -32,6 +35,10 @@ actor UserProfileCache {
     ///   only valid while the record that carried them is alive.
     func image(for user: UserModel?) async -> UIImage? {
         guard let user else { return nil }
+
+        // Xcode previews can't reach CloudKit (no iCloud entitlement) and crash if they try.
+        // A preview user with only a record ID and no local picture gets the placeholder avatar.
+        if Self.isRunningForPreviews, user.profilePicture?.fileURL == nil { return nil }
 
         guard let recordID = user.recordID else {
             guard let fileURL = user.profilePicture?.fileURL else { return nil }

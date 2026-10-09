@@ -54,6 +54,47 @@
         }
       }
     },
+    "%lld itens para comprar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld item to buy"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld items to buy"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld item para comprar"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld itens para comprar"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld pontos" : {
       "localizations" : {
         "en" : {
@@ -175,7 +216,21 @@
         }
       }
     },
+    "+%lld pontos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld points"
+          }
+        }
+      }
+    },
     "×%lld" : {
+
+    },
+    "0" : {
 
     },
     "0 dias" : {
@@ -305,6 +360,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The home you belonged to was deleted."
+          }
+        }
+      }
+    },
+    "A comprar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To buy"
           }
         }
       }
@@ -522,6 +588,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Something went wrong"
+          }
+        }
+      }
+    },
+    "Alimentos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Food"
           }
         }
       }
@@ -799,6 +876,16 @@
         }
       }
     },
+    "Aumentar quantidade" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Increase quantity"
+          }
+        }
+      }
+    },
     "baixa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -831,6 +918,17 @@
         }
       }
     },
+    "Bebidas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drinks"
+          }
+        }
+      }
+    },
     "Bem vindo, %@!" : {
       "localizations" : {
         "en" : {
@@ -842,6 +940,7 @@
       }
     },
     "Buscando tarefas, moradores e cômodos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -923,6 +1022,17 @@
         }
       }
     },
+    "Casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
+          }
+        }
+      }
+    },
     "Casa não encontrada." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -941,6 +1051,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "If this chore is for your home, it will be visible to all housemates."
+          }
+        }
+      }
+    },
+    "Categoria" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Category"
           }
         }
       }
@@ -1115,6 +1235,28 @@
         }
       }
     },
+    "Comprado por %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bought by %@"
+          }
+        }
+      }
+    },
+    "Comprados" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bought"
+          }
+        }
+      }
+    },
     "Compras" : {
       "localizations" : {
         "en" : {
@@ -1242,6 +1384,7 @@
       }
     },
     "Confirmar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1647,6 +1790,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "daily"
+          }
+        }
+      }
+    },
+    "Digite o nome para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type the name to confirm the item."
+          }
+        }
+      }
+    },
+    "Diminuir quantidade" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decrease quantity"
           }
         }
       }
@@ -2202,6 +2366,17 @@
         }
       }
     },
+    "Escolha quem vai consumir/pagar para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose who will use/pay to confirm the item."
+          }
+        }
+      }
+    },
     "Escolha um cômodo para a tarefa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2245,6 +2420,17 @@
         }
       }
     },
+    "Escolha uma categoria para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a category to confirm the item."
+          }
+        }
+      }
+    },
     "Escolha uma data para a tarefa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2272,6 +2458,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose a photo and a name to use in the app"
+          }
+        }
+      }
+    },
+    "Escolha uma unidade para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a unit to confirm the item."
           }
         }
       }
@@ -2382,6 +2579,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Waiting for you to accept the invite..."
+          }
+        }
+      }
+    },
+    "Essa ação não pode ser desfeita." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This action can't be undone."
           }
         }
       }
@@ -2581,6 +2788,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete Home?"
+          }
+        }
+      }
+    },
+    "Excluir item" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete item"
+          }
+        }
+      }
+    },
+    "Excluir item?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete item?"
           }
         }
       }
@@ -2796,6 +3023,17 @@
         }
       }
     },
+    "Higiene" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hygiene"
+          }
+        }
+      }
+    },
     "Hoje" : {
       "localizations" : {
         "en" : {
@@ -2812,6 +3050,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Time to start the chore split"
+          }
+        }
+      }
+    },
+    "Hortifruti" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produce"
           }
         }
       }
@@ -2889,6 +3138,28 @@
         }
       }
     },
+    "Informe a quantidade para confirmar o item." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the quantity to confirm the item."
+          }
+        }
+      }
+    },
+    "Informe o valor e quem consome para ganhar mais" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the price and who uses it to earn more"
+          }
+        }
+      }
+    },
     "Iniciar divisão" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2907,6 +3178,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This will happen automatically once all members join the home and set their free time."
+          }
+        }
+      }
+    },
+    "Item adicionado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item added"
+          }
+        }
+      }
+    },
+    "Item comprado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Item bought"
           }
         }
       }
@@ -3293,6 +3586,17 @@
         }
       }
     },
+    "Limpeza" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaning"
+          }
+        }
+      }
+    },
     "Lista de compras ainda não carregada." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3354,6 +3658,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "long"
+          }
+        }
+      }
+    },
+    "Marcar como comprado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as bought"
+          }
+        }
+      }
+    },
+    "Marcar como não comprado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as not bought"
           }
         }
       }
@@ -3574,6 +3898,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't postpone"
+          }
+        }
+      }
+    },
+    "Não foi possível concluir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't complete"
           }
         }
       }
@@ -4327,6 +4661,17 @@
         }
       }
     },
+    "Outros" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
     "pacote" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4600,6 +4945,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Allow Notifications"
+          }
+        }
+      }
+    },
+    "Pets" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pets"
           }
         }
       }
