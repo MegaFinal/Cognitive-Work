@@ -513,10 +513,19 @@ private struct RoomQuantityEditor: View {
     
     // MARK: - Names
     
-    /// Reads the room's current name (custom or default); writing stores it as a custom name.
+    /// Reads the room's current name; writing stores it as a custom name.
+    ///
+    /// What the user typed is returned exactly as typed. Only the untouched default name
+    /// ("Quarto 2") is shown translated. Translating the typed text on every keystroke turned
+    /// "qua" into "Wed" for people using the phone in English.
     private func nameBinding(at index: Int) -> Binding<String> {
         Binding(
-            get: { room.instanceName(at: index).localizedDefault },
+            get: {
+                if room.instances.indices.contains(index), let customName = room.instances[index].customName {
+                    return customName
+                }
+                return room.instanceName(at: index).localizedDefault
+            },
             set: { newName in
                 guard room.instances.indices.contains(index) else { return }
                 room.instances[index].customName = newName
