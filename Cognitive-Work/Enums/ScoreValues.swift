@@ -20,6 +20,9 @@ enum ScoreValues {
     /// Setting the beneficiary when creating a shopping list item (bonus).
     case shoppingItemBeneficiaryAssigned
 
+    /// Buying (checking off) a shopping list item.
+    case shoppingItemBought
+
     /// Opening the app on a given day (streak).
     case dailyAppOpen
 
@@ -49,6 +52,8 @@ enum ScoreValues {
             return 3
         case .shoppingItemBeneficiaryAssigned:
             return 3
+        case .shoppingItemBought:
+            return 4
         case .dailyAppOpen:
             return 2
         case .appleCalendarLinked:

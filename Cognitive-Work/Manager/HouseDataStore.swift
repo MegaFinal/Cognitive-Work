@@ -20,6 +20,12 @@ struct HouseSnapshot {
     let houseUser: UserModel?
 
     let privateUser: UserModel?
+
+    /// The house's shopping list, or `nil` if it has none.
+    let shopList: ShopListModel?
+
+    /// Every shopping item visible to the user (the list keeps those whose parent it is).
+    let shopItems: [ShopListItem]
 }
 
 /// Loads the house data once and serves it to every tab.
@@ -129,6 +135,8 @@ final class HouseDataStore {
         async let assignments = cloud.fetchAll(RecurrentAssignmentModel.self)
         async let houseUser = cloud.currentHouseUser()
         async let privateUser = cloud.fetchMyUser()
+        async let shopList = fetchShopList()
+        async let shopItems = cloud.fetchAll(ShopListItem.self)
 
         return await HouseSnapshot(
             chores: chores,
@@ -136,7 +144,14 @@ final class HouseDataStore {
             rooms: rooms,
             assignments: assignments,
             houseUser: houseUser,
-            privateUser: privateUser
+            privateUser: privateUser,
+            shopList: shopList,
+            shopItems: shopItems
         )
+    }
+
+    private nonisolated static func fetchShopList() async -> ShopListModel? {
+        guard let house = try? await CloudKitManager.shared.currentHouse() else { return nil }
+        return await house.shopList
     }
 }
