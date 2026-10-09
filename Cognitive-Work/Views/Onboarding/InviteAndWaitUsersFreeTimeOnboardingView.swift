@@ -64,16 +64,19 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                 .frame(width: width * 0.84, alignment: .leading)
                 .padding(.top, 30)
                 .padding(.bottom, width * 0.02)
+                .accessibilityLabel(Text(L10n.tr("%lld moradores na casa", houseUsers.count)))
             
             if !hasLoadedUsers {
                 ProgressView()
                     .controlSize(.regular)
+                    .accessibilityLabel(Text(L10n.tr("Carregando moradores")))
             }
                     
             if !pendingUsers.isEmpty {
                 Text("Em configuração")
                 .font(.subheadline)
                 .fontWeight(.thin)
+                .accessibilityAddTraits(.isHeader)
                 pendingUsersView
             }
             
@@ -81,6 +84,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                 Text("Moradores prontos")
                 .font(.subheadline)
                 .fontWeight(.thin)
+                .accessibilityAddTraits(.isHeader)
                 completedUsersView
             }
             
@@ -109,6 +113,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                         .buttonBorderShape(.circle)
                         .controlSize(.large)
                         .disabled(!pendingUsers.isEmpty)
+                        .accessibilityHint(pendingUsers.isEmpty ? Text("") : Text(L10n.tr("Disponível quando todos os moradores terminarem a configuração")))
                     }
                     Spacer()
                 }
@@ -167,6 +172,8 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                     
                     UserProfilePictureTag(user: user, widthMultiplier: 0.15)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(L10n.tr("%@, pronto", user.name)))
             }
         }
     }
@@ -182,6 +189,8 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                     
                     UserProfilePictureTag(user: user, widthMultiplier: 0.15)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(L10n.tr("%@, ainda configurando o tempo livre", user.name)))
             }
         }
     }
@@ -288,10 +297,25 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         
         // Sync fix: publish only if no newer refresh started meanwhile.
         guard generation == refreshGeneration else { return }
+        let wasLoaded = hasLoadedUsers
+        let previousCompletedCount = completedUsers.count
         houseUsers = fetchedUsers
         completedUsers = completed
         pendingUsers = pending
         hasLoadedUsers = true
+        announceProgress(isFirstLoad: !wasLoaded, previousCompletedCount: previousCompletedCount)
+    }
+    
+    /// VoiceOver: says where the wait stands on the first load, then whenever someone finishes
+    /// (the screen polls every few seconds, so it only speaks when something changed).
+    private func announceProgress(isFirstLoad: Bool, previousCompletedCount: Int) {
+        guard !isFromSettings else { return }
+        guard isFirstLoad || completedUsers.count > previousCompletedCount else { return }
+        if pendingUsers.isEmpty {
+            VoiceOver.announce(L10n.tr("Todos os moradores estão prontos"))
+        } else {
+            VoiceOver.announce(L10n.tr("Aguardando os moradores: %lld de %lld prontos", completedUsers.count, houseUsers.count))
+        }
     }
 }
 

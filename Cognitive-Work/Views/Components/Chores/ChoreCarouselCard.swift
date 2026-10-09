@@ -43,6 +43,12 @@ struct ChoreCarouselCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 31))
         .shadow(color: .black.opacity(0.14), radius: 16.84883, x: 0, y: 4.79682)
         .transition(.identity)
+        // One element: the room icon and texture are decorative.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(carouselViewModel.accessibilitySummary(
+            for: chore,
+            assignment: carouselViewModel.getAssignmentsForActiveContext(for: chore).first
+        ))
     }
     
     /// The carousel card is bigger than the onboarding ones, so its texture needs less zoom.

@@ -44,6 +44,7 @@ struct TermsDeclinedView: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.titleGray)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
                 Text(message)
                     .font(.system(size: 16))
@@ -69,7 +70,11 @@ struct TermsDeclinedView: View {
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white.ignoresSafeArea())
-        .onAppear { isAnimating = true }
+        .onAppear {
+            isAnimating = true
+            // Replaces the whole app: VoiceOver starts reading from the goodbye title.
+            VoiceOver.screenChanged()
+        }
         .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: isAnimating)
     }
 

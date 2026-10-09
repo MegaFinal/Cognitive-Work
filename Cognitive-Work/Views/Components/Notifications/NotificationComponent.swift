@@ -22,6 +22,8 @@ struct NotificationComponent: View {
                 Image(systemName: symbol)
                     .font(.system(size: 20))
             }.padding(.trailing, 16)
+            // The icon only repeats the notification's kind, which the title already says.
+            .accessibilityDecorative()
             
             VStack(alignment: .leading, spacing: 8){
                 Text(title)
@@ -34,6 +36,8 @@ struct NotificationComponent: View {
             }
             .frame(width: width * 0.62, alignment: .leading)
         }
+        // "3 tarefas a pegar hoje, Escolha as que couberem no seu tempo" as one element.
+        .accessibilityElement(children: .combine)
     }
 }
 

@@ -27,13 +27,18 @@ struct ExistingIPView: View {
         VStack(spacing: 20) {
             avatarView
                 .frame(width: 100, height: 100)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(L10n.tr("Imagem que será enviada ao Harvi"))
+                .accessibilityAddTraits(.isImage)
 
             Button {
                 isSendingImage = true
+                VoiceOver.announce(L10n.tr("Enviando imagem para o Harvi…"))
                 Task {
                     do {
                         try await viewModelHardware.prepareImageForESP32(view: avatarForDevice)
                         HapticsManager.notify(.success)
+                        VoiceOver.announce(L10n.tr("Imagem enviada para o Harvi"))
                     } catch {
                         errorMessage = L10n.tr("Não foi possível enviar a imagem para o dispositivo. Verifique a conexão e tente novamente.")
                     }
@@ -54,6 +59,9 @@ struct ExistingIPView: View {
                     }
                 }
             }
+            // Label stays the same while the spinner replaces the text.
+            .accessibilityLabel(L10n.tr("Enviar imagem"))
+            .accessibilityValue(isSendingImage ? L10n.tr("Enviando") : "")
             .disabled(isSendingImage || isResetting)
 
             Button("Desconectar este celular") {
@@ -70,6 +78,8 @@ struct ExistingIPView: View {
                     Text("Resetar o Harvi")
                 }
             }
+            .accessibilityLabel(L10n.tr("Resetar o Harvi"))
+            .accessibilityValue(isResetting ? L10n.tr("Resetando") : "")
             .disabled(isSendingImage || isResetting)
         }
         .confirmationDialog(
@@ -79,6 +89,7 @@ struct ExistingIPView: View {
         ) {
             Button("Resetar", role: .destructive) {
                 isResetting = true
+                VoiceOver.announce(L10n.tr("Resetando o Harvi…"))
                 Task {
                     do {
                         try await viewModelHardware.resetHardware()

@@ -29,11 +29,14 @@ struct FortnightlyView: View {
                     .bold()
                     .font(.system(size: 30))
                     .foregroundStyle(.titleGray)
+                    .accessibilityAddTraits(.isHeader)
                 
                 VStack(alignment: .leading, spacing: 10) {
                     Text(description)
                     
                     Text("Clique nas tarefas para saber mais.")
+                        // VoiceOver users double-tap; the bars carry their own hint.
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.bottom, 30)
@@ -89,14 +92,22 @@ struct FortnightlyView: View {
                 await viewModel.setup(users: users, chores: chores)
             }
             selectInitialEntry()
+            if let errorMessage = viewModel.errorMessage {
+                VoiceOver.announce(errorMessage)
+            }
         }
     }
     
     // MARK: - Selection
     
     private func select(_ entry: DailyUsageEntry) {
+        let changed = selectedEntry != nil && selectedEntry != entry
         selectedEntry = entry
         selectedUser = viewModel.users.first { $0.recordID == entry.userID }
+        // The card below the chart changes out of VoiceOver's focus: say what it now shows.
+        if changed {
+            VoiceOver.announce(L10n.tr("Detalhes de %@ abaixo do gráfico", entry.choreName.localizedDefault))
+        }
     }
     
     /// The screen always opens with the first chore of the first day (the leftmost column,
@@ -124,6 +135,9 @@ struct FortnightlyView: View {
                 }
             }
         }
+        // Colors only matter visually: every bar already reads its resident's name.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.tr("Moradores na legenda: %@", ChartA11y.list(viewModel.users.map(\.name))))
     }
 }
 

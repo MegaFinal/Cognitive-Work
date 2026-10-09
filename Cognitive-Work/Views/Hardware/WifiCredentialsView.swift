@@ -25,6 +25,7 @@ struct WifiCredentialsView: View {
                         Text("Conectar Harvi")
                             .font(.largeTitle)
                             .bold()
+                            .accessibilityAddTraits(.isHeader)
 
                         Text("Para que seja possível conectar o Harvi ao WiFi da sua casa, entre no WiFi ESP32, com senha 12345678, retorne ao app e envie o nome e senha do WiFi.")
                             .foregroundStyle(.secondary)
@@ -64,6 +65,7 @@ struct WifiCredentialsView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     if viewModel.isSending {
                         ProgressView()
+                            .accessibilityLabel(L10n.tr("Enviando dados do WiFi"))
                     } else {
                         Button("Continuar", systemImage: "chevron.right") {
                             Task { await viewModel.sendWifiCredentials() }
@@ -78,6 +80,10 @@ struct WifiCredentialsView: View {
             }
             .resultAlert($viewModel.wifiResult)
             .dismissKeyboardOnTap()
+            // Sending takes a few seconds behind a spinner; the result arrives as an alert.
+            .onChange(of: viewModel.isSending) { _, isSending in
+                if isSending { VoiceOver.announce(L10n.tr("Enviando dados do WiFi para o Harvi…")) }
+            }
         }
     }
 }
@@ -91,8 +97,11 @@ struct LabeledInput<Content: View>: View {
             Text(title)
                 .font(.body)
                 .padding(.leading, 12)
+                // The field below reads this title as its own label.
+                .accessibilityHidden(true)
             
             content()
+                .accessibilityLabel(Text(title))
                 .padding(.horizontal, 16)
                 .frame(height: 48)
                 .background(Color(.secondarySystemGroupedBackground),

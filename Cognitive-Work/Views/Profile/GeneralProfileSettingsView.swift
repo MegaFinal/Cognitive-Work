@@ -34,6 +34,7 @@ struct GeneralProfileSettingsView: View {
         VStack(spacing: 30) {
             HStack {
                 Text("Idioma")
+                    .accessibilityHidden(true) // carried by the menu's label
                 
                 Spacer()
                 
@@ -53,11 +54,14 @@ struct GeneralProfileSettingsView: View {
                     }
                 }
                 .foregroundColor(.black)
+                .accessibilityLabel(L10n.tr("Idioma"))
+                .accessibilityValue(languageManager.current.nativeName)
             }
             
             VStack(alignment: .leading) {
                 HStack {
                     Text("Haptics")
+                        .accessibilityHidden(true) // carried by the toggle's label
                     
                     Spacer()
                     
@@ -65,6 +69,7 @@ struct GeneralProfileSettingsView: View {
                         .toggleStyle(.switch)
                         .padding(.trailing, 7)
                         .frame(width: width * 0.37)
+                        .accessibilityLabel(L10n.tr("Haptics"))
                         .onChange(of: areHapticsEnabled) { _, isOn in
                             // Immediate confirmation that vibrations are back on.
                             if isOn { HapticsManager.impact(.medium) }
@@ -80,12 +85,14 @@ struct GeneralProfileSettingsView: View {
             VStack(alignment: .leading) {
                 HStack {
                     Text("Sincronizar com Calendário")
+                        .accessibilityHidden(true) // carried by the toggle's label
                      
                     Spacer()
                      
                     if viewModel.isSyncingCalendar {
                         ProgressView()
                             .controlSize(.small)
+                            .accessibilityLabel(L10n.tr("Sincronizando"))
                     }
                     
                     Toggle("", isOn: $viewModel.isCalendarSyncEnabled)
@@ -93,6 +100,7 @@ struct GeneralProfileSettingsView: View {
                         .padding(.trailing, 7)
                         .frame(width: width * 0.37)
                         .disabled(viewModel.isSyncingCalendar)
+                        .accessibilityLabel(L10n.tr("Sincronizar com Calendário"))
                 }
                  
                 Text("Adicionar automaticamente as suas tarefas ao calendário da Apple (Pipa).")

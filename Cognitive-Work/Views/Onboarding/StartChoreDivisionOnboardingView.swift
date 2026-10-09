@@ -72,6 +72,7 @@ private struct InfoCard: View {
                     Circle()
                         .foregroundStyle(tagColor)
                 )
+                .accessibilityLabel(Text(L10n.tr("Etapa %@ de %lld", number, 3)))
             
             VStack(alignment: .leading, spacing: 10) {
                 Text(title)
@@ -87,6 +88,8 @@ private struct InfoCard: View {
             RoundedRectangle(cornerRadius: 32)
                 .foregroundColor(backgroundColor.opacity(0.2))
         )
+        // Read as one sentence: "Etapa 1 de 3, Defina os cômodos, Escolha os cômodos…".
+        .accessibilityElement(children: .combine)
     }
 }
 

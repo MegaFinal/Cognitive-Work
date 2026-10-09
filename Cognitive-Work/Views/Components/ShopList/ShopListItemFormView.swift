@@ -109,6 +109,7 @@ struct ShopListItemFormView: View {
                         Image(systemName: "xmark")
                     }
                     .disabled(isSaving)
+                    .accessibilityLabel(L10n.tr("Cancelar"))
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -126,6 +127,8 @@ struct ShopListItemFormView: View {
                         .tint(.blue)
                         .buttonStyle(.glassProminent)
                         .disabled(!missingFields.isEmpty)
+                        .accessibilityLabel(isEditing ? L10n.tr("Salvar") : L10n.tr("Adicionar item"))
+                        .accessibilityHint(missingFields.first?.warning ?? "")
                     }
                 }
             }
@@ -138,6 +141,9 @@ struct ShopListItemFormView: View {
             if !isEditing { isNameFocused = true }
         }
         .dismissKeyboardOnTap()
+        .onChange(of: visibleWarning) { _, warning in
+            if let warning { VoiceOver.announce(warning) }
+        }
         .confirmationDialog("Excluir item?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Excluir item", role: .destructive) {
                 Task { await deleteItem() }
@@ -172,6 +178,7 @@ struct ShopListItemFormView: View {
                 .foregroundStyle(category.color)
                 .contentTransition(.symbolEffect(.replace))
                 .padding(.leading, 6)
+                .accessibilityHidden(true)
 
             VStack(spacing: 2) {
                 TextField(
@@ -184,21 +191,28 @@ struct ShopListItemFormView: View {
                 .characterLimit(TextLimits.shopItemName, text: $name)
                 .submitLabel(.done)
                 .focused($isNameFocused)
+                .accessibilityLabel(L10n.tr("Nome do item"))
 
                 Capsule()
                     .frame(height: 1.5)
                     .foregroundStyle(.gray.opacity(0.5))
+                    .accessibilityHidden(true)
             }
         }
         .animation(.snappy, value: category)
+    }
+
+    /// The warning on screen, if any; VoiceOver announces it whenever it appears or changes.
+    private var visibleWarning: String? {
+        trimmedName.isEmpty ? nil : missingFields.first?.warning
     }
 
     /// Explains why the confirm button is disabled, near the top so it shows without scrolling.
     /// Like the chore form, it names one thing at a time and waits for the name first.
     @ViewBuilder
     private var validationWarning: some View {
-        if !trimmedName.isEmpty, let next = missingFields.first {
-            Text(next.warning)
+        if let warning = visibleWarning {
+            Text(warning)
                 .font(.system(size: 13))
                 .foregroundColor(.red)
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -214,6 +228,7 @@ struct ShopListItemFormView: View {
             Text(title)
                 .font(.system(size: 15))
                 .fontWeight(.semibold)
+                .accessibilityAddTraits(.isHeader)
 
             content()
         }
@@ -222,8 +237,11 @@ struct ShopListItemFormView: View {
     /// Stepper and unit menu on one soft card.
     private var quantityCard: some View {
         VStack(spacing: 16) {
-            QuantityStepper(value: $quantity)
-                .frame(maxWidth: .infinity)
+            QuantityStepper(
+                value: $quantity,
+                valueDescription: { ShopListViewModel.accessibilityQuantity($0, unit: unitMeasurement) }
+            )
+            .frame(maxWidth: .infinity)
 
             Divider()
 
@@ -255,6 +273,8 @@ struct ShopListItemFormView: View {
                     }
                     .fixedSize()
                 }
+                .accessibilityLabel(L10n.tr("Unidade"))
+                .accessibilityValue(unitMeasurement.getDisplayName(for: Double(quantity)))
             }
         }
         .padding(16)
@@ -269,10 +289,13 @@ struct ShopListItemFormView: View {
         HStack(spacing: 10) {
             Image(systemName: "tag")
                 .foregroundStyle(.subTitleGray)
+                .accessibilityHidden(true)
 
             TextField(pricePlaceholder, text: $valueText)
                 .priceInput(text: $valueText)
                 .font(.system(size: 17))
+                .accessibilityLabel(L10n.tr("Preço por unidade"))
+                .accessibilityValue(ShopListViewModel.accessibilityPrice(valueText))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)

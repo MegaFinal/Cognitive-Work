@@ -39,6 +39,7 @@ struct ShareHouseButton: View {
                     self.showSheet = true
                 } catch {
                     print("Erro ao gerar link: \(error.localizedDescription)")
+                    VoiceOver.announce(L10n.tr("Não foi possível gerar o link do convite"))
                 }
                 
                 isLoading = false
@@ -57,6 +58,9 @@ struct ShareHouseButton: View {
             .background(Capsule().foregroundColor(share == nil || isLoading ? .gray : .blue))
         }
         .disabled(share == nil || isLoading)
+        .accessibilityLabel(Text(L10n.tr("Compartilhar Convite")))
+        .accessibilityValue(isLoading ? Text(L10n.tr("Gerando link")) : Text(""))
+        .accessibilityHint(share == nil ? Text(L10n.tr("Aguarde, o convite ainda está sendo preparado")) : Text(L10n.tr("Abre as opções para enviar o link da casa")))
     }
 }
 

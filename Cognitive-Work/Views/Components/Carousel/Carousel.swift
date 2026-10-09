@@ -57,6 +57,9 @@ struct Carousel: View {
                             viewModel.focusAndFlip(index)
                         }
                     }
+                    // VoiceOver reads the carousel as one adjustable element (see below);
+                    // only the opened card's details are exposed as separate elements.
+                    .accessibilityHidden(!viewModel.isFocused(index))
                 }
                 .gesture(
                     DragGesture()
@@ -72,6 +75,42 @@ struct Carousel: View {
         .frame(maxWidth: .infinity)
         .onPullDownAtTop(action: onSwipeDown)
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
+        // MARK: - VoiceOver
+        // Closed: one adjustable element (swipe up/down to change card, double tap to open).
+        // Open (or empty): a container exposing the details card / empty state, which traps focus.
+        .accessibilityElement(children: exposesChildren ? .contain : .ignore)
+        .accessibilityLabel(exposesChildren ? "" : L10n.tr("Tarefas do dia"))
+        .accessibilityValue(exposesChildren ? "" : viewModel.accessibilityCarouselValue)
+        .accessibilityHint(exposesChildren ? "" : L10n.tr("Deslize para cima ou para baixo para trocar de tarefa. Toque duas vezes para ver os detalhes."))
+        .accessibilityAddTraits(viewModel.hasFocusedCard ? .isModal : [])
+        .accessibilityAction {
+            guard !viewModel.visibleChores.isEmpty else { return }
+            if viewModel.hasFocusedCard {
+                viewModel.clearFocus()
+            } else {
+                viewModel.focusAndFlip(viewModel.activeIndex)
+            }
+        }
+        .accessibilityAdjustableAction { direction in
+            guard !viewModel.hasFocusedCard else { return }
+            switch direction {
+            case .increment: viewModel.accessibilityMoveCarousel(by: 1)
+            case .decrement: viewModel.accessibilityMoveCarousel(by: -1)
+            @unknown default: break
+            }
+        }
+        .accessibilityAction(named: Text(L10n.tr("Ver como lista"))) {
+            onSwipeDown()
+        }
+        .accessibilityAction(.escape) {
+            viewModel.clearFocus()
+        }
+    }
+    
+    /// Whether VoiceOver should see the carousel's children (the opened card's details or the
+    /// empty state) instead of the single adjustable "carousel" element.
+    private var exposesChildren: Bool {
+        viewModel.hasFocusedCard || viewModel.visibleChores.isEmpty
     }
 }
 

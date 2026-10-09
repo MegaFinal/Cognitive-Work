@@ -17,6 +17,7 @@ struct LoadingScreen: View {
         VStack(spacing: 24) {
             Image("loadingIcon")
                 .rotationEffect(.degrees(rotation))
+                .accessibilityDecorative()
                 .onAppear {
                     withAnimation(.linear(duration: 1).speed(0.3).repeatForever(autoreverses: false)) {
                         rotation = 360.0
@@ -36,8 +37,10 @@ struct LoadingScreen: View {
                 .opacity(0.2)
                 .frame(width: width * 1.6)
                 .ignoresSafeArea()
+                .accessibilityDecorative()
         )
         .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }
 

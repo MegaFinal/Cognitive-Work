@@ -33,6 +33,9 @@ struct ChoresViewButtonsSection: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.tr("Tarefas para pegar"))
+            .accessibilityHint(L10n.tr("Mostra as tarefas sem responsável."))
+            .accessibilityValue(carouselViewModel.isShowingUnassignedList ? L10n.tr("expandido") : L10n.tr("recolhido"))
             .glassEffect(
                 .regular.interactive(),
                 in: .circle
@@ -49,6 +52,7 @@ struct ChoresViewButtonsSection: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.tr("Nova tarefa"))
             .glassEffect(
                 .regular.interactive().tint(.black),
                 in: .circle

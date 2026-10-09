@@ -31,6 +31,9 @@ struct CheckListCreateAndEdit: View {
                             .foregroundColor(item.isDone ? .black : .gray)
                             .font(.system(size: 17, weight: .semibold))
                     }
+                    .accessibilityLabel(accessibilityName(of: item))
+                    .accessibilityValue(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
+                    .accessibilityHint(L10n.tr("Toque duas vezes para alternar."))
                     
                     TextField("Novo item", text: $item.name)
                         .strikethrough(item.isDone, color: .gray)
@@ -51,6 +54,7 @@ struct CheckListCreateAndEdit: View {
                         Image(systemName: "minus.circle.fill")
                             .foregroundColor(.red)
                     }
+                    .accessibilityLabel(L10n.tr("Remover %@", accessibilityName(of: item)))
                 }
             }
             Button {
@@ -64,7 +68,14 @@ struct CheckListCreateAndEdit: View {
                 .foregroundColor(.blue)
                 .padding(.top, 5)
             }
+            .accessibilityLabel(L10n.tr("Adicionar item"))
         }
+    }
+    
+    /// The item's text, or "Novo item" while it's still blank.
+    private func accessibilityName(of item: CheckItemDTO) -> String {
+        let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? L10n.tr("Novo item") : name
     }
     
     // MARK: - Actions
@@ -97,6 +108,9 @@ struct CheckListCreateAndEdit: View {
     }
     
     private func remove(_ id: UUID) {
+        if let item = localChecklist.first(where: { $0.id == id }) {
+            VoiceOver.announce(L10n.tr("%@ removido", accessibilityName(of: item)))
+        }
         localChecklist.removeAll { $0.id == id }
         if localChecklist.isEmpty {
             hasChecklist = false

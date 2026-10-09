@@ -118,6 +118,23 @@ struct SwipeToCompleteButton: View {
             }
         }
         .frame(height: height)
+        // MARK: - VoiceOver
+        // The swipe is replaced by a plain double tap.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isDone ? L10n.tr("Tarefa concluída") : L10n.tr("Concluir tarefa"))
+        .accessibilityHint(isDone ? "" : L10n.tr("Toque duas vezes para marcar a tarefa como concluída."))
+        .accessibilityAddTraits(isDone ? [] : .isButton)
+        .accessibilityAction {
+            completeFromAccessibility()
+        }
+    }
+    
+    /// VoiceOver alternative to the swipe: completes the task right away.
+    private func completeFromAccessibility() {
+        guard !isDone else { return }
+        HapticsManager.notify(.success)
+        action()
+        VoiceOver.announce(L10n.tr("Tarefa concluída"))
     }
 }
 

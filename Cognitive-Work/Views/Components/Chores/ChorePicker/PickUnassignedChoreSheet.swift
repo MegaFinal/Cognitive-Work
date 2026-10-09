@@ -118,6 +118,15 @@ struct PickUnassignedChoreCard: View {
             slots = carouselViewModel.initialPickSlots(for: item)
             activeSlot = slots.firstIndex { $0.isDateEditable } ?? 0
         }
+        // Popup: keeps VoiceOver inside it; the escape gesture closes it.
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) {
+            carouselViewModel.dismissPickCard()
+        }
+        .onChange(of: didFail) { _, failed in
+            if failed { VoiceOver.announce(L10n.tr("Não foi possível salvar. Tente novamente.")) }
+        }
     }
     
     // MARK: - Calendar binding
@@ -162,6 +171,7 @@ struct PickUnassignedChoreCard: View {
             Text("Selecionar dia")
                 .font(.system(size: 16))
                 .foregroundStyle(.black)
+                .accessibilityAddTraits(.isHeader)
             
             Spacer()
             
@@ -212,6 +222,8 @@ struct PickUnassignedChoreCard: View {
             RoundedRectangle(cornerRadius: 16)
                 .foregroundStyle(Color.gray.opacity(0.08))
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "\(chore.localizedName), \(roomName), \(carouselViewModel.accessibilityTagsText(for: chore))"))
     }
     
     private var calendarText: some View {
@@ -219,6 +231,7 @@ struct PickUnassignedChoreCard: View {
             Text("Quando você deseja realizar esta tarefa?")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(.black)
+                .accessibilityAddTraits(.isHeader)
             
             Text("Esta escolha será apenas para a divisão de tarefas atual")
                 .font(.system(size: 15))
@@ -239,6 +252,7 @@ struct PickUnassignedChoreCard: View {
                 .glassEffect(in: .circle)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(L10n.tr("Fechar"))
     }
     
     private var confirmButton: some View {
@@ -254,6 +268,7 @@ struct PickUnassignedChoreCard: View {
                         score: ScoreValues.unassignedChorePicked.points
                     )
                     carouselViewModel.dismissPickCard()
+                    VoiceOver.announce(L10n.tr("Tarefa adicionada às suas tarefas"))
                 } else {
                     isSaving = false
                     didFail = true
@@ -277,5 +292,7 @@ struct PickUnassignedChoreCard: View {
         .buttonStyle(.plain)
         .disabled(!canConfirm || isSaving)
         .opacity(canConfirm ? 1.0 : 0.5)
+        .accessibilityLabel(isSaving ? L10n.tr("Salvando") : L10n.tr("Confirmar"))
+        .accessibilityHint(canConfirm ? "" : L10n.tr("Escolha pelo menos um dia para confirmar."))
     }
 }

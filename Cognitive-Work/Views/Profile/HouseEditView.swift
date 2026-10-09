@@ -16,6 +16,7 @@ struct HouseEditView: View {
         VStack {
             if viewModel.isLoading {
                 ProgressView()
+                    .accessibilityLabel(L10n.tr("Carregando"))
             } else if viewModel.house != nil {
                 if viewModel.isUserAdmin {
                     Button {
@@ -25,6 +26,7 @@ struct HouseEditView: View {
                     } label: {
                         if viewModel.isDeleting {
                             ProgressView()
+                                .accessibilityLabel(L10n.tr("Excluindo sua casa..."))
                         } else {
                             Text("Deletar Casa")
                                 .foregroundColor(.red)

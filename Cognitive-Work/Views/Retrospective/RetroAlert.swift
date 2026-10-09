@@ -11,12 +11,15 @@ struct RetroView: View {
     @State var isExpanded: Bool = false
     @State var isRetroDone: Bool = false
     @State var page = 0
+    /// Closes the presenting fullScreenCover; used by VoiceOver's escape gesture.
+    @Environment(\.dismiss) private var dismissRetro
     var body: some View {
         ZStack {
             Color.black.opacity(0.45)
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture { }
+                .accessibilityDecorative()
             
             RoundedRectangle(cornerRadius: 32)
                 .frame(width: isExpanded ? .infinity : width * 0.87, height: isExpanded ? .infinity : height * 0.59)
@@ -48,6 +51,12 @@ struct RetroView: View {
                     }
                 }
         }
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) { dismissRetro() }
+        // Each step swaps the whole content: let VoiceOver re-read it from the top.
+        .onChange(of: isExpanded) { VoiceOver.screenChanged() }
+        .onChange(of: isRetroDone) { VoiceOver.screenChanged() }
+        .onChange(of: page) { VoiceOver.screenChanged() }
     }
 }
 
@@ -65,6 +74,20 @@ struct PageIndicator: View {
             }
         }
         .animation(.spring(duration: 0.3), value: current)
+        // One adjustable element: swipe up/down to change page.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.tr("Página"))
+        .accessibilityValue(L10n.tr("%lld de %lld", current + 1, count))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                if current < count - 1 { current += 1 }
+            case .decrement:
+                if current > 0 { current -= 1 }
+            @unknown default:
+                break
+            }
+        }
     }
 }
 
@@ -79,11 +102,13 @@ private struct RetroAlert: View {
                 .frame(width: width * 0.27, height: height * 0.089)
                 .foregroundStyle(.choreYellow)
                 .padding(.bottom, height * 0.05)
+                .accessibilityDecorative()
             
             Text("Sua retrospectiva chegou!")
                 .bold()
                 .font(.largeTitle)
                 .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
                 .padding(.bottom, height * 0.018)
             
             Text("Veja como você se saiu durante os últimos 15 dias")
@@ -138,6 +163,8 @@ private struct RetroPercentageOfDoneView: View {
                     .bold()
                     .font(.system(size: 64))
                     .padding(.bottom, height * 0.03)
+                    .accessibilityLabel(L10n.tr("%@ das tarefas concluídas", ChartA11y.percent(percentage / 100)))
+                    .accessibilityAddTraits(.isHeader)
                 
                 Text("Você realizou 0 de 20 \n tarefas da sua escala")
                     .font(.title)
@@ -199,11 +226,13 @@ private struct RetroStreakView: View {
                 .frame(width: width * 0.54, height: height * 0.3)
                 .foregroundStyle(.gray)
                 .padding(.bottom, height * 0.037)
+                .accessibilityDecorative()
             
             Text("0 dias")
                 .bold()
                 .font(.system(size: 64))
                 .padding(.bottom, height * 0.014)
+                .accessibilityAddTraits(.isHeader)
             
             Text("seguidos sem atrasar nenhuma tarefa")
                 .fontWeight(.regular)
@@ -259,11 +288,13 @@ private struct RetroPointsView: View {
                 .frame(width: width * 0.6, height: width * 0.6)
                 .foregroundStyle(.gray)
                 .padding(.bottom, height * 0.037)
+                .accessibilityDecorative()
             
             Text("4 pontos")
                 .bold()
                 .font(.system(size: 64))
                 .padding(.bottom, height * 0.014)
+                .accessibilityAddTraits(.isHeader)
             
             Text("adquiridos por ter notado algo na casa")
                 .fontWeight(.regular)
@@ -342,6 +373,7 @@ struct RetroRoomsView: View {
                 .bold()
                 .font(.system(size: 64))
                 .padding(.top, height * 0.071)
+                .accessibilityAddTraits(.isHeader)
             
             Text("A cozinha foi onde você mais trabalhou.")
                 .font(.title)
@@ -355,6 +387,8 @@ struct RetroRoomsView: View {
                             .font(.body)
                             .fontWeight(.semibold)
                             .padding(.bottom, 0.01)
+                            // Read by the bar below, together with its value.
+                            .accessibilityHidden(true)
                         
                         Capsule()
                             .frame(width: (width * 0.877) * CGFloat(item.numOfChores) / CGFloat(maxNumOfChores), height: height * 0.041)
@@ -367,11 +401,18 @@ struct RetroRoomsView: View {
                                     .padding(.horizontal)
                             }
                             .padding(.bottom, 0.02)
+                            // One element per room: "Cozinha, 8 tarefas".
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(item.roomName.localizedDefault)
+                            .accessibilityValue(L10n.tr("%lld tarefas", item.numOfChores))
                     }
                 }
                 Spacer()
             }
             .padding(.horizontal, width * 0.061)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(L10n.tr("Tarefas por cômodo"))
+            .accessibilityChartDescriptor(roomsChartDescriptor)
             
             Spacer()
 
@@ -390,6 +431,17 @@ struct RetroRoomsView: View {
             .glassEffectTransition(.identity)
         }
     }
+    
+    /// Audio graph for VoiceOver's chart rotor: chores done per room.
+    private var roomsChartDescriptor: CategoryChartDescriptor {
+        CategoryChartDescriptor(
+            title: L10n.tr("Tarefas por cômodo"),
+            summary: nil,
+            categoryAxisTitle: L10n.tr("Cômodo"),
+            valueAxisTitle: L10n.tr("Tarefas"),
+            points: chartItens.map { (label: $0.roomName.localizedDefault, value: Double($0.numOfChores)) }
+        )
+    }
 }
 
 struct RetroNewChoresDivision: View {
@@ -404,11 +456,13 @@ struct RetroNewChoresDivision: View {
                 .padding(.bottom, height * 0.04)
                 .foregroundStyle(.choreGreen)
                 .padding(.top, height * 0.088)
+                .accessibilityDecorative()
             
             Text("Comece a nova divisão de tarefas da casa!")
                 .font(.title)
                 .bold()
                 .multilineTextAlignment(.leading)
+                .accessibilityAddTraits(.isHeader)
             
             Text("Clique no botão abaixo para dividir as tarefas entre todos os moradores da casa automaticamente")
                 .font(.title3)
