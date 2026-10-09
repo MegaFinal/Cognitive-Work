@@ -77,6 +77,7 @@ struct OnboardingNewChoreSheet: View {
                     }
                     .tint(.black)
                     .accessibilityLabel(Text(L10n.tr("Fechar")))
+                    .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -128,6 +129,7 @@ struct OnboardingNewChoreSheet: View {
                 .characterLimit(TextLimits.choreName, text: $draft.name)
                 .submitLabel(.done)
                 .accessibilityLabel(Text(L10n.tr("Nome da tarefa")))
+                .voiceControlNames([L10n.tr("Nome da tarefa"), L10n.tr("Nome")])
                 
                 Capsule()
                     .fill(.white.opacity(0.55))
@@ -177,6 +179,8 @@ struct OnboardingNewChoreSheet: View {
         }
         .accessibilityLabel(Text(L10n.tr("Cômodo")))
         .accessibilityValue(Text(selectedRoom?.name.localizedDefault ?? L10n.tr("Sem Cômodo")))
+        // Voice Control: the visible room name first, then the field's own name.
+        .voiceControlNames([selectedRoom?.name.localizedDefault ?? L10n.tr("Sem Cômodo"), L10n.tr("Cômodo")])
     }
     
     /// Priority, duration and frequency, one rounded row each, tinted with the room's color.
@@ -244,6 +248,7 @@ struct OnboardingNewChoreSheet: View {
                 .lineLimit(3...6)
                 .characterLimit(TextLimits.choreDescription, text: $draft.description)
                 .accessibilityLabel(Text(L10n.tr("Descrição")))
+                .voiceControlNames([L10n.tr("Descrição")])
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -269,7 +274,8 @@ struct OnboardingNewChoreSheet: View {
         .buttonStyle(.plain)
         .disabled(!canCreate)
         .accessibilityLabel(Text(L10n.tr("Criar tarefa")))
-        .accessibilityHint(canCreate ? Text("") : Text(L10n.tr("Dê um nome à tarefa para poder criá-la")))
+        .voiceControlNames([L10n.tr("Criar tarefa"), L10n.tr("Criar"), L10n.tr("Confirmar")])
+        .voiceOverHint(canCreate ? "" : L10n.tr("Dê um nome à tarefa para poder criá-la"))
         .padding(.horizontal, 22)
         .padding(.top, 10)
         .padding(.bottom, 8)

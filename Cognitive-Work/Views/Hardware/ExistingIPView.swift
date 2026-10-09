@@ -28,7 +28,7 @@ struct ExistingIPView: View {
             avatarView
                 .frame(width: 100, height: 100)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(L10n.tr("Imagem que será enviada ao Harvi"))
+                .voiceOverLabel(L10n.tr("Imagem que será enviada ao Harvi"))
                 .accessibilityAddTraits(.isImage)
 
             Button {
@@ -60,14 +60,16 @@ struct ExistingIPView: View {
                 }
             }
             // Label stays the same while the spinner replaces the text.
-            .accessibilityLabel(L10n.tr("Enviar imagem"))
-            .accessibilityValue(isSendingImage ? L10n.tr("Enviando") : "")
+            .voiceOverLabel(L10n.tr("Enviar imagem"))
+            .voiceOverValue(isSendingImage ? L10n.tr("Enviando") : "")
+            .voiceControlNames([L10n.tr("Enviar imagem"), L10n.tr("Enviar")])
             .disabled(isSendingImage || isResetting)
 
             Button("Desconectar este celular") {
                 viewModelHardware.disconnectThisPhone()
                 dismiss()
             }
+            .voiceControlNames([L10n.tr("Desconectar este celular"), L10n.tr("Desconectar")])
 
             Button(role: .destructive) {
                 showResetConfirmation = true
@@ -78,8 +80,9 @@ struct ExistingIPView: View {
                     Text("Resetar o Harvi")
                 }
             }
-            .accessibilityLabel(L10n.tr("Resetar o Harvi"))
-            .accessibilityValue(isResetting ? L10n.tr("Resetando") : "")
+            .voiceOverLabel(L10n.tr("Resetar o Harvi"))
+            .voiceOverValue(isResetting ? L10n.tr("Resetando") : "")
+            .voiceControlNames([L10n.tr("Resetar o Harvi"), L10n.tr("Resetar")])
             .disabled(isSendingImage || isResetting)
         }
         .confirmationDialog(

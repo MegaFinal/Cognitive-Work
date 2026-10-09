@@ -71,7 +71,8 @@ struct FortnightlyScheduleView: View {
                     }
                     .tint(.blue)
                     .buttonStyle(.glassProminent)
-                    .accessibilityLabel(L10n.tr("Confirmar escala"))
+                    .voiceOverLabel(L10n.tr("Confirmar escala"))
+                    .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("OK"), L10n.tr("Confirmar escala")])
                 }
             }
         }

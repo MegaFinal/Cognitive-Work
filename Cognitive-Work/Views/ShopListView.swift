@@ -158,6 +158,7 @@ struct ShopListView: View {
                         .padding(8)
                 }
                 .accessibilityLabel("Pendências")
+                .voiceControlNames([L10n.tr("Pendências"), L10n.tr("Dinheiro"), L10n.tr("Pagamentos")])
 
                 Menu {
                     Picker("Ordenar por", selection: $viewModel.sortOption) {
@@ -172,7 +173,8 @@ struct ShopListView: View {
                         .padding(12)
                 }
                 .accessibilityLabel("Ordenar por")
-                .accessibilityValue(viewModel.sortOption.label)
+                .voiceOverValue(viewModel.sortOption.label)
+                .voiceControlNames([L10n.tr("Ordenar"), L10n.tr("Filtro"), L10n.tr("Ordenar por")])
             }
             .glassEffect(
                 .regular.interactive(),
@@ -274,8 +276,9 @@ struct ShopListView: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityLabel(viewModel.accessibilityLabel(for: section))
-        .accessibilityValue(viewModel.accessibilityValue(for: section))
+        .voiceOverLabel(viewModel.accessibilityLabel(for: section))
+        .voiceOverValue(viewModel.accessibilityValue(for: section))
+        .voiceControlNames([section.title])
         .accessibilityAddTraits(.isHeader)
     }
 
@@ -301,7 +304,7 @@ struct ShopListView: View {
                 }
             )
         }
-        .accessibilityAction(named: L10n.tr("Editar")) {
+        .accessibilityAction(named: Text(verbatim: L10n.tr("Editar"))) {
             editingItem = item
         }
         // "Excluir" comes from SwipeToDeleteRow itself (it calls onDelete above).
@@ -324,7 +327,8 @@ struct ShopListView: View {
             in: .circle
         )
         .disabled(!viewModel.canAddItems)
-        .accessibilityLabel(L10n.tr("Adicionar item"))
+        .voiceOverLabel(L10n.tr("Adicionar item"))
+        .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Adicionar item")])
         .padding(.horizontal, 30)
         .padding(.bottom)
     }

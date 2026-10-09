@@ -44,11 +44,13 @@ struct EditableProfileImage: View {
                 .accessibilityLabel(image == nil
                                     ? L10n.tr("Adicionar foto de perfil")
                                     : L10n.tr("Alterar foto de perfil"))
-                .accessibilityValue(isLoading ? L10n.tr("Carregando foto") : "")
+                .voiceOverValue(isLoading ? L10n.tr("Carregando foto") : "")
+                // Voice Control: "Toque em Foto" instead of the full sentence.
+                .voiceControlNames([L10n.tr("Foto"), L10n.tr("Alterar foto"), L10n.tr("Foto de perfil")])
             } else {
                 profileImage
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(L10n.tr("Foto de perfil"))
+                    .voiceOverLabel(L10n.tr("Foto de perfil"))
                     .accessibilityAddTraits(.isImage)
                     .accessibilityHidden(image == nil && !isLoading)
             }
@@ -168,7 +170,8 @@ extension EditableProfileImage {
             in: .circle
         )
         .disabled(isLoading)
-        .accessibilityLabel(L10n.tr("Editar banner"))
+        .voiceOverLabel(L10n.tr("Editar banner"))
+        .voiceControlNames([L10n.tr("Editar banner"), L10n.tr("Banner"), L10n.tr("Editar")])
         .offset(x: offset, y: offset)
     }
 }

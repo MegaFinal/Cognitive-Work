@@ -26,8 +26,9 @@ struct UnassignmentList: View {
                 
                 Image(systemName: "chevron.down")
                     // Visually just a hint; for VoiceOver it closes the popup.
-                    .accessibilityLabel(L10n.tr("Fechar"))
+                    .voiceOverLabel(L10n.tr("Fechar"))
                     .accessibilityAddTraits(.isButton)
+                    .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                     .accessibilityAction {
                         carouselViewModel.dismissUnassignedList()
                     }
@@ -111,8 +112,9 @@ struct UnassignmentList: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(ScaleButtonStyle())
-        .accessibilityLabel(rowAccessibilityLabel(for: item))
-        .accessibilityHint(L10n.tr("Toque duas vezes para pegar esta tarefa."))
+        .voiceOverLabel(rowAccessibilityLabel(for: item))
+        .voiceControlNames([item.chore.localizedName, L10n.tr("Pegar %@", item.chore.localizedName)])
+        .voiceOverHint(L10n.tr("Toque duas vezes para pegar esta tarefa."))
         .glassEffect(
             .regular.tint(roomColor.opacity(0.2)),
             in: .rect(cornerRadius: 16)

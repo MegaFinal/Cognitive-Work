@@ -91,7 +91,8 @@ struct CreateOrEnterHouseOnboardingView: View {
             .contentShape(.rect(cornerRadius: 24))
             .disabled(isBusy)
             .accessibilityLabel(Text(L10n.tr("Criar uma casa")))
-            .accessibilityValue(isCreatingHouse ? Text(L10n.tr("Carregando")) : Text(""))
+            .voiceControlNames([L10n.tr("Criar uma casa"), L10n.tr("Criar casa"), L10n.tr("Criar")])
+            .voiceOverValue(isCreatingHouse ? L10n.tr("Carregando") : "")
             .accessibilityHint(Text(L10n.tr("Você será o administrador")))
             
             Button {
@@ -142,7 +143,8 @@ struct CreateOrEnterHouseOnboardingView: View {
             .contentShape(.rect(cornerRadius: 24))
             .disabled(isBusy)
             .accessibilityLabel(Text(L10n.tr("Entrar em uma casa")))
-            .accessibilityValue(isEnteringHouse ? Text(L10n.tr("Entrando na casa")) : Text(""))
+            .voiceControlNames([L10n.tr("Entrar em uma casa"), L10n.tr("Entrar na casa"), L10n.tr("Entrar")])
+            .voiceOverValue(isEnteringHouse ? L10n.tr("Entrando na casa") : "")
             .accessibilityHint(Text(L10n.tr("A casa já foi criada por outro morador")))
             
             Spacer()

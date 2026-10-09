@@ -56,8 +56,10 @@ struct PurchasePricePopUp: View {
                     .font(.system(size: 32, weight: .bold))
                     .priceInput(text: $text)
                     .focused($isFocused)
-                    .accessibilityLabel(L10n.tr("Preço por unidade"))
-                    .accessibilityValue(ShopListViewModel.accessibilityPrice(text))
+                    .voiceOverLabel(L10n.tr("Preço por unidade"))
+                    .voiceOverValue(ShopListViewModel.accessibilityPrice(text))
+                    // Voice Control: "Toque em Preço", then dictate the value.
+                    .voiceControlNames([L10n.tr("Preço"), L10n.tr("Preço por unidade"), L10n.tr("Valor")])
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
@@ -114,6 +116,7 @@ struct PurchasePricePopUp: View {
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive(), in: .capsule)
             .accessibilityLabel("Cancelar")
+            .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
 
             Spacer()
 
@@ -130,6 +133,7 @@ struct PurchasePricePopUp: View {
             .disabled(!isValid)
             .opacity(isValid ? 1 : 0.4)
             .accessibilityLabel("Confirmar")
+            .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
         }
         .padding(.top, 5)
     }

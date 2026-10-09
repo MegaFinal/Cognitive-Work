@@ -77,6 +77,19 @@ extension ShopListViewModel {
         )
     }
 
+    // MARK: - Voice Control
+
+    /// Speakable names for an item card, whose activation checks it off: the name shown on the
+    /// card first, then "Comprar Arroz" / "Marcar Arroz" ("Desmarcar Arroz" once bought).
+    static func voiceControlInputLabels(for item: ShopListItem) -> [String] {
+        let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return [L10n.tr("Item")] }
+        if item.isBought {
+            return [name, L10n.tr("Desmarcar %@", name)]
+        }
+        return [name, L10n.tr("Comprar %@", name), L10n.tr("Marcar %@", name)]
+    }
+
     // MARK: - Actions that announce their result
 
     /// ``toggleBought(_:)``, then says "Item comprado" / "Item devolvido à lista" when the item

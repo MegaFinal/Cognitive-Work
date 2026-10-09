@@ -72,6 +72,7 @@ struct WaitAcceptLinkOnboardingView: View {
                         Label("Pedir o convite por mensagem", systemImage: "square.and.arrow.up")
                             .fontWeight(.semibold)
                     }
+                    .voiceControlNames([L10n.tr("Pedir o convite por mensagem"), L10n.tr("Pedir convite"), L10n.tr("Compartilhar")])
                     .controlSize(.large)
                     .buttonStyle(.glassProminent)
                     .tint(.blue)
@@ -120,6 +121,7 @@ struct WaitAcceptLinkOnboardingView: View {
                     }
                     .disabled(isEnteringHouse)
                     .accessibilityLabel(Text(L10n.tr("Voltar")))
+                    .voiceControlNames([L10n.tr("Voltar")])
                 }
             }
         }

@@ -39,7 +39,7 @@ struct DebtBalanceCard: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
                 .contentTransition(.numericText())
-                .accessibilityLabel(accessibilityAmount ?? amountText)
+                .voiceOverLabel(accessibilityAmount ?? amountText)
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)

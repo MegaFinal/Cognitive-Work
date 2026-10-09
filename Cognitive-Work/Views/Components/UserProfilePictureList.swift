@@ -22,7 +22,7 @@ struct UserProfilePictureList: View {
         }
         // Read as "Fulano, Ciclano e mais 2" instead of one stop per avatar.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(ProfileAccessibility.memberList(users.map(\.name)))
+        .voiceOverLabel(ProfileAccessibility.memberList(users.map(\.name)))
         .accessibilityHidden(users.isEmpty)
     }
 }

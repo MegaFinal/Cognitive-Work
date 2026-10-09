@@ -141,6 +141,7 @@ struct SelectFreeTimeOnboardingView: View {
                     }
                     .disabled(true)
                     .accessibilityLabel(Text(L10n.tr("Voltar")))
+                    .voiceControlNames([L10n.tr("Voltar")])
                 }
             }
         }
@@ -261,6 +262,20 @@ private struct OnboardingCustomSliderComponent: View {
             case .decrement: selectedFreeTimeLevel = max(0, selectedFreeTimeLevel - 1)
             @unknown default: break
             }
+        }
+        // Voice Control: "Mostrar ações para Segunda-feira" → "Aumentar"/"Diminuir", since it
+        // can't swipe-adjust. The visible abbreviation ("Seg") comes first.
+        .voiceControlNames([
+            L10n.tr(dayOfWeek.nameAbbreviation),
+            L10n.tr(dayOfWeek.name.trimmingCharacters(in: .whitespaces))
+        ])
+        .accessibilityAction(named: Text(L10n.tr("Aumentar"))) {
+            guard !isLoading else { return }
+            selectedFreeTimeLevel = min(6, selectedFreeTimeLevel + 1)
+        }
+        .accessibilityAction(named: Text(L10n.tr("Diminuir"))) {
+            guard !isLoading else { return }
+            selectedFreeTimeLevel = max(0, selectedFreeTimeLevel - 1)
         }
         .onChange(of: selectedFreeTimeLevel) { _, newValue in
             withAnimation(.easeInOut(duration: 0.1)) {

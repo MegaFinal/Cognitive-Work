@@ -171,7 +171,7 @@ struct UserScheduleCard: View {
         // VoiceOver walks the days in order: each weekday reads its full date, then its bars
         // as buttons that open the chore popover.
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(chartAccessibilityLabel)
+        .voiceOverLabel(chartAccessibilityLabel)
     }
     
     /// "Gráfico da sua divisão, 12 tarefas em 14 dias".
@@ -212,7 +212,7 @@ private struct ScheduleDayColumn: View {
             Text(weekdayText)
                 .font(.system(size: 16.35, weight: .medium))
                 .frame(height: UserScheduleCard.weekdayLabelHeight)
-                .accessibilityLabel(ChartA11y.weekdayDayMonth(day))
+                .voiceOverLabel(ChartA11y.weekdayDayMonth(day))
                 .accessibilityValue(
                     entries.isEmpty
                         ? L10n.tr("Sem tarefas")
@@ -306,10 +306,15 @@ private struct ScheduleDayColumn: View {
             )
         )
         .accessibilityAddTraits(.isButton)
-        .accessibilityHint(L10n.tr("Mostra os detalhes da tarefa"))
+        .voiceOverHint(L10n.tr("Mostra os detalhes da tarefa"))
         .accessibilityAction {
             selectedEntry = (selectedEntry == entry) ? nil : entry
         }
+        // Voice Control: "Toque em Lavar a louça" (or the room) instead of the full sentence.
+        .voiceControlNames([
+            resolvedChore?.localizedName ?? entry.choreName.localizedDefault,
+            resolvedRoom?.name.localizedDefault
+        ].compactMap { $0 })
         .popover(
             isPresented: isPresented(entry),
             attachmentAnchor: .rect(.bounds),
@@ -321,6 +326,12 @@ private struct ScheduleDayColumn: View {
                     // Keeps a real popover on iPhone instead of a sheet.
                     .presentationCompactAdaptation(.none)
                     .presentationBackground(.white)
+                    // Voice Control can't tap outside the popover: "Toque em Fechar" closes it.
+                    .accessibilityAddTraits(.isButton)
+                    .voiceControlNames([resolvedChore.localizedName, L10n.tr("Fechar")])
+                    .voiceOverHint(L10n.tr("Fecha os detalhes da tarefa"))
+                    .accessibilityAction { selectedEntry = nil }
+                    .accessibilityAction(.escape) { selectedEntry = nil }
             }
         }
     }

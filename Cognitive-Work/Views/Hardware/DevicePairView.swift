@@ -43,6 +43,7 @@ struct DevicePairView: View {
                     hardwareViewModel.disconnectThisPhone()
                     disconectThisPhone = true
                 }
+                .voiceControlNames([L10n.tr("Desconectar este celular"), L10n.tr("Desconectar")])
                 .padding(.bottom, 100)
             }
             .padding(.horizontal, 16)

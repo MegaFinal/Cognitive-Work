@@ -51,6 +51,14 @@ struct RetroView: View {
                     }
                 }
         }
+        // Voice Control has no escape gesture: an invisible, touch-transparent "Fechar"
+        // element in the top corner lets the user say "Toque em Fechar".
+        .overlay(alignment: .topTrailing) {
+            DashboardVoiceControlButton(
+                labels: [L10n.tr("Fechar"), L10n.tr("Sair")],
+                action: { dismissRetro() }
+            )
+        }
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) { dismissRetro() }
         // Each step swaps the whole content: let VoiceOver re-read it from the top.
@@ -63,6 +71,9 @@ struct RetroView: View {
 struct PageIndicator: View {
     let count: Int
     @Binding var current: Int
+    /// VoiceOver pages with the adjustable action; everyone else (Voice Control) gets
+    /// the invisible "Anterior" / "Próxima" elements next to the dots.
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     var body: some View {
         HStack(spacing: 8) {
@@ -76,8 +87,8 @@ struct PageIndicator: View {
         .animation(.spring(duration: 0.3), value: current)
         // One adjustable element: swipe up/down to change page.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.tr("Página"))
-        .accessibilityValue(L10n.tr("%lld de %lld", current + 1, count))
+        .voiceOverLabel(L10n.tr("Página"))
+        .voiceOverValue(L10n.tr("%lld de %lld", current + 1, count))
         .accessibilityAdjustableAction { direction in
             switch direction {
             case .increment:
@@ -88,6 +99,49 @@ struct PageIndicator: View {
                 break
             }
         }
+        .voiceControlNames([L10n.tr("Página")])
+        .accessibilityActions {
+            Button(L10n.tr("Próxima")) { if current < count - 1 { current += 1 } }
+            Button(L10n.tr("Anterior")) { if current > 0 { current -= 1 } }
+        }
+        // Voice Control can't use adjustable actions: "Toque em Próxima" / "Toque em Anterior".
+        .overlay(alignment: .leading) {
+            if !voiceOverEnabled && current > 0 {
+                DashboardVoiceControlButton(
+                    labels: [L10n.tr("Anterior"), L10n.tr("Voltar")],
+                    action: { current -= 1 }
+                )
+                .offset(x: -32)
+            }
+        }
+        .overlay(alignment: .trailing) {
+            if !voiceOverEnabled && current < count - 1 {
+                DashboardVoiceControlButton(
+                    labels: [L10n.tr("Próxima"), L10n.tr("Avançar")],
+                    action: { current += 1 }
+                )
+                .offset(x: 32)
+            }
+        }
+    }
+}
+
+/// An invisible element that only exists for Voice Control (and VoiceOver) to activate by
+/// name. It draws nothing and lets touches through, so the visual design is unchanged.
+struct DashboardVoiceControlButton: View {
+    /// Spoken names; the first is also the accessibility label.
+    let labels: [String]
+    let action: () -> Void
+
+    var body: some View {
+        Color.clear
+            .frame(width: 28, height: 28)
+            .allowsHitTesting(false)
+            .accessibilityElement()
+            .voiceOverLabel(labels.first ?? "")
+            .voiceControlNames(labels)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { action() }
     }
 }
 
@@ -163,7 +217,7 @@ private struct RetroPercentageOfDoneView: View {
                     .bold()
                     .font(.system(size: 64))
                     .padding(.bottom, height * 0.03)
-                    .accessibilityLabel(L10n.tr("%@ das tarefas concluídas", ChartA11y.percent(percentage / 100)))
+                    .voiceOverLabel(L10n.tr("%@ das tarefas concluídas", ChartA11y.percent(percentage / 100)))
                     .accessibilityAddTraits(.isHeader)
                 
                 Text("Você realizou 0 de 20 \n tarefas da sua escala")
@@ -205,6 +259,7 @@ private struct RetroPercentageOfDoneView: View {
                         .fontWeight(.medium)
                         .font(.system(size: 17))
                 }
+                .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próxima")])
                 .buttonStyle(.glassProminent)
                 .glassEffectTransition(.identity)
             }
@@ -268,6 +323,7 @@ private struct RetroStreakView: View {
                     .fontWeight(.medium)
                     .font(.system(size: 17))
             }
+            .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próxima")])
             .buttonStyle(.glassProminent)
             .glassEffectTransition(.identity)
         }
@@ -330,6 +386,7 @@ private struct RetroPointsView: View {
                     .fontWeight(.medium)
                     .font(.system(size: 17))
             }
+            .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próxima")])
             .buttonStyle(.glassProminent)
             .glassEffectTransition(.identity)
         }
@@ -403,15 +460,15 @@ struct RetroRoomsView: View {
                             .padding(.bottom, 0.02)
                             // One element per room: "Cozinha, 8 tarefas".
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel(item.roomName.localizedDefault)
-                            .accessibilityValue(L10n.tr("%lld tarefas", item.numOfChores))
+                            .voiceOverLabel(item.roomName.localizedDefault)
+                            .voiceOverValue(L10n.tr("%lld tarefas", item.numOfChores))
                     }
                 }
                 Spacer()
             }
             .padding(.horizontal, width * 0.061)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(L10n.tr("Tarefas por cômodo"))
+            .voiceOverLabel(L10n.tr("Tarefas por cômodo"))
             .accessibilityChartDescriptor(roomsChartDescriptor)
             
             Spacer()

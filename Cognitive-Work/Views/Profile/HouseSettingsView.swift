@@ -44,6 +44,7 @@ struct HouseSettingsView: View {
                         .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Adicionar moradores"), L10n.tr("Convidar"), L10n.tr("Moradores")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
@@ -58,13 +59,14 @@ struct HouseSettingsView: View {
                         .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Cômodos")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
             if isCheckingAdmin {
                 ProgressView()
                     .frame(maxWidth: .infinity)
-                    .accessibilityLabel(L10n.tr("Verificando permissões"))
+                    .voiceOverLabel(L10n.tr("Verificando permissões"))
             }
             
             // MARK: - Reset chores assignments
@@ -81,6 +83,7 @@ struct HouseSettingsView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .voiceControlNames([L10n.tr("Reiniciar divisão de tarefas"), L10n.tr("Reiniciar divisão"), L10n.tr("Reiniciar")])
                 .padding(.horizontal)
             }
             
@@ -94,6 +97,7 @@ struct HouseSettingsView: View {
                     Text("Excluir Casa")
                         .fontWeight(.semibold)
                 }
+                .voiceControlNames([L10n.tr("Excluir Casa"), L10n.tr("Excluir"), L10n.tr("Apagar")])
                 .foregroundColor(.red)
             } else if !isCheckingAdmin {
                 // MARK: - Leave house button
@@ -104,6 +108,7 @@ struct HouseSettingsView: View {
                     Text("Sair da Casa")
                         .fontWeight(.semibold)
                 }
+                .voiceControlNames([L10n.tr("Sair da Casa"), L10n.tr("Sair")])
                 .foregroundColor(.red)
             }
         }

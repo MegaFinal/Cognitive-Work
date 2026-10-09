@@ -62,6 +62,7 @@ struct CreateProfileOnboardingView: View {
                 .submitLabel(.done)
                 .padding(.top, 52)
                 .accessibilityLabel(Text(L10n.tr("Nome")))
+                .voiceControlNames([L10n.tr("Nome"), L10n.tr("Seu nome")])
                 .accessibilityHint(Text(L10n.tr("Como os outros moradores vão te ver no app")))
             
             Spacer(minLength: 16)

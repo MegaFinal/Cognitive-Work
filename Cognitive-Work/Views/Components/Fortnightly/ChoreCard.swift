@@ -35,7 +35,7 @@ struct ChoreCard: View {
         .shadow(color: .black.opacity(0.32), radius: 5.8, x: 4, y: 6)
         // One sentence instead of icon, avatar and tags read separately.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText)
+        .voiceOverLabel(accessibilityText)
     }
     
     /// "Cozinha: Lavar a louça. Responsável: Ana, prioridade alta, duração curta".

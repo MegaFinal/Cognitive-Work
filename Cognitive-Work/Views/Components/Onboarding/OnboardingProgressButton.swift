@@ -40,6 +40,15 @@ struct OnboardingProgressButton: View {
         }
     }
 
+    /// Voice Control names: the visible text first; icon-only buttons get short words to say.
+    private var inputLabels: [String] {
+        guard isSystemImage else { return [L10n.tr(text)] }
+        switch text {
+        case "checkmark": return [L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")]
+        default: return [L10n.tr("Continuar"), L10n.tr("Próximo"), L10n.tr("Avançar")]
+        }
+    }
+
     var body: some View {
         Button {
             Task {
@@ -69,7 +78,8 @@ struct OnboardingProgressButton: View {
         }
         .disabled(isLoading || isDisabled)
         .accessibilityLabel(Text(accessibilityText))
-        .accessibilityValue(isLoading ? Text(L10n.tr("Carregando")) : Text(""))
+        .voiceControlNames(inputLabels)
+        .voiceOverValue(isLoading ? L10n.tr("Carregando") : "")
     }
 }
 

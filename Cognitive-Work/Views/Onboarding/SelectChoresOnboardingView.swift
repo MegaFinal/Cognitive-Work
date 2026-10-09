@@ -287,9 +287,10 @@ private struct RoomCapsule: View {
         .buttonStyle(.plain)
         .animation(.snappy(duration: 0.25), value: selectedCount)
         .accessibilityLabel(Text(room.name.localizedDefault))
-        .accessibilityValue(selectedCount > 0 ? Text(L10n.tr("%lld tarefas marcadas", selectedCount)) : Text(""))
-        .accessibilityHint(isSelected ? Text("") : Text(L10n.tr("Mostra as tarefas deste cômodo")))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .voiceControlNames([room.name.localizedDefault])
+        .voiceOverValue(selectedCount > 0 ? L10n.tr("%lld tarefas marcadas", selectedCount) : "")
+        .voiceOverHint(isSelected ? "" : L10n.tr("Mostra as tarefas deste cômodo"))
+        .voiceOverTraits(.isSelected, when: isSelected)
     }
 }
 
@@ -321,6 +322,7 @@ private struct NewChoreRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(L10n.tr("Nova tarefa")))
+        .voiceControlNames([L10n.tr("Nova tarefa"), L10n.tr("Adicionar tarefa"), L10n.tr("Adicionar")])
         .accessibilityHint(Text(L10n.tr("Cria uma tarefa que não está na lista")))
     }
 }
@@ -359,7 +361,8 @@ private struct ChoreSelectionRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(chore.localizedName))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .voiceControlNames([chore.localizedName])
+        .voiceOverTraits(.isSelected, when: isSelected)
     }
 }
 

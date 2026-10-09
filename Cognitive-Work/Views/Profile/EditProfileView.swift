@@ -44,7 +44,9 @@ struct EditProfileView: View {
                 .submitLabel(.done)
                 .disabled(viewModel.isSaving)
                 // The title is empty (only a placeholder), so name the field explicitly.
-                .accessibilityLabel(L10n.tr("Nome"))
+                .voiceOverLabel(L10n.tr("Nome"))
+                // Voice Control: the visible placeholder first ("Toque em Seu Nome").
+                .voiceControlNames([L10n.tr("Seu Nome"), L10n.tr("Nome")])
                 Spacer()
             }
             
@@ -104,7 +106,8 @@ struct EditProfileView: View {
                 .tint(Color.blue)
                 .buttonStyle(.glassProminent)
                 .disabled(!viewModel.canSave)
-                .accessibilityLabel(L10n.tr("Salvar"))
+                .voiceOverLabel(L10n.tr("Salvar"))
+                .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
             }
         }
         .hidesTabBar()

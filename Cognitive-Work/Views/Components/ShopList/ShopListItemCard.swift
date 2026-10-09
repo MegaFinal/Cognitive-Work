@@ -59,9 +59,12 @@ struct ShopListItemCard: View {
         // One VoiceOver element for the whole card; activating it checks the item off (the
         // parent adds "Editar" and "Excluir" as named actions).
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(ShopListViewModel.accessibilityLabel(for: item, relatedUsers: relatedUsers))
-        .accessibilityHint(ShopListViewModel.accessibilityToggleName(for: item))
+        .voiceOverLabel(ShopListViewModel.accessibilityLabel(for: item, relatedUsers: relatedUsers))
+        .voiceOverHint(ShopListViewModel.accessibilityToggleName(for: item))
         .accessibilityAddTraits(.isButton)
+        // Voice Control: "Toque em Arroz" / "Toque em Comprar Arroz"; "Editar" and "Excluir"
+        // via "Mostrar ações para Arroz".
+        .voiceControlNames(ShopListViewModel.voiceControlInputLabels(for: item))
         .accessibilityAction {
             toggle()
         }
@@ -113,7 +116,7 @@ struct ShopListItemCard: View {
         }
         .buttonStyle(.plain)
         .disabled(isToggling)
-        .accessibilityLabel(item.isBought ? "Marcar como não comprado" : "Marcar como comprado")
+        .voiceOverLabel(item.isBought ? L10n.tr("Marcar como não comprado") : L10n.tr("Marcar como comprado"))
     }
 
     /// Checks the item off (or puts it back), from the button or from VoiceOver.

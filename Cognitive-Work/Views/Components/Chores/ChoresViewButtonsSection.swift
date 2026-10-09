@@ -33,9 +33,10 @@ struct ChoresViewButtonsSection: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(L10n.tr("Tarefas para pegar"))
-            .accessibilityHint(L10n.tr("Mostra as tarefas sem responsável."))
-            .accessibilityValue(carouselViewModel.isShowingUnassignedList ? L10n.tr("expandido") : L10n.tr("recolhido"))
+            .voiceOverLabel(L10n.tr("Tarefas para pegar"))
+            .voiceControlNames([L10n.tr("Tarefas para pegar"), L10n.tr("Pegar tarefa"), L10n.tr("Tarefas sem responsável")])
+            .voiceOverHint(L10n.tr("Mostra as tarefas sem responsável."))
+            .voiceOverValue(carouselViewModel.isShowingUnassignedList ? L10n.tr("expandido") : L10n.tr("recolhido"))
             .glassEffect(
                 .regular.interactive(),
                 in: .circle
@@ -52,7 +53,8 @@ struct ChoresViewButtonsSection: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(L10n.tr("Nova tarefa"))
+            .voiceOverLabel(L10n.tr("Nova tarefa"))
+            .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Nova tarefa"), L10n.tr("Adicionar tarefa")])
             .glassEffect(
                 .regular.interactive().tint(.black),
                 in: .circle

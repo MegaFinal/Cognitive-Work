@@ -162,8 +162,10 @@ struct ChoreCardListStyle: View {
         // MARK: - VoiceOver
         // One element; the completion button becomes a named action.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(carouselViewModel.accessibilitySummary(for: chore, assignment: recurrentAssignment))
-        .accessibilityHint(L10n.tr("Toque duas vezes para ver os detalhes."))
+        .voiceOverLabel(carouselViewModel.accessibilitySummary(for: chore, assignment: recurrentAssignment))
+        // Voice Control: "Toque em <tarefa>"; the completion circle via "Mostrar ações para <tarefa>".
+        .voiceControlNames(carouselViewModel.voiceControlInputLabels(for: chore))
+        .voiceOverHint(L10n.tr("Toque duas vezes para ver os detalhes."))
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onTap() }
         .accessibilityAction(named: Text(isOccurrenceDone ? L10n.tr("Marcar como pendente") : L10n.tr("Marcar como concluída"))) {

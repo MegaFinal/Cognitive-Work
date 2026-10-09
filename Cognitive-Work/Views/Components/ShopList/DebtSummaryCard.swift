@@ -63,8 +63,9 @@ struct DebtSummaryCard: View {
         .buttonStyle(.plain)
         .animation(.snappy, value: isSelected)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityText ?? "\(title), \(amount.currency)\(amount.whole)\(amount.cents)")
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .voiceOverLabel(accessibilityText ?? "\(title), \(amount.currency)\(amount.whole)\(amount.cents)")
+        .voiceOverTraits(.isSelected, when: isSelected)
+        .voiceControlNames([title])
     }
 }
 

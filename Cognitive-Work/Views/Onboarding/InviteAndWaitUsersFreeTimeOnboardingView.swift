@@ -113,7 +113,8 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                         .buttonBorderShape(.circle)
                         .controlSize(.large)
                         .disabled(!pendingUsers.isEmpty)
-                        .accessibilityHint(pendingUsers.isEmpty ? Text("") : Text(L10n.tr("Disponível quando todos os moradores terminarem a configuração")))
+                        .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próximo"), L10n.tr("Avançar")])
+                        .voiceOverHint(pendingUsers.isEmpty ? "" : L10n.tr("Disponível quando todos os moradores terminarem a configuração"))
                     }
                     Spacer()
                 }
@@ -205,6 +206,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                     Text("Compartilhar Convite")
                 }
             }
+            .voiceControlNames([L10n.tr("Compartilhar Convite"), L10n.tr("Compartilhar"), L10n.tr("Convidar")])
         } else if didFailToPrepareInvite && !resolveShare {
             Button {
                 Task { await prepareInvite() }
@@ -213,6 +215,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                     Label("Tentar novamente", systemImage: "arrow.clockwise")
                 }
             }
+            .voiceControlNames([L10n.tr("Tentar novamente"), L10n.tr("Recarregar")])
         } else {
             inviteCapsule(color: .gray) {
                 ProgressView()

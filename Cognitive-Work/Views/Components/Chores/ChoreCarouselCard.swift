@@ -49,6 +49,7 @@ struct ChoreCarouselCard: View {
             for: chore,
             assignment: carouselViewModel.getAssignmentsForActiveContext(for: chore).first
         ))
+        .voiceControlNames(carouselViewModel.voiceControlInputLabels(for: chore))
     }
     
     /// The carousel card is bigger than the onboarding ones, so its texture needs less zoom.

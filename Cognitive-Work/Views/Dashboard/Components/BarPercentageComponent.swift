@@ -90,7 +90,7 @@ struct BarPercentageComponent: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Tarefas sem dono")
                         .font(.title2.bold())
-                        .accessibilityLabel(L10n.tr("%lld tarefas sem dono", viewModel.unownedPublicCount))
+                        .voiceOverLabel(L10n.tr("%lld tarefas sem dono", viewModel.unownedPublicCount))
                         .accessibilityAddTraits(.isHeader)
                     
                     Text("O trabalho de notar, lembrar e distribuir tarefas também faz parte da organização da casa")
@@ -105,8 +105,8 @@ struct BarPercentageComponent: View {
                 }
                 .frame(height: height * 0.05)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(L10n.tr("Gráfico de tarefas sem dono"))
-                .accessibilityValue(viewModel.unownedAccessibilityValue)
+                .voiceOverLabel(L10n.tr("Gráfico de tarefas sem dono"))
+                .voiceOverValue(viewModel.unownedAccessibilityValue)
             }
             
             HStack(spacing: 16) {
@@ -183,8 +183,8 @@ struct BarPercentageComponent: View {
         // One element for the number and the bar below it:
         // "Sua parte do esforço mental da casa esta semana: 40%, ideal 50%, abaixo do ideal".
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.tr("Sua parte do esforço mental da casa esta semana"))
-        .accessibilityValue(viewModel.cognitiveShareAccessibilityValue)
+        .voiceOverLabel(L10n.tr("Sua parte do esforço mental da casa esta semana"))
+        .voiceOverValue(viewModel.cognitiveShareAccessibilityValue)
     }
     
     // MARK: - Expected contribution average as separate positioned views

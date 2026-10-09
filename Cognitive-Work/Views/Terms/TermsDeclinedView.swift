@@ -64,6 +64,7 @@ struct TermsDeclinedView: View {
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
+            .voiceControlNames([L10n.tr("Rever os Termos de Uso"), L10n.tr("Rever termos"), L10n.tr("Termos")])
             .glassEffect(.regular.interactive().tint(.black), in: .capsule)
         }
         .padding(.horizontal, 32)

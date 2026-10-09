@@ -35,17 +35,28 @@ struct WifiCredentialsView: View {
                         Button("Já enviei o WiFi, ir para o pareamento") {
                             viewModel.navigateToParingView = true
                         }
+                        .voiceControlNames([
+                            L10n.tr("Já enviei o WiFi, ir para o pareamento"),
+                            L10n.tr("Pareamento"),
+                            L10n.tr("Ir para o pareamento")
+                        ])
                         .font(.callout)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 8)
                     } else {
-                        LabeledInput(title: "Nome do Wi-Fi") {
+                        LabeledInput(
+                            title: "Nome do Wi-Fi",
+                            spokenAlternatives: [L10n.tr("Nome da rede"), L10n.tr("Rede")]
+                        ) {
                             TextField("", text: $viewModel.userWifiName)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .characterLimit(TextLimits.wifiName, text: $viewModel.userWifiName)
                         }
-                        LabeledInput(title: "Senha do Wi-Fi") {
+                        LabeledInput(
+                            title: "Senha do Wi-Fi",
+                            spokenAlternatives: [L10n.tr("Senha")]
+                        ) {
                             SecureField("", text: $viewModel.userWifiPassord)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
@@ -61,16 +72,19 @@ struct WifiCredentialsView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) { dismiss() }
+                        .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if viewModel.isSending {
                         ProgressView()
-                            .accessibilityLabel(L10n.tr("Enviando dados do WiFi"))
+                            .voiceOverLabel(L10n.tr("Enviando dados do WiFi"))
                     } else {
                         Button("Continuar", systemImage: "chevron.right") {
                             Task { await viewModel.sendWifiCredentials() }
                         }
                         .buttonStyle(.glassProminent)
+                        // Icon-only in the toolbar: "Toque em Continuar" / "Enviar".
+                        .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Enviar"), L10n.tr("Conectar")])
                         .disabled(!canSubmit)
                     }
                 }
@@ -90,7 +104,18 @@ struct WifiCredentialsView: View {
 
 struct LabeledInput<Content: View>: View {
     let title: LocalizedStringKey
+    /// Extra Voice Control names after the visible title ("Toque em Senha").
+    var spokenAlternatives: [String] = []
     @ViewBuilder var content: () -> Content
+
+    /// Voice Control names: the visible title first, then the alternatives.
+    private var inputLabelTexts: [Text] {
+        var texts: [Text] = [Text(title)]
+        for name in spokenAlternatives {
+            texts.append(Text(verbatim: name))
+        }
+        return texts
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -102,6 +127,8 @@ struct LabeledInput<Content: View>: View {
             
             content()
                 .accessibilityLabel(Text(title))
+                // Voice Control: the visible title first, then shorter alternatives.
+                .accessibilityInputLabels(inputLabelTexts)
                 .padding(.horizontal, 16)
                 .frame(height: 48)
                 .background(Color(.secondarySystemGroupedBackground),

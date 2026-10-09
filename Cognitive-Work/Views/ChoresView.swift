@@ -278,7 +278,10 @@ struct ChoresView: View {
                         .foregroundColor(.black)
                         .padding(8)
                 }
-                .accessibilityLabel(carouselVM.layoutMode == .grid ? L10n.tr("Ver como lista") : L10n.tr("Ver como carrossel"))
+                .voiceOverLabel(carouselVM.layoutMode == .grid ? L10n.tr("Ver como lista") : L10n.tr("Ver como carrossel"))
+                .voiceControlNames(carouselVM.layoutMode == .grid
+                    ? [L10n.tr("Lista"), L10n.tr("Ver como lista"), L10n.tr("Layout")]
+                    : [L10n.tr("Carrossel"), L10n.tr("Ver como carrossel"), L10n.tr("Layout")])
                 
                 NavigationLink {
                     NotificationsView(
@@ -297,7 +300,8 @@ struct ChoresView: View {
                         .foregroundColor(.black)
                         .padding(8)
                 }
-                .accessibilityLabel(L10n.tr("Notificações"))
+                .voiceOverLabel(L10n.tr("Notificações"))
+                .voiceControlNames([L10n.tr("Notificações"), L10n.tr("Avisos")])
                 
                 if carouselVM.layoutMode == .list {
                     Menu {
@@ -310,8 +314,9 @@ struct ChoresView: View {
                             .foregroundColor(.black)
                             .padding(12)
                     }
-                    .accessibilityLabel(L10n.tr("Filtrar e ordenar"))
-                    .accessibilityValue(carouselVM.isFilterOn ? L10n.tr("Filtro ativo") : "")
+                    .voiceOverLabel(L10n.tr("Filtrar e ordenar"))
+                    .voiceOverValue(carouselVM.isFilterOn ? L10n.tr("Filtro ativo") : "")
+                    .voiceControlNames([L10n.tr("Filtro"), L10n.tr("Ordenar"), L10n.tr("Filtrar e ordenar")])
                 }
             }
             .glassEffect(
@@ -350,7 +355,7 @@ struct ChoresView: View {
         .padding(.horizontal, 30)
         .animation(.easeInOut, value: activeRoomColor)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(L10n.tr("Progresso do dia"))
+        .voiceOverLabel(L10n.tr("Progresso do dia"))
     }
     
     // MARK: - Actions

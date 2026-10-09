@@ -59,8 +59,10 @@ struct CopyButtonView: View {
         .buttonStyle(.plain)
         .disabled(textToCopy == nil)
         .opacity(textToCopy == nil ? Self.disabledOpacity : 1)
-        .accessibilityLabel(textToCopy == nil ? L10n.tr("Nenhum link ainda") : L10n.tr("Copiar"))
-        .accessibilityValue(isCopied ? L10n.tr("Copiado") : (textToCopy ?? ""))
+        .voiceOverLabel(textToCopy == nil ? L10n.tr("Nenhum link ainda") : L10n.tr("Copiar"))
+        .voiceOverValue(isCopied ? L10n.tr("Copiado") : (textToCopy ?? ""))
+        // Voice Control: the visible text is a URL nobody can say, so offer short words instead.
+        .voiceControlNames([L10n.tr("Copiar"), L10n.tr("Copiar link"), L10n.tr("Compartilhar")])
     }
 
     // MARK: - Actions

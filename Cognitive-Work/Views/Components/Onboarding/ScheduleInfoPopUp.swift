@@ -34,6 +34,7 @@ struct ScheduleInfoPopUp: View {
                         )
                 }
                 .accessibilityLabel(Text(L10n.tr("Fechar")))
+                .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
             }
             .padding(.top, 5)
             
@@ -123,6 +124,7 @@ struct ScheduleInfoPopUp: View {
                         in: .capsule
                     )
             }
+            .voiceControlNames([L10n.tr("Ver minha escala"), L10n.tr("Ver escala"), L10n.tr("Escala")])
             .padding(.top, 15)
         }
         .padding(.vertical, 18)

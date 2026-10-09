@@ -31,15 +31,17 @@ struct CheckListCreateAndEdit: View {
                             .foregroundColor(item.isDone ? .black : .gray)
                             .font(.system(size: 17, weight: .semibold))
                     }
-                    .accessibilityLabel(accessibilityName(of: item))
-                    .accessibilityValue(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
-                    .accessibilityHint(L10n.tr("Toque duas vezes para alternar."))
+                    .voiceOverLabel(accessibilityName(of: item))
+                    .voiceOverValue(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
+                    .voiceOverHint(L10n.tr("Toque duas vezes para alternar."))
+                    .voiceControlNames([L10n.tr("Marcar %@", accessibilityName(of: item)), L10n.tr("Concluir %@", accessibilityName(of: item))])
                     
                     TextField("Novo item", text: $item.name)
                         .strikethrough(item.isDone, color: .gray)
                         .foregroundColor(item.isDone ? .gray : .black)
                         .font(.system(size: 15))
                         .characterLimit(TextLimits.checklistItem, text: $item.name)
+                        .voiceControlNames([accessibilityName(of: item), L10n.tr("Item")])
                         .focused($focusedItemID, equals: item.id)
                         .submitLabel(.next)
                         .onSubmit {
@@ -54,7 +56,8 @@ struct CheckListCreateAndEdit: View {
                         Image(systemName: "minus.circle.fill")
                             .foregroundColor(.red)
                     }
-                    .accessibilityLabel(L10n.tr("Remover %@", accessibilityName(of: item)))
+                    .voiceOverLabel(L10n.tr("Remover %@", accessibilityName(of: item)))
+                    .voiceControlNames([L10n.tr("Remover"), L10n.tr("Remover %@", accessibilityName(of: item)), L10n.tr("Menos")])
                 }
             }
             Button {
@@ -68,7 +71,8 @@ struct CheckListCreateAndEdit: View {
                 .foregroundColor(.blue)
                 .padding(.top, 5)
             }
-            .accessibilityLabel(L10n.tr("Adicionar item"))
+            .voiceOverLabel(L10n.tr("Adicionar item"))
+            .voiceControlNames([L10n.tr("Adicionar item"), L10n.tr("Adicionar"), L10n.tr("Mais")])
         }
     }
     
