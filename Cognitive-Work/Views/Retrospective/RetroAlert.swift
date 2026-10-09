@@ -11,12 +11,15 @@ struct RetroView: View {
     @State var isExpanded: Bool = false
     @State var isRetroDone: Bool = false
     @State var page = 0
+    /// Closes the presenting fullScreenCover; used by VoiceOver's escape gesture.
+    @Environment(\.dismiss) private var dismissRetro
     var body: some View {
         ZStack {
             Color.black.opacity(0.45)
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture { }
+                .accessibilityDecorative()
             
             RoundedRectangle(cornerRadius: 32)
                 .frame(width: isExpanded ? .infinity : width * 0.87, height: isExpanded ? .infinity : height * 0.59)
@@ -48,12 +51,29 @@ struct RetroView: View {
                     }
                 }
         }
+        // Voice Control has no escape gesture: an invisible, touch-transparent "Fechar"
+        // element in the top corner lets the user say "Toque em Fechar".
+        .overlay(alignment: .topTrailing) {
+            DashboardVoiceControlButton(
+                labels: [L10n.tr("Fechar"), L10n.tr("Sair")],
+                action: { dismissRetro() }
+            )
+        }
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) { dismissRetro() }
+        // Each step swaps the whole content: let VoiceOver re-read it from the top.
+        .onChange(of: isExpanded) { VoiceOver.screenChanged() }
+        .onChange(of: isRetroDone) { VoiceOver.screenChanged() }
+        .onChange(of: page) { VoiceOver.screenChanged() }
     }
 }
 
 struct PageIndicator: View {
     let count: Int
     @Binding var current: Int
+    /// VoiceOver pages with the adjustable action; everyone else (Voice Control) gets
+    /// the invisible "Anterior" / "Próxima" elements next to the dots.
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     var body: some View {
         HStack(spacing: 8) {
@@ -65,6 +85,63 @@ struct PageIndicator: View {
             }
         }
         .animation(.spring(duration: 0.3), value: current)
+        // One adjustable element: swipe up/down to change page.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(L10n.tr("Página"))
+        .voiceOverValue(L10n.tr("%lld de %lld", current + 1, count))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                if current < count - 1 { current += 1 }
+            case .decrement:
+                if current > 0 { current -= 1 }
+            @unknown default:
+                break
+            }
+        }
+        .voiceControlNames([L10n.tr("Página")])
+        .accessibilityActions {
+            Button(L10n.tr("Próxima")) { if current < count - 1 { current += 1 } }
+            Button(L10n.tr("Anterior")) { if current > 0 { current -= 1 } }
+        }
+        // Voice Control can't use adjustable actions: "Toque em Próxima" / "Toque em Anterior".
+        .overlay(alignment: .leading) {
+            if !voiceOverEnabled && current > 0 {
+                DashboardVoiceControlButton(
+                    labels: [L10n.tr("Anterior"), L10n.tr("Voltar")],
+                    action: { current -= 1 }
+                )
+                .offset(x: -32)
+            }
+        }
+        .overlay(alignment: .trailing) {
+            if !voiceOverEnabled && current < count - 1 {
+                DashboardVoiceControlButton(
+                    labels: [L10n.tr("Próxima"), L10n.tr("Avançar")],
+                    action: { current += 1 }
+                )
+                .offset(x: 32)
+            }
+        }
+    }
+}
+
+/// An invisible element that only exists for Voice Control (and VoiceOver) to activate by
+/// name. It draws nothing and lets touches through, so the visual design is unchanged.
+struct DashboardVoiceControlButton: View {
+    /// Spoken names; the first is also the accessibility label.
+    let labels: [String]
+    let action: () -> Void
+
+    var body: some View {
+        Color.clear
+            .frame(width: 28, height: 28)
+            .allowsHitTesting(false)
+            .accessibilityElement()
+            .voiceOverLabel(labels.first ?? "")
+            .voiceControlNames(labels)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { action() }
     }
 }
 
@@ -79,11 +156,13 @@ private struct RetroAlert: View {
                 .frame(width: width * 0.27, height: height * 0.089)
                 .foregroundStyle(.choreYellow)
                 .padding(.bottom, height * 0.05)
+                .accessibilityDecorative()
             
             Text("Sua retrospectiva chegou!")
                 .bold()
                 .font(.largeTitle)
                 .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
                 .padding(.bottom, height * 0.018)
             
             Text("Veja como você se saiu durante os últimos 15 dias")
@@ -138,6 +217,8 @@ private struct RetroPercentageOfDoneView: View {
                     .bold()
                     .font(.system(size: 64))
                     .padding(.bottom, height * 0.03)
+                    .voiceOverLabel(L10n.tr("%@ das tarefas concluídas", ChartA11y.percent(percentage / 100)))
+                    .accessibilityAddTraits(.isHeader)
                 
                 Text("Você realizou 0 de 20 \n tarefas da sua escala")
                     .font(.title)
@@ -178,6 +259,7 @@ private struct RetroPercentageOfDoneView: View {
                         .fontWeight(.medium)
                         .font(.system(size: 17))
                 }
+                .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próxima")])
                 .buttonStyle(.glassProminent)
                 .glassEffectTransition(.identity)
             }
@@ -199,11 +281,13 @@ private struct RetroStreakView: View {
                 .frame(width: width * 0.54, height: height * 0.3)
                 .foregroundStyle(.gray)
                 .padding(.bottom, height * 0.037)
+                .accessibilityDecorative()
             
             Text("0 dias")
                 .bold()
                 .font(.system(size: 64))
                 .padding(.bottom, height * 0.014)
+                .accessibilityAddTraits(.isHeader)
             
             Text("seguidos sem atrasar nenhuma tarefa")
                 .fontWeight(.regular)
@@ -239,6 +323,7 @@ private struct RetroStreakView: View {
                     .fontWeight(.medium)
                     .font(.system(size: 17))
             }
+            .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próxima")])
             .buttonStyle(.glassProminent)
             .glassEffectTransition(.identity)
         }
@@ -259,11 +344,13 @@ private struct RetroPointsView: View {
                 .frame(width: width * 0.6, height: width * 0.6)
                 .foregroundStyle(.gray)
                 .padding(.bottom, height * 0.037)
+                .accessibilityDecorative()
             
             Text("4 pontos")
                 .bold()
                 .font(.system(size: 64))
                 .padding(.bottom, height * 0.014)
+                .accessibilityAddTraits(.isHeader)
             
             Text("adquiridos por ter notado algo na casa")
                 .fontWeight(.regular)
@@ -299,6 +386,7 @@ private struct RetroPointsView: View {
                     .fontWeight(.medium)
                     .font(.system(size: 17))
             }
+            .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próxima")])
             .buttonStyle(.glassProminent)
             .glassEffectTransition(.identity)
         }
@@ -342,6 +430,7 @@ struct RetroRoomsView: View {
                 .bold()
                 .font(.system(size: 64))
                 .padding(.top, height * 0.071)
+                .accessibilityAddTraits(.isHeader)
             
             Text("A cozinha foi onde você mais trabalhou.")
                 .font(.title)
@@ -355,6 +444,8 @@ struct RetroRoomsView: View {
                             .font(.body)
                             .fontWeight(.semibold)
                             .padding(.bottom, 0.01)
+                            // Read by the bar below, together with its value.
+                            .accessibilityHidden(true)
                         
                         Capsule()
                             .frame(width: (width * 0.877) * CGFloat(item.numOfChores) / CGFloat(maxNumOfChores), height: height * 0.041)
@@ -367,11 +458,18 @@ struct RetroRoomsView: View {
                                     .padding(.horizontal)
                             }
                             .padding(.bottom, 0.02)
+                            // One element per room: "Cozinha, 8 tarefas".
+                            .accessibilityElement(children: .ignore)
+                            .voiceOverLabel(item.roomName.localizedDefault)
+                            .voiceOverValue(L10n.tr("%lld tarefas", item.numOfChores))
                     }
                 }
                 Spacer()
             }
             .padding(.horizontal, width * 0.061)
+            .accessibilityElement(children: .contain)
+            .voiceOverLabel(L10n.tr("Tarefas por cômodo"))
+            .accessibilityChartDescriptor(roomsChartDescriptor)
             
             Spacer()
 
@@ -390,6 +488,17 @@ struct RetroRoomsView: View {
             .glassEffectTransition(.identity)
         }
     }
+    
+    /// Audio graph for VoiceOver's chart rotor: chores done per room.
+    private var roomsChartDescriptor: CategoryChartDescriptor {
+        CategoryChartDescriptor(
+            title: L10n.tr("Tarefas por cômodo"),
+            summary: nil,
+            categoryAxisTitle: L10n.tr("Cômodo"),
+            valueAxisTitle: L10n.tr("Tarefas"),
+            points: chartItens.map { (label: $0.roomName.localizedDefault, value: Double($0.numOfChores)) }
+        )
+    }
 }
 
 struct RetroNewChoresDivision: View {
@@ -404,11 +513,13 @@ struct RetroNewChoresDivision: View {
                 .padding(.bottom, height * 0.04)
                 .foregroundStyle(.choreGreen)
                 .padding(.top, height * 0.088)
+                .accessibilityDecorative()
             
             Text("Comece a nova divisão de tarefas da casa!")
                 .font(.title)
                 .bold()
                 .multilineTextAlignment(.leading)
+                .accessibilityAddTraits(.isHeader)
             
             Text("Clique no botão abaixo para dividir as tarefas entre todos os moradores da casa automaticamente")
                 .font(.title3)

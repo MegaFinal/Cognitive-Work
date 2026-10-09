@@ -676,6 +676,15 @@ class CarouselViewModel {
         isHouseAdmin = await house.isAdmin() == true
     }
     
+    /// Opens the "new member" pop-up on demand (from the notification), with the same rule as
+    /// the automatic check: only the admin can redo the division, so residents get nothing.
+    func presentNewUserPopUp() {
+        guard isHouseAdmin == true else { return }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            showNewUserPopUp = true
+        }
+    }
+    
     /// Compares the house members with the ones saved last time and turns ``showNewUserPopUp``
     /// on when someone new shows up and the user is the house admin.
     ///

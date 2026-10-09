@@ -101,6 +101,8 @@ struct SelectFreeTimeOnboardingView: View {
                 .fontWeight(.medium)
                 .padding(.trailing, 12)
                 .padding(.top, height * 0.005)
+                // The scale is visual only; each day reads its value ("2 horas") itself.
+                .accessibilityDecorative()
                 
                 ForEach($weekOrder, id: \.name) { $day in
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
@@ -124,6 +126,7 @@ struct SelectFreeTimeOnboardingView: View {
             if isFetchingSavedTime {
                 ProgressView()
                     .controlSize(.large)
+                    .accessibilityLabel(Text(L10n.tr("Carregando")))
             }
         }
         .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
@@ -137,6 +140,8 @@ struct SelectFreeTimeOnboardingView: View {
                         Image(systemName: "chevron.left")
                     }
                     .disabled(true)
+                    .accessibilityLabel(Text(L10n.tr("Voltar")))
+                    .voiceControlNames([L10n.tr("Voltar")])
                 }
             }
         }
@@ -244,6 +249,33 @@ private struct OnboardingCustomSliderComponent: View {
                 
                 caption
             }
+        }
+        // VoiceOver: each day is one adjustable element — "Segunda-feira, 2 horas", swipe up or
+        // down to change it — instead of a drag-only row.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(L10n.tr(dayOfWeek.name.trimmingCharacters(in: .whitespaces))))
+        .accessibilityValue(Text(FreeTimeSlider.accessibilityValue(for: selectedFreeTimeLevel)))
+        .accessibilityAdjustableAction { direction in
+            guard !isLoading else { return }
+            switch direction {
+            case .increment: selectedFreeTimeLevel = min(6, selectedFreeTimeLevel + 1)
+            case .decrement: selectedFreeTimeLevel = max(0, selectedFreeTimeLevel - 1)
+            @unknown default: break
+            }
+        }
+        // Voice Control: "Mostrar ações para Segunda-feira" → "Aumentar"/"Diminuir", since it
+        // can't swipe-adjust. The visible abbreviation ("Seg") comes first.
+        .voiceControlNames([
+            L10n.tr(dayOfWeek.nameAbbreviation),
+            L10n.tr(dayOfWeek.name.trimmingCharacters(in: .whitespaces))
+        ])
+        .accessibilityAction(named: Text(L10n.tr("Aumentar"))) {
+            guard !isLoading else { return }
+            selectedFreeTimeLevel = min(6, selectedFreeTimeLevel + 1)
+        }
+        .accessibilityAction(named: Text(L10n.tr("Diminuir"))) {
+            guard !isLoading else { return }
+            selectedFreeTimeLevel = max(0, selectedFreeTimeLevel - 1)
         }
         .onChange(of: selectedFreeTimeLevel) { _, newValue in
             withAnimation(.easeInOut(duration: 0.1)) {

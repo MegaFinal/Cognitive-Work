@@ -38,6 +38,7 @@ struct PurchasePricePopUp: View {
                 Text("Quanto custou cada um?")
                     .font(.system(size: 28))
                     .bold()
+                    .accessibilityAddTraits(.isHeader)
 
                 Text(itemName)
                     .font(.system(size: 22))
@@ -49,11 +50,16 @@ struct PurchasePricePopUp: View {
                 Text("R$")
                     .font(.system(size: 26, weight: .semibold))
                     .foregroundStyle(.subTitleGray)
+                    .accessibilityHidden(true)
 
                 TextField("0,00", text: $text)
                     .font(.system(size: 32, weight: .bold))
                     .priceInput(text: $text)
                     .focused($isFocused)
+                    .voiceOverLabel(L10n.tr("Preço por unidade"))
+                    .voiceOverValue(ShopListViewModel.accessibilityPrice(text))
+                    // Voice Control: "Toque em Preço", then dictate the value.
+                    .voiceControlNames([L10n.tr("Preço"), L10n.tr("Preço por unidade"), L10n.tr("Valor")])
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
@@ -66,6 +72,9 @@ struct PurchasePricePopUp: View {
                 .font(.system(size: 14))
                 .foregroundStyle(.subTitleGray)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel(
+                    ShopListViewModel.accessibilityPurchaseTotal(text: text, quantity: quantity) ?? totalCaption
+                )
 
             Button(action: onSkip) {
                 Text("Comprar sem valor")
@@ -86,7 +95,14 @@ struct PurchasePricePopUp: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 32))
         .onTapGesture { isFocused = false }
-        .onAppear { isFocused = true }
+        // VoiceOver stays inside the popup; the two-finger "Z" scrub cancels it like the xmark.
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) { onCancel() }
+        .onAppear {
+            isFocused = true
+            VoiceOver.screenChanged()
+        }
     }
 
     private var toolbar: some View {
@@ -100,6 +116,7 @@ struct PurchasePricePopUp: View {
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive(), in: .capsule)
             .accessibilityLabel("Cancelar")
+            .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
 
             Spacer()
 
@@ -116,6 +133,7 @@ struct PurchasePricePopUp: View {
             .disabled(!isValid)
             .opacity(isValid ? 1 : 0.4)
             .accessibilityLabel("Confirmar")
+            .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
         }
         .padding(.top, 5)
     }

@@ -94,6 +94,7 @@ struct CustomCalendar: View {
             .font(.system(size: 16))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
+            .accessibilityAddTraits(.isHeader)
     }
     
     private var weekdayRow: some View {
@@ -105,6 +106,8 @@ struct CustomCalendar: View {
                     .foregroundStyle(.black.opacity(0.3))
             }
         }
+        // Each day already says its weekday.
+        .accessibilityHidden(true)
     }
     
     private var dayGrid: some View {

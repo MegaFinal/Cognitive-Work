@@ -14,7 +14,8 @@ enum NotificationDestination {
     case pickChores
     case retrospective
     case dashboard
-    case userProfile(UserModel)
+    /// Someone joined the house: offers to redo the division (the pop-up only opens for the admin).
+    case newMember
     case chore(ChoreModel, RecurrentAssignmentModel?)
 }
 
@@ -292,7 +293,7 @@ class NotificationsViewModel {
         return result
     }
 
-    /// "Fulano entrou na casa": everyone except me.
+    /// "Fulano entrou na casa": everyone except me. Tapping it offers to redo the division.
     private func newUserNotifications(_ members: [UserModel], myIDs: Set<CKRecord.ID>) -> [NotificationModel] {
         members.compactMap { user -> NotificationModel? in
             guard let id = user.recordID, !myIDs.contains(id),
@@ -301,10 +302,10 @@ class NotificationsViewModel {
             return NotificationModel(
                 id: "user-\(id.recordName)",
                 kind: .newUser,
-                title: user.name + Notifications.newUser.rawValue,
-                subtitle: Notifications.newUser.subTitle,
+                title: L10n.tr("%@ entrou na casa", user.name),
+                subtitle: L10n.tr(Notifications.newUser.subTitle),
                 date: joined,
-                destination: .userProfile(user)
+                destination: .newMember
             )
         }
     }

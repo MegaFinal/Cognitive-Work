@@ -33,6 +33,27 @@ struct ChoreCard: View {
         .background(room?.color.lowOpacityColor ?? .gray)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: .black.opacity(0.32), radius: 5.8, x: 4, y: 6)
+        // One sentence instead of icon, avatar and tags read separately.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(accessibilityText)
+    }
+    
+    /// "Cozinha: Lavar a louça. Responsável: Ana, prioridade alta, duração curta".
+    private var accessibilityText: String {
+        let tier = ChoreDurationTier.from(minutes: chore.duration)
+        let roomName = room?.name.localizedDefault ?? L10n.tr("Cômodo")
+        if let user {
+            return L10n.tr(
+                "%@: %@. Responsável: %@, prioridade %@, duração %@",
+                roomName, chore.localizedName, user.name,
+                chore.priorityTag.displayName, tier.displayText
+            )
+        }
+        return L10n.tr(
+            "%@: %@. Prioridade %@, duração %@",
+            roomName, chore.localizedName,
+            chore.priorityTag.displayName, tier.displayText
+        )
     }
     
     private var title: some View {

@@ -11,6 +11,7 @@ struct NotificationsView: View {
     /// ChoresView decides what to do with these actions (it owns carouselVM).
     var onPickChores: () -> Void = {}
     var onOpenChore: (ChoreModel, RecurrentAssignmentModel?) -> Void = { _, _ in }
+    var onNewMember: () -> Void = {}
     
     @State private var viewModel = NotificationsViewModel()
     @State private var isShowingRetro = false
@@ -25,6 +26,7 @@ struct NotificationsView: View {
                 
                 if viewModel.isLoading {
                     ProgressView().frame(maxWidth: .infinity)
+                        .voiceOverLabel(L10n.tr("Carregando notificações"))
                 } else if viewModel.sections.isEmpty {
                     Text("Nada por aqui nos últimos 14 dias")
                         .foregroundStyle(.subTitleGray)
@@ -56,6 +58,7 @@ struct NotificationsView: View {
             Text("Notificações")
                 .font(.system(size: 34))
                 .fontWeight(.bold)
+                .accessibilityAddTraits(.isHeader)
             Text(viewModel.newCountText)
                 .font(.system(size: 17))
                 .foregroundStyle(.subTitleGray)
@@ -67,7 +70,8 @@ struct NotificationsView: View {
             Text(viewModel.title(for: section))
                 .font(.system(size: 17))
                 .foregroundStyle(.subTitleGray)
-            
+                .accessibilityAddTraits(.isHeader)
+
             ForEach(section.items) { notification in
                 Button {
                     handleTap(notification.destination)
@@ -80,6 +84,8 @@ struct NotificationsView: View {
                     )
                 }
                 .buttonStyle(.plain) // keeps the text black
+                // Voice Control: say just the title, not title + subtitle.
+                .voiceControlNames([notification.title])
             }
         }
     }
@@ -98,8 +104,9 @@ struct NotificationsView: View {
         case .chore(let chore, let assignment):
             dismiss()
             onOpenChore(chore, assignment)
-        case .userProfile(_):
-            break // TODO: there is no screen for ANOTHER user's profile yet
+        case .newMember:
+            dismiss()
+            onNewMember()
         }
     }
 }

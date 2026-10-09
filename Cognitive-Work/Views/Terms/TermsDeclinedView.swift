@@ -44,6 +44,7 @@ struct TermsDeclinedView: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.titleGray)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
                 Text(message)
                     .font(.system(size: 16))
@@ -63,13 +64,18 @@ struct TermsDeclinedView: View {
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
+            .voiceControlNames([L10n.tr("Rever os Termos de Uso"), L10n.tr("Rever termos"), L10n.tr("Termos")])
             .glassEffect(.regular.interactive().tint(.black), in: .capsule)
         }
         .padding(.horizontal, 32)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white.ignoresSafeArea())
-        .onAppear { isAnimating = true }
+        .onAppear {
+            isAnimating = true
+            // Replaces the whole app: VoiceOver starts reading from the goodbye title.
+            VoiceOver.screenChanged()
+        }
         .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: isAnimating)
     }
 

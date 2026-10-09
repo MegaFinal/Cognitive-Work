@@ -66,6 +66,15 @@ struct InviteUsersOnboardingView: View {
         .task(id: viewModel.currentHouse?.recordID) {
             await prepareInvite()
         }
+        .onChange(of: houseUsers.count) { oldCount, newCount in
+            // Someone accepted the invite while the user waits on this screen.
+            if newCount > oldCount && oldCount > 0 {
+                VoiceOver.announce(L10n.tr("%lld moradores na casa", newCount))
+            }
+        }
+        .onChange(of: didFailToPrepareInvite) { _, didFail in
+            if didFail { VoiceOver.announce(L10n.tr("Não foi possível preparar o convite")) }
+        }
     }
     
     // MARK: - Actions
@@ -113,6 +122,7 @@ struct InviteUsersOnboardingView: View {
                     Text("Compartilhar Convite")
                 }
             }
+            .voiceControlNames([L10n.tr("Compartilhar Convite"), L10n.tr("Compartilhar"), L10n.tr("Convidar")])
         } else if didFailToPrepareInvite && !resolvendoShare {
             Button {
                 Task { await prepareInvite() }
@@ -121,6 +131,7 @@ struct InviteUsersOnboardingView: View {
                     Label("Tentar novamente", systemImage: "arrow.clockwise")
                 }
             }
+            .voiceControlNames([L10n.tr("Tentar novamente"), L10n.tr("Recarregar")])
         } else {
             inviteCapsule(color: .gray) {
                 ProgressView()
@@ -150,8 +161,12 @@ struct InviteUsersOnboardingView: View {
                         .frame(width: width * 0.17)
                     UserProfilePictureTag(user: user, widthMultiplier: 0.15)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(user.name))
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text(L10n.tr("Moradores que já entraram")))
     }
 }
 

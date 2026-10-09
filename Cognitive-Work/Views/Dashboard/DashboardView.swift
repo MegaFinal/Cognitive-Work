@@ -51,6 +51,8 @@ struct DashboardView: View {
             }
             .disabled(viewModel.isLoading)
             .opacity(viewModel.isLoading ? 0 : 1)
+            // Invisible while loading, so VoiceOver must not reach it either.
+            .accessibilityHidden(viewModel.isLoading)
         }
         .task(id: CloudKitManager.shared.dataRevision) {
             await viewModel.loadIfNeeded()
@@ -63,6 +65,7 @@ struct DashboardView: View {
                 .font(.system(size: 34))
                 .fontWeight(.bold)
                 .padding(.top, 20)
+                .accessibilityAddTraits(.isHeader)
             
             DateDivisionComponent(viewModel: $viewModel)
         }

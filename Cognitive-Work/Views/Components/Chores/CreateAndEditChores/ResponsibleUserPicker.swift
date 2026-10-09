@@ -33,6 +33,16 @@ struct ResponsibleUserPicker: View {
                     .onTapGesture {
                         selectedUsers.removeAll { $0.id == selectedUser.id }
                     }
+                    // VoiceOver: the avatar is a "remove this person" button.
+                    .accessibilityElement(children: .ignore)
+                    .voiceOverLabel(selectedUser.name)
+                    .voiceOverHint(L10n.tr("Toque duas vezes para remover dos responsáveis."))
+                    .accessibilityAddTraits(.isButton)
+                    .voiceControlNames([selectedUser.name, L10n.tr("Remover %@", selectedUser.name)])
+                    .accessibilityAction {
+                        selectedUsers.removeAll { $0.id == selectedUser.id }
+                        VoiceOver.announce(L10n.tr("%@ removido", selectedUser.name))
+                    }
             }
             
             Menu {
@@ -60,6 +70,11 @@ struct ResponsibleUserPicker: View {
                     .background(Color.blue)
                     .clipShape(Circle())
             }
+            .voiceOverLabel(L10n.tr("Adicionar responsável"))
+            .voiceControlNames([L10n.tr("Adicionar responsável"), L10n.tr("Adicionar"), L10n.tr("Mais")])
+            .accessibilityValue(selectedUsers.isEmpty
+                                ? L10n.tr("Sem responsável")
+                                : selectedUsers.map(\.name).formatted(.list(type: .and).locale(L10n.locale)))
         }
     }
 }

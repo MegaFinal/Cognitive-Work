@@ -43,6 +43,7 @@ struct WaitAcceptLinkOnboardingView: View {
             VStack {
                 Image("TocTocPurple")
                     .frame(width: width * 0.64, height: height * 0.19)
+                    .accessibilityDecorative()
                     .padding(.bottom, height * 0.075)
                 OnboardingHeader(
                     title: "Peça o convite para o administrador da casa",
@@ -64,12 +65,14 @@ struct WaitAcceptLinkOnboardingView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.chorePurple)
                     }
+                    .accessibilityElement(children: .combine)
                     .transition(.opacity)
                 } else {
                     ShareLink(item: inviteRequestMessage) {
                         Label("Pedir o convite por mensagem", systemImage: "square.and.arrow.up")
                             .fontWeight(.semibold)
                     }
+                    .voiceControlNames([L10n.tr("Pedir o convite por mensagem"), L10n.tr("Pedir convite"), L10n.tr("Compartilhar")])
                     .controlSize(.large)
                     .buttonStyle(.glassProminent)
                     .tint(.blue)
@@ -84,9 +87,13 @@ struct WaitAcceptLinkOnboardingView: View {
                     .resizable()
                     .frame(width: height * 1.09, height: height * 1.09)
                     .opacity(0.2)
+                    .accessibilityDecorative()
             }
             .padding(.horizontal, 10)
             .animation(.easeInOut(duration: 0.2), value: isEnteringHouse)
+            .onChange(of: isEnteringHouse) { _, isEntering in
+                if isEntering { VoiceOver.announce(L10n.tr("Entrando na casa...")) }
+            }
             .navigationBarBackButtonHidden()
             .task {
                 // Covers the case where the invite was already accepted while the app was closed.
@@ -113,6 +120,8 @@ struct WaitAcceptLinkOnboardingView: View {
                         Image(systemName: "chevron.left")
                     }
                     .disabled(isEnteringHouse)
+                    .accessibilityLabel(Text(L10n.tr("Voltar")))
+                    .voiceControlNames([L10n.tr("Voltar")])
                 }
             }
         }

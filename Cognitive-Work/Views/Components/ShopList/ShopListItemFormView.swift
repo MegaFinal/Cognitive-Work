@@ -109,6 +109,8 @@ struct ShopListItemFormView: View {
                         Image(systemName: "xmark")
                     }
                     .disabled(isSaving)
+                    .voiceOverLabel(L10n.tr("Cancelar"))
+                    .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -126,6 +128,11 @@ struct ShopListItemFormView: View {
                         .tint(.blue)
                         .buttonStyle(.glassProminent)
                         .disabled(!missingFields.isEmpty)
+                        .voiceOverLabel(isEditing ? L10n.tr("Salvar") : L10n.tr("Adicionar item"))
+                        .voiceControlNames(isEditing
+                            ? [L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")]
+                            : [L10n.tr("Confirmar"), L10n.tr("Adicionar item"), L10n.tr("OK")])
+                        .voiceOverHint(missingFields.first?.warning ?? "")
                     }
                 }
             }
@@ -138,6 +145,9 @@ struct ShopListItemFormView: View {
             if !isEditing { isNameFocused = true }
         }
         .dismissKeyboardOnTap()
+        .onChange(of: visibleWarning) { _, warning in
+            if let warning { VoiceOver.announce(warning) }
+        }
         .confirmationDialog("Excluir item?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Excluir item", role: .destructive) {
                 Task { await deleteItem() }
@@ -172,6 +182,7 @@ struct ShopListItemFormView: View {
                 .foregroundStyle(category.color)
                 .contentTransition(.symbolEffect(.replace))
                 .padding(.leading, 6)
+                .accessibilityHidden(true)
 
             VStack(spacing: 2) {
                 TextField(
@@ -184,21 +195,29 @@ struct ShopListItemFormView: View {
                 .characterLimit(TextLimits.shopItemName, text: $name)
                 .submitLabel(.done)
                 .focused($isNameFocused)
+                .voiceOverLabel(L10n.tr("Nome do item"))
+                .voiceControlNames([L10n.tr("Nome do item"), L10n.tr("Nome")])
 
                 Capsule()
                     .frame(height: 1.5)
                     .foregroundStyle(.gray.opacity(0.5))
+                    .accessibilityHidden(true)
             }
         }
         .animation(.snappy, value: category)
+    }
+
+    /// The warning on screen, if any; VoiceOver announces it whenever it appears or changes.
+    private var visibleWarning: String? {
+        trimmedName.isEmpty ? nil : missingFields.first?.warning
     }
 
     /// Explains why the confirm button is disabled, near the top so it shows without scrolling.
     /// Like the chore form, it names one thing at a time and waits for the name first.
     @ViewBuilder
     private var validationWarning: some View {
-        if !trimmedName.isEmpty, let next = missingFields.first {
-            Text(next.warning)
+        if let warning = visibleWarning {
+            Text(warning)
                 .font(.system(size: 13))
                 .foregroundColor(.red)
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -214,6 +233,7 @@ struct ShopListItemFormView: View {
             Text(title)
                 .font(.system(size: 15))
                 .fontWeight(.semibold)
+                .accessibilityAddTraits(.isHeader)
 
             content()
         }
@@ -222,8 +242,11 @@ struct ShopListItemFormView: View {
     /// Stepper and unit menu on one soft card.
     private var quantityCard: some View {
         VStack(spacing: 16) {
-            QuantityStepper(value: $quantity)
-                .frame(maxWidth: .infinity)
+            QuantityStepper(
+                value: $quantity,
+                valueDescription: { ShopListViewModel.accessibilityQuantity($0, unit: unitMeasurement) }
+            )
+            .frame(maxWidth: .infinity)
 
             Divider()
 
@@ -255,6 +278,12 @@ struct ShopListItemFormView: View {
                     }
                     .fixedSize()
                 }
+                .voiceOverLabel(L10n.tr("Unidade"))
+                .voiceOverValue(unitMeasurement.getDisplayName(for: Double(quantity)))
+                .voiceControlNames([
+                    L10n.tr("Unidade"),
+                    unitMeasurement.getDisplayName(for: Double(quantity)).capitalized(with: L10n.locale)
+                ])
             }
         }
         .padding(16)
@@ -269,10 +298,15 @@ struct ShopListItemFormView: View {
         HStack(spacing: 10) {
             Image(systemName: "tag")
                 .foregroundStyle(.subTitleGray)
+                .accessibilityHidden(true)
 
             TextField(pricePlaceholder, text: $valueText)
                 .priceInput(text: $valueText)
                 .font(.system(size: 17))
+                .voiceOverLabel(L10n.tr("Preço por unidade"))
+                .voiceOverValue(ShopListViewModel.accessibilityPrice(valueText))
+                // Voice Control: "Toque em Preço", then dictate the value.
+                .voiceControlNames([L10n.tr("Preço por unidade"), L10n.tr("Preço"), L10n.tr("Valor")])
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -291,6 +325,7 @@ struct ShopListItemFormView: View {
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity, minHeight: 44)
         }
+        .voiceControlNames([L10n.tr("Excluir item"), L10n.tr("Excluir")])
         .disabled(isSaving)
     }
 

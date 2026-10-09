@@ -24,6 +24,9 @@ struct QuantityStepper: View {
     @Binding var value: Int
     var range: ClosedRange<Int> = Self.allowedRange
 
+    /// How VoiceOver reads the number ("5 unidades"); just the number when `nil`.
+    var valueDescription: ((Int) -> String)? = nil
+
     /// What the field shows. Kept apart from ``value`` so an empty field stays empty while typing.
     @State private var text: String = ""
     @FocusState private var isFocused: Bool
@@ -42,6 +45,15 @@ struct QuantityStepper: View {
                 .frame(width: 110)
                 .focused($isFocused)
                 .accessibilityLabel("Quantidade")
+                .voiceControlNames([L10n.tr("Quantidade")])
+                .voiceOverValue(valueDescription?(value) ?? String(value))
+                .accessibilityAdjustableAction { direction in
+                    switch direction {
+                    case .increment: change(by: 1)
+                    case .decrement: change(by: -1)
+                    @unknown default: break
+                    }
+                }
                 .onChange(of: text) { _, newText in
                     applyTyped(newText)
                 }
@@ -74,7 +86,10 @@ struct QuantityStepper: View {
         .glassEffect(.regular.interactive(), in: .circle)
         .opacity(isEnabled ? 1 : 0.35)
         .disabled(!isEnabled)
-        .accessibilityLabel(delta > 0 ? "Aumentar quantidade" : "Diminuir quantidade")
+        .voiceOverLabel(delta > 0 ? L10n.tr("Aumentar quantidade") : L10n.tr("Diminuir quantidade"))
+        .voiceControlNames(delta > 0
+            ? [L10n.tr("Mais"), L10n.tr("Aumentar"), L10n.tr("Aumentar quantidade")]
+            : [L10n.tr("Menos"), L10n.tr("Diminuir"), L10n.tr("Diminuir quantidade")])
     }
 
     private func change(by delta: Int) {

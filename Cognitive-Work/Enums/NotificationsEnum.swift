@@ -19,7 +19,7 @@ enum Notifications: String {
         switch self {
         case .grabChore: return "Escolha as que couberem no seu tempo"
         case .retrospective: return "Veja como foram os seus últimos 15 dias da casa"
-        case .newUser: return "Veja como foram os seus últimos 15 dias da casa"
+        case .newUser: return "Agora a casa tem mais um morador"
         case .newDivision: return "Suas tarefas dos próximos 15 dias já estão na escala"
         case .yourDelayedChore: return ""
         case .noUserDelayedChore: return ""

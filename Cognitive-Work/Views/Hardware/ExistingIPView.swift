@@ -27,13 +27,18 @@ struct ExistingIPView: View {
         VStack(spacing: 20) {
             avatarView
                 .frame(width: 100, height: 100)
+                .accessibilityElement(children: .ignore)
+                .voiceOverLabel(L10n.tr("Imagem que será enviada ao Harvi"))
+                .accessibilityAddTraits(.isImage)
 
             Button {
                 isSendingImage = true
+                VoiceOver.announce(L10n.tr("Enviando imagem para o Harvi…"))
                 Task {
                     do {
                         try await viewModelHardware.prepareImageForESP32(view: avatarForDevice)
                         HapticsManager.notify(.success)
+                        VoiceOver.announce(L10n.tr("Imagem enviada para o Harvi"))
                     } catch {
                         errorMessage = L10n.tr("Não foi possível enviar a imagem para o dispositivo. Verifique a conexão e tente novamente.")
                     }
@@ -54,12 +59,17 @@ struct ExistingIPView: View {
                     }
                 }
             }
+            // Label stays the same while the spinner replaces the text.
+            .voiceOverLabel(L10n.tr("Enviar imagem"))
+            .voiceOverValue(isSendingImage ? L10n.tr("Enviando") : "")
+            .voiceControlNames([L10n.tr("Enviar imagem"), L10n.tr("Enviar")])
             .disabled(isSendingImage || isResetting)
 
             Button("Desconectar este celular") {
                 viewModelHardware.disconnectThisPhone()
                 dismiss()
             }
+            .voiceControlNames([L10n.tr("Desconectar este celular"), L10n.tr("Desconectar")])
 
             Button(role: .destructive) {
                 showResetConfirmation = true
@@ -70,6 +80,9 @@ struct ExistingIPView: View {
                     Text("Resetar o Harvi")
                 }
             }
+            .voiceOverLabel(L10n.tr("Resetar o Harvi"))
+            .voiceOverValue(isResetting ? L10n.tr("Resetando") : "")
+            .voiceControlNames([L10n.tr("Resetar o Harvi"), L10n.tr("Resetar")])
             .disabled(isSendingImage || isResetting)
         }
         .confirmationDialog(
@@ -79,6 +92,7 @@ struct ExistingIPView: View {
         ) {
             Button("Resetar", role: .destructive) {
                 isResetting = true
+                VoiceOver.announce(L10n.tr("Resetando o Harvi…"))
                 Task {
                     do {
                         try await viewModelHardware.resetHardware()

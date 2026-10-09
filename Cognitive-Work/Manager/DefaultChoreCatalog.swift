@@ -23,6 +23,21 @@ enum DefaultChoreCatalog {
         return keys
     }()
     
+    /// Every text the app itself provides in Portuguese and translates on display: default room
+    /// names plus the suggested chores' names and descriptions. ``String/localizedDefault`` only
+    /// translates text in this set, so whatever the user types is never swapped for a translation
+    /// (typing "Qua" used to become "Wed", the weekday abbreviation from the catalog).
+    static let defaultTexts: Set<String> = {
+        var texts = Set(DefaultRoomsOnboarding.allCases.map(\.rawValue))
+        for room in DefaultRoomsOnboarding.allCases {
+            for chore in room.defaultChores {
+                texts.insert(chore.name)
+                texts.insert(chore.description)
+            }
+        }
+        return texts
+    }()
+
     /// Whether `name` and `description` are exactly one of the app's suggested chores.
     static func isSuggestion(name: String, description: String) -> Bool {
         entries.contains(key(name: name, description: description))

@@ -23,6 +23,7 @@ struct PointsComponent: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: width * 0.28, height: height * 0.08)
+                    .accessibilityDecorative()
                 do {
                     Text("\(points) pontos")
                         .font(.system(size: 20))
@@ -36,6 +37,8 @@ struct PointsComponent: View {
                 }
             }
         }
+        // "42 pontos, adquiridos por ter notado algo na casa" as one element.
+        .accessibilityElement(children: .combine)
     }
 }
 

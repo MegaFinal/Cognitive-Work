@@ -16,6 +16,7 @@ struct HouseEditView: View {
         VStack {
             if viewModel.isLoading {
                 ProgressView()
+                    .voiceOverLabel(L10n.tr("Carregando"))
             } else if viewModel.house != nil {
                 if viewModel.isUserAdmin {
                     Button {
@@ -25,12 +26,14 @@ struct HouseEditView: View {
                     } label: {
                         if viewModel.isDeleting {
                             ProgressView()
+                                .voiceOverLabel(L10n.tr("Excluindo sua casa..."))
                         } else {
                             Text("Deletar Casa")
                                 .foregroundColor(.red)
                         }
                     }
                     .disabled(viewModel.isDeleting)
+                    .voiceControlNames([L10n.tr("Deletar Casa"), L10n.tr("Excluir"), L10n.tr("Apagar")])
                 }
             } else {
                 Text("Nenhuma casa encontrada.")

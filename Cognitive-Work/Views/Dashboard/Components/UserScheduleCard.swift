@@ -125,6 +125,7 @@ struct UserScheduleCard: View {
         HStack(alignment: .top) {
             Text("Sua divisão atual")
                 .font(.system(size: 22).bold())
+                .accessibilityAddTraits(.isHeader)
             
             Spacer()
             
@@ -167,6 +168,15 @@ struct UserScheduleCard: View {
             }
             .scrollBounceBehavior(.basedOnSize)
         }
+        // VoiceOver walks the days in order: each weekday reads its full date, then its bars
+        // as buttons that open the chore popover.
+        .accessibilityElement(children: .contain)
+        .voiceOverLabel(chartAccessibilityLabel)
+    }
+    
+    /// "Gráfico da sua divisão, 12 tarefas em 14 dias".
+    private var chartAccessibilityLabel: String {
+        L10n.tr("Gráfico da sua divisão, %lld tarefas em %lld dias", entries.count, daysToShow)
     }
 }
 
@@ -202,6 +212,12 @@ private struct ScheduleDayColumn: View {
             Text(weekdayText)
                 .font(.system(size: 16.35, weight: .medium))
                 .frame(height: UserScheduleCard.weekdayLabelHeight)
+                .voiceOverLabel(ChartA11y.weekdayDayMonth(day))
+                .accessibilityValue(
+                    entries.isEmpty
+                        ? L10n.tr("Sem tarefas")
+                        : L10n.tr("%lld tarefas", entries.count)
+                )
             
             VStack(spacing: UserScheduleCard.barSpacing) {
                 ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
@@ -280,6 +296,25 @@ private struct ScheduleDayColumn: View {
         .onTapGesture {
             selectedEntry = (selectedEntry == entry) ? nil : entry
         }
+        // Each bar is a button: "Lavar a louça, Cozinha, tarefa curta, 15 minutos".
+        .accessibilityElement()
+        .accessibilityLabel(
+            ChartA11y.choreDescription(
+                name: resolvedChore?.localizedName ?? entry.choreName.localizedDefault,
+                room: resolvedRoom?.name.localizedDefault,
+                minutes: entry.minutes
+            )
+        )
+        .accessibilityAddTraits(.isButton)
+        .voiceOverHint(L10n.tr("Mostra os detalhes da tarefa"))
+        .accessibilityAction {
+            selectedEntry = (selectedEntry == entry) ? nil : entry
+        }
+        // Voice Control: "Toque em Lavar a louça" (or the room) instead of the full sentence.
+        .voiceControlNames([
+            resolvedChore?.localizedName ?? entry.choreName.localizedDefault,
+            resolvedRoom?.name.localizedDefault
+        ].compactMap { $0 })
         .popover(
             isPresented: isPresented(entry),
             attachmentAnchor: .rect(.bounds),
@@ -291,6 +326,12 @@ private struct ScheduleDayColumn: View {
                     // Keeps a real popover on iPhone instead of a sheet.
                     .presentationCompactAdaptation(.none)
                     .presentationBackground(.white)
+                    // Voice Control can't tap outside the popover: "Toque em Fechar" closes it.
+                    .accessibilityAddTraits(.isButton)
+                    .voiceControlNames([resolvedChore.localizedName, L10n.tr("Fechar")])
+                    .voiceOverHint(L10n.tr("Fecha os detalhes da tarefa"))
+                    .accessibilityAction { selectedEntry = nil }
+                    .accessibilityAction(.escape) { selectedEntry = nil }
             }
         }
     }
@@ -348,5 +389,10 @@ private struct RoomScheduleCaption: View {
                 }
             }
         }
+        // The swatches only matter visually (each bar already says its room): one summary line.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            L10n.tr("Cômodos na legenda: %@", ChartA11y.list(rooms.map { $0.name.localizedDefault }))
+        )
     }
 }
