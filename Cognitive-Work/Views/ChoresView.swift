@@ -20,6 +20,9 @@ struct ChoresView: View {
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .black
     
+    /// Chore opened from a notification. Shown on top of everything until dismissed.
+    @State private var choreFromNotification: ChoreOccurrence?
+    
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
@@ -106,6 +109,31 @@ struct ChoresView: View {
                         Spacer()
                     }
                     .zIndex(2)
+                    .transition(.scale)
+                }
+                
+                // MARK: - Chore opened from a notification
+                if let occurrence = choreFromNotification {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .zIndex(4)
+                        .transition(.opacity)
+                        .onTapGesture {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                choreFromNotification = nil
+                            }
+                        }
+                    
+                    CarouselCardFrame(
+                        chore: occurrence.chore,
+                        recurrentAssignment: occurrence.assignment,
+                        carouselViewModel: carouselVM,
+                        namespace: cardAnimation,
+                        isFocused: true,
+                        rotation: 180,
+                        isShowingBack: true
+                    )
+                    .zIndex(5)
                     .transition(.scale)
                 }
                 
@@ -203,6 +231,9 @@ struct ChoresView: View {
             Text(headerTitle)
                 .font(.system(size: 34))
                 .fontWeight(.bold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .layoutPriority(1)
                 .padding(.horizontal, 30)
                 .padding(.top, 20)
             
@@ -213,6 +244,24 @@ struct ChoresView: View {
                     toggleLayout()
                 } label: {
                     Image(systemName: carouselVM.layoutMode == .grid ? "inset.filled.leftthird.middlethird.rightthird.rectangle" : "inset.filled.topthird.middlethird.bottomthird.rectangle")
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(8)
+                }
+                
+                NavigationLink {
+                    NotificationsView(
+                        onPickChores: {
+                            withAnimation { carouselVM.isShowingUnassignedList = true }
+                        },
+                        onOpenChore: { chore, assignment in
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                choreFromNotification = ChoreOccurrence(chore: chore, assignment: assignment)
+                            }
+                        }
+                    )
+                } label: {
+                    Image(systemName: "bell")
                         .font(.system(size: 22))
                         .foregroundColor(.black)
                         .padding(8)

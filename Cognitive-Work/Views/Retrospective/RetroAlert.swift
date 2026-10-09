@@ -24,7 +24,7 @@ struct RetroView: View {
                 .ignoresSafeArea()
                 .overlay {
                     if !isExpanded && !isRetroDone{
-                        RetroAlert(isExpanded: $isExpanded)
+                        RetroAlert(isExpanded: $isExpanded, isRetroDone: $isRetroDone)
                     }
                     else if isExpanded && !isRetroDone {
                         VStack(spacing: 12){
@@ -70,6 +70,7 @@ struct PageIndicator: View {
 
 private struct RetroAlert: View {
     @Binding var isExpanded: Bool
+    @Binding var isRetroDone: Bool
     
     var body: some View {
         VStack {
@@ -105,7 +106,10 @@ private struct RetroAlert: View {
                 .glassEffectTransition(.identity)
 
                 Button {
-                    isExpanded = true
+                    // Skips the retrospective pages and goes straight to the new division screen.
+                    withAnimation {
+                        isRetroDone = true
+                    }
                 } label: {
                     Text("Pular para a nova divisão")
                         .frame(width: width * 0.69, height: height * 0.037)
@@ -389,6 +393,8 @@ struct RetroRoomsView: View {
 }
 
 struct RetroNewChoresDivision: View {
+    /// Closes the screen that presented the retrospective (e.g. the fullScreenCover in NotificationsView).
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         VStack {
@@ -423,7 +429,7 @@ struct RetroNewChoresDivision: View {
             .glassEffectTransition(.identity)
             
             Button {
-
+                dismiss()
             } label: {
                 Text("Dividir mais tarde")
                     .fontWeight(.semibold)
