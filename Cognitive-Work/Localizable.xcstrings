@@ -7,22 +7,24 @@
     "%@" : {
 
     },
-    "%@ está atrasado" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ is overdue"
-          }
-        }
-      }
-    },
     "%@ · cerca de %lld min" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · about %lld min"
+          }
+        }
+      }
+    },
+    "%@ está atrasado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is overdue"
           }
         }
       }
@@ -75,6 +77,7 @@
       }
     },
     "%lld novas notificações" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "variations" : {
@@ -236,6 +239,7 @@
       }
     },
     "%lld tarefas a pegar hoje" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "variations" : {
@@ -271,96 +275,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "Escolha as que couberem no seu tempo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick the ones that fit your time"
-          }
-        }
-      }
-    },
-    "hoje" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "today"
-          }
-        }
-      }
-    },
-    "Nenhuma notificação nova" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No new notifications"
-          }
-        }
-      }
-    },
-    "Ninguém pegou %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nobody picked up %@"
-          }
-        }
-      }
-    },
-    "Nova divisão pronta" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New split is ready"
-          }
-        }
-      }
-    },
-    "ontem" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "yesterday"
-          }
-        }
-      }
-    },
-    "Sua retrospectiva chegou" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your recap is here"
-          }
-        }
-      }
-    },
-    "Suas tarefas dos próximos 15 dias já estão na escala" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your chores for the next 15 days are on the schedule"
-          }
-        }
-      }
-    },
-    "Veja como foram os seus últimos 15 dias da casa" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See how your last 15 days at home went"
           }
         }
       }
@@ -2348,6 +2262,17 @@
         }
       }
     },
+    "Escolha as que couberem no seu tempo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the ones that fit your time"
+          }
+        }
+      }
+    },
     "Escolha as tarefas" : {
 
     },
@@ -2983,6 +2908,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Haptics"
+          }
+        }
+      }
+    },
+    "hoje" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
           }
         }
       }
@@ -4012,6 +3948,17 @@
         }
       }
     },
+    "Nenhuma notificação nova" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No new notifications"
+          }
+        }
+      }
+    },
     "Nenhuma tarefa ainda" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4060,6 +4007,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No chores right now"
+          }
+        }
+      }
+    },
+    "Ninguém pegou %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nobody picked up %@"
           }
         }
       }
@@ -4184,6 +4142,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "Nova divisão pronta" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New split is ready"
           }
         }
       }
@@ -4394,6 +4363,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        }
+      }
+    },
+    "ontem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
           }
         }
       }
@@ -5719,6 +5699,17 @@
         }
       }
     },
+    "Sua retrospectiva chegou" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recap is here"
+          }
+        }
+      }
+    },
     "Sua retrospectiva chegou!" : {
       "localizations" : {
         "en" : {
@@ -5736,6 +5727,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your Chores"
+          }
+        }
+      }
+    },
+    "Suas tarefas dos próximos 15 dias já estão na escala" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your chores for the next 15 days are on the schedule"
           }
         }
       }
@@ -6301,6 +6303,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sweep the balcony"
+          }
+        }
+      }
+    },
+    "Veja como foram os seus últimos 15 dias da casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See how your last 15 days at home went"
           }
         }
       }

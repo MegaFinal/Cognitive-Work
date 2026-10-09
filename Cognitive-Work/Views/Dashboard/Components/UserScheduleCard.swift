@@ -44,15 +44,75 @@ struct UserScheduleCard: View {
     /// The entry whose popover is currently open, if any.
     @State private var selectedEntry: DailyUsageEntry?
     
+    // MARK: Layout
+    
+    /// Screen the Figma was drawn for (iPhone 16). Every measure below is written in Figma
+    /// points and converted with ``designWidth(_:)`` / ``designHeight(_:)``, so the card keeps
+    /// the same proportions on any iPhone.
+    private static let referenceScreen = CGSize(width: 393, height: 852)
+    
+    /// Converts a horizontal Figma measure into this device's points.
+    private func designWidth(_ value: CGFloat) -> CGFloat {
+        width * value / Self.referenceScreen.width
+    }
+    
+    /// Converts a vertical Figma measure into this device's points.
+    private func designHeight(_ value: CGFloat) -> CGFloat {
+        height * value / Self.referenceScreen.height
+    }
+    
+    /// Number of day columns that fit in the card at once; the rest scroll horizontally.
+    static let visibleDays: CGFloat = 7
+    
+    /// Bar height for a `heightRatio` of 1, before scaling. Only the *ratio* between bars
+    /// matters, since everything is scaled to fill the chart.
+    static let baseBarHeight: CGFloat = 80
+    
+    /// Gap between two bars of the same day (not scaled).
+    static let barSpacing: CGFloat = 4
+    
+    /// Fixed height of the weekday label, so the space left for the bars is known exactly.
+    static let weekdayLabelHeight: CGFloat = 20
+    
+    /// Gap between the weekday label and the bars.
+    static let labelToBarsSpacing: CGFloat = 6
+    
+    /// Factor applied to every bar so the busiest day exactly fills `barAreaHeight`.
+    ///
+    /// For each day: (area − gaps) / (sum of the bars' natural heights) is the largest scale
+    /// that still fits that day. The smallest of those values fits *every* day, and using the
+    /// same factor everywhere keeps the bars proportional to each other.
+    private func barScale(fitting barAreaHeight: CGFloat) -> CGFloat {
+        let calendar = Calendar.current
+        let entriesByDay = Dictionary(grouping: entries) { calendar.startOfDay(for: $0.day) }
+        
+        let scalesThatFit = entriesByDay.values.compactMap { dayEntries -> CGFloat? in
+            let barsHeight = dayEntries.reduce(CGFloat(0)) { total, entry in
+                total + Self.baseBarHeight * CGFloat(entry.tier.heightRatio)
+            }
+            guard barsHeight > 0 else { return nil }
+            let gaps = Self.barSpacing * CGFloat(dayEntries.count - 1)
+            return max(barAreaHeight - gaps, 0) / barsHeight
+        }
+        
+        return scalesThatFit.min() ?? 1
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // Figma (iPhone 16): card 361 × 476, padding 16 top/bottom and 8 on the sides,
+        // 12 between title, chart and legend.
+        VStack(alignment: .leading, spacing: designHeight(12)) {
             header
             
             chart
             
             RoomScheduleCaption(rooms: roomCaption)
         }
-        .padding()
+        .padding(.vertical, designHeight(16))
+        .padding(.horizontal, designWidth(8))
+        // Card size follows the screen. Title and legend take their natural height;
+        // the chart gets the rest.
+        .frame(width: designWidth(361), height: designHeight(476))
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .foregroundColor(Color(.systemGray6).opacity(0.5))
@@ -75,25 +135,38 @@ struct UserScheduleCard: View {
         let calendar = Calendar.current
         let firstDay = calendar.startOfDay(for: startDate)
         
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .bottom, spacing: 0) {
-                ForEach(0..<daysToShow, id: \.self) { offset in
-                    if let day = calendar.date(byAdding: .day, value: offset, to: firstDay) {
-                        ScheduleDayColumn(
-                            day: day,
-                            entries: entries.filter { calendar.isDate($0.day, inSameDayAs: day) },
-                            selectedEntry: $selectedEntry,
-                            user: user,
-                            chore: chore,
-                            room: room
-                        )
+        // GeometryReader is greedy: it takes all the space the card has left after the
+        // title and the legend, and tells us how much that is.
+        return GeometryReader { proxy in
+            let columnHeight = proxy.size.height
+            // The busiest day uses the whole column: its label on top, its bars below.
+            let barAreaHeight = max(columnHeight - Self.weekdayLabelHeight - Self.labelToBarsSpacing, 0)
+            // Exactly `visibleDays` columns fill the card width on any device.
+            let columnWidth = proxy.size.width / Self.visibleDays
+            // Computed once here instead of once per column.
+            let scale = barScale(fitting: barAreaHeight)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .bottom, spacing: 0) {
+                    ForEach(0..<daysToShow, id: \.self) { offset in
+                        if let day = calendar.date(byAdding: .day, value: offset, to: firstDay) {
+                            ScheduleDayColumn(
+                                day: day,
+                                entries: entries.filter { calendar.isDate($0.day, inSameDayAs: day) },
+                                selectedEntry: $selectedEntry,
+                                barScale: scale,
+                                columnHeight: columnHeight,
+                                columnWidth: columnWidth,
+                                user: user,
+                                chore: chore,
+                                room: room
+                            )
+                        }
                     }
                 }
             }
-            .frame(minHeight: 330, alignment: .bottom)
-            .padding(.vertical, 12)
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .scrollBounceBehavior(.basedOnSize)
     }
 }
 
@@ -111,22 +184,34 @@ private struct ScheduleDayColumn: View {
     /// Shared selection; the popover opens on the bar whose entry equals this value.
     @Binding var selectedEntry: DailyUsageEntry?
     
+    /// Factor applied to every bar height (see `UserScheduleCard.barScale(fitting:)`).
+    let barScale: CGFloat
+    
+    /// Full height of the column (label + bars), the same for every day.
+    let columnHeight: CGFloat
+    
+    /// Width of the column; the bar uses most of it.
+    let columnWidth: CGFloat
+    
     let user: UserModel?
     let chore: (DailyUsageEntry) -> ChoreModel?
     let room: (ChoreModel) -> RoomModel?
     
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: UserScheduleCard.labelToBarsSpacing) {
             Text(weekdayText)
                 .font(.system(size: 16.35, weight: .medium))
+                .frame(height: UserScheduleCard.weekdayLabelHeight)
             
-            VStack(spacing: 4) {
+            VStack(spacing: UserScheduleCard.barSpacing) {
                 ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
                     bar(for: entry)
                 }
             }
         }
-        .frame(width: 50)
+        // Same height for every day, content at the bottom: as in the Figma, each weekday
+        // label sits right on top of its own bars.
+        .frame(width: columnWidth, height: columnHeight, alignment: .bottom)
     }
     
     /// Short, capitalized weekday in the app's language (e.g. "Seg").
@@ -181,7 +266,7 @@ private struct ScheduleDayColumn: View {
     private func bar(for entry: DailyUsageEntry) -> some View {
         let resolvedChore = chore(entry)
         let resolvedRoom = resolvedChore.flatMap(room)
-        let maxBarHeight: CGFloat = 80
+        let maxBarHeight = UserScheduleCard.baseBarHeight
         
         RoomTexturedShape(
             shape: RoundedRectangle(cornerRadius: 15),
@@ -189,7 +274,8 @@ private struct ScheduleDayColumn: View {
             zoom: 1.5,
             fixedSize: maxBarHeight
         )
-        .frame(width: 45, height: maxBarHeight * entry.tier.heightRatio)
+        // 45 of 50 in the original layout: the bar keeps that share of the column.
+        .frame(width: columnWidth * 0.9, height: maxBarHeight * CGFloat(entry.tier.heightRatio) * barScale)
         .contentShape(RoundedRectangle(cornerRadius: 15))
         .onTapGesture {
             selectedEntry = (selectedEntry == entry) ? nil : entry
