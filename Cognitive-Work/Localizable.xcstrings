@@ -2362,6 +2362,17 @@
         }
       }
     },
+    "Escolha as que couberem no seu tempo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the ones that fit your time"
+          }
+        }
+      }
+    },
     "Escolha as tarefas" : {
 
     },
@@ -3873,6 +3884,16 @@
         }
       }
     },
+    "Nada por aqui nos últimos 14 dias" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing here in the last 14 days"
+          }
+        }
+      }
+    },
     "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4230,6 +4251,17 @@
         }
       }
     },
+    "Nenhuma notificação nova" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No new notifications"
+          }
+        }
+      }
+    },
     "Nenhuma tarefa ainda" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4403,6 +4435,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Our goal is to take the mental load out of organizing chores, fairly and visually, for everyone in the home."
+          }
+        }
+      }
+    },
+    "Notificações" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "Nova divisão pronta" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New split is ready"
           }
         }
       }
@@ -4623,6 +4676,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        }
+      }
+    },
+    "ontem" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
           }
         }
       }
@@ -6047,6 +6111,17 @@
         }
       }
     },
+    "Sua retrospectiva chegou" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your recap is here"
+          }
+        }
+      }
+    },
     "Sua retrospectiva chegou!" : {
       "localizations" : {
         "en" : {
@@ -6064,6 +6139,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your Chores"
+          }
+        }
+      }
+    },
+    "Suas tarefas dos próximos 15 dias já estão na escala" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your chores for the next 15 days are on the schedule"
           }
         }
       }
@@ -6643,6 +6729,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sweep the balcony"
+          }
+        }
+      }
+    },
+    "Veja como foram os seus últimos 15 dias da casa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See how your last 15 days at home went"
           }
         }
       }
