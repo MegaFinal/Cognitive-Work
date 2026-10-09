@@ -38,23 +38,23 @@ struct FilterOptionsMenu: View {
             FilterMenuRow(
                 systemImage: "arrow.up.arrow.down",
                 title: "Ordenação",
-                subtitle: viewModel.isSortedByUrgency ? "Dia e urgência" : "Dia"
+                subtitle: viewModel.isSortedByUrgency ? L10n.tr("Dia e urgência") : L10n.tr("Dia")
             )
         }
 
         // MARK: - Filters section
         Menu {
             Menu {
-                ForEach(PriorityTag.allCases, id: \.self) { tag in
+                ForEach(PriorityTag.allCases.filter { $0 != .undefined }, id: \.self) { tag in
                     Toggle(isOn: tagBinding(tag)) {
-                        Text(tag.rawValue.capitalized)
+                        Text(verbatim: tag.displayName.capitalized(with: L10n.locale))
                     }
                 }
             } label: {
                 FilterMenuRow(
                     systemImage: "flag",
                     title: "Prioridade",
-                    subtitle: summary(viewModel.filterChoices.tags.map { $0.rawValue.capitalized })
+                    subtitle: summary(viewModel.filterChoices.tags.map { $0.displayName.capitalized(with: L10n.locale) })
                 )
             }
 
@@ -68,35 +68,35 @@ struct FilterOptionsMenu: View {
                 FilterMenuRow(
                     systemImage: "person.2",
                     title: "Usuários",
-                    subtitle: summary(viewModel.filterChoices.users.map { $0.name.capitalized })
+                    subtitle: summary(viewModel.filterChoices.users.map { $0.name.localizedDefault.capitalized(with: L10n.locale) })
                 )
             }
 
             Menu {
-                ForEach(Recurrence.allCases, id: \.self) { frequency in
+                ForEach(Recurrence.allCases.filter { $0 != .undefined }, id: \.self) { frequency in
                     Toggle(isOn: frequencyBinding(frequency)) {
-                        Text(frequency.rawValue.capitalized)
+                        Text(verbatim: frequency.displayName.capitalized(with: L10n.locale))
                     }
                 }
             } label: {
                 FilterMenuRow(
                     systemImage: "repeat",
                     title: "Frequência",
-                    subtitle: summary(viewModel.filterChoices.frequencies.map { $0.rawValue.capitalized })
+                    subtitle: summary(viewModel.filterChoices.frequencies.map { $0.displayName.capitalized(with: L10n.locale) })
                 )
             }
 
             Menu {
                 ForEach(filterableRooms, id: \.self) { room in
                     Toggle(isOn: roomBinding(room)) {
-                        Text(room.name.capitalized)
+                        Text(room.name.localizedDefault.capitalized(with: L10n.locale))
                     }
                 }
             } label: {
                 FilterMenuRow(
                     systemImage: "house",
                     title: "Cômodo",
-                    subtitle: summary(viewModel.filterChoices.rooms.map { $0.name.capitalized })
+                    subtitle: summary(viewModel.filterChoices.rooms.map { $0.name.localizedDefault.capitalized(with: L10n.locale) })
                 )
             }
 
@@ -111,7 +111,7 @@ struct FilterOptionsMenu: View {
                 FilterMenuRow(
                     systemImage: "checkmark.circle",
                     title: "Status",
-                    subtitle: viewModel.filterChoices.state.map { $0 ? "Concluído" : "Pendente" } ?? "Nenhum"
+                    subtitle: viewModel.filterChoices.state.map { $0 ? L10n.tr("Concluído") : L10n.tr("Pendente") } ?? L10n.tr("Nenhum")
                 )
             }
 
@@ -127,7 +127,7 @@ struct FilterOptionsMenu: View {
             FilterMenuRow(
                 systemImage: "line.3.horizontal.decrease",
                 title: "Filtros",
-                subtitle: activeFilterCount == 0 ? "Nenhum" : "\(activeFilterCount) ativo\(activeFilterCount == 1 ? "" : "s")"
+                subtitle: activeFilterCount == 0 ? L10n.tr("Nenhum") : L10n.tr("%lld ativos", activeFilterCount)
             )
         }
     }
@@ -172,9 +172,9 @@ struct FilterOptionsMenu: View {
     /// "Nenhum" when empty, the single value's name, or a count once more than one is picked
     private func summary(_ selected: [String]) -> String {
         switch selected.count {
-        case 0: return "Nenhum"
+        case 0: return L10n.tr("Nenhum")
         case 1: return selected[0]
-        default: return "\(selected.count) selecionados"
+        default: return L10n.tr("%lld selecionados", selected.count)
         }
     }
 }
@@ -182,7 +182,7 @@ struct FilterOptionsMenu: View {
 /// A single row inside the filter menu: icon, title, and the current selection as a subtitle
 private struct FilterMenuRow: View {
     let systemImage: String
-    let title: String
+    let title: LocalizedStringKey
     let subtitle: String
 
     var body: some View {

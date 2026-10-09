@@ -64,7 +64,9 @@ struct ChoreTagPicker: View {
                     .foregroundColor(.black)
                     .imageScale(.small)
             }
+            .fixedSize()
         }
+        .id(type.labelName(for: chore, currentRoom: currentRoom))
         .onChange(of: currentRoom) { _, newRoom in
             if let recordID = newRoom?.recordID {
                 chore.roomReference = CKRecord.Reference(recordID: recordID, action: .none)
@@ -77,19 +79,8 @@ struct ChoreTagPicker: View {
     /// Maps raw numerical duration intervals into standard UX tiers for editing purposes.
     private var durationTierBinding: Binding<ChoreDurationTier> {
         Binding(
-            get: {
-                let minutes = chore.duration / 60
-                return ChoreDurationTier.from(minutes: minutes)
-            },
-            set: { newTier in
-                switch newTier {
-                case .quick: chore.duration = 15 * 60
-                case .moderate: chore.duration = 30 * 60
-                case .slow: chore.duration = 60 * 60
-                case .verySlow: chore.duration = 120 * 60
-                case .undefined: chore.duration = 0
-                }
-            }
+            get: { ChoreDurationTier.from(minutes: chore.duration) },
+            set: { newTier in chore.duration = newTier.minutes }
         )
     }
 }

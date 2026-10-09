@@ -11,33 +11,21 @@ import PhotosUI
 struct EditProfileView: View {
     @Bindable var viewModel: UserProfileViewModel
     @Environment(\.dismiss) private var dismiss
-        
+    
+    /// Whether the banner picker sheet is open.
+    @State private var isPickingBanner = false
     
     var body: some View {
         VStack(spacing: 40) {
-            // MARK: - Photo Picker
-            PhotosPicker(selection: $viewModel.selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
-                ZStack(alignment: .bottomTrailing) {
-                    if let data = viewModel.displayedImageData, let uiImage = UIImage(data: data) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: width * 0.7, height: width * 0.7)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.25), radius: 7.26429, x: 0, y: 5.38095)
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.gray)
-                            .frame(width: width * 0.7, height: width * 0.7)
-                            .background(.white)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.25), radius: 7.26429, x: 0, y: 5.38095)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
+            // MARK: - Photo + banner
+            EditableProfileImage(
+                image: viewModel.displayedImageData.flatMap(UIImage.init(data:)),
+                isEditing: true,
+                selection: $viewModel.selectedPhotoItem,
+                banner: viewModel.editedBanner,
+                onEditBanner: { isPickingBanner = true }
+            )
+            .disabled(viewModel.isSaving)
             
             // MARK: - Name Textfield
             HStack {
@@ -52,12 +40,23 @@ struct EditProfileView: View {
                 .frame(width: width * 0.8)
                 .multilineTextAlignment(.center)
                 .bold()
+                .characterLimit(TextLimits.userName, text: $viewModel.editedName)
+                .submitLabel(.done)
+                .disabled(viewModel.isSaving)
                 Spacer()
             }
             
             Spacer()
         }
         .padding(.top, 70)
+        .sheet(isPresented: $isPickingBanner) {
+            ProfileBannerSheet(
+                banner: viewModel.editedBanner,
+                image: viewModel.displayedImageData.flatMap(UIImage.init(data:))
+            ) { banner in
+                viewModel.editedBanner = banner
+            }
+        }
         .navigationTitle("Editar Perfil")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(viewModel.isSaving)
@@ -100,7 +99,7 @@ struct EditProfileView: View {
                 .disabled(!viewModel.canSave)
             }
         }
-        .toolbar(.hidden, for: .tabBar)
+        .hidesTabBar()
         // MARK: - Error Alert
         .alert(
             "Erro ao salvar",
@@ -120,7 +119,7 @@ struct EditProfileView: View {
 
 /// A small confirmation pill shown briefly over ``EditProfileView`` after a successful save.
 private struct SuccessToast: View {
-    let text: String
+    let text: LocalizedStringKey
 
     var body: some View {
         Label(text, systemImage: "checkmark.circle.fill")

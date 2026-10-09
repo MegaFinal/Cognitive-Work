@@ -31,19 +31,30 @@ struct ChoreCardListStyle: View {
     }
     
     var occurrenceResponsibleUsers: [UserModel] {
-        guard chore.dailyAssignmentsReference?.isEmpty == false else {
-            guard let refs = chore.allResponsibleUsersReference else { return [] }
-            let ids = Set(refs.compactMap { $0.recordID })
-            return carouselViewModel.userModels.filter { user in
-                guard let id = user.recordID else { return false }
-                return ids.contains(id)
+        if let target = targetAssignments.first {
+            if let refs = target.userReferences {
+                let targetIDs = Set(refs.map(\.recordID))
+                guard !targetIDs.isEmpty else { return [] }
+                
+                return carouselViewModel.userModels.filter { user in
+                    guard let userID = user.recordID else { return false }
+                    return targetIDs.contains(userID)
+                }
             }
         }
-
-        let userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
+        
+        var targetIDs = Set<CKRecord.ID>()
+        if let refs = chore.allResponsibleUsersReference, !refs.isEmpty {
+            targetIDs.formUnion(refs.map(\.recordID))
+        } else if let currentID = chore.currentResponsibleReference?.recordID {
+            targetIDs.insert(currentID)
+        }
+        
+        guard !targetIDs.isEmpty else { return [] }
+        
         return carouselViewModel.userModels.filter { user in
-            guard let id = user.recordID else { return false }
-            return userIDs.contains(id)
+            guard let userID = user.recordID else { return false }
+            return targetIDs.contains(userID)
         }
     }
     
@@ -71,7 +82,7 @@ struct ChoreCardListStyle: View {
                 
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 10) {
-                        HStack(spacing: -5) {
+                        HStack(spacing: -10) {
                             ForEach(occurrenceResponsibleUsers, id: \.recordID) { user in
                                 UserProfilePictureTag(user: user, widthMultiplier: 0.07)
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
@@ -98,8 +109,8 @@ struct ChoreCardListStyle: View {
                             )
                             
                             CapsuleTag(
-                                tagName: ChoreDurationTier.from(minutes: chore.duration / 60).displayText,
-                                tagColor: ChoreDurationTier.from(minutes: chore.duration / 60).color,
+                                tagName: ChoreDurationTier.from(minutes: chore.duration).displayText,
+                                tagColor: ChoreDurationTier.from(minutes: chore.duration).color,
                                 horizontalPadding: 7.0,
                                 verticalPadding: 1.0
                             )
@@ -112,10 +123,10 @@ struct ChoreCardListStyle: View {
                     VStack {
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(room?.name ?? "Room not found")
+                                Text(room?.name.localizedDefault ?? L10n.tr("Sem cômodo"))
                                     .font(.system(size: 12))
                                 
-                                Text(chore.name)
+                                Text(chore.localizedName)
                                     .font(.system(size: 22))
                                     .bold()
                             }
@@ -125,8 +136,7 @@ struct ChoreCardListStyle: View {
                             
                             // MARK: Completion button
                             Button {
-                                let generator = UINotificationFeedbackGenerator()
-                                generator.notificationOccurred(isOccurrenceDone ? .warning : .success)
+                                HapticsManager.notify(isOccurrenceDone ? .warning : .success)
                                 
                                 Task {
                                     recurrentAssignment == nil
@@ -138,7 +148,7 @@ struct ChoreCardListStyle: View {
                                     Circle()
                                         .foregroundColor(.white)
                                         .frame(width: width * 0.05)
-
+                                    
                                     Image(systemName: isOccurrenceDone ? "checkmark.circle.fill" : "circle.fill")
                                         .foregroundColor(isOccurrenceDone ? .black : .white)
                                         .font(.system(size: 28))
@@ -160,7 +170,7 @@ struct ChoreCardListStyle: View {
 
 #Preview("Card em lista") {
     @Previewable @Namespace var namespace
-
+    
     let room: RoomModel = {
         var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")

@@ -30,18 +30,45 @@ struct Onboarding: View {
                     ProgressView()
                         .controlSize(.large)
                 } else {
-                    stepView(for: viewModel.stateMachine)
+                    NavigationStack {
+                        stepView(for: viewModel.stateMachine)
+                    }
                 }
             }
                 .onChange(of: viewModel.isOnboardingSkipped) {
                     didOnboard = true
                 }
+                .onReceive(NotificationCenter.default.publisher(for: .willAcceptShare)) { _ in
+                    guard viewModel.stateMachine.flow != .houseCreator else { return }
+                    viewModel.isAcceptingInvite = true
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .shareAcceptFailed)) { _ in
+                    viewModel.isAcceptingInvite = false
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { _ in
+                    viewModel.isAcceptingInvite = false
+                }
                 .onReceive(NotificationCenter.default.publisher(for: .didAcceptShare)) { _ in
                     Task {
+                        defer { viewModel.isAcceptingInvite = false }
+                        
+                        // A house creator mid-flow must not be switched to an invited flow:
+                        // the same index means a different step there.
+                        guard viewModel.stateMachine.flow != .houseCreator else { return }
+                        viewModel.isAcceptingInvite = true
+                        
+                        // On a cold launch through the invite link this can fire before
+                        // `checkExistingAccount()` loaded the profile. Treating that as "no
+                        // profile" sent the user down `.invitedWithoutProfile` past the
+                        // profile step, so `joinHouse()` never ran and no public user was created.
+                        if viewModel.currentUser == nil {
+                            await viewModel.fetchCurrentUser()
+                        }
+                        
                         if viewModel.currentUser != nil {
                             viewModel.stateMachine.flow = .invitedWithProfile
                             if await viewModel.joinHouse() {
-                                viewModel.goToNextView()
+                                viewModel.advanceAfterJoiningHouse()
                             }
                         } else {
                             viewModel.stateMachine.flow = .invitedWithoutProfile
@@ -51,10 +78,6 @@ struct Onboarding: View {
         }
         .blockingWhileUnlinkingOrphanedHouse()
         .task {
-            #if DEBUG && RESET_CLOUDKIT_ON_LAUNCH
-            await CloudKitManager.shared.deleteAllRecords()
-            viewModel.stateMachine.resetProgress()
-            #endif
             await viewModel.checkExistingAccount()
 
             if !viewModel.isOnboardingSkipped {
@@ -102,11 +125,14 @@ struct Onboarding: View {
             WaitHouseCreatorSheduleView(viewModel: $viewModel)
             
         case .scheduleChores:
-            FortnightlyScheduleView(shouldGenerate: viewModel.stateMachine.isOwner ?? false) {
-                    viewModel.finishOnboarding()
-                }
+            FortnightlyScheduleView(
+                shouldGenerate: viewModel.stateMachine.isOwner ?? false,
+                knownChoreIDs: viewModel.createdChoreRecordIDs
+            ) {
+                viewModel.finishOnboarding()
+            }
         case .waitGuestsFreeTime:
-            WaitUsersFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: false)
+            InviteAndWaitUsersFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: false)
             
         case .none:
             EmptyView()

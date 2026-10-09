@@ -31,6 +31,10 @@ struct SelectRoomsOnboardingView: View {
     /// The room type whose quantity and names are being edited (after a long press), or `nil`.
     @State private var editingRoomID: UUID?
     
+    /// The card being pressed right now, so it can shrink under the finger while the long
+    /// press builds up.
+    @State private var pressingRoomID: UUID?
+    
     /// The editor's current height, measured so it can be flipped above its card when it
     /// wouldn't fit below.
     @State private var editorHeight: CGFloat = 0
@@ -69,11 +73,19 @@ struct SelectRoomsOnboardingView: View {
                                 }
                             }
                         }
-                        // Long press opens the quantity/name editor for this room type.
-                        .onLongPressGesture {
+                        // Long press opens the quantity/name editor for this room type. The card
+                        // sinks while the finger is down, so the user sees something is happening.
+                        .onLongPressGesture(minimumDuration: 0.25) {
                             guard !viewModel.isLoading, !roomDraft.isAddButton else { return }
                             startEditing(roomDraft)
+                        } onPressingChanged: { isPressing in
+                            guard !roomDraft.isAddButton || !isPressing else { return }
+                            withAnimation(isPressing ? .easeOut(duration: 0.15) : .spring(response: 0.25, dampingFraction: 0.6)) {
+                                pressingRoomID = isPressing ? roomDraft.id : nil
+                            }
                         }
+                        .scaleEffect(pressingRoomID == roomDraft.id ? 0.9 : 1)
+                        .opacity(editingRoomID != nil && editingRoomID != roomDraft.id ? 0.55 : 1)
                         .anchorPreference(key: RoomCardBoundsKey.self, value: .bounds) {
                             [roomDraft.id: $0]
                         }
@@ -84,7 +96,8 @@ struct SelectRoomsOnboardingView: View {
                 OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: !viewModel.hasSelectedRooms) {
                     Task {
                         await viewModel.saveSelectedRooms()
-                        if !viewModel.isLoading {
+                        // `isLoading` is always false here, even on failure; check the error instead.
+                        if viewModel.errorMessage == nil {
                             viewModel.goToNextView()
                         }
                   }
@@ -106,6 +119,25 @@ struct SelectRoomsOnboardingView: View {
                             .ignoresSafeArea()
                             .onTapGesture { stopEditing() }
                         
+                        // The card being edited is redrawn above the dim, lifted, so it stays
+                        // bright and it is clear which room the editor belongs to.
+                        if let cardFrame = cardBounds[editingRoomID].map({ proxy[$0] }) {
+                            let room = viewModel.availableRooms[index]
+                            OnboardingRoomCard(
+                                text: room.name,
+                                symbol: room.symbol,
+                                color: room.color,
+                                pattern: room.texturePattern,
+                                isSelected: true,
+                                quantity: room.quantity
+                            )
+                            .scaleEffect(1.06)
+                            .shadow(color: room.color.uiColor.opacity(0.55), radius: 14, x: 0, y: 6)
+                            .position(x: cardFrame.midX, y: cardFrame.midY)
+                            .allowsHitTesting(false)
+                            .transition(.scale(scale: 0.92).combined(with: .opacity))
+                        }
+                        
                         RoomQuantityEditor(room: $viewModel.availableRooms[index])
                             .frame(width: placement.width)
                             .onGeometryChange(for: CGFloat.self) { geometry in
@@ -123,9 +155,18 @@ struct SelectRoomsOnboardingView: View {
         .sheet(isPresented: $isShowingCustomRoomSheet) {
             NewRoomSheet()
                 .environment(viewModel)
-                .presentationDetents([.medium])
+                .presentationDetents([.large])
         }
+        .onboardingBackButton(viewModel: viewModel)
         .navigationBarBackButtonHidden()
+        .alert("Não foi possível salvar os cômodos", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
     
     // MARK: - Editing
@@ -133,7 +174,7 @@ struct SelectRoomsOnboardingView: View {
     /// Opens the editor for a room type, selecting it too: setting how many rooms of a type
     /// the house has
     private func startEditing(_ room: RoomDTO) {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        HapticsManager.impact(.medium)
         
         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             if !room.isSelected {
@@ -236,7 +277,20 @@ private struct OnboardingRoomCard: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             content
+            
+            if quantity > 1 {
+                Text("×\(quantity)")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(isSelected ? color.uiColor : .black)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(.white, in: Capsule())
+                    .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+                    .offset(x: -8, y: 8)
+                    .transition(.scale.combined(with: .opacity))
+            }
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.65), value: quantity)
     }
     
     private var content: some View {
@@ -248,7 +302,7 @@ private struct OnboardingRoomCard: View {
                 .padding(.bottom, 20)
                 .foregroundColor(isSelected ? .white : .black)
             
-            Text(text)
+            Text(L10n.tr(text))
                 .fontWeight(.medium)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, 20)
@@ -278,7 +332,7 @@ private struct RoomQuantityEditor: View {
     @FocusState private var focusedInstance: UUID?
     
     private let maxQuantity = 10
-    private let maxNameLength = 16
+    private let maxNameLength = TextLimits.roomName
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -301,6 +355,10 @@ private struct RoomQuantityEditor: View {
         .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 25))
+        // Absorbs taps on the popup's empty areas so they don't reach the dimmed backdrop,
+        // which closes the editor. Buttons and the text field still take priority.
+        .contentShape(RoundedRectangle(cornerRadius: 25))
+        .onTapGesture {}
         .onChange(of: focusedInstance) { _, _ in
             restoreDefaultForEmptyNames()
         }
@@ -309,11 +367,13 @@ private struct RoomQuantityEditor: View {
     // MARK: - Subviews
     
     private var quantityStepper: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 0) {
             Button {
                 withAnimation(.snappy) { room.setQuantity(room.quantity - 1) }
             } label: {
                 Image(systemName: "minus")
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
             }
             .foregroundStyle(room.quantity > 1 ? Color.black : Color.gray.opacity(0.5))
             .disabled(room.quantity <= 1)
@@ -326,6 +386,8 @@ private struct RoomQuantityEditor: View {
                 withAnimation(.snappy) { room.setQuantity(room.quantity + 1) }
             } label: {
                 Image(systemName: "plus")
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
             }
             .foregroundStyle(room.quantity < maxQuantity ? Color.black : Color.gray.opacity(0.5))
             .disabled(room.quantity >= maxQuantity)
@@ -340,22 +402,28 @@ private struct RoomQuantityEditor: View {
     private func nameRow(index: Int, instance: RoomInstanceDTO) -> some View {
         let name = nameBinding(at: index)
         
-        return HStack {
-            TextField(room.instanceName(at: index), text: name)
+        return HStack(spacing: 0) {
+            TextField(room.instanceName(at: index).localizedDefault, text: name)
                 .font(.system(size: 20))
                 .foregroundStyle(.secondary)
                 .focused($focusedInstance, equals: instance.id)
                 .submitLabel(.done)
                 .characterLimit(maxNameLength, text: name)
             
+            // Tapping the pencil puts the cursor in this room's name field. The hit area is
+            // larger than the icon so it is easy to tap.
             Button {
+                HapticsManager.selection()
                 focusedInstance = instance.id
             } label: {
                 Image(systemName: "pencil")
                     .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.tr("Editar"))
         }
     }
     
@@ -364,7 +432,7 @@ private struct RoomQuantityEditor: View {
     /// Reads the room's current name (custom or default); writing stores it as a custom name.
     private func nameBinding(at index: Int) -> Binding<String> {
         Binding(
-            get: { room.instanceName(at: index) },
+            get: { room.instanceName(at: index).localizedDefault },
             set: { newName in
                 guard room.instances.indices.contains(index) else { return }
                 room.instances[index].customName = newName

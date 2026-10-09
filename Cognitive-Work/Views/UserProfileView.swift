@@ -47,9 +47,6 @@ struct UserProfileView: View {
                 Spacer()
             }
             .ignoresSafeArea()
-            .task {
-                await viewModelUser.loadUser()
-            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     NavigationLink {
@@ -57,15 +54,12 @@ struct UserProfileView: View {
                     } label: {
                         Image(systemName: "pencil")
                             .foregroundColor(.black)
-                            .contentShape(Circle())
                     }
-                    .buttonStyle(.plain)
-                    .glassEffect(
-                        .regular.interactive(),
-                        in: .circle
-                    )
+                    .accessibilityLabel(Text("Editar Perfil"))
+                    .disabled(viewModelUser.user == nil)
                 }
             }
+            .tabBarVisibilityRoot()
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -73,8 +67,9 @@ struct UserProfileView: View {
         .task {
             async let loadUserTask: () = viewModelUser.loadUser()
             async let loadIpTask: () = viewModelHardware.fetchHostName()
+            async let loadAdminTask: Bool = viewModelHouse.checkAdminStatus()
             
-            _ = await (loadUserTask, loadIpTask)
+            _ = await (loadUserTask, loadIpTask, loadAdminTask)
         }
         // MARK: Alert if didn't save
         .alert(
@@ -98,8 +93,8 @@ struct UserProfileView: View {
     
     private var userInfo: some View {
         ZStack(alignment: .top) {
-            Rectangle()
-                .foregroundColor(.orange)
+            RoomTextureBackground(color: viewModelUser.displayedBanner.color,
+                                  pattern: viewModelUser.displayedBanner.pattern)
                 .frame(height: height * 0.26)
                 .shadow(color: .black.opacity(0.14), radius: 16.46937, x: 0, y: 4.68879)
             
@@ -120,13 +115,14 @@ struct UserProfileView: View {
                         .clipShape(Circle())
                 }
                 
-                Text(viewModelUser.user?.name ?? "")
-                    .font(.system(size: 22))
-                    .bold()
-                
-                Text(viewModelUser.user?.tier.rawValue ?? "Ranking")
-                    .font(.system(size: 20))
-                    .fontWeight(.light)
+                if viewModelUser.isLoading && viewModelUser.user == nil {
+                    ProgressView()
+                        .frame(height: 50)
+                } else {
+                    Text(viewModelUser.user?.name ?? "")
+                        .font(.system(size: 22))
+                        .bold()
+                }
             }
             .padding(.top, (height * 0.25) - (width * 0.25))
         }
@@ -144,8 +140,7 @@ private struct SettingsButtonsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
             NavigationLink {
-                GeneralProfileSettingsView(viewModel: viewModelUser)
-                    .toolbar(.hidden, for: .tabBar)
+                GeneralProfileSettingsView(viewModel: viewModelUser, houseViewModel: viewModelHouse)
             } label: {
                 HStack {
                     Text("Configurações Gerais")
@@ -158,7 +153,6 @@ private struct SettingsButtonsSection: View {
             
             NavigationLink {
                 HouseSettingsView(viewModel: viewModelHouse)
-                    .toolbar(.hidden, for: .tabBar)
             } label: {
                 HStack {
                     Text("Ajustes da Casa")
@@ -181,41 +175,43 @@ private struct SettingsButtonsSection: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
-            Button {
-                if viewModelHardware.isPaired {
-                    hardwareSheet = .existing
-                } else if !viewModelHardware.hostName.isEmpty {
-                    hardwareSheet = .pair
-                } else {
-                    hardwareSheet = .wifi
-                }
-            } label: {
-                Text("Conectar com meu Hardware")
-            }
-            .padding(.horizontal)
+            
+            // MARK: HarviiConnection
+//            Button {
+//                if viewModelHardware.isPaired {
+//                    hardwareSheet = .existing
+//                } else if !viewModelHardware.hostName.isEmpty {
+//                    hardwareSheet = .pair
+//                } else {
+//                    hardwareSheet = .wifi
+//                }
+//            } label: {
+//                Text("Conectar com meu Hardware")
+//            }
+//            .padding(.horizontal)
         }
-        .sheet(item: $hardwareSheet) { sheet in
-            Group {
-                switch sheet {
-                case .existing:
-                    ExistingIPView(
-                        viewModelHardware: $viewModelHardware,
-                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
-                    )
-                case .pair:
-                    NavigationStack {
-                        DevicePairView(
-                            hardwareViewModel: viewModelHardware,
-                            onClose: { hardwareSheet = nil }
-                        )
-                    }
-                case .wifi:
-                    WifiCredentialsView(viewModel: viewModelHardware)
-                }
-            }
-            .presentationDetents([.medium ])
-            .presentationDragIndicator(.visible)
-        }
+//        .sheet(item: $hardwareSheet) { sheet in
+//            Group {
+//                switch sheet {
+//                case .existing:
+//                    ExistingIPView(
+//                        viewModelHardware: $viewModelHardware,
+//                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+//                    )
+//                case .pair:
+//                    NavigationStack {
+//                        DevicePairView(
+//                            hardwareViewModel: viewModelHardware,
+//                            onClose: { hardwareSheet = nil }
+//                        )
+//                    }
+//                case .wifi:
+//                    WifiCredentialsView(viewModel: viewModelHardware)
+//                }
+//            }
+//            .presentationDetents([.medium ])
+//            .presentationDragIndicator(.visible)
+//        }
     }
 }
 

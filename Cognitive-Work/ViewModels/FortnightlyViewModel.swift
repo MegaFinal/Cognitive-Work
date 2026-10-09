@@ -1,9 +1,9 @@
-////
-////  FortnightlyViewModel.swift
-////  Cognitive-Work
-////
-////  Created by anshu Li on 24/08/26.
-////
+//
+//  FortnightlyViewModel.swift
+//  Cognitive-Work
+//
+//  Created by anshu Li on 24/08/26.
+//
 
 import SwiftUI
 import CloudKit
@@ -69,6 +69,19 @@ class FortnightlyViewModel {
         await finishSetup()
     }
     
+    /// Configures the view model with data already in memory, without touching CloudKit.
+    func setup(
+        users: [UserModel],
+        chores: [ChoreModel],
+        assignments: [RecurrentAssignmentModel],
+        rooms: [RoomModel]
+    ) async {
+        self.users = users
+        self.chores = chores
+        
+        await apply(assignments: assignments, rooms: rooms)
+    }
+    
     /// Fetches all users, chores, and daily assignments directly from CloudKit,
     /// and initializes the fortnightly time frame.
     func setupWithFetch() async {
@@ -89,6 +102,11 @@ class FortnightlyViewModel {
         async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
         
         let (assignments, rooms) = await (fetchAssignments, fetchRooms)
+        await apply(assignments: assignments, rooms: rooms)
+    }
+    
+    /// Stores the assignments and rooms, sets the cycle's start date and builds the chart entries.
+    private func apply(assignments: [RecurrentAssignmentModel], rooms: [RoomModel]) async {
         recurrentAssignments = assignments
         roomModels = rooms
         
@@ -99,6 +117,7 @@ class FortnightlyViewModel {
         }
         
         await loadUsageEntries()
+        
         
         isLoading = false
     }
@@ -126,24 +145,26 @@ class FortnightlyViewModel {
                     
                     guard let assignment = assignmentDict[assignmentID] else { continue }
                     
-                    let userID: CKRecord.ID?
-                    if let userRef = assignment.userReference {
-                        userID = userRef.recordID
-                    } else if let userObj = await assignment.user {
-                        userID = userObj.recordID
+                    var assignedUserIDs: [CKRecord.ID] = []
+                    
+                    if let refs = assignment.userReferences, !refs.isEmpty {
+                        assignedUserIDs = refs.map(\.recordID)
                     } else {
-                        userID = nil
+                        let usersObj = await assignment.users
+                        assignedUserIDs = usersObj.compactMap(\.recordID)
                     }
                     
-                    guard let finalUserID = userID, userIDs.contains(finalUserID) else { continue }
-                    
-                    entries.append(DailyUsageEntry(
-                        day: assignment.day,
-                        userID: finalUserID,
-                        choreID: choreID,
-                        minutes: chore.duration,
-                        choreName: chore.name
-                    ))
+                    for finalUserID in assignedUserIDs {
+                        guard userIDs.contains(finalUserID) else { continue }
+                        
+                        entries.append(DailyUsageEntry(
+                            day: assignment.day,
+                            userID: finalUserID,
+                            choreID: choreID,
+                            minutes: chore.duration,
+                            choreName: chore.name
+                        ))
+                    }
                 }
             } else {
                 guard let dueDate = chore.dueDate,

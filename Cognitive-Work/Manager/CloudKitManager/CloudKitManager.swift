@@ -69,7 +69,7 @@ class CloudKitManager {
     
     /// In-flight house lookup, so concurrent callers share one request instead of racing.
     @ObservationIgnored
-    private var houseLookup: Task<HouseModel?, Never>?
+    private var houseLookup: Task<HouseModel?, Error>?
     
     /// In-flight in-house profile lookup, deduplicated the same way.
     @ObservationIgnored
@@ -80,12 +80,43 @@ class CloudKitManager {
     @ObservationIgnored
     private var sharedZonesLookup: Task<[CKRecordZone]?, Never>?
     
+    // MARK: - Data revision
+    
+    /// Counter that changes whenever house data changes, locally or remotely.
+    private(set) var dataRevision: Int = 0
+    
+    /// Records that house data changed
+    func markDataChanged() {
+        Task { @MainActor in
+            self.dataRevision &+= 1
+        }
+    }
+    
     private init() {
         container = CKContainer(
             identifier: "iCloud.JonasMelo.Cognitive-Work"
         )
         privateDB = container.privateCloudDatabase
         sharedDB = container.sharedCloudDatabase
+        
+        NotificationCenter.default.addObserver(
+            forName: .cloudKitDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.markDataChanged()
+        }
+    }
+    
+    
+    private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
+        guard let origem = asset.fileURL else { return nil }
+        
+        let destino = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        
+        try FileManager.default.copyItem(at: origem, to: destino)
+        return CKAsset(fileURL: destino)
     }
     
     // MARK: - Zone Management
@@ -118,24 +149,27 @@ class CloudKitManager {
     
     /// The house this device belongs to, resolved once per session.
     /// - Parameter forceRefresh: Pass `true` to bypass the cache and re-resolve.
-    func currentHouse(forceRefresh: Bool = false) async -> HouseModel? {
-        if forceRefresh {
-            cachedHouse = nil
-            houseLookup?.cancel()
-            houseLookup = nil
-        }
-        
+    func currentHouse(forceRefresh: Bool = false) async throws -> HouseModel? {
+        if forceRefresh { cachedHouse = nil }
+
         if let cachedHouse { return cachedHouse }
-        if let houseLookup { return await houseLookup.value }
-        
-        let lookup = Task<HouseModel?, Never> { [weak self] in
+        // A fetch already in flight is fresh enough — share it instead of cancelling it.
+        if let houseLookup { return try await houseLookup.value }
+
+        let lookup = Task<HouseModel?, Error> { [weak self] in
             guard let self else { return nil }
-            return try? await self.fetchFirst(HouseModel.self)
+            do {
+                return try await self.fetchFirst(HouseModel.self)
+            } catch let error as CloudKitErrors<String> {
+                // `fetchFirst` signals "no record" by throwing — for us that just means "no house".
+                if case .notFound = error { return nil }
+                throw error
+            }
         }
         houseLookup = lookup
-        
-        let house = await lookup.value
-        houseLookup = nil
+        defer { houseLookup = nil }
+
+        let house = try await lookup.value
         cachedHouse = house
         return house
     }
@@ -346,7 +380,7 @@ class CloudKitManager {
     ///   deleted, or the copy predates this naming convention.
     func fetchMyHouseUser() async -> UserModel? {
         guard let privateRecordID = await fetchMyUser()?.recordID,
-              let houseZoneID = await currentHouse()?.recordID?.zoneID
+              let houseZoneID = try? await currentHouse()?.recordID?.zoneID
         else {
             return nil
         }
@@ -494,6 +528,47 @@ class CloudKitManager {
         return accepted
     }
     
+    private func addMyselfToCurrentHouse() async -> Bool {
+        var found: HouseModel?
+        for _ in 0..<3 where found == nil {
+            found = try? await fetchFirst(HouseModel.self)
+            if found == nil { try? await Task.sleep(for: .seconds(1)) }
+        }
+        
+        guard let house = found,
+              let houseID = house.recordID,
+              let profile = await fetchMyUser(),
+              let profileID = profile.recordID,
+              let ownerName = await fetchCurrentUserRecordID()?.recordName
+        else { return false }
+        
+        guard let userPFP = profile.profilePicture,
+              let profilePictureDuplicate = try? duplicateCKAsset(userPFP)
+        else { return false }
+        
+        let member = UserModel(
+            name: profile.name,
+            profilePicture: profilePictureDuplicate,
+            banner: profile.banner,
+            tier: profile.tier,
+            coins: profile.coins,
+            points: profile.points,
+            house: CKRecord.Reference(recordID: houseID, action: .none),
+            couponLimit: profile.couponLimit,
+            ownerRecordName: ownerName
+        )
+        
+        guard let saved = await create(
+            member,
+            id: houseUserRecordID(for: profileID, inHouseZone: houseID.zoneID),
+            parent: house.reference(action: .none)
+        ) else { return false }
+        
+        await house.appendUsers([saved])
+        clearPendingJoin(ifMatching: houseID.zoneID)
+        return true
+    }
+    
     @discardableResult
     func leaveCurrentHouse() async throws -> Bool {
         guard let house = try? await fetchFirst(HouseModel.self),
@@ -519,6 +594,7 @@ class CloudKitManager {
         do {
             guard try await leaveCurrentHouse() else { return false }
             return await acceptShare(metadata: metadata)
+            return await addMyselfToCurrentHouse()
         }
         catch {
             print("\(String(describing: errorMessage))")
@@ -644,13 +720,28 @@ class CloudKitManager {
     ///
     /// - Important: If the operation fails, the error message is stored in **`self.errorMessage`**.
     @discardableResult
-    func batchSave(records: [CKRecord], zoneID: CKRecordZone.ID) async -> Bool {
+    func batchSave(
+        records: [CKRecord],
+        zoneID: CKRecordZone.ID,
+        savePolicy: CKModifyRecordsOperation.RecordSavePolicy = .ifServerRecordUnchanged
+    ) async -> Bool {
         let isPrivate = zoneID.ownerName == CKCurrentUserDefaultName
         let database = isPrivate ? privateDB : sharedDB
         do {
-            _ = try await database.modifyRecords(saving: records, deleting: [])
+            let (saveResults, _) = try await database.modifyRecords(
+                saving: records,
+                deleting: [],
+                savePolicy: savePolicy,
+                atomically: true
+            )
+            // `modifyRecords` only throws for whole-request failures; per-record errors
+            // (e.g. serverRecordChanged) come back in the results and used to be ignored.
+            for (_, result) in saveResults {
+                if case .failure(let error) = result { throw error }
+            }
         
             await HardwareViewModel.notifyDataChanged()
+            markDataChanged()
             return true
         } catch {
             self.errorMessage = "Batch save failed: \(error.localizedDescription)"
@@ -677,8 +768,10 @@ class CloudKitManager {
                 let fetchResults = try await database.records(for: recordIDs)
 
                 var recordsToSave: [CKRecord] = []
+                var savedIDs: Set<CKRecord.ID> = []
                 for item in group {
                     guard let recordID = item.recordID,
+                          savedIDs.insert(recordID).inserted,
                           let result = fetchResults[recordID],
                           case .success(let record) = result else { continue }
                     item.populate(record: record)
@@ -690,6 +783,7 @@ class CloudKitManager {
                 _ = try await database.modifyRecords(saving: recordsToSave, deleting: [])
                 
                 await HardwareViewModel.notifyDataChanged()
+                markDataChanged()
             } catch {
                 errorMessage = "Batch update failed: \(error.localizedDescription)"
                 print("    batchUpdate FAILED (\(T.recordType)): \(error)")

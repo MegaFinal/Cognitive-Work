@@ -89,6 +89,11 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     @ObservationIgnored
     private var isUpdating = false
     
+    /// Set when the record still stores ``duration`` in seconds; see
+    /// ``migrateDurationsToMinutesIfNeeded(_:)``.
+    @ObservationIgnored
+    private(set) var needsDurationMigration = false
+    
     var checkList: [CheckItemModel] {
         get async {
             if let checkListReference {
@@ -177,7 +182,12 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.dueDate = record["dueDate"] as? Date
         self.frequency = frequency
         self.shouldBeIncluded = (record["shouldBeIncluded"] as? Int).map { $0 != 0 }
-        self.duration = duration
+        if Self.isLegacySecondsDuration(duration) {
+            self.duration = duration / 60
+            self.needsDurationMigration = true
+        } else {
+            self.duration = duration
+        }
         self.isPublic = isPublic
         self.isLate = isLate
         self.weight = weight
@@ -272,14 +282,23 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         record["calendarEventIdentifier"] = calendarEventIdentifier
     }
     
-    func postpone(byDays days: Int) async {
-        let currentDate = self.dueDate ?? Date()
+    /// Moves a one-off chore's ``dueDate`` by `days`.
+    ///
+    /// - Returns: `true` when CloudKit saved it. On failure the date is put back.
+    @discardableResult
+    func postpone(byDays days: Int) async -> Bool {
+        let calendar = Calendar.current
+        let previousDueDate = dueDate
+        let currentDate = calendar.startOfDay(for: dueDate ?? Date())
         
-        if let newDate = Calendar.current.date(byAdding: .day, value: days, to: currentDate) {
-            self.dueDate = newDate
-            
-            await CloudKitManager.shared.update(self)
+        guard let newDate = calendar.date(byAdding: .day, value: days, to: currentDate) else { return false }
+        dueDate = newDate
+        
+        guard await CloudKitManager.shared.update(self) else {
+            dueDate = previousDueDate
+            return false
         }
+        return true
     }
     
     /// Flips ``isDone``, records who did it and persists the change.
@@ -311,14 +330,14 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     }
     
     /// Applies the edits made in `choreDTO` to this chore and persists everything to CloudKit.
-    ///
-    /// - Parameters:
-    ///   - choreDTO: The edited values collected by the create/edit screen.
-    ///   - pickedDate: The date picked in the form. Required to create a chore (except a daily one,
-    ///     which starts today), and stored as `dueDate` when the chore is a one-off.
-    ///   - targetAssignments: Optional recurrent assignment instances to update if this is an
-    ///     occurrence of a recurring chore.
-    /// - Throws: ``ChoreSaveError`` describing why nothing (or not everything) was saved.
+        ///
+        /// - Parameters:
+        ///   - choreDTO: The edited values collected by the create/edit screen.
+        ///   - pickedDate: The date picked in the form. Required to create a chore (except a daily one,
+        ///     which starts today), and stored as `dueDate` when the chore is a one-off.
+        ///   - targetAssignments: Optional recurrent assignment instances to update if this is an
+        ///     occurrence of a recurring chore.
+        /// - Throws: ``ChoreSaveError`` describing why nothing (or not everything) was saved.
     func save(
         from choreDTO: ChoreDTO,
         pickedDate: Date? = nil,
@@ -346,27 +365,21 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         let zoneID = houseReference.recordID.zoneID
         let parentReference = CKRecord.Reference(recordID: houseReference.recordID, action: .none)
         
-        let responsibleUsers: [UserModel]
-        var newCurrentResponsibleReference = currentResponsibleReference
+        var newCurrentResponsibleReference: CKRecord.Reference?
         
-        if choreDTO.isPublic {
-            responsibleUsers = choreDTO.responsibleUsers
-            if !isPublic {
-                newCurrentResponsibleReference = nil
-            }
+        let responsibleUsers = choreDTO.responsibleUsers
+
+        if let firstUser = responsibleUsers.first, let firstID = firstUser.recordID {
+            newCurrentResponsibleReference = CKRecord.Reference(recordID: firstID, action: .none)
         } else {
-            guard let me = await CloudKitManager.shared.currentHouseUser(),
-                  let myRecordID = me.recordID
-            else {
-                throw ChoreSaveError.missingCurrentUser
-            }
-            responsibleUsers = [me]
-            newCurrentResponsibleReference = CKRecord.Reference(recordID: myRecordID, action: .none)
+            newCurrentResponsibleReference = nil
         }
                 
         let snapshot = EditableSnapshot(of: self)
         
-        applyEditableFields(from: choreDTO, responsibleUsers: responsibleUsers)
+        let isSingleOccurrence = !targetAssignments.isEmpty
+        applyEditableFields(from: choreDTO, responsibleUsers: responsibleUsers, isSingleOccurrence: isSingleOccurrence)
+        
         currentResponsibleReference = newCurrentResponsibleReference
         if choreDTO.frequency == .none {
             dueDate = pickedDate
@@ -388,8 +401,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
         let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
         
-        let previousChecklist = checkListReference ?? []
-        let checklistDrafts = choreDTO.hasChecklist ? choreDTO.checklist : []
+        let checklistDrafts = choreDTO.hasChecklist
+            ? choreDTO.checklist.filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            : []
         self.checkListReference = await CheckItemModel.sync(from: checklistDrafts, parent: choreReference)
         
         if !targetAssignments.isEmpty {
@@ -402,6 +416,59 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         guard await CloudKitManager.shared.update(self) else {
             snapshot.restore(on: self)
             throw ChoreSaveError.cloudKit(CloudKitManager.shared.errorMessage)
+        }
+    }
+
+        /// Copies every user-editable field from `choreDTO` onto this chore.
+        private func applyEditableFields(
+            from choreDTO: ChoreDTO,
+            responsibleUsers: [UserModel],
+            isSingleOccurrence: Bool = false
+        ) {
+            name = choreDTO.name
+            description = choreDTO.description
+            frequency = choreDTO.frequency
+            duration = choreDTO.duration
+            priorityTag = choreDTO.priorityTag
+            isPublic = choreDTO.isPublic
+            symbolName = choreDTO.symbolName
+            roomReference = choreDTO.roomReference
+            
+            if !isSingleOccurrence {
+                if responsibleUsers.isEmpty {
+                    allResponsibleUsersReference = nil
+                } else {
+                    allResponsibleUsersReference = responsibleUsers.compactMap { responsibleUser in
+                        responsibleUser.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+                    }
+                }
+            }
+        }
+
+        /// Updates the user references for specific occurrences of a recurring chore based on selected users.
+    func updateRecurrentAssignments(
+        for responsibleUsers: [UserModel],
+        targetAssignments: [RecurrentAssignmentModel]
+    ) async {
+        let userRefs = responsibleUsers.compactMap { user -> CKRecord.Reference? in
+            guard let id = user.recordID else { return nil }
+            return CKRecord.Reference(recordID: id, action: .none)
+        }
+        
+        let assignmentsToUpdate: [RecurrentAssignmentModel]
+        if targetAssignments.isEmpty {
+            let allAssignments = await self.dailyAssignments
+            assignmentsToUpdate = allAssignments.filter { !$0.isCompleted }
+        } else {
+            assignmentsToUpdate = targetAssignments
+        }
+        
+        for assignment in assignmentsToUpdate {
+            assignment.userReferences = userRefs.isEmpty ? nil : userRefs
+        }
+        
+        if !assignmentsToUpdate.isEmpty {
+            _ = await CloudKitManager.shared.batchUpdate(assignmentsToUpdate)
         }
     }
     
@@ -425,21 +492,6 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         return ownerIDs.isDisjoint(with: otherResidentIDs)
     }
     
-    /// Copies every user-editable field from `choreDTO` onto this chore.
-    private func applyEditableFields(from choreDTO: ChoreDTO, responsibleUsers: [UserModel]) {
-        name = choreDTO.name
-        description = choreDTO.description
-        frequency = choreDTO.frequency
-        duration = choreDTO.duration
-        priorityTag = choreDTO.priorityTag
-        isPublic = choreDTO.isPublic
-        symbolName = choreDTO.symbolName
-        roomReference = choreDTO.roomReference
-        
-        allResponsibleUsersReference = responsibleUsers.compactMap { responsibleUser in
-            responsibleUser.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
-        }
-    }
     
     /// The fields ``save(from:pickedDate:targetAssignments:)`` may change, captured so a
     /// failed save can put the chore back exactly as it was.
@@ -488,44 +540,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
-    /// Updates the user references for specific occurrences of a recurring chore based on selected users.
-    private func updateRecurrentAssignments(
-        for selectedUsers: [UserModel],
-        targetAssignments: [RecurrentAssignmentModel]) async {
-            let selectedUserIDs = Set(selectedUsers.compactMap { $0.recordID })
-            var modelsToUpdate: [RecurrentAssignmentModel] = []
-            
-            // Clear user references for records that are no longer selected
-            for assignment in targetAssignments {
-                guard let userID = assignment.userReference?.recordID,
-                      !selectedUserIDs.contains(userID)
-                else { continue }
-                
-                assignment.userReference = nil
-                modelsToUpdate.append(assignment)
-            }
-            
-            // Fill available slots with newly selected users who aren't yet assigned
-            var freeSlots = targetAssignments.filter { $0.userReference == nil }
-            let alreadyAssignedUserIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
-            let needsAssignment = selectedUsers.filter {
-                guard let id = $0.recordID else { return false }
-                return !alreadyAssignedUserIDs.contains(id)
-            }
-            
-            for user in needsAssignment {
-                guard let userID = user.recordID else { continue }
-                guard !freeSlots.isEmpty else { break }
-                let slot = freeSlots.removeFirst()
-                slot.userReference = CKRecord.Reference(recordID: userID, action: .none)
-                modelsToUpdate.append(slot)
-            }
-            
-            // Batch update the modified assignment models in CloudKit
-            if !modelsToUpdate.isEmpty {
-                await CloudKitManager.shared.batchUpdate(modelsToUpdate)
-            }
-        }
+    
   
     // MARK: - Delete
     
@@ -587,6 +602,25 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         
         return true
     }
+    
+    // MARK: - Duration migration
+    
+    /// Whether `duration` is a value the edit screen used to save in seconds (15 * 60, 30 * 60…)
+    /// instead of minutes.
+    static func isLegacySecondsDuration(_ duration: Double) -> Bool {
+        duration >= 300 && duration.truncatingRemainder(dividingBy: 60) == 0
+    }
+    
+    /// Rewrites, in minutes, the `duration` of chores whose record still stores seconds.
+    static func migrateDurationsToMinutesIfNeeded(_ chores: [ChoreModel]) async {
+        for chore in chores where chore.needsDurationMigration {
+            guard let record = await CloudKitManager.shared.fetchRecord(for: chore) else { continue }
+            record["duration"] = chore.duration
+            if await CloudKitManager.shared.update(record: record) {
+                chore.needsDurationMigration = false
+            }
+        }
+    }
 }
 
 // MARK: - Save errors
@@ -602,15 +636,15 @@ enum ChoreSaveError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingRoom:
-            return "Escolha um cômodo para a tarefa."
+            return L10n.tr("Escolha um cômodo para a tarefa.")
         case .missingDate:
-            return "Escolha uma data para a tarefa."
+            return L10n.tr("Escolha uma data para a tarefa.")
         case .missingHouse:
-            return "Não foi possível identificar a casa deste cômodo."
+            return L10n.tr("Não foi possível identificar a casa deste cômodo.")
         case .missingCurrentUser:
-            return "Não foi possível identificar seu perfil para salvar a tarefa privada."
+            return L10n.tr("Não foi possível identificar seu perfil para salvar a tarefa privada.")
         case .cloudKit(let message):
-            return message ?? "Não foi possível salvar a tarefa. Tente novamente."
+            return message ?? L10n.tr("Não foi possível salvar a tarefa. Tente novamente.")
         }
     }
 }

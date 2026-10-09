@@ -34,28 +34,61 @@ struct SelectFreeTimeOnboardingView: View {
         DayOfWeekDTO(name: "Domingo ",nameAbbreviation: "Dom")
     ]
     @State var showAllert: Bool = false
+
+    /// The free time was saved on the profile but not on the house yet (see `save()`).
+    @State private var showSyncWarning: Bool = false
+
+    /// Becomes true once the saved free time has been fetched (settings only).
+    @State private var hasLoadedSavedTime: Bool = false
+    
+    /// Shows a loading state until the saved data arrives when opened from settings.
+    private var isFetchingSavedTime: Bool { isFromSettings && !hasLoadedSavedTime }
+    
+    /// At least one day needs free time before saving.
+    private var canSave: Bool {
+        weekOrder.contains(where: { $0.freeTime != .none })
+    }
+    
+    // MARK: - Actions
+    
+    /// Persists the week and advances (onboarding) or goes back (settings).
+    private func save() async {
+        viewModel.isLoading = true
+        defer { viewModel.isLoading = false }
+
+        guard await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) else { return }
+        HapticsManager.notify(.success)
+
+        // Saved on the user's profile but not yet on the house's: say so before moving on (the
+        // alert's button continues). The sync is retried automatically.
+        if viewModel.freeTimeSyncWarning != nil {
+            showSyncWarning = true
+            return
+        }
+        continueAfterSaving()
+    }
+
+    private func continueAfterSaving() {
+        if isFromSettings {
+            dismiss()
+        } else {
+            viewModel.advanceAfterFreeTime()
+        }
+    }
     
     // MARK: - Body
     
     var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = geometry.size.height
+        VStack(alignment: .leading) {
+            OnboardingHeader(
+                title: "Quanto tempo você tem para a casa?",
+                description: "Arraste em cada dia para definir seu tempo livre para as tarefas da casa",
+                containerInset: width * 0.0565
+            )
+            .padding(.bottom, 20)
             
-            VStack(alignment: .leading) {
-                Text("Delimite seu tempo")
-                    .bold()
-                    .font(.system(size: 32))
-                    .foregroundStyle(.titleGray)
-                    .padding(.top, height * 0.034)
-                    .padding(.bottom, 10)
-                
-                Text("Defina seu tempo disponível para realizar tarefas domésticas durante a semana")
-                    .bold()
-                    .font(.system(size: 16))
-                    .foregroundStyle(.subTitleGray)
-                
-                HStack(spacing: width * 0.073) {
+            VStack {
+                HStack(spacing: width * 0.07) {
                     Spacer()
                     Text("30’")
                     Text("1h")
@@ -66,39 +99,49 @@ struct SelectFreeTimeOnboardingView: View {
                 }
                 .font(.system(size: 16))
                 .fontWeight(.medium)
-                .padding(.trailing, 10)
-                .padding(.top, height * 0.023)
+                .padding(.trailing, 12)
+                .padding(.top, height * 0.005)
                 
                 ForEach($weekOrder, id: \.name) { $day in
                     OnboardingCustomSliderComponent(dayOfWeek: $day, width: width, isLoading: $viewModel.isLoading)
                 }
-                
-                OnboardingProgressButton(
-                    width: 50.0,
-                    height: 50.0,
-                    text: isFromSettings ? "checkmark" : "chevron.forward",
-                    isSystemImage: true,
-                    isLoading: viewModel.isLoading,
-                    isDisabled: !weekOrder.contains(where: { $0.freeTime != .none })
-                ) {
-                    viewModel.isLoading = true
-                    if await viewModel.setAvailableTimeToUser(daysOfWeekDTO: weekOrder) {
-                        if isFromSettings {
-                            dismiss()
-                        } else {
-                            viewModel.goToNextView()
-                        }
-                    }
-                    viewModel.isLoading = false
-                }
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
-            .padding(.horizontal, width * 0.0865)
-            .navigationBarBackButtonHidden(!isFromSettings)
-            .toolbar(.hidden, for: .tabBar)
-
+            .padding(.horizontal)
+            
+            Spacer()
+            HStack {
+                Spacer()
+                OnboardingProgressButton(width: width * 0.12, height: width * 0.12, text: isFromSettings ? "checkmark" : "chevron.right", isSystemImage: true, isLoading: viewModel.isLoading, isDisabled: !canSave) {
+                    Task {
+                        await save()
+                    }
+                }
+            }
         }
+        .padding(.horizontal, width * 0.0565)
+        .opacity(isFetchingSavedTime ? 0 : 1)
+        .overlay {
+            if isFetchingSavedTime {
+                ProgressView()
+                    .controlSize(.large)
+            }
+        }
+        .navigationBarBackButtonHidden(!isFromSettings || viewModel.isLoading)
+        .toolbar {
+            // While saving, the system back button is hidden; a disabled one takes its place.
+            if isFromSettings && viewModel.isLoading {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                    .disabled(true)
+                }
+            }
+        }
+        .onboardingBackButton(viewModel: viewModel, isHidden: isFromSettings)
+        .hidesTabBar()
         .alert("Não deu para salvar seus horários", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -107,8 +150,24 @@ struct SelectFreeTimeOnboardingView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        .alert("Salvo no seu perfil", isPresented: $showSyncWarning) {
+            Button("OK") {
+                viewModel.freeTimeSyncWarning = nil
+                continueAfterSaving()
+            }
+        } message: {
+            Text(viewModel.freeTimeSyncWarning ?? "")
+        }
         .task {
-            guard isFromSettings else { return }
+            guard isFromSettings else {
+                // Restores a choice already made in onboarding (kept until the house exists).
+                if let pending = viewModel.freeTimeToRestore {
+                    for (index, minutes) in pending.enumerated() where weekOrder.indices.contains(index) {
+                        weekOrder[index].freeTime = FreeTimeEnum(minutes: minutes)
+                    }
+                }
+                return
+            }
             
             viewModel.isLoading = true
             let saved = await viewModel.fetchCurrentFreeTime()
@@ -116,6 +175,7 @@ struct SelectFreeTimeOnboardingView: View {
                 weekOrder[index].freeTime = freeTime
             }
             viewModel.isLoading = false
+            hasLoadedSavedTime = true
         }
     }
 }
@@ -135,10 +195,6 @@ private struct OnboardingCustomSliderComponent: View {
     
     /// Layout values shared by the component, kept here to avoid magic numbers.
     private enum Layout {
-        /// Horizontal spacing between the day abbreviation and the slider,
-        /// expressed as a fraction of the available width.
-        static let horizontalSpacingRatio: CGFloat = 0.03
-        
         /// Width reserved for the day abbreviation, expressed as a fraction of
         /// the available width.
         static let abbreviationWidthRatio: CGFloat = 0.091
@@ -162,11 +218,6 @@ private struct OnboardingCustomSliderComponent: View {
     /// Amount of free-time blocks currently selected on the slider.
     @State private var selectedFreeTimeLevel: Int = 0
     
-    /// Horizontal spacing between the day abbreviation and the slider.
-    private var horizontalSpacing: CGFloat {
-        width * Layout.horizontalSpacingRatio
-    }
-    
     /// Width reserved for the day abbreviation.
     private var abbreviationWidth: CGFloat {
         width * Layout.abbreviationWidthRatio
@@ -177,13 +228,14 @@ private struct OnboardingCustomSliderComponent: View {
     // MARK: - Body
     
     var body: some View {
-        HStack(spacing: horizontalSpacing) {
-            Text(dayOfWeek.nameAbbreviation)
+        HStack(spacing: 10) {
+            Text(LocalizedStringKey(dayOfWeek.nameAbbreviation))
                 .font(.system(size: Layout.abbreviationFontSize))
                 .fontWeight(.medium)
                 .frame(width: abbreviationWidth, alignment: .leading)
+                .padding(.bottom)
             
-            VStack {
+            VStack(spacing: 8) {
                 FreeTimeSlider(rating: $selectedFreeTimeLevel, isLoading: $isLoading)
                 
                 caption
@@ -210,21 +262,19 @@ private struct OnboardingCustomSliderComponent: View {
     /// label of the currently selected free time.
     private var caption: some View {
         HStack {
-            Text(dayOfWeek.name)
-                .font(.system(size: Layout.captionFontSize))
-                .fontWeight(.medium)
-            
-            Text(dayOfWeek.freeTime.rawValue)
+            Text(dayOfWeek.freeTime.displayName)
                 .font(.system(size: Layout.captionFontSize))
                 .fontWeight(.light)
             
             Spacer()
         }
-        .foregroundStyle(.delimiteTimeTextComponent)
+        .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.45))
     }
 }
 
 #Preview {
     @Previewable @State var viewModel = OnboardingViewModel()
-    SelectFreeTimeOnboardingView(viewModel: $viewModel)
+    NavigationStack {
+        SelectFreeTimeOnboardingView(viewModel: $viewModel, isFromSettings: true)
+    }
 }

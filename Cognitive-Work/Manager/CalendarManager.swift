@@ -169,7 +169,7 @@ class CalendarManager {
       
     @discardableResult
     func upsertRecurrentEventWithoutPersisting(for assignment: RecurrentAssignmentModel, chore: ChoreModel, currentUserID: CKRecord.ID) throws -> Bool {
-        let isAssignedToMe = assignment.userReference?.recordID == currentUserID
+        let isAssignedToMe = (assignment.userReferences ?? []).contains { $0.recordID == currentUserID }
         let isNotCompleted = !assignment.isCompleted
           
         // Must belong to the current user and remain uncompleted
@@ -279,10 +279,6 @@ class CalendarManager {
     // MARK: - Single Item Operations
       
     /// Creates or updates a single one-off chore calendar event.
-    ///
-    /// - Parameters:
-    ///   - chore: The `ChoreModel` instance to update.
-    ///   - currentUserID: The `CKRecord.ID` of the current user.
     func upsertOneOffEvent(for chore: ChoreModel, currentUserID: CKRecord.ID) async throws {
         guard await requestAccess() else { return }
 
@@ -320,15 +316,10 @@ class CalendarManager {
     }
       
     /// Creates or updates a single recurrent assignment calendar event.
-    ///
-    /// - Parameters:
-    ///   - assignment: The `RecurrentAssignmentModel` instance to update.
-    ///   - chore: The parent `ChoreModel`.
-    ///   - currentUserID: The `CKRecord.ID` of the current user.
     func upsertRecurrentEvent(for assignment: RecurrentAssignmentModel, chore: ChoreModel, currentUserID: CKRecord.ID) async throws {
         guard await requestAccess() else { return }
 
-        let isAssignedToMe = assignment.userReference?.recordID == currentUserID
+        let isAssignedToMe = (assignment.userReferences ?? []).contains { $0.recordID == currentUserID }
         let isNotCompleted = !assignment.isCompleted
           
         guard isAssignedToMe, isNotCompleted else {
@@ -361,11 +352,6 @@ class CalendarManager {
     }
       
     /// Removes a calendar event using identifier-first lookup with title and date fallback matching.
-    ///
-    /// - Parameters:
-    ///   - identifier: The unique string identifier of the event.
-    ///   - title: The title of the event used for fallback matching.
-    ///   - date: The date of the event used for fallback matching.
     func removeEvent(identifier: String?, title: String, date: Date?) {
         // Try direct removal via identifier
         if let identifier, let event = store.calendarItem(withIdentifier: identifier) as? EKEvent {

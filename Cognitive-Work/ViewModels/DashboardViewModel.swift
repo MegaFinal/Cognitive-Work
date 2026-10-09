@@ -10,223 +10,286 @@ import CloudKit
 
 @Observable
 class DashboardViewModel {
-
+    
     // MARK: - Chart Data Types
-
-    /// One slice of the room distribution chart.
+    
+    /// One room inside a chart (a bar segment or a legend item).
     struct RoomSlice: Identifiable {
         let id: String
         let name: String
         let color: Color
         let choreCount: Int
     }
-
+    
+    /// One column of the daily chart: one day, split by room.
+    struct DaySlice: Identifiable {
+        let day: Date
+        let rooms: [RoomSlice]
+        var id: Date { day }
+    }
+    
+    // MARK: - Cache
+    
+    private var user: UserModel?
+    private var houseMembers: [UserModel] = []
+    private var chores: [ChoreModel] = []
+    private var assignments: [RecurrentAssignmentModel] = []
+    private var rooms: [RoomModel] = []
+    
+    /// "Current division" card data. Loaded in the same pass as everything else,
+    /// from the data already fetched here (no second round of CloudKit requests).
+    let schedule = CurrentScheduleViewModel()
+    
+    // MARK: - Period
+    
+    /// Monday of the selected week. The chart always goes from Monday to Sunday.
+    var periodStart: Date = DashboardViewModel.mondayOfWeek(containing: .now)
+    var periodFinish: Date = DashboardViewModel.mondayOfWeek(containing: Calendar.current.date(byAdding: .day, value: 13, to: .now) ?? Date())
+    
+    /// Monday of the week that contains `date` (weeks run Monday → Sunday).
+    static func mondayOfWeek(containing date: Date) -> Date {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 1 = Sunday, 2 = Monday
+        return calendar.dateInterval(of: .weekOfYear, for: date)?.start
+        ?? calendar.startOfDay(for: date)
+    }
+    
     // MARK: - 1. Daily Completion Ring
-
+    
     var completedToday: Int = 0
     var totalToday: Int = 0
-
-    /// From `0.0` to `1.0`.
     var completionProgress: Double = 0.0
-
-    /// E.g. `"75%"`.
     var completionText: String = "0%"
-
-    // MARK: - 2. Distribution by Room
-
+    
+    // MARK: - 2. Room Distribution (legend)
+    
+    /// Rooms that appear in the period, with their total chore count.
     var roomDistribution: [RoomSlice] = []
-
-    // MARK: - 3. Cognitive Load Comparison
-
-    /// The user's points.
+    
+    // MARK: - 3. Cognitive Load
+    
+    /// The user's points (also used by the "42 pontos" card).
     var myCognitiveLoad: Int = 0
-
-    /// Sum of the points of every house member.
     var houseCognitiveLoad: Int = 0
-
-    /// The user's share of the house load, from `0.0` to `1.0`.
     var myCognitiveShare: Double = 0.0
-
-    /// The ideal share for an even split (`1 / members`), from `0.0` to `1.0`.
     var idealCognitiveShare: Double = 0.0
-
     var myCognitiveShareText: String = "0%"
     var idealCognitiveShareText: String = "0%"
-
+    
+    // MARK: - 4. Daily Distribution by Room
+    
+    var dailyRoomDistribution: [DaySlice] = []
+    
     // MARK: - 5. Unowned Public Chores
-
+    
     var unownedPublicCount: Int = 0
     var totalPublicCount: Int = 0
-
-    /// Fraction of public chores that still have no owner, from `0.0` to `1.0`.
     var unownedPublicProgress: Double = 0.0
-
-    // MARK: - Load All
-
-    /// Refreshes every chart at once.
-    ///
-    /// - Parameters:
-    ///   - user: The user viewing the dashboard.
-    ///   - houseMembers: Every house member (including `user`).
-    ///   - chores: Every chore in the house.
-    ///   - rooms: Every room in the house.
-    ///   - todayChores: The user's chores for today (e.g. ``DashboardModel/todayChores``).
-    ///   - pendingToday: Today's chores still pending (e.g. ``DashboardModel/toDoList``).
-    func load(
-        user: UserModel,
-        houseMembers: [UserModel],
-        chores: [ChoreModel],
-        rooms: [RoomModel],
-        todayChores: [ChoreModel],
-        pendingToday: [ChoreModel]
-    ) {
-        loadCompletionRing(todayChores: todayChores, pendingToday: pendingToday)
-        loadRoomDistribution(for: user, chores: chores, rooms: rooms)
-        loadCognitiveLoad(for: user, houseMembers: houseMembers)
-        loadUnownedPublicChores(chores: chores)
+    
+    // MARK: - Load
+    
+    var isLoading: Bool = true
+    
+    /// `CloudKitManager.dataRevision` the cached data was fetched at. `nil` until the first load.
+    private var loadedRevision: Int?
+    
+    /// Day the cached data was built for. "Today" cards go stale at midnight
+    private var loadedDay: Date?
+    
+    /// Whether the cached data is out of date
+    var needsReload: Bool {
+        guard let loadedRevision, let loadedDay else { return true }
+        return loadedRevision != CloudKitManager.shared.dataRevision
+            || !Calendar.current.isDateInToday(loadedDay)
     }
-
+    
+    /// Loads only when ``needsReload`` says so.
+    func loadIfNeeded() async {
+        guard needsReload else { return }
+        await load()
+    }
+    
+    func load() async {
+        let revision = CloudKitManager.shared.dataRevision
+        
+        if loadedRevision == nil { isLoading = true }
+        
+        async let fetchUser = CloudKitManager.shared.fetchMyHouseUser()
+        async let fetchMembers = CloudKitManager.shared.fetchHouseUsers()
+        async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
+        async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
+        
+        let newUser = await fetchUser
+        let newMembers = await fetchMembers
+        let newChores = await fetchChores
+        let newAssignments = await fetchAssignments
+        let newRooms = await fetchRooms
+        
+        guard !Task.isCancelled else { return }
+        
+        user = newUser
+        houseMembers = newMembers
+        chores = newChores
+        assignments = newAssignments
+        rooms = newRooms
+        
+        refresh()
+        await schedule.setup(users: newMembers, chores: newChores,
+                             assignments: newAssignments, rooms: newRooms, me: newUser)
+        guard !Task.isCancelled else { return }
+        
+        loadedRevision = revision
+        loadedDay = Calendar.current.startOfDay(for: .now)
+        isLoading = false
+    }
+    func refresh() {
+        loadCompletionRing()
+        loadCognitiveLoad()
+        loadDailyRoomDistribution()
+        loadRoomDistribution()
+        loadUnownedPublicChores()
+    }
+    
+    func changePeriod(by offset: Int) {
+        guard let newStart = Calendar.current.date(
+            byAdding: .day,
+            value: offset * 7,
+            to: periodStart
+        )
+        else {
+            return
+        }
+        
+        periodStart = newStart
+        loadDailyRoomDistribution()
+        loadRoomDistribution() }
+    
     // MARK: - 1. Completion Ring
-
-    func loadCompletionRing(todayChores: [ChoreModel], pendingToday: [ChoreModel]) {
-        totalToday = todayChores.count
-        completedToday = totalToday - pendingToday.count
-
+    
+    func loadCompletionRing() {
+        guard let user else { return }
+        
+        // Same filter as the chores screen
+        let today = DashboardModel(user: user)
+        today.setup(chores: chores, assignments: assignments)
+        
+        totalToday = today.todayChores.count
+        completedToday = totalToday - today.toDoList.count
         completionProgress = fraction(completedToday, of: totalToday)
         completionText = percentText(completionProgress)
     }
-
-    /// Same ring, but fetches the user, chores and assignments from CloudKit itself.
-    ///
-    /// Today's and pending chores are filtered by ``DashboardModel``, so the ring always
-    /// matches the progress cards on the chores screen.
-    func loadCompletionRing() async {
-        guard let myUser = await CloudKitManager.shared.fetchMyHouseUser() else { return }
-
-        async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
-        let (chores, assignments) = await (fetchChores, fetchAssignments)
-
-        let today = DashboardModel(user: myUser)
-        today.setup(chores: chores, assignments: assignments)
-
-        loadCompletionRing(todayChores: today.todayChores, pendingToday: today.toDoList)
-    }
-
+    
     // MARK: - 2. Room Distribution
-
-    func loadRoomDistribution(for user: UserModel, chores: [ChoreModel], rooms: [RoomModel]) {
-        let myChores = chores.filter { isResponsible(user, for: $0) }
-
-        // Counts how many of the user's chores are in each room
-        var countByRoomID: [CKRecord.ID: Int] = [:]
-        for chore in myChores {
-            guard let roomID = chore.roomReference?.recordID else { continue }
-            countByRoomID[roomID, default: 0] += 1
-        }
-
-        roomDistribution = rooms.compactMap { room in
-            guard let roomID = room.recordID,
-                  let count = countByRoomID[roomID], count > 0
-            else { return nil }
-
-            return RoomSlice(
-                id: roomID.recordName,
-                name: room.name,
-                color: room.color.uiColor,
-                choreCount: count
+    
+    /// Sums the daily chart per room — must run after `loadDailyRoomDistribution()`.
+    func loadRoomDistribution() {
+        var totals: [String: RoomSlice] = [:]
+        for slice in dailyRoomDistribution.flatMap(\.rooms) {
+            let previous = totals[slice.id]?.choreCount ?? 0
+            totals[slice.id] = RoomSlice(
+                id: slice.id,
+                name: slice.name,
+                color: slice.color,
+                choreCount: previous + slice.choreCount
             )
         }
-        .sorted { $0.choreCount > $1.choreCount }
+        roomDistribution = totals.values.sorted { $0.choreCount > $1.choreCount }
     }
-
-    /// Same distribution, but fetches the rooms through each chore's `room` property.
-    ///
-    /// Makes one CloudKit fetch per distinct room (not one per chore).
-    func loadRoomDistribution(for user: UserModel, chores: [ChoreModel]) async {
-        let myChores = chores.filter { isResponsible(user, for: $0) }
-
-        // Fetches each room only once
-        var rooms: [RoomModel] = []
-        var fetchedRoomIDs: Set<CKRecord.ID> = []
-        for chore in myChores {
-            guard let roomID = chore.roomReference?.recordID,
-                  !fetchedRoomIDs.contains(roomID)
-            else { continue }
-
-            fetchedRoomIDs.insert(roomID)
-            if let room = await chore.room {
-                rooms.append(room)
-            }
-        }
-
-        loadRoomDistribution(for: user, chores: myChores, rooms: rooms)
-    }
-
+    
     // MARK: - 3. Cognitive Load
-
-    /// Compares only the user against the house total — other members are never exposed.
-    func loadCognitiveLoad(for user: UserModel, houseMembers: [UserModel]) {
+    
+    func loadCognitiveLoad() {
+        guard let user else { return }
+        
         myCognitiveLoad = user.points
         houseCognitiveLoad = houseMembers.reduce(0) { $0 + $1.points }
-
         myCognitiveShare = fraction(myCognitiveLoad, of: houseCognitiveLoad)
         idealCognitiveShare = houseMembers.isEmpty ? 0 : 1.0 / Double(houseMembers.count)
-
         myCognitiveShareText = percentText(myCognitiveShare)
         idealCognitiveShareText = percentText(idealCognitiveShare)
     }
+    
+    // MARK: - 4. Daily Room Distribution
+    
+    func loadDailyRoomDistribution() {
+        guard let userID = user?.recordID else { return }
+        let calendar = Calendar.current
+        let days = (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: periodStart) }
 
-    /// Fetches the user and the house members itself.
-    func loadCognitiveLoad() async {
-        async let fetchMyUser = CloudKitManager.shared.fetchMyHouseUser()
-        async let fetchMembers = CloudKitManager.shared.fetchHouseUsers()
-        let (myUser, members) = await (fetchMyUser, fetchMembers)
-
-        guard let myUser else { return }
-        loadCognitiveLoad(for: myUser, houseMembers: members)
+        // The user's assignments, by recordID (checking multi-user references)
+        let myAssignments = Dictionary(
+            assignments
+                .filter { assignment in
+                    (assignment.userReferences ?? []).contains { $0.recordID == userID }
+                }
+                .compactMap { a in a.recordID.map { ($0, a) } },
+            uniquingKeysWith: { first, _ in first }
+        )
+        
+        // Dates on which each chore falls for the user
+        func dates(of chore: ChoreModel) -> [Date] {
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+                return refs.compactMap { myAssignments[$0.recordID]?.day }
+            }
+            if chore.currentResponsibleReference?.recordID == userID, let due = chore.dueDate {
+                return [due]
+            }
+            return []
+        }
+        
+        dailyRoomDistribution = days.map { day in
+            let choresOfDay = chores.filter { chore in
+                dates(of: chore).contains { calendar.isDate($0, inSameDayAs: day) }
+            }
+            let slices: [RoomSlice] = rooms.compactMap { room in
+                let count = choresOfDay.filter { $0.roomReference?.recordID == room.recordID }.count
+                guard count > 0, let id = room.recordID else { return nil }
+                return RoomSlice(id: id.recordName, name: room.name, color: room.color.uiColor, choreCount: count)
+            }
+            return DaySlice(day: day, rooms: slices)
+        }
     }
-
-    /// Takes the user and fetches only the house members.
-    func loadCognitiveLoad(for user: UserModel) async {
-        let members = await CloudKitManager.shared.fetchHouseUsers()
-        loadCognitiveLoad(for: user, houseMembers: members)
-    }
-
+    
     // MARK: - 5. Unowned Public Chores
-
-    func loadUnownedPublicChores(chores: [ChoreModel]) {
-        let publicChores = chores.filter { $0.isPublic }
-        let unowned = publicChores.filter { $0.currentResponsibleReference == nil }
-
-        totalPublicCount = publicChores.count
+    
+    /// Same rule as the "sem dono" list on the chores screen (`CarouselViewModel.rebuildUnassignedItems`):
+    /// - recurring chore → has at least one upcoming slot (today on) with nobody assigned;
+    /// - one-off chore → has no current responsible and nobody in its rotation.
+    /// Finished chores are ignored. The total is every pending chore, so the bar is "sem dono × com dono".
+    func loadUnownedPublicChores() {
+        let today = Calendar.current.startOfDay(for: .now)
+        let assignmentsByID = Dictionary(
+            assignments.compactMap { assignment in assignment.recordID.map { ($0, assignment) } },
+            uniquingKeysWith: { first, _ in first }
+        )
+        
+        let pending = chores.filter { !$0.isDone }
+        
+        let unowned = pending.filter { chore in
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+                return refs.contains { ref in
+                    guard let assignment = assignmentsByID[ref.recordID] else { return false }
+                    let nobody = assignment.userReferences?.isEmpty ?? true
+                    return nobody && assignment.day >= today
+                }
+            }
+            return chore.currentResponsibleReference == nil
+                && (chore.allResponsibleUsersReference?.isEmpty ?? true)
+        }
+        
+        totalPublicCount = pending.count
         unownedPublicCount = unowned.count
         unownedPublicProgress = fraction(unownedPublicCount, of: totalPublicCount)
     }
-
-    /// Fetches every chore in the house itself.
-    func loadUnownedPublicChores() async {
-        let chores = await CloudKitManager.shared.fetchAll(ChoreModel.self)
-        loadUnownedPublicChores(chores: chores)
-    }
-
+    
     // MARK: - Helpers
-
-    /// `true` when the user is the chore's current responsible or is in its rotation.
-    private func isResponsible(_ user: UserModel, for chore: ChoreModel) -> Bool {
-        guard let userID = user.recordID else { return false }
-
-        if chore.currentResponsibleReference?.recordID == userID { return true }
-        return chore.allResponsibleUsersReference?.contains { $0.recordID == userID } ?? false
-    }
-
-    /// Safe division: returns `0` when the total is `0`.
+    
     private func fraction(_ value: Int, of total: Int) -> Double {
         guard total > 0 else { return 0 }
         return Double(value) / Double(total)
     }
-
-    /// `0.75` → `"75%"`.
+    
     private func percentText(_ value: Double) -> String {
         "\(Int((value * 100).rounded()))%"
     }

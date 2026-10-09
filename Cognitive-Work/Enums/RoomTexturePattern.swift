@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 /// The texture drawn over a room's color on its cards.
 enum RoomTexturePattern: String, CaseIterable {
@@ -15,12 +16,39 @@ enum RoomTexturePattern: String, CaseIterable {
     case stars
     case worms
     
-    /// Used for rooms that aren't one of the default types (custom rooms).
-    static let fallback: RoomTexturePattern = .sparkles
+    /// Used for rooms that aren't one of the default types (custom rooms). Must exist in every
+    /// ``RoomColor``: `clouds` is the only pattern the asset catalog has for all five colors.
+    static let fallback: RoomTexturePattern = .clouds
     
     /// Name of the texture image in the asset catalog for a room of `color`.
+    ///
+    /// Falls back to ``fallback`` when the catalog has no image of this pattern in that color,
+    /// so a card never renders without a texture.
     func assetName(for color: RoomColor) -> String {
-        "\(color.rawValue).\(rawValue)"
+        let pattern = resolved(for: color)
+        return "\(color.rawValue).\(pattern.rawValue)"
+    }
+    
+    /// Whether the asset catalog has this pattern in `color` (not every combination exists,
+    /// e.g. there is no green half circle).
+    func isAvailable(for color: RoomColor) -> Bool {
+        UIImage(named: "\(color.rawValue).\(rawValue)") != nil
+    }
+    
+    /// This pattern when it exists in `color`, otherwise ``fallback``.
+    func resolved(for color: RoomColor) -> RoomTexturePattern {
+        isAvailable(for: color) ? self : .fallback
+    }
+    
+    /// Name shown in the pattern picker.
+    var displayName: String {
+        switch self {
+        case .clouds: L10n.tr("Nuvens")
+        case .halfCircle: L10n.tr("Meia-lua")
+        case .sparkles: L10n.tr("Brilhos")
+        case .stars: L10n.tr("Estrelas")
+        case .worms: L10n.tr("Bastões")
+        }
     }
 }
 
@@ -34,7 +62,7 @@ extension DefaultRoomsOnboarding {
         case .livingRoom: .stars
         case .garage: .halfCircle
         case .kitchen: .halfCircle
-        case .pantry: .sparkles
+        case .pantry: .worms
         case .bathroom: .sparkles
         case .powderRoom: .clouds
         case .laundryRoom: .stars
@@ -47,9 +75,12 @@ extension DefaultRoomsOnboarding {
 extension RoomModel {
     
     /// Texture for this room's cards: by room type (`kind`, or the name for rooms saved before
-    /// `kind` existed), falling back to ``RoomTexturePattern/fallback`` for custom rooms.
+    /// `kind` existed), otherwise the one the user picked for a custom room, falling back to
+    /// ``RoomTexturePattern/fallback``.
     var texturePattern: RoomTexturePattern {
-        DefaultRoomsOnboarding(kind: kind, name: name)?.texturePattern ?? .fallback
+        DefaultRoomsOnboarding(kind: kind, name: name)?.texturePattern
+            ?? pattern?.resolved(for: color)
+            ?? .fallback
     }
 }
 
@@ -57,6 +88,8 @@ extension RoomDTO {
     
     /// Texture for this room's card on the selection screen.
     var texturePattern: RoomTexturePattern {
-        DefaultRoomsOnboarding(rawValue: name)?.texturePattern ?? .fallback
+        DefaultRoomsOnboarding(rawValue: name)?.texturePattern
+            ?? pattern?.resolved(for: color)
+            ?? .fallback
     }
 }

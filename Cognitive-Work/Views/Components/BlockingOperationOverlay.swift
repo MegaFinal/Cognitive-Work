@@ -33,7 +33,8 @@ private struct BlockingOperationView: View {
             ProgressView()
                 .scaleEffect(1.5)
                 .padding(.bottom, 8)
-            Text(message)
+            // `message` is a localization key ("Excluindo sua casa...").
+            Text(LocalizedStringKey(message))
                 .foregroundStyle(.gray)
                 .multilineTextAlignment(.center)
         }

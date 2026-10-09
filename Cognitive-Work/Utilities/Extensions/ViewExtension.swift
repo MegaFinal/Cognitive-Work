@@ -7,6 +7,26 @@
 
 import SwiftUI
 
+/// Maximum length of every free-text field in the app, in one place so layouts that display the
+/// text (cards, tags, e-paper) can rely on it and never overflow.
+enum TextLimits {
+    /// User display name (profile, onboarding).
+    static let userName = 20
+    /// Chore title — the carousel card and e-paper columns are sized for this.
+    static let choreName = 18
+    static let choreDescription = 250
+    static let checklistItem = 40
+    /// Room names (onboarding cards and the custom-room sheet share it).
+    static let roomName = 16
+    static let shopItemName = 30
+    /// Price text, e.g. "99999,99".
+    static let price = 9
+    /// IEEE 802.11 SSID maximum.
+    static let wifiName = 32
+    /// WPA2 passphrase maximum.
+    static let wifiPassword = 63
+}
+
 struct CharacterLimit: ViewModifier {
     @Binding var text: String
     let limit: Int

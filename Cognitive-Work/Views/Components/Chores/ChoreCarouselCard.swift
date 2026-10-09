@@ -22,7 +22,7 @@ struct ChoreCarouselCard: View {
     var body: some View {
         ZStack {
             VStack {
-                Text(chore.name)
+                Text(chore.localizedName)
                     .font(.system(size: 26))
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)

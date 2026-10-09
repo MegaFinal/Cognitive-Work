@@ -76,14 +76,12 @@ struct SwipeToCompleteButton: View {
                                 for (index, step) in progressSteps.enumerated() {
                                     if progress >= step && !reachedSteps.contains(index) {
                                         reachedSteps.insert(index)
-                                        let generator = UIImpactFeedbackGenerator(style: .light)
-                                        generator.impactOccurred(intensity: 0.6)
+                                        HapticsManager.impact(.light, intensity: 0.6)
                                     }
                                 }
                                 if progress >= completionThreshold && !reachedSteps.contains(999) {
                                     reachedSteps.insert(999)
-                                    let generator = UIImpactFeedbackGenerator(style: .heavy)
-                                    generator.impactOccurred()
+                                    HapticsManager.impact(.heavy)
                                 }
                             }
                             .onEnded { _ in
@@ -94,8 +92,7 @@ struct SwipeToCompleteButton: View {
                                         dragOffset = maxDrag
                                     }
                                     
-                                    let generator = UINotificationFeedbackGenerator()
-                                    generator.notificationOccurred(.success)
+                                    HapticsManager.notify(.success)
                                     
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                         action()
@@ -105,8 +102,7 @@ struct SwipeToCompleteButton: View {
                                         dragOffset = 0
                                     }
                                     
-                                    let generator = UIImpactFeedbackGenerator(style: .light)
-                                    generator.impactOccurred()
+                                    HapticsManager.impact(.light)
                                 }
                             }
                     )

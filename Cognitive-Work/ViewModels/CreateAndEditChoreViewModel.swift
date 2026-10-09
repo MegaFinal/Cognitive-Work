@@ -36,8 +36,8 @@ final class CreateAndEditChoreViewModel {
         
         var title: String {
             switch kind {
-            case .saveFailed: return "Não foi possível salvar"
-            case .deleteFailed: return "Não foi possível excluir"
+            case .saveFailed: return L10n.tr("Não foi possível salvar")
+            case .deleteFailed: return L10n.tr("Não foi possível excluir")
             }
         }
     }
@@ -101,6 +101,7 @@ final class CreateAndEditChoreViewModel {
         self.availableHouseUsers = Self.uniqueByOwner(availableHouseUsers)
         self.draft = ChoreDTO(from: originalModel, users: [], checklist: [], room: nil)
         Self.replaceUndefinedTags(in: draft)
+        fillFromMemory()
     }
     
     // MARK: - Derived state
@@ -143,8 +144,8 @@ final class CreateAndEditChoreViewModel {
     
     var visibilityDescription: String {
         draft.isPublic
-        ? "Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores."
-        : "Tarefa privada: só aparece para você e é atribuída somente a você."
+        ? L10n.tr("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
+        : L10n.tr("Tarefa privada: só aparece para você e é atribuída somente a você.")
     }
     
     var selectableResponsibleUsers: [UserModel] {
@@ -188,38 +189,60 @@ final class CreateAndEditChoreViewModel {
     /// Rebuilds the draft from what is persisted and loads everything the form needs.
     func load() async {
         isLoaded = false
-        draft = ChoreDTO(from: originalModel, users: [], checklist: [], room: nil)
-        Self.replaceUndefinedTags(in: draft)
+        fillFromMemory()
         
-        availableRooms = await cloudKit.fetchAll(RoomModel.self)
-            .filter { $0.name != "Casa" }
-        currentHouseUser = await cloudKit.currentHouseUser()
-        draft.room = await originalModel.room
+        if availableRooms.isEmpty {
+            availableRooms = await cloudKit.fetchAll(RoomModel.self).filter { $0.name != "Casa" }
+        }
+        if currentHouseUser == nil {
+            currentHouseUser = await cloudKit.currentHouseUser()
+        }
+        if draft.room == nil, originalModel.roomReference != nil {
+            draft.room = await originalModel.room
+        }
+        
+        draft.responsibleUsers = persistedResponsibleUsers()
         
         let checklistModels = await originalModel.checkList
         draft.checklist = checklistModels.map(CheckItemDTO.init(from:))
         draft.hasChecklist = !draft.checklist.isEmpty
         
-        draft.responsibleUsers = persistedResponsibleUsers()
-        selectedDate = targetAssignments.first?.day ?? originalModel.dueDate
-        
-        if !draft.isPublic {
-            draft.responsibleUsers = currentHouseUserInList.map { [$0] } ?? []
-        }
-        
         isLoaded = true
+    }
+    
+    /// Fills the room, the rooms list, the current resident, the responsible users and the date
+    /// from what ``CarouselViewModel`` already holds
+    private func fillFromMemory() {
+        availableRooms = carouselViewModel.roomModels.filter { $0.name != "Casa" }
+        currentHouseUser = carouselViewModel.dashboardUser
+        draft.room = carouselViewModel.getRoom(for: originalModel)
+        selectedDate = targetAssignments.first?.day ?? originalModel.dueDate
+        applyResponsibleUsers()
+    }
+    
+    /// The persisted responsible users, or only the current resident for a private chore.
+    private func applyResponsibleUsers() {
+        draft.responsibleUsers = draft.isPublic
+        ? persistedResponsibleUsers()
+        : (currentHouseUserInList.map { [$0] } ?? [])
     }
     
     /// The responsible users stored on the occurrence(s) being edited, or on the chore.
     private func persistedResponsibleUsers() -> [UserModel] {
-        let userIDs: Set<CKRecord.ID>
+        var userIDs = Set<CKRecord.ID>()
         
-        if !targetAssignments.isEmpty {
-            userIDs = Set(targetAssignments.compactMap { $0.userReference?.recordID })
-        } else if let refs = originalModel.allResponsibleUsersReference {
-            userIDs = Set(refs.map(\.recordID))
-        } else {
-            return []
+        if let target = targetAssignments.first {
+            if let refs = target.userReferences {
+                userIDs.formUnion(refs.map(\.recordID))
+                return availableHouseUsers.filter { user in
+                    guard let id = user.recordID else { return false }
+                    return userIDs.contains(id)
+                }
+            }
+        }
+        
+        if let refs = originalModel.allResponsibleUsersReference {
+            userIDs.formUnion(refs.map(\.recordID))
         }
         
         return availableHouseUsers.filter { user in
@@ -272,21 +295,17 @@ final class CreateAndEditChoreViewModel {
         let previousFrequency = originalModel.frequency
         let frequencyChanged = !isNewChore && previousFrequency != draft.frequency
         
-        // When frequency changes, targetAssignments are outdated/deleted, so pass empty targetAssignments
-        let assignmentsToUpdate = frequencyChanged ? [] : targetAssignments
-        
         do {
             try await originalModel.save(
                 from: draft,
                 pickedDate: selectedDate,
-                targetAssignments: assignmentsToUpdate
+                targetAssignments: frequencyChanged ? [] : targetAssignments
             )
         } catch {
             alert = FormAlert(kind: .saveFailed, message: error.localizedDescription)
             return false
         }
         
-        // MARK: - Schedule Generation & Frequency Handling
         if isNewChore {
             await scheduleNewRecurringChore(
                 originalModel,
@@ -296,18 +315,28 @@ final class CreateAndEditChoreViewModel {
             )
             await awardCreationScore()
         } else if frequencyChanged {
-            // Purge old occurrences and generate new series based on new frequency
             await carouselViewModel.handleFrequencyChange(
                 for: originalModel,
                 from: previousFrequency,
                 responsibleUsers: responsibleUsersForScheduling,
                 pickedDate: selectedDate
             )
+        } else if let target = targetAssignments.first {
+            if let pickedDate = selectedDate {
+                target.day = Calendar.current.startOfDay(for: pickedDate)
+            }
+            
+            let selectedRefs = draft.responsibleUsers.compactMap { user -> CKRecord.Reference? in
+                guard let id = user.recordID else { return nil }
+                return CKRecord.Reference(recordID: id, action: .none)
+            }
+            target.userReferences = selectedRefs.isEmpty ? nil : selectedRefs
+            
+            await cloudKit.update(target)
         } else {
             await applyPickedDateToOccurrence(isNewChore: isNewChore)
         }
         
-        // MARK: - Local & Remote Sync
         let newOccurrenceIDs: Set<CKRecord.ID> = (isNewChore || frequencyChanged)
         ? Set((originalModel.dailyAssignmentsReference ?? []).map(\.recordID))
         : []
@@ -397,7 +426,7 @@ final class CreateAndEditChoreViewModel {
         if !success {
             alert = FormAlert(
                 kind: .deleteFailed,
-                message: carouselViewModel.errorMessage ?? "Não foi possível excluir a tarefa."
+                message: carouselViewModel.errorMessage ?? L10n.tr("Não foi possível excluir a tarefa.")
             )
             carouselViewModel.errorMessage = nil
         }
@@ -416,7 +445,7 @@ final class CreateAndEditChoreViewModel {
             draft.frequency = Recurrence.allCases.first { $0 != .undefined } ?? Recurrence.none
         }
         if draft.duration <= 0 {
-            draft.duration = 5 * 60
+            draft.duration = ChoreDurationTier.quick.minutes
         }
     }
     

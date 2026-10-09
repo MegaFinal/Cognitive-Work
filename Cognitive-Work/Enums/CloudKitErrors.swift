@@ -31,28 +31,28 @@ enum CloudKitErrors<T>: Error, LocalizedError {
             return "User not authorized to complete request for type: \(T.self)"
             
         case .missingShareURL:
-            return "Missing share URL. Não foi possível gerar o link de compartilhamento."
+            return L10n.tr("Missing share URL. Não foi possível gerar o link de compartilhamento.")
             
         case .networkUnavailable:
-            return "Sem conexão com a internet."
+            return L10n.tr("Sem conexão com a internet.")
             
         case .quotaExceeded:
-            return "O armazenamento do iCloud do usuário está cheio. Libere espaço para continuar."
+            return L10n.tr("O armazenamento do iCloud do usuário está cheio. Libere espaço para continuar.")
             
         case .recordChangedTwice:
-            return "Conflito: Este registro foi modificado recentemente em outro dispositivo. A operação foi cancelada para evitar perda de dados."
+            return L10n.tr("Conflito: Este registro foi modificado recentemente em outro dispositivo. A operação foi cancelada para evitar perda de dados.")
             
         case .zoneNotFound:
-            return "A zona de registros não foi encontrada. Ela pode ter sido apagada ou não sincronizada."
+            return L10n.tr("A zona de registros não foi encontrada. Ela pode ter sido apagada ou não sincronizada.")
             
         case .limitExceeded:
-            return "O limite de requisições da Apple foi excedido. Tente novamente mais tarde."
+            return L10n.tr("O limite de requisições da Apple foi excedido. Tente novamente mais tarde.")
             
         case .underlying(let error):
             if let ckError = error as? CKError {
-                return "Erro do CloudKit (Código \(ckError.errorCode)): \(ckError.localizedDescription)"
+                return L10n.tr("Erro do CloudKit (Código %lld): %@", ckError.errorCode, ckError.localizedDescription)
             }
-            return "Erro inesperado: \(error.localizedDescription)"
+            return L10n.tr("Erro inesperado: %@", error.localizedDescription)
         case .currentHouseOwnerCannotLeaveTheHouse:
             return "Failed to leave house: current user is the owner"
         }

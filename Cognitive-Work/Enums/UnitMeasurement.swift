@@ -131,13 +131,13 @@ enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
         let isSingular = value == 1
 
         switch self {
-        case .gram: return isSingular ? "grama" : "gramas"
-        case .kilogram: return isSingular ? "quilograma" : "quilogramas"
-        case .milliliter: return isSingular ? "mililitro" : "mililitros"
-        case .liter: return isSingular ? "litro" : "litros"
-        case .unit: return isSingular ? "unidade" : "unidades"
-        case .package: return isSingular ? "pacote" : "pacotes"
-        case .undefined: return "indefinido"
+        case .gram: return isSingular ? L10n.tr("grama") : L10n.tr("gramas")
+        case .kilogram: return isSingular ? L10n.tr("quilograma") : L10n.tr("quilogramas")
+        case .milliliter: return isSingular ? L10n.tr("mililitro") : L10n.tr("mililitros")
+        case .liter: return isSingular ? L10n.tr("litro") : L10n.tr("litros")
+        case .unit: return isSingular ? L10n.tr("unidade") : L10n.tr("unidades")
+        case .package: return isSingular ? L10n.tr("pacote") : L10n.tr("pacotes")
+        case .undefined: return L10n.tr("indefinido")
         }
     }
 

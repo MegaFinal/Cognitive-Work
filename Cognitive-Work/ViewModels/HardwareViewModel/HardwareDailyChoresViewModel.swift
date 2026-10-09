@@ -67,16 +67,13 @@ class HardwareDailyChoresViewModel {
     /// Every room referenced by the target day's chores, for the color legend.
     private(set) var roomsInUse: [RoomModel] = []
 
-    private let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_BR")
-        formatter.dateFormat = "EEEE, d 'de' MMMM."
-        return formatter
-    }()
-
-    /// The rendered day, formatted for the header.
+    /// The rendered day, formatted for the header in the app's language
+    /// ("quinta-feira, 1 de outubro" / "Thursday, October 1").
     var targetDateFormatted: String {
-        dateFormatter.string(from: Self.targetDay())
+        let formatter = DateFormatter()
+        formatter.locale = L10n.locale
+        formatter.setLocalizedDateFormatFromTemplate("EEEEdMMMM")
+        return formatter.string(from: Self.targetDay())
     }
 
     // MARK: - Initialization
@@ -178,24 +175,29 @@ class HardwareDailyChoresViewModel {
             for ref in refs {
                 guard let assignment = assignmentsByID[ref.recordID],
                       calendar.isDate(assignment.day, inSameDayAs: day),
-                      let userID = assignment.userReference?.recordID,
-                      seen.insert(userID).inserted
-                else { continue }
+                      let userRefs = assignment.userReferences else { continue }
 
-                responsibleIDs.append(userID)
+                for userRef in userRefs {
+                    let userID = userRef.recordID
+                    if seen.insert(userID).inserted {
+                        responsibleIDs.append(userID)
+                    }
+                }
             }
 
             return responsibleIDs
         }
 
         guard let dueDate = chore.dueDate,
-              calendar.isDate(dueDate, inSameDayAs: day),
-              let responsibleID = chore.currentResponsibleReference?.recordID
+              calendar.isDate(dueDate, inSameDayAs: day)
         else {
             return []
         }
 
-        return [responsibleID]
+        var seen: Set<CKRecord.ID> = []
+        let candidates = [chore.currentResponsibleReference].compactMap { $0 }
+            + (chore.allResponsibleUsersReference ?? [])
+        return candidates.map(\.recordID).filter { seen.insert($0).inserted }
     }
 
     // MARK: - Helpers

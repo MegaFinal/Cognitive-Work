@@ -11,7 +11,7 @@ struct ScheduleInfoPopUp: View {
     var onDismiss: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 13) {
             HStack {
                 Text("EXPLICAÇÃO")
                     .font(.system(size: 13))
@@ -74,7 +74,7 @@ struct ScheduleInfoPopUp: View {
                             .font(.system(size: 18))
                             .bold()
                         
-                        Text("As tarefas que sobraram da divisão ficam na tela inicial, no botão. Pegue as que couberem no seu tempo.")
+                        Text("As tarefas que sobraram da divisão ficam na tela inicial, no botão \(Image(systemName: "hand.tap")). Pegue as que couberem no seu tempo.")
                             .font(.system(size: 15))
                     }
                     .frame(width: width * 0.6)
@@ -114,12 +114,13 @@ struct ScheduleInfoPopUp: View {
                         in: .capsule
                     )
             }
+            .padding(.top, 15)
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, 18)
         .padding(.horizontal, 22)
         .frame(width: width * 0.87)
         .background(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 32)
                 .foregroundColor(.white)
                 .shadow(color: .black.opacity(0.2), radius: 3.2, x: 0, y: 4)
         )

@@ -30,6 +30,17 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         }
     }
 
+    /// The duration, in minutes, a chore gets when this tier is picked in the form.
+    var minutes: Double {
+        switch self {
+        case .undefined: return 0
+        case .quick: return 15
+        case .moderate: return 30
+        case .slow: return 60
+        case .verySlow: return 120
+        }
+    }
+
     /// Derives proportion scaling specific to a visual representation logic sequence.
     var heightRatio: Double {
         switch self {
@@ -44,11 +55,11 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
     /// Localized structural string.
     var displayText: String {
         switch self {
-        case .undefined: return "indefinido"
-        case .quick: return "curta"
-        case .moderate: return "regular"
-        case .slow: return "longa"
-        case .verySlow: return "extensa"
+        case .undefined: return L10n.tr("indefinido")
+        case .quick: return L10n.tr("curta")
+        case .moderate: return L10n.tr("regular")
+        case .slow: return L10n.tr("longa")
+        case .verySlow: return L10n.tr("extensa")
         }
     }
     

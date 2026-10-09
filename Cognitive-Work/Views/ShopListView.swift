@@ -167,6 +167,7 @@ struct ShopListView: View {
                 .clipShape(Circle())
                 .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
         }
+        .disabled(viewModel.list == nil)
         .padding(24)
     }
 
@@ -180,8 +181,8 @@ struct ShopListView: View {
 
         var label: String {
             switch self {
-            case .addedOrder: return "Adicionados recentemente"
-            case .name: return "Nome"
+            case .addedOrder: return L10n.tr("Adicionados recentemente")
+            case .name: return L10n.tr("Nome")
             }
         }
     }
@@ -216,6 +217,9 @@ private struct ShopListItemRow: View {
 
     var onToggle: () async -> Void
     var onTap: () -> Void
+    
+    /// Blocks double taps while the change is being saved.
+    @State private var isToggling = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -237,14 +241,27 @@ private struct ShopListItemRow: View {
             Spacer()
 
             Button {
-                Task { await onToggle() }
+                HapticsManager.selection()
+                isToggling = true
+                Task {
+                    await onToggle()
+                    isToggling = false
+                }
             } label: {
                 Circle()
                     .strokeBorder(item.isBought ? Color.clear : Color.black, lineWidth: 1.5)
                     .background(Circle().fill(item.isBought ? Color.black : Color.clear))
                     .frame(width: 26, height: 26)
+                    .overlay {
+                        if isToggling {
+                            ProgressView()
+                                .controlSize(.mini)
+                                .tint(item.isBought ? .white : .black)
+                        }
+                    }
             }
             .buttonStyle(.plain)
+            .disabled(isToggling)
             .padding(.top, 4)
         }
         .padding(.horizontal, 24)
@@ -278,6 +295,7 @@ private struct ShopListItemFormView: View {
     @State private var valueText: String = ""
     @State private var relatedUsers: [UserModel] = []
     @State private var isSaving = false
+    @State private var saveErrorMessage: String?
 
     private var isEditing: Bool {
         if case .edit = mode { return true }
@@ -297,6 +315,8 @@ private struct ShopListItemFormView: View {
                             )
                             .font(.system(size: 28))
                             .bold()
+                            .characterLimit(TextLimits.shopItemName, text: $name)
+                            .submitLabel(.done)
 
                             Capsule()
                                 .frame(height: 1.5)
@@ -340,9 +360,10 @@ private struct ShopListItemFormView: View {
                             Text("Valor (opcional)")
                                 .font(.system(size: 15))
                                 .fontWeight(.semibold)
-                            TextField("R$ 0,00", text: $valueText)
+                            TextField(pricePlaceholder, text: $valueText)
                                 .keyboardType(.decimalPad)
                                 .font(.system(size: 17))
+                                .characterLimit(TextLimits.price, text: $valueText)
                         }
 
                         VStack(alignment: .leading, spacing: 10) {
@@ -366,13 +387,27 @@ private struct ShopListItemFormView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
+                        .disabled(isSaving)
                 }
             }
+            .disabled(isSaving)
         }
+        .interactiveDismissDisabled(isSaving)
         .task {
             populateFromMode()
         }
         .dismissKeyboardOnTap()
+        .alert(
+            "Não foi possível salvar",
+            isPresented: Binding(
+                get: { saveErrorMessage != nil },
+                set: { if !$0 { saveErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(saveErrorMessage ?? "")
+        }
     }
 
     private func confirmButton(width: CGFloat) -> some View {
@@ -400,6 +435,11 @@ private struct ShopListItemFormView: View {
         }
     }
 
+    /// Currency placeholder in the app's language/region format (e.g. "R$ 0,00").
+    private var pricePlaceholder: String {
+        0.0.formatted(.currency(code: "BRL").locale(L10n.locale))
+    }
+
     /// Seeds the form's local state from the item being edited
     private func populateFromMode() {
         guard case .edit(let item) = mode else { return }
@@ -421,9 +461,11 @@ private struct ShopListItemFormView: View {
             return nil
         }()
 
-        await viewModel.saveItem(
+        // The sheet used to dismiss even when CloudKit rejected the save, silently losing the
+        // item. It now stays open and explains what happened.
+        let success = await viewModel.saveItem(
             existingItem,
-            name: name,
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             valueText: valueText,
             quantity: quantity,
             unitMeasurement: unitMeasurement,
@@ -431,7 +473,12 @@ private struct ShopListItemFormView: View {
             addedBy: currentUser
         )
 
-        dismiss()
+        if success {
+            HapticsManager.notify(.success)
+            dismiss()
+        } else {
+            saveErrorMessage = viewModel.errorMessage ?? L10n.tr("Tente novamente.")
+        }
     }
 }
 
