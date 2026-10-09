@@ -41,6 +41,7 @@ struct HouseSettingsView: View {
                     Text("Adicionar moradores")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
             .buttonStyle(.plain)
@@ -54,6 +55,7 @@ struct HouseSettingsView: View {
                     Text("Cômodos")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
             .buttonStyle(.plain)
@@ -62,6 +64,7 @@ struct HouseSettingsView: View {
             if isCheckingAdmin {
                 ProgressView()
                     .frame(maxWidth: .infinity)
+                    .accessibilityLabel(L10n.tr("Verificando permissões"))
             }
             
             // MARK: - Reset chores assignments
@@ -74,6 +77,7 @@ struct HouseSettingsView: View {
                         Text("Reiniciar divisão de tarefas")
                         Spacer()
                         Image(systemName: "chevron.right")
+                            .accessibilityHidden(true)
                     }
                 }
                 .buttonStyle(.plain)

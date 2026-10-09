@@ -38,6 +38,10 @@ struct FortnightlyBarChart: View {
                 }
             }
         }
+        // VoiceOver: days in order, bars as buttons, plus an audio graph of minutes per resident.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L10n.tr("Gráfico da escala quinzenal, %lld tarefas em %lld dias", entries.count, daysToShow))
+        .accessibilityChartDescriptor(chartDescriptor)
         
         let paddedContent = content.padding(selectionInset)
         
@@ -48,6 +52,23 @@ struct FortnightlyBarChart: View {
         } else {
             paddedContent
         }
+    }
+    
+    /// Total minutes each resident got in the period, for VoiceOver's chart rotor.
+    private var chartDescriptor: CategoryChartDescriptor {
+        let points = users.map { user -> (label: String, value: Double) in
+            let minutes = entries
+                .filter { $0.userID == user.recordID }
+                .reduce(0) { $0 + $1.minutes }
+            return (label: user.name, value: minutes)
+        }
+        return CategoryChartDescriptor(
+            title: L10n.tr("Minutos de tarefas por morador"),
+            summary: nil,
+            categoryAxisTitle: L10n.tr("Morador"),
+            valueAxisTitle: L10n.tr("Minutos"),
+            points: points
+        )
     }
 }
 
@@ -87,6 +108,12 @@ private struct FortnightlyDayUserBar: View {
             Text(weekdayText(for: day))
                 .font(.system(size: 16.35))
                 .fontWeight(.medium)
+                .accessibilityLabel(ChartA11y.weekdayDayMonth(day))
+                .accessibilityValue(
+                    entries.isEmpty
+                        ? L10n.tr("Sem tarefas")
+                        : L10n.tr("%lld tarefas", entries.count)
+                )
             
             if !entries.isEmpty {
                 VStack(spacing: 4) {
@@ -103,11 +130,30 @@ private struct FortnightlyDayUserBar: View {
                             .onTapGesture {
                                 onSelect(entry)
                             }
+                            // "Ana, Lavar a louça, tarefa curta, 15 minutos", selectable.
+                            .accessibilityElement()
+                            .accessibilityLabel(accessibilityLabel(for: entry))
+                            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+                            .accessibilityHint(L10n.tr("Mostra os detalhes abaixo do gráfico"))
+                            .accessibilityAction {
+                                onSelect(entry)
+                            }
                     }
                 }
             }
         }
         .frame(width: 55)
+    }
+    
+    /// Resident first, then the chore: who does what is the point of this chart.
+    private func accessibilityLabel(for entry: DailyUsageEntry) -> String {
+        let chore = ChartA11y.choreDescription(
+            name: entry.choreName.localizedDefault,
+            room: nil,
+            minutes: entry.minutes
+        )
+        guard let user = users.first(where: { $0.recordID == entry.userID }) else { return chore }
+        return "\(user.name), \(chore)"
     }
 }
 

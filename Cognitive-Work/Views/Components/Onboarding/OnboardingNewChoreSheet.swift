@@ -76,6 +76,7 @@ struct OnboardingNewChoreSheet: View {
                         Image(systemName: "xmark")
                     }
                     .tint(.black)
+                    .accessibilityLabel(Text(L10n.tr("Fechar")))
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -94,6 +95,7 @@ struct OnboardingNewChoreSheet: View {
                 .bold()
                 .font(.system(size: 32))
                 .foregroundStyle(.titleGray)
+                .accessibilityAddTraits(.isHeader)
             
             Text("Ela já entra marcada e vai para a escala de **todos**.")
                 .font(.system(size: 16))
@@ -111,6 +113,7 @@ struct OnboardingNewChoreSheet: View {
                 .fontWeight(.light)
                 .frame(width: 64, height: 64)
                 .contentTransition(.symbolEffect(.replace))
+                .accessibilityDecorative()
             
             VStack(spacing: 6) {
                 TextField(
@@ -124,11 +127,13 @@ struct OnboardingNewChoreSheet: View {
                 .focused($isNameFocused)
                 .characterLimit(TextLimits.choreName, text: $draft.name)
                 .submitLabel(.done)
+                .accessibilityLabel(Text(L10n.tr("Nome da tarefa")))
                 
                 Capsule()
                     .fill(.white.opacity(0.55))
                     .frame(height: 2)
                     .padding(.horizontal, 24)
+                    .accessibilityDecorative()
             }
             
             roomMenu
@@ -170,6 +175,8 @@ struct OnboardingNewChoreSheet: View {
             .background(.white.opacity(0.22), in: Capsule())
             .overlay(Capsule().strokeBorder(.white.opacity(0.45), lineWidth: 1))
         }
+        .accessibilityLabel(Text(L10n.tr("Cômodo")))
+        .accessibilityValue(Text(selectedRoom?.name.localizedDefault ?? L10n.tr("Sem Cômodo")))
     }
     
     /// Priority, duration and frequency, one rounded row each, tinted with the room's color.
@@ -206,6 +213,7 @@ struct OnboardingNewChoreSheet: View {
                 .foregroundStyle(accent.uiColor)
                 .frame(width: 34, height: 34)
                 .background(accent.lowOpacityColor.opacity(0.35), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .accessibilityDecorative()
             
             Text(title)
                 .font(.system(size: 17, weight: .medium))
@@ -235,6 +243,7 @@ struct OnboardingNewChoreSheet: View {
                 .foregroundStyle(.black.opacity(0.7))
                 .lineLimit(3...6)
                 .characterLimit(TextLimits.choreDescription, text: $draft.description)
+                .accessibilityLabel(Text(L10n.tr("Descrição")))
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -259,6 +268,8 @@ struct OnboardingNewChoreSheet: View {
         }
         .buttonStyle(.plain)
         .disabled(!canCreate)
+        .accessibilityLabel(Text(L10n.tr("Criar tarefa")))
+        .accessibilityHint(canCreate ? Text("") : Text(L10n.tr("Dê um nome à tarefa para poder criá-la")))
         .padding(.horizontal, 22)
         .padding(.top, 10)
         .padding(.bottom, 8)

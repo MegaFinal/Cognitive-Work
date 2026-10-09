@@ -136,13 +136,7 @@ struct ChoreCardListStyle: View {
                             
                             // MARK: Completion button
                             Button {
-                                HapticsManager.notify(isOccurrenceDone ? .warning : .success)
-                                
-                                Task {
-                                    recurrentAssignment == nil
-                                    ? await carouselViewModel.toggle(chore: chore)
-                                    : await carouselViewModel.toggle(assignment: recurrentAssignment!)
-                                }
+                                toggleCompletion()
                             } label: {
                                 ZStack {
                                     Circle()
@@ -165,6 +159,29 @@ struct ChoreCardListStyle: View {
         .frame(minHeight: height * 0.14)
         .onTapGesture(perform: onTap)
         .transition(.identity)
+        // MARK: - VoiceOver
+        // One element; the completion button becomes a named action.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(carouselViewModel.accessibilitySummary(for: chore, assignment: recurrentAssignment))
+        .accessibilityHint(L10n.tr("Toque duas vezes para ver os detalhes."))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onTap() }
+        .accessibilityAction(named: Text(isOccurrenceDone ? L10n.tr("Marcar como pendente") : L10n.tr("Marcar como concluída"))) {
+            toggleCompletion()
+        }
+    }
+    
+    /// Marks this occurrence as done (or not done again), from the circle button or VoiceOver.
+    private func toggleCompletion() {
+        let willBeDone = !isOccurrenceDone
+        HapticsManager.notify(willBeDone ? .success : .warning)
+        
+        Task {
+            recurrentAssignment == nil
+            ? await carouselViewModel.toggle(chore: chore)
+            : await carouselViewModel.toggle(assignment: recurrentAssignment!)
+            VoiceOver.announce(willBeDone ? L10n.tr("Tarefa concluída") : L10n.tr("Tarefa marcada como pendente"))
+        }
     }
 }
 

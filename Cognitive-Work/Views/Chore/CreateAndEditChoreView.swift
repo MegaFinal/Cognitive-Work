@@ -52,18 +52,21 @@ struct CreateAndEditChoreView: View {
                 VStack(spacing: 10) {
                     HStack {
                         Text("Prioridade")
+                            .accessibilityHidden(true) // the picker says "Prioridade"
                         Spacer()
                         ChoreTagPicker(chore: $viewModel.draft, type: .priority)
                     }
                     
                     HStack {
                         Text("Duração")
+                            .accessibilityHidden(true) // the picker says "Duração"
                         Spacer()
                         ChoreTagPicker(chore: $viewModel.draft, type: .duration)
                     }
                     
                     HStack {
                         Text("Frequência")
+                            .accessibilityHidden(true) // the picker says "Frequência"
                         Spacer()
                         ChoreTagPicker(chore: $viewModel.draft, type: .frequency)
                     }
@@ -81,6 +84,7 @@ struct CreateAndEditChoreView: View {
                     Text("Descrição")
                         .font(.system(size: 15))
                         .fontWeight(.semibold)
+                        .accessibilityAddTraits(.isHeader)
                     
                     TextField("Descrição da Tarefa", text: $viewModel.draft.description, axis: .vertical)
                         .font(.system(size: 17))
@@ -96,6 +100,7 @@ struct CreateAndEditChoreView: View {
                     Text("Responsáveis")
                         .font(.system(size: 15))
                         .fontWeight(.semibold)
+                        .accessibilityAddTraits(.isHeader)
                     
                     ResponsibleUserPicker(
                         availableUsers: viewModel.selectableResponsibleUsers,
@@ -125,6 +130,7 @@ struct CreateAndEditChoreView: View {
             if !viewModel.isLoaded {
                 ProgressView()
                     .controlSize(.large)
+                    .accessibilityLabel(L10n.tr("Carregando"))
             }
         }
         .navigationBarBackButtonHidden(isSubmitting || viewModel.isSaving || viewModel.isDeleting)
@@ -133,6 +139,7 @@ struct CreateAndEditChoreView: View {
             ToolbarItem(placement: .confirmationAction) {
                 if isSubmitting || viewModel.isSaving {
                     ProgressView()
+                        .accessibilityLabel(L10n.tr("Salvando"))
                 } else {
                     Button {
                         // Lock the form right away, before the first `await`.
@@ -155,6 +162,7 @@ struct CreateAndEditChoreView: View {
                     .tint(.blue)
                     .buttonStyle(.glassProminent)
                     .disabled(!viewModel.canConfirm)
+                    .accessibilityLabel(L10n.tr("Confirmar"))
                 }
             }
         }
@@ -210,6 +218,7 @@ struct CreateAndEditChoreView: View {
                 .frame(width: width * 0.15)
                 .fontWeight(.thin)
                 .padding(.leading, 8)
+                .accessibilityDecorative()
             
             Spacer()
             
@@ -225,14 +234,17 @@ struct CreateAndEditChoreView: View {
                     .bold()
                     .characterLimit(TextLimits.choreName, text: $viewModel.draft.name)
                     .submitLabel(.done)
+                    .accessibilityLabel(L10n.tr("Nome da Tarefa"))
                     
                     Capsule()
                         .frame(height: height * 0.0015)
+                        .accessibilityDecorative()
                 }
                 
                 HStack {
                     Text("Cômodo")
                         .bold()
+                        .accessibilityHidden(true) // the menu says "Cômodo"
                     
                     Spacer()
                     
@@ -259,6 +271,8 @@ struct CreateAndEditChoreView: View {
                         }
                         .fixedSize()
                     }
+                    .accessibilityLabel(L10n.tr("Cômodo"))
+                    .accessibilityValue(viewModel.draft.room?.name.localizedDefault ?? L10n.tr("Sem Cômodo"))
                     .id(viewModel.draft.room?.recordID)
                 }
             }
@@ -273,6 +287,7 @@ struct CreateAndEditChoreView: View {
             Text("Data")
                 .font(.system(size: 15))
                 .fontWeight(.semibold)
+                .accessibilityAddTraits(.isHeader)
             
             CustomCalendar(
                 selectedDate: $viewModel.selectedDate,
@@ -290,11 +305,13 @@ struct CreateAndEditChoreView: View {
                 Text("Checklist")
                     .font(.system(size: 15))
                     .fontWeight(.semibold)
+                    .accessibilityHidden(true) // the switch says "Checklist"
                 
                 Spacer()
                 
                 Toggle("", isOn: $viewModel.draft.hasChecklist)
                     .toggleStyle(.switch)
+                    .accessibilityLabel(L10n.tr("Checklist"))
                     .onChange(of: viewModel.draft.hasChecklist) { _, isOn in
                         viewModel.checklistToggleDidChange(isOn: isOn)
                     }
@@ -318,11 +335,13 @@ struct CreateAndEditChoreView: View {
                 Text("Essa tarefa é para a casa?")
                     .font(.system(size: 15))
                     .fontWeight(.semibold)
+                    .accessibilityHidden(true) // the switch says it
                 
                 Spacer()
                 
                 Toggle("", isOn: $viewModel.draft.isPublic)
                     .toggleStyle(.switch)
+                    .accessibilityLabel(L10n.tr("Essa tarefa é para a casa?"))
                     .padding(.trailing, 7)
                     .frame(width: width * 0.37)
             }
@@ -344,11 +363,13 @@ struct CreateAndEditChoreView: View {
                 .font(.system(size: 13))
                 .foregroundColor(.red)
                 .frame(maxWidth: .infinity, alignment: .trailing)
+                .onAppear { VoiceOver.announce(L10n.tr("Escolha um cômodo para confirmar a tarefa.")) }
         } else if viewModel.showsMissingDateWarning {
             Text("Escolha uma data para confirmar a tarefa.")
                 .font(.system(size: 13))
                 .foregroundColor(.red)
                 .frame(maxWidth: .infinity, alignment: .trailing)
+                .onAppear { VoiceOver.announce(L10n.tr("Escolha uma data para confirmar a tarefa.")) }
         }
     }
     
@@ -361,6 +382,7 @@ struct CreateAndEditChoreView: View {
                 if viewModel.isDeleting {
                     ProgressView()
                         .tint(.red)
+                        .accessibilityLabel(L10n.tr("Excluindo tarefa..."))
                 } else {
                     Text("Excluir Tarefa")
                         .fontWeight(.semibold)

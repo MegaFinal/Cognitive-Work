@@ -41,8 +41,16 @@ struct EditableProfileImage: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isLoading)
+                .accessibilityLabel(image == nil
+                                    ? L10n.tr("Adicionar foto de perfil")
+                                    : L10n.tr("Alterar foto de perfil"))
+                .accessibilityValue(isLoading ? L10n.tr("Carregando foto") : "")
             } else {
                 profileImage
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(L10n.tr("Foto de perfil"))
+                    .accessibilityAddTraits(.isImage)
+                    .accessibilityHidden(image == nil && !isLoading)
             }
         }
         .frame(width: layoutSize, height: layoutSize)
@@ -160,6 +168,7 @@ extension EditableProfileImage {
             in: .circle
         )
         .disabled(isLoading)
+        .accessibilityLabel(L10n.tr("Editar banner"))
         .offset(x: offset, y: offset)
     }
 }

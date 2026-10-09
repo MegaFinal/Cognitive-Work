@@ -16,6 +16,8 @@ struct DebtSummaryCard: View {
     /// Color and texture shown when the card is selected (the user's profile banner).
     let banner: ProfileBanner
     let onTap: () -> Void
+    /// What VoiceOver reads for the card ("Você deve, 350 reais"); title and amount when `nil`.
+    var accessibilityText: String? = nil
 
     var body: some View {
         Button(action: onTap) {
@@ -61,6 +63,7 @@ struct DebtSummaryCard: View {
         .buttonStyle(.plain)
         .animation(.snappy, value: isSelected)
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityText ?? "\(title), \(amount.currency)\(amount.whole)\(amount.cents)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

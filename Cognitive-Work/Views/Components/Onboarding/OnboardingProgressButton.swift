@@ -31,6 +31,15 @@ struct OnboardingProgressButton: View {
     private var resolvedWidth: CGFloat { width ?? (self as any View).width * 0.6 }
     private var resolvedHeight: CGFloat { height ?? (self as any View).height * 0.06 }
 
+    /// What VoiceOver reads: icon-only buttons get a word for their symbol.
+    private var accessibilityText: String {
+        guard isSystemImage else { return L10n.tr(text) }
+        switch text {
+        case "checkmark": return L10n.tr("Salvar")
+        default: return L10n.tr("Continuar")
+        }
+    }
+
     var body: some View {
         Button {
             Task {
@@ -59,6 +68,8 @@ struct OnboardingProgressButton: View {
             )
         }
         .disabled(isLoading || isDisabled)
+        .accessibilityLabel(Text(accessibilityText))
+        .accessibilityValue(isLoading ? Text(L10n.tr("Carregando")) : Text(""))
     }
 }
 

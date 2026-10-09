@@ -23,6 +23,7 @@ struct DevicePairView: View {
                         .font(.largeTitle)
                         .bold()
                         .padding(.top, 50)
+                        .accessibilityAddTraits(.isHeader)
                     
                     Text("Para que seja possível conectar o seu celular com o hardware, retorne ao seu WiFi e clique para confirmar.")
                         .foregroundStyle(.secondary)
@@ -50,6 +51,11 @@ struct DevicePairView: View {
         .navigationBarBackButtonHidden()
         .task {
             await hardwareViewModel.fetchHostName()
+        }
+        // The button only shows a spinner while pairing: say it out loud. The result comes in
+        // the alert below, which VoiceOver reads by itself.
+        .onChange(of: hardwareViewModel.isPairing) { _, isPairing in
+            if isPairing { VoiceOver.announce(L10n.tr("Pareando com o Harvi…")) }
         }
         .alert(
             hardwareViewModel.conectionResult?.title ?? "",

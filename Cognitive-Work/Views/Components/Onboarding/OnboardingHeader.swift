@@ -32,6 +32,7 @@ struct OnboardingHeader: View {
                 .bold()
                 .foregroundStyle(.titleGray)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
             
             VStack(alignment: .leading, spacing: 10) {
                 Text(description)

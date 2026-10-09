@@ -43,10 +43,12 @@ struct WaitHouseCreatorSheduleView: View {
             .frame(width: width, height: height, alignment: .top)
             .clipped()
             .opacity(0.6)
+            .accessibilityDecorative()
             
             VStack(spacing: 30) {
                 Image("loadingIcon")
                     .rotationEffect(.degrees(isRotating))
+                    .accessibilityDecorative()
                     .onAppear {
                         withAnimation(.linear(duration: 1)
                             .speed(0.1).repeatForever(autoreverses: false)) {
@@ -57,11 +59,13 @@ struct WaitHouseCreatorSheduleView: View {
                 Text("Aguardando divisão de tarefas...")
                     .font(.system(size: 30))
                     .bold()
+                    .accessibilityAddTraits(.isHeader)
                 
                 VStack(spacing: 15) {
                     Text(description1)
                     Text(description2)
                 }
+                .accessibilityElement(children: .combine)
                 .padding(.horizontal)
                 
                 // MARK: - Skip

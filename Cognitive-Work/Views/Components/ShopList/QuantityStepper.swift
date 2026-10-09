@@ -24,6 +24,9 @@ struct QuantityStepper: View {
     @Binding var value: Int
     var range: ClosedRange<Int> = Self.allowedRange
 
+    /// How VoiceOver reads the number ("5 unidades"); just the number when `nil`.
+    var valueDescription: ((Int) -> String)? = nil
+
     /// What the field shows. Kept apart from ``value`` so an empty field stays empty while typing.
     @State private var text: String = ""
     @FocusState private var isFocused: Bool
@@ -42,6 +45,14 @@ struct QuantityStepper: View {
                 .frame(width: 110)
                 .focused($isFocused)
                 .accessibilityLabel("Quantidade")
+                .accessibilityValue(valueDescription?(value) ?? String(value))
+                .accessibilityAdjustableAction { direction in
+                    switch direction {
+                    case .increment: change(by: 1)
+                    case .decrement: change(by: -1)
+                    @unknown default: break
+                    }
+                }
                 .onChange(of: text) { _, newText in
                     applyTyped(newText)
                 }

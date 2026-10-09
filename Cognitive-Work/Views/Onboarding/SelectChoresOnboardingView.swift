@@ -286,6 +286,9 @@ private struct RoomCapsule: View {
         }
         .buttonStyle(.plain)
         .animation(.snappy(duration: 0.25), value: selectedCount)
+        .accessibilityLabel(Text(room.name.localizedDefault))
+        .accessibilityValue(selectedCount > 0 ? Text(L10n.tr("%lld tarefas marcadas", selectedCount)) : Text(""))
+        .accessibilityHint(isSelected ? Text("") : Text(L10n.tr("Mostra as tarefas deste cômodo")))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
@@ -317,6 +320,8 @@ private struct NewChoreRow: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(L10n.tr("Nova tarefa")))
+        .accessibilityHint(Text(L10n.tr("Cria uma tarefa que não está na lista")))
     }
 }
 
@@ -353,6 +358,7 @@ private struct ChoreSelectionRow: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(chore.localizedName))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

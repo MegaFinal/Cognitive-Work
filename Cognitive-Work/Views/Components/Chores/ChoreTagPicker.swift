@@ -66,6 +66,9 @@ struct ChoreTagPicker: View {
             }
             .fixedSize()
         }
+        // "Prioridade, média, pop-up button"
+        .accessibilityLabel(accessibilityTitle)
+        .accessibilityValue(type.labelName(for: chore, currentRoom: currentRoom))
         .id(type.labelName(for: chore, currentRoom: currentRoom))
         .onChange(of: currentRoom) { _, newRoom in
             if let recordID = newRoom?.recordID {
@@ -73,6 +76,15 @@ struct ChoreTagPicker: View {
             } else {
                 chore.room = nil
             }
+        }
+    }
+    
+    /// What this picker edits, spoken before its current value.
+    private var accessibilityTitle: String {
+        switch type {
+        case .priority: return L10n.tr("Prioridade")
+        case .frequency: return L10n.tr("Frequência")
+        case .duration: return L10n.tr("Duração")
         }
     }
     

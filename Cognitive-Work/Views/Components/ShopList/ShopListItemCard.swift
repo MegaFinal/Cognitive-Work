@@ -56,6 +56,15 @@ struct ShopListItemCard: View {
         .animation(.snappy, value: item.isBought)
         .contentShape(RoundedRectangle(cornerRadius: 22))
         .onTapGesture(perform: onTap)
+        // One VoiceOver element for the whole card; activating it checks the item off (the
+        // parent adds "Editar" and "Excluir" as named actions).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ShopListViewModel.accessibilityLabel(for: item, relatedUsers: relatedUsers))
+        .accessibilityHint(ShopListViewModel.accessibilityToggleName(for: item))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction {
+            toggle()
+        }
     }
     
     // MARK: - Pieces
@@ -88,12 +97,7 @@ struct ShopListItemCard: View {
 
     private var checkButton: some View {
         Button {
-            HapticsManager.notify(item.isBought ? .warning : .success)
-            isToggling = true
-            Task {
-                await onToggle()
-                isToggling = false
-            }
+            toggle()
         } label: {
             ZStack {
                 Image(systemName: item.isBought ? "checkmark.circle.fill" : "circle")
@@ -110,6 +114,17 @@ struct ShopListItemCard: View {
         .buttonStyle(.plain)
         .disabled(isToggling)
         .accessibilityLabel(item.isBought ? "Marcar como não comprado" : "Marcar como comprado")
+    }
+
+    /// Checks the item off (or puts it back), from the button or from VoiceOver.
+    private func toggle() {
+        guard !isToggling else { return }
+        HapticsManager.notify(item.isBought ? .warning : .success)
+        isToggling = true
+        Task {
+            await onToggle()
+            isToggling = false
+        }
     }
 }
 

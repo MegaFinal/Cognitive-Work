@@ -71,6 +71,7 @@ struct FortnightlyScheduleView: View {
                     }
                     .tint(.blue)
                     .buttonStyle(.glassProminent)
+                    .accessibilityLabel(L10n.tr("Confirmar escala"))
                 }
             }
         }
@@ -84,6 +85,16 @@ struct FortnightlyScheduleView: View {
         .task {
             await scheduleViewModel.loadSchedule(shouldGenerate: shouldGenerate)
         }
+        // Says how the division ended once the waiting screen goes away.
+        .onChange(of: scheduleViewModel.isLoading) { _, isLoading in
+            guard !isLoading else { return }
+            if let error = scheduleViewModel.errorMessage {
+                VoiceOver.announce(error)
+            } else {
+                VoiceOver.announce(L10n.tr("Escala quinzenal pronta"))
+            }
+        }
+        .onChange(of: showInfoPopUp) { VoiceOver.screenChanged() }
     }
     
     @ViewBuilder
@@ -94,6 +105,7 @@ struct FortnightlyScheduleView: View {
                     .ignoresSafeArea()
                     .contentShape(Rectangle())
                     .onTapGesture { }
+                    .accessibilityDecorative()
                 
                 ScheduleInfoPopUp {
                     withAnimation(.easeInOut(duration: 0.25)) {
@@ -103,6 +115,13 @@ struct FortnightlyScheduleView: View {
                 .transition(.scale(scale: 0.92).combined(with: .opacity))
             }
             .transition(.opacity)
+            // Only the pop-up is reachable; the escape gesture closes it like its button.
+            .accessibilityAddTraits(.isModal)
+            .accessibilityAction(.escape) {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    showInfoPopUp = false
+                }
+            }
         }
     }
 }

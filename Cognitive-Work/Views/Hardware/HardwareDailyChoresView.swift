@@ -31,6 +31,8 @@ struct HardwareDailyChoresView: View {
             legend
         }
         .padding(.vertical)
+        // Rendered to an image for the e-paper device; never meant for VoiceOver.
+        .accessibilityHidden(true)
         .task {
             guard viewModel.userGroups.isEmpty else { return }
             await viewModel.setup()

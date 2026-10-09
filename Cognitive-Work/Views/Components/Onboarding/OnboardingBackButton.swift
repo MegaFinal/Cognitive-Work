@@ -53,7 +53,8 @@ private struct OnboardingBackButtonModifier: ViewModifier {
                         }
                     }
                     .disabled(isDisabled || viewModel.isLoading || viewModel.isRollingBack)
-                    .accessibilityLabel(Text("Voltar"))
+                    .accessibilityLabel(Text(L10n.tr("Voltar")))
+                    .accessibilityValue(viewModel.isRollingBack ? Text(L10n.tr("Carregando")) : Text(""))
                 }
             }
             .confirmationDialog(

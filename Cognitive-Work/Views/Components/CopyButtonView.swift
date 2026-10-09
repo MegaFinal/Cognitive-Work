@@ -59,6 +59,8 @@ struct CopyButtonView: View {
         .buttonStyle(.plain)
         .disabled(textToCopy == nil)
         .opacity(textToCopy == nil ? Self.disabledOpacity : 1)
+        .accessibilityLabel(textToCopy == nil ? L10n.tr("Nenhum link ainda") : L10n.tr("Copiar"))
+        .accessibilityValue(isCopied ? L10n.tr("Copiado") : (textToCopy ?? ""))
     }
 
     // MARK: - Actions
@@ -70,6 +72,7 @@ struct CopyButtonView: View {
         UIPasteboard.general.string = textToCopy
 
         withAnimation { isCopied = true }
+        VoiceOver.announce(L10n.tr("Copiado"))
         Task {
             try? await Task.sleep(for: Self.feedbackDuration)
             withAnimation { isCopied = false }

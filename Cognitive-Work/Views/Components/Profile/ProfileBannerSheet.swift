@@ -50,6 +50,7 @@ struct ProfileBannerSheet: View {
                     } label: {
                         Image(systemName: "xmark")
                     }
+                    .accessibilityLabel(L10n.tr("Cancelar"))
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -60,6 +61,7 @@ struct ProfileBannerSheet: View {
                     } label: {
                         Image(systemName: "checkmark")
                     }
+                    .accessibilityLabel(L10n.tr("Confirmar"))
                 }
             }
         }
@@ -82,6 +84,12 @@ struct ProfileBannerSheet: View {
         .clipped()
         .animation(.easeInOut(duration: 0.3), value: selectedColor)
         .animation(.easeInOut(duration: 0.3), value: pattern)
+        // One summary of the live preview (the photo itself isn't informative here).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.tr("Pré-visualização do banner: %@, %@",
+                                    selectedColor.voiceOverName,
+                                    pattern.displayName))
+        .accessibilityAddTraits(.isImage)
     }
     
     private var avatar: some View {
@@ -156,6 +164,7 @@ struct ProfileBannerSheet: View {
     private func sectionTitle(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.system(size: 20, weight: .bold))
+            .accessibilityAddTraits(.isHeader)
     }
 }
 

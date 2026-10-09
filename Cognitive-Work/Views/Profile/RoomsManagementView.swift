@@ -61,6 +61,10 @@ struct RoomsManagementView: View {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             isEditing.toggle()
                         }
+                        // The header instruction changes with the mode; read the new one.
+                        VoiceOver.announce(isEditing
+                            ? L10n.tr("Toque no ícone vermelho para excluir um cômodo.")
+                            : L10n.tr("Toque em um cômodo para editá-lo ou no + para criar um novo."))
                     }
                     .fontWeight(isEditing ? .semibold : .regular)
                 }
@@ -101,6 +105,7 @@ struct RoomsManagementView: View {
                 Task {
                     if await viewModel.deleteRoom(room) {
                         HapticsManager.notify(.success)
+                        VoiceOver.announce(L10n.tr("Cômodo excluído"))
                     } else {
                         HapticsManager.notify(.error)
                     }
@@ -148,7 +153,8 @@ struct RoomsManagementView: View {
                     choreCount: viewModel.choreCount(for: room),
                     isEditing: isEditing,
                     wiggleDirection: index.isMultiple(of: 2) ? 1 : -1,
-                    onDelete: { askToDelete(room) }
+                    onDelete: { askToDelete(room) },
+                    onEdit: { roomBeingEdited = room }
                 )
                 .onTapGesture {
                     HapticsManager.selection()
@@ -176,8 +182,14 @@ struct RoomsManagementView: View {
                     isEditing = false
                     isCreatingRoom = true
                 }
+                .accessibilityAction {
+                    isEditing = false
+                    isCreatingRoom = true
+                }
                 .opacity(isEditing ? 0.4 : 1)
                 .allowsHitTesting(!isEditing)
+                // Not tappable in delete mode, so VoiceOver skips it too.
+                .accessibilityHidden(isEditing)
                 .staggeredEntrance(index: viewModel.rooms.count, isVisible: hasAppeared)
         }
         .padding(.horizontal)
@@ -192,6 +204,8 @@ struct RoomsManagementView: View {
             }
         }
         .padding(.horizontal)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.tr("Carregando cômodos"))
     }
     
     // MARK: - Deletion
@@ -230,6 +244,8 @@ private struct RoomCard: View {
     /// 1 or -1, so neighbouring cards wiggle in opposite directions.
     let wiggleDirection: Double
     let onDelete: () -> Void
+    /// Opens the edit sheet; used as the card's VoiceOver default action.
+    var onEdit: (() -> Void)? = nil
     
     @State private var isWiggling = false
     
@@ -265,7 +281,7 @@ private struct RoomCard: View {
                 .buttonStyle(.plain)
                 .offset(x: -8, y: -8)
                 .transition(.scale.combined(with: .opacity))
-                .accessibilityLabel("Excluir \(room.name.localizedDefault)")
+                .accessibilityLabel(L10n.tr("Excluir %@", room.name.localizedDefault))
             }
         }
     }
@@ -278,6 +294,7 @@ private struct RoomCard: View {
                     .scaledToFit()
                     .frame(width: 52, height: 52)
                     .fontWeight(.light)
+                    .accessibilityHidden(true)
                 
                 Text(room.name.localizedDefault)
                     .fontWeight(.medium)
@@ -306,6 +323,14 @@ private struct RoomCard: View {
         .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
+        .accessibilityAction {
+            HapticsManager.selection()
+            onEdit?()
+        }
+        // Alternative to the context menu / delete badge.
+        .accessibilityAction(named: Text(L10n.tr("Excluir"))) {
+            onDelete()
+        }
     }
     
     private var choreCountText: String {
@@ -323,6 +348,7 @@ private struct AddRoomCard: View {
         VStack(spacing: 14) {
             Image(systemName: "plus")
                 .font(.system(size: 40, weight: .light))
+                .accessibilityHidden(true)
             Text("Novo cômodo")
                 .fontWeight(.medium)
         }
@@ -457,18 +483,21 @@ struct RoomFormSheet: View {
                     } label: {
                         Image(systemName: "xmark")
                     }
+                    .accessibilityLabel(L10n.tr("Cancelar"))
                     .disabled(isSaving)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
+                            .accessibilityLabel(L10n.tr("Salvando"))
                     } else {
                         Button {
                             save()
                         } label: {
                             Image(systemName: "checkmark")
                         }
+                        .accessibilityLabel(L10n.tr("Salvar"))
                         .disabled(!canSave)
                     }
                 }
@@ -515,6 +544,13 @@ struct RoomFormSheet: View {
         .clipped()
         .animation(.easeInOut(duration: 0.3), value: selectedColor)
         .animation(.easeInOut(duration: 0.3), value: pattern)
+        // One summary of the live preview instead of an unlabeled icon.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.tr("Pré-visualização do cômodo: %@, %@, %@",
+                                    ProfileAccessibility.symbolName(selectedSymbol),
+                                    selectedColor.voiceOverName,
+                                    pattern.displayName))
+        .accessibilityAddTraits(.isImage)
     }
     
     // MARK: - Name
@@ -551,6 +587,11 @@ struct RoomFormSheet: View {
         .animation(.linear(duration: 0.4), value: failureCount)
         .animation(.easeInOut(duration: 0.2), value: isReservedName)
         .animation(.easeInOut(duration: 0.2), value: didFailToSave)
+        .onChange(of: isReservedName) { _, isReserved in
+            if isReserved {
+                VoiceOver.announce(L10n.tr("Este nome é reservado para tarefas da casa toda."))
+            }
+        }
     }
     
     // MARK: - Color
@@ -636,7 +677,15 @@ struct RoomFormSheet: View {
                                 selectedSymbol = symbol
                             }
                         }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(ProfileAccessibility.symbolName(symbol))
                         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+                        .accessibilityAction {
+                            HapticsManager.selection()
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) {
+                                selectedSymbol = symbol
+                            }
+                        }
                 }
             }
         }
@@ -646,6 +695,7 @@ struct RoomFormSheet: View {
     private func sectionTitle(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.system(size: 20, weight: .bold))
+            .accessibilityAddTraits(.isHeader)
     }
     
     // MARK: - Save
@@ -666,6 +716,7 @@ struct RoomFormSheet: View {
                 HapticsManager.notify(.error)
                 didFailToSave = true
                 failureCount += 1
+                VoiceOver.announce(L10n.tr("Não foi possível salvar o cômodo. Verifique sua conexão e tente novamente."))
             }
         }
     }
@@ -741,7 +792,10 @@ struct ColorSwatch: View {
             .shadow(color: .black.opacity(isSelected ? 0.2 : 0.08), radius: 4, y: 2)
             .contentShape(Circle())
             .onTapGesture(perform: action)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(color.voiceOverName)
             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+            .accessibilityAction { action() }
     }
 }
 
@@ -790,7 +844,11 @@ struct PatternSwatch: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(pattern.displayName))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityHint(isAvailable ? Text("") : Text("Indisponível nesta cor"))
+        .accessibilityHint(isAvailable ? Text("") : Text(L10n.tr("Indisponível nesta cor")))
+        .accessibilityAction {
+            guard isAvailable else { return }
+            action()
+        }
     }
 }
 

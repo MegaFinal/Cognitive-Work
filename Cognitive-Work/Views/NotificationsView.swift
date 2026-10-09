@@ -25,6 +25,7 @@ struct NotificationsView: View {
 
                 if viewModel.isLoading {
                     ProgressView().frame(maxWidth: .infinity)
+                        .accessibilityLabel(L10n.tr("Carregando notificações"))
                 } else if viewModel.sections.isEmpty {
                     Text("Nada por aqui nos últimos 14 dias")
                         .foregroundStyle(.subTitleGray)
@@ -56,6 +57,7 @@ struct NotificationsView: View {
             Text("Notificações")
                 .font(.system(size: 34))
                 .fontWeight(.bold)
+                .accessibilityAddTraits(.isHeader)
             Text(viewModel.newCountText)
                 .font(.system(size: 17))
                 .foregroundStyle(.subTitleGray)
@@ -67,6 +69,7 @@ struct NotificationsView: View {
             Text(viewModel.title(for: section))
                 .font(.system(size: 17))
                 .foregroundStyle(.subTitleGray)
+                .accessibilityAddTraits(.isHeader)
 
             ForEach(section.items) { notification in
                 Button {

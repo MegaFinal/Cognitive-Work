@@ -28,6 +28,18 @@ struct DayCell: View {
         }
         .buttonStyle(.plain)
         .disabled(!isSelectable)
+        // "sexta-feira, 25 de setembro" — "Selecionado" — "Muitas tarefas"
+        .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(L10n.locale)))
+        .accessibilityValue(loadDescription)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        // Days outside the window (or already past) can't be picked: skip them.
+        .accessibilityHidden(!isSelectable)
+    }
+    
+    /// How busy the day is, as shown by the yellow background's strength.
+    private var loadDescription: String {
+        guard isSelectable, opacity > 0 else { return "" }
+        return opacity >= 0.6 ? L10n.tr("Muitas tarefas") : L10n.tr("Poucas tarefas")
     }
 
     private var foreground: Color {

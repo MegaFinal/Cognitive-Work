@@ -85,6 +85,24 @@ struct FreeTimeSlider: View {
             .gesture(buildSelectionGesture(in: geometry.size.width))
         }
         .frame(maxWidth: totalWidth, maxHeight: squareSize)
+        // VoiceOver: one adjustable element (swipe up/down) instead of a drag-only row.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(L10n.tr("Tempo livre")))
+        .accessibilityValue(Text(Self.accessibilityValue(for: rating)))
+        .accessibilityAdjustableAction { direction in
+            guard !isLoading else { return }
+            switch direction {
+            case .increment: rating = min(maxRating, rating + 1)
+            case .decrement: rating = max(0, rating - 1)
+            @unknown default: break
+            }
+        }
+    }
+
+    /// Spoken value for a slider level ("2 horas", or "Nenhum tempo livre" at zero).
+    static func accessibilityValue(for level: Int) -> String {
+        let freeTime = FreeTimeEnum(level)
+        return freeTime == .none ? L10n.tr("Nenhum tempo livre") : freeTime.displayName
     }
 
     // MARK: - View Builders

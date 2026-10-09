@@ -20,10 +20,17 @@ struct UnassignmentList: View {
                     .font(.system(size: 22))
                     .bold()
                     .foregroundStyle(.black)
+                    .accessibilityAddTraits(.isHeader)
                 
                 Spacer()
                 
                 Image(systemName: "chevron.down")
+                    // Visually just a hint; for VoiceOver it closes the popup.
+                    .accessibilityLabel(L10n.tr("Fechar"))
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction {
+                        carouselViewModel.dismissUnassignedList()
+                    }
             }
             
             if items.isEmpty {
@@ -46,6 +53,12 @@ struct UnassignmentList: View {
         .frame(width: width * 0.7)
         .glassEffect(.regular.tint(.white.opacity(0.35)), in: .rect(cornerRadius: 28))
         .shadow(radius: 28, y: 4)
+        // Popup: keeps VoiceOver inside it; the escape gesture closes it.
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) {
+            carouselViewModel.dismissUnassignedList()
+        }
     }
     
     private func choreRow(for item: CarouselViewModel.UnassignedItem) -> some View {
@@ -84,6 +97,7 @@ struct UnassignmentList: View {
                 Spacer()
                 
                 Image(systemName: "hand.rays")
+                    .accessibilityDecorative()
                     .font(.system(size: 15))
                     .padding(7)
                     .foregroundColor(.black)
@@ -97,10 +111,25 @@ struct UnassignmentList: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(ScaleButtonStyle())
+        .accessibilityLabel(rowAccessibilityLabel(for: item))
+        .accessibilityHint(L10n.tr("Toque duas vezes para pegar esta tarefa."))
         .glassEffect(
             .regular.tint(roomColor.opacity(0.2)),
             in: .rect(cornerRadius: 16)
         )
+    }
+    
+    /// "Lavar a louça, Cozinha, Prioridade média, …, sexta-feira, 25 de setembro".
+    private func rowAccessibilityLabel(for item: CarouselViewModel.UnassignedItem) -> String {
+        var parts = [
+            item.chore.localizedName,
+            carouselViewModel.accessibilityRoomName(for: item.chore),
+            carouselViewModel.accessibilityTagsText(for: item.chore)
+        ]
+        if let date = item.displayDate {
+            parts.append(CarouselViewModel.accessibilityDateText(date))
+        }
+        return parts.joined(separator: ", ")
     }
     
     private struct ScaleButtonStyle: ButtonStyle {

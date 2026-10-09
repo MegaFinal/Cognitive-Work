@@ -61,6 +61,8 @@ struct CreateProfileOnboardingView: View {
                 .characterLimit(TextLimits.userName, text: $viewModel.userName)
                 .submitLabel(.done)
                 .padding(.top, 52)
+                .accessibilityLabel(Text(L10n.tr("Nome")))
+                .accessibilityHint(Text(L10n.tr("Como os outros moradores vão te ver no app")))
             
             Spacer(minLength: 16)
             
@@ -90,6 +92,9 @@ struct CreateProfileOnboardingView: View {
             Button("OK", role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+        .onChange(of: isLoadingImage) { wasLoading, isLoading in
+            if wasLoading && !isLoading { VoiceOver.announce(L10n.tr("Foto atualizada")) }
         }
         .onChange(of: selectedItem) { _, newItem in
             guard let newItem else { return }

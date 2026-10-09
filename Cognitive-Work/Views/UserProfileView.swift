@@ -87,6 +87,7 @@ struct UserProfileView: View {
         .overlay {
             if viewModelUser.isSaving {
                 ProgressView()
+                    .accessibilityLabel(L10n.tr("Salvando"))
             }
         }
     }
@@ -121,6 +122,10 @@ struct UserProfileView: View {
             }
             .padding(.top, (height * 0.25) - (width * 0.25))
         }
+        // Read the header as one sentence: name, level, points and coins.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(viewModelUser.accessibilityProfileSummary)
+        .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -141,6 +146,7 @@ private struct SettingsButtonsSection: View {
                     Text("Configurações Gerais")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
             .buttonStyle(.plain)
@@ -153,6 +159,7 @@ private struct SettingsButtonsSection: View {
                     Text("Ajustes da Casa")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
             .buttonStyle(.plain)
@@ -165,6 +172,7 @@ private struct SettingsButtonsSection: View {
                     Text("Alterar Tempo Livre")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
             .buttonStyle(.plain)

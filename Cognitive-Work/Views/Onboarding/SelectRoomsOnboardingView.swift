@@ -84,6 +84,27 @@ struct SelectRoomsOnboardingView: View {
                                 pressingRoomID = isPressing ? roomDraft.id : nil
                             }
                         }
+                        // VoiceOver: one button per card; the long press becomes a named action.
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(roomAccessibilityLabel(roomDraft)))
+                        .accessibilityAddTraits(roomDraft.isSelected && !roomDraft.isAddButton ? [.isButton, .isSelected] : .isButton)
+                        .accessibilityHint(roomDraft.isAddButton ? Text(L10n.tr("Abre o formulário para criar um cômodo")) : Text(""))
+                        .accessibilityAction {
+                            guard !viewModel.isLoading else { return }
+                            if roomDraft.isAddButton {
+                                isShowingCustomRoomSheet = true
+                            } else {
+                                viewModel.toggleRoomSelection(id: roomDraft.id)
+                            }
+                        }
+                        .accessibilityActions {
+                            if !roomDraft.isAddButton {
+                                Button(L10n.tr("Editar nomes e quantidade")) {
+                                    guard !viewModel.isLoading else { return }
+                                    startEditing(roomDraft)
+                                }
+                            }
+                        }
                         .scaleEffect(pressingRoomID == roomDraft.id ? 0.9 : 1)
                         .opacity(editingRoomID != nil && editingRoomID != roomDraft.id ? 0.55 : 1)
                         .anchorPreference(key: RoomCardBoundsKey.self, value: .bounds) {
@@ -118,6 +139,13 @@ struct SelectRoomsOnboardingView: View {
                         Color.black.opacity(0.35)
                             .ignoresSafeArea()
                             .onTapGesture { stopEditing() }
+                            // For VoiceOver the dimmed backdrop is the editor's "close" button,
+                            // read after the editor's own controls.
+                            .accessibilityElement()
+                            .accessibilityLabel(Text(L10n.tr("Fechar editor")))
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityAction { stopEditing() }
+                            .accessibilitySortPriority(-1)
                         
                         // The card being edited is redrawn above the dim, lifted, so it stays
                         // bright and it is clear which room the editor belongs to.
@@ -136,6 +164,7 @@ struct SelectRoomsOnboardingView: View {
                             .position(x: cardFrame.midX, y: cardFrame.midY)
                             .allowsHitTesting(false)
                             .transition(.scale(scale: 0.92).combined(with: .opacity))
+                            .accessibilityHidden(true)
                         }
                         
                         RoomQuantityEditor(room: $viewModel.availableRooms[index])
@@ -148,6 +177,10 @@ struct SelectRoomsOnboardingView: View {
                             .offset(x: placement.origin.x, y: placement.origin.y)
                             .transition(.scale(scale: 0.9, anchor: placement.anchor).combined(with: .opacity))
                     }
+                    // A modal popup: VoiceOver stays inside, and the escape gesture closes it.
+                    .accessibilityElement(children: .contain)
+                    .accessibilityAddTraits(.isModal)
+                    .accessibilityAction(.escape) { stopEditing() }
                 }
                 .transition(.opacity)
             }
@@ -182,6 +215,14 @@ struct SelectRoomsOnboardingView: View {
             }
             editingRoomID = room.id
         }
+        VoiceOver.screenChanged()
+    }
+    
+    /// What VoiceOver reads for a room card: its name and, when there's more than one, how many.
+    private func roomAccessibilityLabel(_ room: RoomDTO) -> String {
+        if room.isAddButton { return L10n.tr("Adicionar cômodo") }
+        let name = room.name.localizedDefault
+        return room.quantity > 1 ? L10n.tr("%@, %lld cômodos", name, room.quantity) : name
     }
     
     private func editorPlacement(cardFrame: CGRect?, in size: CGSize) -> EditorPlacement {
@@ -231,6 +272,7 @@ struct SelectRoomsOnboardingView: View {
         withAnimation(.easeOut(duration: 0.2)) {
             editingRoomID = nil
         }
+        VoiceOver.screenChanged()
     }
 }
 
@@ -339,6 +381,7 @@ private struct RoomQuantityEditor: View {
             HStack {
                 Text("Quantidade")
                     .font(.system(size: 22, weight: .bold))
+                    .accessibilityAddTraits(.isHeader)
                 
                 Spacer()
                 
@@ -397,6 +440,22 @@ private struct RoomQuantityEditor: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 3)
         .background(Color.black.opacity(0.06), in: Capsule())
+        // VoiceOver: one adjustable element (swipe up/down) instead of two small buttons.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(L10n.tr("Quantidade de %@", room.name.localizedDefault)))
+        .accessibilityValue(Text(verbatim: "\(room.quantity)"))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                guard room.quantity < maxQuantity else { return }
+                withAnimation(.snappy) { room.setQuantity(room.quantity + 1) }
+            case .decrement:
+                guard room.quantity > 1 else { return }
+                withAnimation(.snappy) { room.setQuantity(room.quantity - 1) }
+            @unknown default:
+                break
+            }
+        }
     }
     
     private func nameRow(index: Int, instance: RoomInstanceDTO) -> some View {
@@ -409,6 +468,7 @@ private struct RoomQuantityEditor: View {
                 .focused($focusedInstance, equals: instance.id)
                 .submitLabel(.done)
                 .characterLimit(maxNameLength, text: name)
+                .accessibilityLabel(Text(L10n.tr("Nome do cômodo %lld", index + 1)))
             
             // Tapping the pencil puts the cursor in this room's name field. The hit area is
             // larger than the icon so it is easy to tap.
@@ -423,7 +483,7 @@ private struct RoomQuantityEditor: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(L10n.tr("Editar"))
+            .accessibilityLabel(L10n.tr("Editar nome do cômodo %lld", index + 1))
         }
     }
     

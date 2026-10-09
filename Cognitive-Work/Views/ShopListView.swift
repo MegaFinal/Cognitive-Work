@@ -104,15 +104,16 @@ struct ShopListView: View {
                     .ignoresSafeArea()
                     .contentShape(Rectangle())
                     .onTapGesture { viewModel.dismissPurchasePrompt() }
+                    .accessibilityHidden(true)
 
                 PurchasePricePopUp(
                     itemName: prompt.item.name,
                     quantity: prompt.item.quantity,
                     onConfirm: { text in
-                        Task { await viewModel.confirmPurchase(of: prompt.item, valueText: text) }
+                        Task { await viewModel.confirmPurchaseAnnouncing(of: prompt.item, valueText: text) }
                     },
                     onSkip: {
-                        Task { await viewModel.confirmPurchase(of: prompt.item, valueText: nil) }
+                        Task { await viewModel.confirmPurchaseAnnouncing(of: prompt.item, valueText: nil) }
                     },
                     onCancel: { viewModel.dismissPurchasePrompt() }
                 )
@@ -132,6 +133,7 @@ struct ShopListView: View {
                 Text("Compras")
                     .font(.system(size: 34))
                     .fontWeight(.bold)
+                    .accessibilityAddTraits(.isHeader)
 
                 if !viewModel.pendingItems.isEmpty {
                     Text(viewModel.pendingSummary)
@@ -170,6 +172,7 @@ struct ShopListView: View {
                         .padding(12)
                 }
                 .accessibilityLabel("Ordenar por")
+                .accessibilityValue(viewModel.sortOption.label)
             }
             .glassEffect(
                 .regular.interactive(),
@@ -271,6 +274,9 @@ struct ShopListView: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityLabel(viewModel.accessibilityLabel(for: section))
+        .accessibilityValue(viewModel.accessibilityValue(for: section))
+        .accessibilityAddTraits(.isHeader)
     }
 
     private func row(for item: ShopListItem) -> some View {
@@ -279,13 +285,13 @@ struct ShopListView: View {
             revealedID: $revealedItemID,
             style: swipeStyle,
             onDelete: {
-                Task { await viewModel.deleteItem(item) }
+                Task { await viewModel.deleteItemAnnouncing(item) }
             }
         ) {
             ShopListItemCard(
                 item: item,
                 relatedUsers: viewModel.relatedUsers(for: item),
-                onToggle: { await viewModel.toggleBought(item) },
+                onToggle: { await viewModel.toggleBoughtAnnouncing(item) },
                 onTap: {
                     if revealedItemID != nil {
                         withAnimation(.snappy) { revealedItemID = nil }
@@ -295,6 +301,10 @@ struct ShopListView: View {
                 }
             )
         }
+        .accessibilityAction(named: L10n.tr("Editar")) {
+            editingItem = item
+        }
+        // "Excluir" comes from SwipeToDeleteRow itself (it calls onDelete above).
     }
 
     private var addButton: some View {
@@ -314,6 +324,7 @@ struct ShopListView: View {
             in: .circle
         )
         .disabled(!viewModel.canAddItems)
+        .accessibilityLabel(L10n.tr("Adicionar item"))
         .padding(.horizontal, 30)
         .padding(.bottom)
     }
@@ -361,6 +372,7 @@ private struct ShopListEmptyState: View {
         }
         .padding(.horizontal, 32)
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
         .onAppear { isAnimating = true }
     }
 
