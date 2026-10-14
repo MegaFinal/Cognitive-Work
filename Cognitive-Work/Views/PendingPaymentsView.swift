@@ -78,9 +78,14 @@ struct PendingPaymentsView: View {
         } message: {
             Text(viewModel.confirmationMessage)
         }
-        .sheet(item: $viewModel.pixPayment) { payment in
-            PixPaymentSheet(payment: payment)
+        .overlay(alignment: .bottom) {
+            if viewModel.isPixCopied {
+                pixCopiedToast
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.snappy, value: viewModel.isPixCopied)
         .alert(
             "Chave Pix não cadastrada",
             isPresented: Binding(
@@ -137,6 +142,21 @@ struct PendingPaymentsView: View {
             isSettling: viewModel.isSettling,
             onSettle: { viewModel.settleTapped(for: group) }
         )
+    }
+
+    /// Shown for a moment after "Pagar" copies the Pix "copia e cola".
+    private var pixCopiedToast: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+            Text("Pix copia e cola copiado!")
+        }
+        .font(.system(size: 16, weight: .semibold))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Capsule().fill(Color.green))
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        .accessibilityElement(children: .combine)
     }
 
     private var emptyState: some View {

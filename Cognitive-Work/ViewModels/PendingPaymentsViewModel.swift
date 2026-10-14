@@ -7,6 +7,7 @@
 
 import Foundation
 import CloudKit
+import UIKit
 
 /// Drives the "Pendências" screen: who owes whom for the things bought for the house.
 @MainActor
@@ -176,8 +177,11 @@ final class PendingPaymentsViewModel {
 
     // MARK: - Paying with Pix
 
-    /// The Pix being paid, or `nil`. The view shows the payment sheet while it is set.
-    var pixPayment: PixPayment?
+    /// True for a moment after the Pix "copia e cola" is copied. The view shows a "copiado" toast.
+    private(set) var isPixCopied = false
+
+    @ObservationIgnored
+    private var pixCopiedTask: Task<Void, Never>?
 
     /// Name of the housemate who has no Pix key yet, or `nil`. The view explains it in an alert.
     var missingPixKeyName: String?
@@ -186,32 +190,37 @@ final class PendingPaymentsViewModel {
         L10n.tr("%@ ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix.", missingPixKeyName ?? "")
     }
 
-    /// What the "Pagar" / "Pago!" button does. When you owe, it opens the Pix payment sheet for
-    /// the housemate; when you are owed, it confirms that they paid you.
+    /// What the "Pagar" / "Pago!" button does. When you owe, it copies the housemate's Pix
+    /// "copia e cola" (amount included); when you are owed, it confirms that they paid you.
     func settleTapped(for group: DebtGroup) {
         guard !isPaid(group) else { return }
 
         switch group.direction {
-        case .youOwe: startPixPayment(for: group)
+        case .youOwe: copyPix(for: group)
         case .owedToYou: requestSettlement(of: group)
         }
     }
 
-    private func startPixPayment(for group: DebtGroup) {
+    private func copyPix(for group: DebtGroup) {
         guard let key = group.counterparty.pixKey.flatMap(PixPayload.normalizedKey) else {
             missingPixKeyName = group.counterparty.name
             return
         }
 
-        pixPayment = PixPayment(
-            code: PixPayload.copyAndPaste(
-                key: key,
-                amount: group.total,
-                receiverName: group.counterparty.name
-            ),
-            amount: amountParts(group.total),
-            receiver: group.counterparty
+        UIPasteboard.general.string = PixPayload.copyAndPaste(
+            key: key,
+            amount: group.total,
+            receiverName: group.counterparty.name
         )
+        HapticsManager.notify(.success)
+
+        isPixCopied = true
+        pixCopiedTask?.cancel()
+        pixCopiedTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            self?.isPixCopied = false
+        }
     }
 
     // MARK: - Settling
