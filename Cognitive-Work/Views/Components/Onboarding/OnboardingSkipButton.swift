@@ -38,6 +38,9 @@ struct OnboardingSkipButton: View {
             .fontWeight(.medium)
         }
         .disabled(isLoading)
+        .accessibilityLabel(Text(L10n.tr("Pular esta etapa")))
+        .voiceControlNames([L10n.tr("Pular esta etapa"), L10n.tr("Pular")])
+        .voiceOverValue(isLoading ? L10n.tr("Carregando") : "")
     }
 }
 

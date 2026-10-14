@@ -53,6 +53,13 @@ struct DateDivisionComponent: View {
             Color.gray.opacity(0.2),
             in: RoundedRectangle(cornerRadius: height * 0.02, style: .continuous)
         )
+        // One element with the full dates ("Divisão atual, de 28 de setembro a 11 de outubro").
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            L10n.tr("Divisão atual, de %@ a %@",
+                    ChartA11y.dayMonth(viewModel.periodStart),
+                    ChartA11y.dayMonth(viewModel.periodFinish))
+        )
     }
 }
 

@@ -31,7 +31,8 @@ struct PendingPaymentsView: View {
                     title: viewModel.balanceTitle,
                     caption: viewModel.balanceCaption,
                     amountText: viewModel.balanceText,
-                    color: viewModel.balanceColor
+                    color: viewModel.balanceColor,
+                    accessibilityAmount: viewModel.balanceAccessibilityText
                 )
                 summaryCards
             }
@@ -70,7 +71,7 @@ struct PendingPaymentsView: View {
             titleVisibility: .visible
         ) {
             Button("Pagar") {
-                Task { await viewModel.confirmSettlement() }
+                Task { await viewModel.confirmSettlementAnnouncing() }
             }
             Button("Cancelar", role: .cancel) {
                 viewModel.cancelSettlement()
@@ -123,7 +124,8 @@ struct PendingPaymentsView: View {
                     onTap: {
                         HapticsManager.selection()
                         viewModel.selectedDirection = direction
-                    }
+                    },
+                    accessibilityText: viewModel.summaryAccessibilityLabel(for: direction)
                 )
             }
         }
@@ -135,7 +137,12 @@ struct PendingPaymentsView: View {
             title: viewModel.title(for: group),
             totalText: viewModel.currencyText(group.total),
             rows: group.entries.map {
-                .init(id: $0.id, name: $0.name, amountText: viewModel.currencyText($0.amount))
+                .init(
+                    id: $0.id,
+                    name: $0.name,
+                    amountText: viewModel.currencyText($0.amount),
+                    accessibilityAmount: viewModel.accessibilityAmount($0.amount)
+                )
             },
             settleTitle: viewModel.settleButtonTitle(for: group),
             isPaid: viewModel.isPaid(group),
@@ -164,6 +171,7 @@ struct PendingPaymentsView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 44))
                 .foregroundStyle(.choreYellow)
+                .accessibilityHidden(true)
 
             Text(viewModel.emptyTitle)
                 .font(.system(size: 22, weight: .bold))
@@ -177,6 +185,7 @@ struct PendingPaymentsView: View {
         }
         .padding(.horizontal, 32)
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
 

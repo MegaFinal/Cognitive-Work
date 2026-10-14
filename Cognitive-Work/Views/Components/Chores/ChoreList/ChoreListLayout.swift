@@ -149,6 +149,12 @@ struct ChoreListLayout: View {
         }
         .buttonStyle(.plain)
         .frame(width: width * 0.92, alignment: .leading)
+        // "Hoje, quinta-feira, 25 de setembro" — header — "expandido, 3 tarefas"
+        .voiceOverLabel(group.accessibilityTitle)
+        .voiceControlNames([group.title])
+        .accessibilityValue(Text(verbatim: "\(isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")), \(L10n.tr("%lld tarefas", group.occurrences.count))"))
+        .voiceOverHint(isCollapsed ? L10n.tr("Toque duas vezes para expandir.") : L10n.tr("Toque duas vezes para recolher."))
+        .accessibilityAddTraits(.isHeader)
     }
     
     /// Shown when there's nothing to list — either the house has no chores, or the active
@@ -193,6 +199,7 @@ struct ChoreListLayout: View {
             revealedOccurrenceID = nil
             return viewModel.removeOccurrenceLocally(chore: occurrence.chore, targetOccurrences: targetOccurrences)
         }
+        VoiceOver.announce(L10n.tr("Tarefa excluída"))
         
         Task {
             await viewModel.persistDelete(chore: occurrence.chore, targetOccurrences: targetOccurrences, restoring: snapshot)
@@ -292,6 +299,10 @@ struct SwipeToDeleteRow<Content: View>: View {
     
     var body: some View {
         content
+            // VoiceOver alternative to the swipe: an "Excluir" action on the row.
+            .accessibilityAction(named: Text(L10n.tr(style.title ?? "Excluir"))) {
+                dismissAndDelete()
+            }
             .background(alignment: .trailing) {
                 deleteButton
                     .offset(x: -offset)
@@ -328,6 +339,8 @@ struct SwipeToDeleteRow<Content: View>: View {
         .opacity(revealProgress)
         .scaleEffect(0.8 + 0.2 * revealProgress)
         .allowsHitTesting(isRevealed && !isDeleting)
+        // Reached through the row's "Excluir" accessibility action instead.
+        .accessibilityHidden(true)
     }
 
     private var swipeGesture: HorizontalPanGesture {
@@ -460,6 +473,17 @@ private struct DayGroup: Identifiable {
         
         let weekday = day.formatted(.dateTime.weekday(.wide).locale(Self.locale))
         return weekday.prefix(1).uppercased() + weekday.dropFirst()
+    }
+    
+    /// Spoken title: "Hoje, quinta-feira, 25 de setembro" (or "Sem data").
+    var accessibilityTitle: String {
+        guard let day else { return title }
+        let longDate = CarouselViewModel.accessibilityDateText(day)
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) || calendar.isDateInTomorrow(day) {
+            return "\(title), \(longDate)"
+        }
+        return longDate
     }
     
     /// "25/09", or `nil` for the undated group.

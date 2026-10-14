@@ -20,5 +20,9 @@ struct UserProfilePictureList: View {
                     .shadow(color: .black.opacity(0.24), radius: 1.83, x: 1.71, y: 1.14)
             }
         }
+        // Read as "Fulano, Ciclano e mais 2" instead of one stop per avatar.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(ProfileAccessibility.memberList(users.map(\.name)))
+        .accessibilityHidden(users.isEmpty)
     }
 }

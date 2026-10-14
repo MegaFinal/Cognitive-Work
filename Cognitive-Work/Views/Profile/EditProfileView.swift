@@ -43,12 +43,19 @@ struct EditProfileView: View {
                 .characterLimit(TextLimits.userName, text: $viewModel.editedName)
                 .submitLabel(.done)
                 .disabled(viewModel.isSaving)
+                // The title is empty (only a placeholder), so name the field explicitly.
+                .voiceOverLabel(L10n.tr("Nome"))
+                // Voice Control: the visible placeholder first ("Toque em Seu Nome").
+                .voiceControlNames([L10n.tr("Seu Nome"), L10n.tr("Nome")])
                 Spacer()
             }
             
             Spacer()
         }
         .padding(.top, 70)
+        .onChange(of: viewModel.isSaving) { _, isSaving in
+            if isSaving { VoiceOver.announce(L10n.tr("Salvando")) }
+        }
         .sheet(isPresented: $isPickingBanner) {
             ProfileBannerSheet(
                 banner: viewModel.editedBanner,
@@ -69,12 +76,14 @@ struct EditProfileView: View {
             if viewModel.didSaveSuccessfully {
                 SuccessToast(text: "Perfil atualizado")
                     .padding(.top, 12)
+                    .accessibilityHidden(true) // announced in onChange below
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(.spring(duration: 0.35), value: viewModel.didSaveSuccessfully)
         .onChange(of: viewModel.didSaveSuccessfully) { _, didSave in
             guard didSave else { return }
+            VoiceOver.announce(L10n.tr("Perfil atualizado"))
             Task {
                 try? await Task.sleep(nanoseconds: 1_100_000_000)
                 viewModel.didSaveSuccessfully = false
@@ -97,6 +106,8 @@ struct EditProfileView: View {
                 .tint(Color.blue)
                 .buttonStyle(.glassProminent)
                 .disabled(!viewModel.canSave)
+                .voiceOverLabel(L10n.tr("Salvar"))
+                .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
             }
         }
         .hidesTabBar()

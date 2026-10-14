@@ -35,6 +35,8 @@ struct CarouselCardFrame: View {
                     x: isFocused ? (0.88 / 0.72) : 1.0,
                     y: isFocused ? (0.65 / 0.47) : 1.0
                 )
+                // Only the face currently shown is read by VoiceOver.
+                .accessibilityHidden(isShowingBack)
 
             if isShowingBack || rotation != 0 {
                 ChoreDetailsCard(
@@ -51,6 +53,7 @@ struct CarouselCardFrame: View {
                     y: isFocused ? 1.0 : (0.47 / 0.65)
                 )
                 .transition(.identity)
+                .accessibilityHidden(!isShowingBack)
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.75), value: isFocused)

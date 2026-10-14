@@ -56,6 +56,7 @@ struct UserProfileView: View {
                             .foregroundColor(.black)
                     }
                     .accessibilityLabel(Text("Editar Perfil"))
+                    .voiceControlNames([L10n.tr("Editar"), L10n.tr("Editar Perfil")])
                     .disabled(viewModelUser.user == nil)
                 }
             }
@@ -87,6 +88,7 @@ struct UserProfileView: View {
         .overlay {
             if viewModelUser.isSaving {
                 ProgressView()
+                    .voiceOverLabel(L10n.tr("Salvando"))
             }
         }
     }
@@ -121,6 +123,11 @@ struct UserProfileView: View {
             }
             .padding(.top, (height * 0.25) - (width * 0.25))
         }
+        // Read the header as one sentence: name, level, points and coins.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(viewModelUser.accessibilityProfileSummary)
+        .voiceControlNames(viewModelUser.accessibilityProfileInputLabels)
+        .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -141,8 +148,10 @@ private struct SettingsButtonsSection: View {
                     Text("Configurações Gerais")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Configurações Gerais"), L10n.tr("Configurações"), L10n.tr("Ajustes")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
@@ -153,8 +162,10 @@ private struct SettingsButtonsSection: View {
                     Text("Ajustes da Casa")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Ajustes da Casa"), L10n.tr("Casa")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
@@ -177,8 +188,10 @@ private struct SettingsButtonsSection: View {
                     Text("Alterar Tempo Livre")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Alterar Tempo Livre"), L10n.tr("Tempo livre")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             

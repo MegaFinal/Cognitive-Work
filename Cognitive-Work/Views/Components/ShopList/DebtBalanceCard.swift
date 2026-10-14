@@ -16,6 +16,8 @@ struct DebtBalanceCard: View {
     let caption: String
     let amountText: String
     let color: RoomColor
+    /// The amount as VoiceOver should read it ("55 reais"); `amountText` when `nil`.
+    var accessibilityAmount: String? = nil
 
     var body: some View {
         HStack(alignment: .center) {
@@ -37,6 +39,7 @@ struct DebtBalanceCard: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
                 .contentTransition(.numericText())
+                .voiceOverLabel(accessibilityAmount ?? amountText)
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)

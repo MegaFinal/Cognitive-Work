@@ -71,6 +71,8 @@ struct RoomTextureBackground: View {
         .scaleEffect(zoom)
         .opacity(textureOpacity)
         .allowsHitTesting(false)
+        // Purely decorative: the asset name ("purple.clouds") must not be read aloud.
+        .accessibilityDecorative()
     }
 }
 

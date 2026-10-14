@@ -796,13 +796,31 @@ class OnboardingViewModel {
     @MainActor
     private func joinedHouseIsAlreadyDivided() async -> Bool {
         let assignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
-        guard !assignments.isEmpty,
-              let myName = await CloudKitManager.shared.fetchMyHouseUser()?.recordID?.recordName
+        guard !assignments.isEmpty else { return false }
+        let ownsUpcoming = await ownsUpcomingAssignment(in: assignments)
+        return !ownsUpcoming
+    }
+    
+    /// Whether this user has an occurrence the division screen would show (from tomorrow on,
+    /// like ``FortnightlyViewModel``).
+    ///
+    /// Past occurrences don't count: a resident who left the house and came back keeps the same
+    /// member record ID, so their old occurrences still point at them even though the screen
+    /// would only show everyone else's chores. When the member record can't be read, the user
+    /// is treated as having none, so they land on the main screen rather than on that screen.
+    @MainActor
+    private func ownsUpcomingAssignment(in assignments: [RecurrentAssignmentModel]) async -> Bool {
+        guard let myName = await CloudKitManager.shared.fetchMyHouseUser()?.recordID?.recordName
         else { return false }
         
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let firstShownDay = calendar.date(byAdding: .day, value: 1, to: today) else { return false }
+        
         // Compared by record name so a different zone ID can't make the match fail.
-        return !assignments.contains { assignment in
-            (assignment.userReferences ?? []).contains { $0.recordID.recordName == myName }
+        return assignments.contains { assignment in
+            assignment.day >= firstShownDay
+                && (assignment.userReferences ?? []).contains { $0.recordID.recordName == myName }
         }
     }
     
@@ -1159,16 +1177,9 @@ class OnboardingViewModel {
         isScheduleReady = true
         guard stateMachine.current == .waitAdminScheduling else { return }
         
-        if let myHouseUser = await CloudKitManager.shared.fetchMyHouseUser(),
-           let myName = myHouseUser.recordID?.recordName {
-            // Compared by record name so a different zone ID can't make the match fail.
-            let hasOwnAssignments = assignments.contains { assignment in
-                (assignment.userReferences ?? []).contains { $0.recordID.recordName == myName }
-            }
-            guard hasOwnAssignments else {
-                finishOnboarding()
-                return
-            }
+        guard await ownsUpcomingAssignment(in: assignments) else {
+            finishOnboarding()
+            return
         }
         
         // The state may have changed while the house user was being fetched.

@@ -33,6 +33,8 @@ struct TermsOfUseView: View {
                     Button("Discordar") {
                         viewModel.decline()
                     }
+                    .accessibilityHint(Text(L10n.tr("Recusa os termos e fecha o acesso ao app")))
+                    .voiceControlNames([L10n.tr("Discordar"), L10n.tr("Recusar")])
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -40,6 +42,8 @@ struct TermsOfUseView: View {
                         viewModel.requestAcceptance()
                     }
                     .fontWeight(.semibold)
+                    .accessibilityHint(Text(L10n.tr("Pede uma confirmação antes de aceitar")))
+                    .voiceControlNames([L10n.tr("Concordar"), L10n.tr("Aceitar")])
                 }
             }
             .alert(viewModel.confirmationTitle, isPresented: $viewModel.isConfirmingAcceptance) {
@@ -66,6 +70,7 @@ struct TermsOfUseView: View {
 
             Text(viewModel.title)
                 .font(.system(size: 30, weight: .bold))
+                .accessibilityAddTraits(.isHeader)
 
             Text(viewModel.subtitle)
                 .font(.system(size: 15))
@@ -79,6 +84,7 @@ struct TermsOfUseView: View {
                 Text(verbatim: title)
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.black)
+                    .accessibilityAddTraits(.isHeader)
             }
 
             ForEach(section.paragraphs, id: \.self) { paragraph in
@@ -112,6 +118,10 @@ struct TermsOfUseView: View {
                     Text(verbatim: value)
                 }
             }
+            // "E-mail: contato@…" read as one element (still opens the link).
+            .accessibilityElement(children: .combine)
+            // Voice Control: "Toque em E-mail" rather than the whole address.
+            .voiceControlNames([label, value])
             .bodyStyle()
         }
     }
