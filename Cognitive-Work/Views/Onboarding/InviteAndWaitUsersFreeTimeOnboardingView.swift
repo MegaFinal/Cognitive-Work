@@ -36,6 +36,9 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     private let pollingInterval: Duration = .seconds(5)
     
+    /// Maximum number of residents shown on each row.
+    private let maxUsersPerRow = 4
+    
     /// CloudKit can't run in Xcode previews (no iCloud entitlement there), and touching it
     /// crashes the preview process. Every network call below is skipped when this is `true`.
     private var isRunningForPreviews: Bool {
@@ -164,34 +167,42 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     /// Members who already completed their free time.
     private var completedUsersView: some View {
-        HStack(spacing: 20) {
-            ForEach(completedUsers) { user in
-                ZStack {
-                    Circle()
-                        .foregroundColor(.green)
-                        .frame(width: width * 0.17)
-                    
-                    UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+        VStack(alignment: .leading, spacing: 20) {
+            ForEach(Array(completedUsers.chunked(into: maxUsersPerRow).enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 20) {
+                    ForEach(row) { user in
+                        ZStack {
+                            Circle()
+                                .foregroundColor(.green)
+                                .frame(width: width * 0.17)
+                            
+                            UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(L10n.tr("%@, pronto", user.name)))
+                    }
                 }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text(L10n.tr("%@, pronto", user.name)))
             }
         }
     }
     
     /// Members who still need to complete their free time.
     private var pendingUsersView: some View {
-        HStack(spacing: 20) {
-            ForEach(pendingUsers) { user in
-                ZStack {
-                    Circle()
-                        .foregroundColor(.red)
-                        .frame(width: width * 0.17)
-                    
-                    UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+        VStack(alignment: .leading, spacing: 20) {
+            ForEach(Array(pendingUsers.chunked(into: maxUsersPerRow).enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 20) {
+                    ForEach(row) { user in
+                        ZStack {
+                            Circle()
+                                .foregroundColor(.red)
+                                .frame(width: width * 0.17)
+                            
+                            UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(L10n.tr("%@, ainda configurando o tempo livre", user.name)))
+                    }
                 }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text(L10n.tr("%@, ainda configurando o tempo livre", user.name)))
             }
         }
     }
@@ -329,4 +340,14 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         viewModel: $mockViewModel,
         isFromSettings: false
     )
+}
+
+private extension Array {
+    /// Splits the array into consecutive slices of at most `size` elements.
+    func chunked(into size: Int) -> [[Element]] {
+        guard size > 0 else { return [self] }
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
+    }
 }
