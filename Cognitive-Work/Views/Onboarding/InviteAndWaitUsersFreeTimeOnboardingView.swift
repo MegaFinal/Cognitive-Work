@@ -75,23 +75,27 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                     .accessibilityLabel(Text(L10n.tr("Carregando moradores")))
             }
                     
-            if !pendingUsers.isEmpty {
-                Text("Em configuração")
-                .font(.subheadline)
-                .fontWeight(.thin)
-                .accessibilityAddTraits(.isHeader)
-                pendingUsersView
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    if !pendingUsers.isEmpty {
+                        Text("Em configuração")
+                        .font(.subheadline)
+                        .fontWeight(.thin)
+                        .accessibilityAddTraits(.isHeader)
+                        pendingUsersView
+                    }
+                    
+                    if !completedUsers.isEmpty {
+                        Text("Moradores prontos")
+                        .font(.subheadline)
+                        .fontWeight(.thin)
+                        .accessibilityAddTraits(.isHeader)
+                        completedUsersView
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            
-            if !completedUsers.isEmpty {
-                Text("Moradores prontos")
-                .font(.subheadline)
-                .fontWeight(.thin)
-                .accessibilityAddTraits(.isHeader)
-                completedUsersView
-            }
-            
-            Spacer()
+            .scrollIndicators(.hidden)
 
             VStack {
                 if !isFromSettings {
