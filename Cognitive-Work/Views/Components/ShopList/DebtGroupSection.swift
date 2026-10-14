@@ -128,15 +128,11 @@ struct DebtGroupSection: View {
         }
     }
 
-    /// "Pagar" (blue) until it's tapped, then a black "Pago!".
+    /// "Pagar" (blue) until it's tapped, then a black "Pago!". When you owe, `onSettle` copies the
+    /// Pix "copia e cola".
     private var settleButton: some View {
         Button(action: onSettle) {
-            Text(settleTitle)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 6)
-                .background(Capsule().fill(isPaid ? Color.black : Color.blue))
+            settleLabel
         }
         .buttonStyle(.plain)
         .disabled(isPaid || isSettling)
@@ -151,6 +147,15 @@ struct DebtGroupSection: View {
     /// Speakable names for the settle button: what it shows, then one naming the person.
     private var settleInputLabels: [String] {
         isPaid ? [settleTitle] : [settleTitle, L10n.tr("Pagar %@", title)]
+    }
+
+    private var settleLabel: some View {
+        Text(settleTitle)
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(isPaid ? Color.black : Color.blue))
     }
 
     private struct Line: Shape {

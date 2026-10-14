@@ -79,6 +79,25 @@ struct PendingPaymentsView: View {
         } message: {
             Text(viewModel.confirmationMessage)
         }
+        .overlay(alignment: .bottom) {
+            if viewModel.isPixCopied {
+                pixCopiedToast
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: viewModel.isPixCopied)
+        .alert(
+            "Chave Pix não cadastrada",
+            isPresented: Binding(
+                get: { viewModel.missingPixKeyName != nil },
+                set: { if !$0 { viewModel.missingPixKeyName = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.missingPixKeyMessage)
+        }
         .alert(
             "Não foi possível concluir",
             isPresented: Binding(
@@ -128,12 +147,23 @@ struct PendingPaymentsView: View {
             settleTitle: viewModel.settleButtonTitle(for: group),
             isPaid: viewModel.isPaid(group),
             isSettling: viewModel.isSettling,
-            onSettle: { viewModel.requestSettlement(of: group) },
-            headerAccessibilityText: viewModel.headerAccessibilityLabel(for: group),
-            totalAccessibilityText: viewModel.accessibilityAmount(group.total),
-            settleAccessibilityLabel: viewModel.settleAccessibilityLabel(for: group),
-            settleAccessibilityValue: viewModel.settleAccessibilityValue(for: group)
+            onSettle: { viewModel.settleTapped(for: group) }
         )
+    }
+
+    /// Shown for a moment after "Pagar" copies the Pix "copia e cola".
+    private var pixCopiedToast: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+            Text("Pix copia e cola copiado!")
+        }
+        .font(.system(size: 16, weight: .semibold))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Capsule().fill(Color.green))
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        .accessibilityElement(children: .combine)
     }
 
     private var emptyState: some View {

@@ -259,6 +259,78 @@ final class UserProfileViewModel {
         isSaving = false
     }
     
+    // MARK: - Pix key
+    
+    /// The text field of the Pix key screen.
+    var editedPixKey: String = ""
+    
+    /// Why the typed key can't be saved, or `nil`.
+    var pixKeyError: String?
+    
+    /// The saved key, as housemates will use it.
+    var savedPixKey: String? {
+        privateUser?.pixKey ?? user?.pixKey
+    }
+    
+    func startEditingPixKey() {
+        editedPixKey = savedPixKey ?? ""
+        pixKeyError = nil
+    }
+    
+    var canSavePixKey: Bool {
+        guard !isSaving, privateUser != nil else { return false }
+        return editedPixKey.trimmingCharacters(in: .whitespacesAndNewlines) != (savedPixKey ?? "")
+    }
+    
+    /// Saves the typed Pix key (or removes it when the field is empty) on the private profile and,
+    /// when there is one, on the in-house copy that housemates read.
+    ///
+    /// - Returns: `true` when it was saved.
+    @discardableResult
+    func savePixKey() async -> Bool {
+        guard let privateUser else {
+            errorMessage = L10n.tr("Perfil não carregado. Tente novamente.")
+            return false
+        }
+        
+        let typed = editedPixKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let newKey: String?
+        if typed.isEmpty {
+            newKey = nil
+        } else if let normalized = PixPayload.normalizedKey(typed) {
+            newKey = normalized
+        } else {
+            pixKeyError = L10n.tr("Chave Pix inválida. Use CPF, CNPJ, e-mail, celular com +55 ou chave aleatória.")
+            return false
+        }
+        pixKeyError = nil
+        
+        isSaving = true
+        defer { isSaving = false }
+        
+        let previousPrivateKey = privateUser.pixKey
+        let previousHouseKey = user?.pixKey
+        
+        privateUser.pixKey = newKey
+        user?.pixKey = newKey
+        
+        let privateSuccess = await CloudKitManager.shared.update(privateUser)
+        var houseSuccess = true
+        if let user {
+            houseSuccess = await CloudKitManager.shared.update(user)
+        }
+        
+        guard privateSuccess && houseSuccess else {
+            privateUser.pixKey = previousPrivateKey
+            user?.pixKey = previousHouseKey
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro desconhecido.")
+            return false
+        }
+        
+        editedPixKey = newKey ?? ""
+        return true
+    }
+    
     // MARK: - Delete Account
 
     /// Deletes everything this account has in the app and detaches it from every house.
