@@ -46,12 +46,17 @@ extension PendingPaymentsViewModel {
         isPaid(group) ? L10n.tr("Pago") : ""
     }
 
-    /// ``confirmSettlement()``, then says "Pago" when it went through.
-    func confirmSettlementAnnouncing() async {
-        let group = settlementRequest
-        await confirmSettlement()
-        if let group, isPaid(group) {
-            VoiceOver.announce(L10n.tr("Pago"))
+    /// What the dialog's confirm button runs: settles the requested debt, then says "Pago" when it
+    /// went through. The request is read right away, before the dialog dismisses itself and clears
+    /// it, so the `Task` that settles still knows which debt it is for.
+    func confirmSettlementAnnouncing() {
+        guard let group = settlementRequest else { return }
+        cancelSettlement()
+        Task {
+            await settle(group)
+            if isPaid(group) {
+                VoiceOver.announce(L10n.tr("Pago"))
+            }
         }
     }
 }

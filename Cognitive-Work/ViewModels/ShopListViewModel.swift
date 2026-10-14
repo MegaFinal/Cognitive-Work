@@ -74,6 +74,10 @@ final class ShopListViewModel {
 
     private(set) var houseUsers: [UserModel] = []
 
+    /// Every user record of the house, also the extra ones of the same person (see
+    /// ``HouseSnapshot/userRecords``).
+    private(set) var houseUserRecords: [UserModel] = []
+
     /// The signed-in user's in-house record, credited as ``ShopListItem/addedByUser`` on items
     /// created here.
     private(set) var currentUser: UserModel?
@@ -84,8 +88,29 @@ final class ShopListViewModel {
         items.filter { !$0.isBought }
     }
 
+    /// Bought items still on the list: the ones whose shares were all paid leave it (they stay
+    /// stored, and ``items`` still has them, so the debts keep adding up).
     var boughtItems: [ShopListItem] {
-        items.filter { $0.isBought }
+        items.filter { $0.isBought && !isFullySettled($0) }
+    }
+
+    /// Whether `item` was bought with a price shared with others and every one of them already
+    /// paid the buyer. People are matched by `ownerRecordName`, like ``DebtCalculator``, since
+    /// the same person may have more than one user record.
+    func isFullySettled(_ item: ShopListItem) -> Bool {
+        guard item.isBought, item.hasPrice, let buyerID = item.buyerRecordID else { return false }
+
+        var ownerByRecord: [String: String] = [:]
+        for user in houseUserRecords + houseUsers {
+            if let name = user.recordID?.recordName { ownerByRecord[name] = user.ownerRecordName }
+        }
+        func person(_ id: CKRecord.ID) -> String { ownerByRecord[id.recordName] ?? id.recordName }
+
+        let buyer = person(buyerID)
+        let settled = Set(item.settledUserIDs.map(person))
+        let debtors = Set(item.consumerRecordIDs.map(person)).subtracting([buyer])
+
+        return !debtors.isEmpty && debtors.isSubset(of: settled)
     }
 
     // MARK: - Presentation
@@ -165,6 +190,7 @@ final class ShopListViewModel {
     init(previewItems: [ShopListItem], houseUsers: [UserModel] = [], currentUser: UserModel? = nil) {
         self.items = previewItems
         self.houseUsers = houseUsers
+        self.houseUserRecords = houseUsers
         self.currentUser = currentUser
         self.hasLoaded = true
     }
@@ -217,6 +243,7 @@ final class ShopListViewModel {
         appliedSnapshotID = snapshot.id
 
         houseUsers = snapshot.users
+        houseUserRecords = snapshot.userRecords
         currentUser = snapshot.houseUser
 
         guard let shopList = snapshot.shopList else {

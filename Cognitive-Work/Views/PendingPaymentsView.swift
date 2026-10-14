@@ -62,23 +62,6 @@ struct PendingPaymentsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .animation(.snappy, value: viewModel.selectedDirection)
         .animation(.snappy, value: viewModel.groups.map(\.id))
-        .confirmationDialog(
-            viewModel.confirmationTitle,
-            isPresented: Binding(
-                get: { viewModel.settlementRequest != nil },
-                set: { if !$0 { viewModel.cancelSettlement() } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Pagar") {
-                Task { await viewModel.confirmSettlementAnnouncing() }
-            }
-            Button("Cancelar", role: .cancel) {
-                viewModel.cancelSettlement()
-            }
-        } message: {
-            Text(viewModel.confirmationMessage)
-        }
         .overlay(alignment: .bottom) {
             if viewModel.isPixCopied {
                 pixCopiedToast
@@ -145,9 +128,16 @@ struct PendingPaymentsView: View {
                 )
             },
             settleTitle: viewModel.settleButtonTitle(for: group),
+            settleSystemImage: nil,
             isPaid: viewModel.isPaid(group),
             isSettling: viewModel.isSettling,
-            onSettle: { viewModel.settleTapped(for: group) }
+            onSettle: { viewModel.settleTapped(for: group) },
+            isConfirmingSettlement: viewModel.settlementRequest?.id == group.id,
+            confirmationTitle: viewModel.confirmationTitle,
+            confirmationMessage: viewModel.confirmationMessage,
+            confirmationButtonTitle: viewModel.confirmationButtonTitle,
+            onConfirmSettlement: { viewModel.confirmSettlementAnnouncing() },
+            onCancelSettlement: { viewModel.cancelSettlement() }
         )
     }
 

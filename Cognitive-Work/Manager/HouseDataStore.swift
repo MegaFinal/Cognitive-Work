@@ -14,6 +14,10 @@ struct HouseSnapshot {
 
     let chores: [ChoreModel]
     let users: [UserModel]
+
+    /// Every user record of the house, including the extra records of the same person that
+    /// ``users`` merges. Used to resolve who a reference points at.
+    let userRecords: [UserModel]
     let rooms: [RoomModel]
     let assignments: [RecurrentAssignmentModel]
 
@@ -130,7 +134,7 @@ final class HouseDataStore {
         let cloud = CloudKitManager.shared
 
         async let chores = cloud.fetchAll(ChoreModel.self)
-        async let users = cloud.fetchHouseUsers()
+        async let userRecords = cloud.fetchHouseUserRecords()
         async let rooms = cloud.fetchAll(RoomModel.self)
         async let assignments = cloud.fetchAll(RecurrentAssignmentModel.self)
         async let houseUser = cloud.currentHouseUser()
@@ -138,9 +142,11 @@ final class HouseDataStore {
         async let shopList = fetchShopList()
         async let shopItems = cloud.fetchAll(ShopListItem.self)
 
+        let records = await userRecords
         return await HouseSnapshot(
             chores: chores,
-            users: users,
+            users: cloud.deduplicatedByOwner(records),
+            userRecords: records,
             rooms: rooms,
             assignments: assignments,
             houseUser: houseUser,
