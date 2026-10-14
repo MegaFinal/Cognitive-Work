@@ -502,6 +502,9 @@
         }
       }
     },
+    "+%lld" : {
+
+    },
     "+%lld pontos" : {
       "extractionState" : "stale",
       "localizations" : {
