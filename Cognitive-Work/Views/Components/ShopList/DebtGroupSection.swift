@@ -17,9 +17,19 @@ struct DebtGroupSection: View {
     let totalText: String
     let rows: [Row]
     let settleTitle: String
+    /// SF Symbol shown before the button's title, e.g. the checkmark of "Foi pago".
+    var settleSystemImage: String? = nil
     let isPaid: Bool
     let isSettling: Bool
     let onSettle: () -> Void
+
+    /// The "register the payment" confirmation, shown as a popover coming out of the button.
+    var isConfirmingSettlement: Bool = false
+    var confirmationTitle: String = ""
+    var confirmationMessage: String = ""
+    var confirmationButtonTitle: String = ""
+    var onConfirmSettlement: () -> Void = {}
+    var onCancelSettlement: () -> Void = {}
 
     /// VoiceOver texts; each falls back to what's on screen when `nil`.
     /// "Isabela, total R$ 45,00".
@@ -138,10 +148,58 @@ struct DebtGroupSection: View {
         .disabled(isPaid || isSettling)
         .opacity(isSettling && !isPaid ? 0.5 : 1)
         .animation(.snappy, value: isPaid)
+        .popover(
+            isPresented: Binding(
+                get: { isConfirmingSettlement },
+                set: { if !$0 { onCancelSettlement() } }
+            ),
+            attachmentAnchor: .point(.bottom),
+            arrowEdge: .top
+        ) {
+            confirmationPopover
+                .presentationCompactAdaptation(.popover)
+        }
         .voiceOverLabel(settleAccessibilityLabel ?? settleTitle)
         .voiceOverValue(settleAccessibilityValue)
         // Voice Control: "Toque em Pagar" (numbered when there are several) or "Toque em Pagar Isabela".
         .voiceControlNames(settleInputLabels)
+    }
+
+    /// What comes out of the button: the question, the warning and the two choices.
+    private var confirmationPopover: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(confirmationTitle)
+                .font(.system(size: 17, weight: .bold))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(confirmationMessage)
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Button(role: .cancel, action: onCancelSettlement) {
+                    Text("Cancelar")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Capsule().fill(Color.black.opacity(0.08)))
+                }
+
+                Button(action: onConfirmSettlement) {
+                    Text(confirmationButtonTitle)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Capsule().fill(Color.blue))
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .frame(width: 300)
     }
 
     /// Speakable names for the settle button: what it shows, then one naming the person.
@@ -150,7 +208,13 @@ struct DebtGroupSection: View {
     }
 
     private var settleLabel: some View {
-        Text(settleTitle)
+        HStack(spacing: 6) {
+            if let settleSystemImage {
+                Image(systemName: settleSystemImage)
+                    .font(.system(size: 14, weight: .bold))
+            }
+            Text(settleTitle)
+        }
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 18)

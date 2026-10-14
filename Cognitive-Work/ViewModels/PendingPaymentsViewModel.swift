@@ -52,7 +52,8 @@ final class PendingPaymentsViewModel {
         DebtCalculator.ledger(
             items: shopList.items,
             users: shopList.houseUsers,
-            me: shopList.currentUser?.recordID,
+            userRecords: shopList.houseUserRecords,
+            me: shopList.currentUser,
             settledOverrides: settledKeys
         )
     }
@@ -85,7 +86,7 @@ final class PendingPaymentsViewModel {
     }
 
     /// Debts settled a moment ago. A settled debt leaves the ledger, so its last state is kept here
-    /// to keep showing the card, with a "Pago!" button, until ``markPaid(_:debtorID:)`` removes it.
+    /// to keep showing the card, with a "Pago!" button, until ``markPaid(_:)`` removes it.
     private var paidGroups: [String: DebtGroup] = [:]
 
     /// The debts of the selected side, one group per housemate: the open ones, plus the ones just
@@ -143,8 +144,10 @@ final class PendingPaymentsViewModel {
     // MARK: - Formatting
 
     /// "R$55,50", in the app's language.
+    /// Negative values get the sign in front: "-R$12,00".
     func currencyText(_ value: Double) -> String {
-        "R$" + value.formatted(.number.precision(.fractionLength(2)).locale(L10n.locale))
+        let sign = value < 0 ? "-" : ""
+        return sign + "R$" + abs(value).formatted(.number.precision(.fractionLength(2)).locale(L10n.locale))
     }
 
     /// The pieces of an amount for the big summary cards.
@@ -159,8 +162,16 @@ final class PendingPaymentsViewModel {
         )
     }
 
+    /// "Pagar" when you owe, "Foi pago" when you are owed (it confirms they paid you), then "Pago!".
     func settleButtonTitle(for group: DebtGroup) -> String {
-        isPaid(group) ? L10n.tr("Pago!") : L10n.tr("Pagar")
+        if isPaid(group) { return L10n.tr("Pago!") }
+        return group.direction == .owedToYou ? L10n.tr("Registrar pagamento") : L10n.tr("Pagar")
+    }
+
+    /// The popover's confirm button: the same words as the button that opened it.
+    var confirmationButtonTitle: String {
+        guard let group = settlementRequest else { return "" }
+        return settleButtonTitle(for: group)
     }
 
     var confirmationTitle: String {
@@ -238,18 +249,12 @@ final class PendingPaymentsViewModel {
         errorMessage = nil
     }
 
-    /// Marks every item of the requested debt as paid by the debtor.
-    func confirmSettlement() async {
-        guard let group = settlementRequest, let me = shopList.currentUser?.recordID else {
-            settlementRequest = nil
-            return
-        }
-
-        let debtorID = group.direction == .youOwe ? me : group.counterparty.recordID
-        guard let debtorID else {
-            settlementRequest = nil
-            return
-        }
+    /// Settles the net debt: every share in it, both ways, is marked as paid by its own debtor.
+    ///
+    /// Takes the group instead of reading ``settlementRequest``: the dialog clears the request as
+    /// it dismisses, which can happen before this runs.
+    func settle(_ group: DebtGroup) async {
+        guard !isSettling else { return }
 
         isSettling = true
         defer {
@@ -258,28 +263,28 @@ final class PendingPaymentsViewModel {
         }
 
         if isPreview {
-            group.entries.forEach { $0.item.settleLocally(for: debtorID) }
-            markPaid(group, debtorID: debtorID)
+            group.entries.forEach { $0.item.settleLocally(for: $0.debtor) }
+            markPaid(group)
             return
         }
 
         for entry in group.entries {
-            guard await entry.item.markSettled(for: debtorID) else {
+            guard await entry.item.markSettled(for: entry.debtor) else {
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Não foi possível quitar. Tente novamente.")
                 return
             }
-            settledKeys.insert(DebtCalculator.settlementKey(item: entry.item, debtor: debtorID))
+            settledKeys.insert(DebtCalculator.settlementKey(item: entry.item, debtor: entry.debtor))
         }
-        markPaid(group, debtorID: debtorID)
+        markPaid(group)
     }
 
     /// How long the card says "Pago!" before it leaves the screen.
     private let paidDisplayDuration: Duration = .milliseconds(1400)
 
     /// Updates the totals now, keeps the card with a "Pago!" button for a moment, then removes it.
-    private func markPaid(_ group: DebtGroup, debtorID: CKRecord.ID) {
+    private func markPaid(_ group: DebtGroup) {
         for entry in group.entries {
-            settledKeys.insert(DebtCalculator.settlementKey(item: entry.item, debtor: debtorID))
+            settledKeys.insert(DebtCalculator.settlementKey(item: entry.item, debtor: entry.debtor))
         }
         paidGroups[group.id] = group
 

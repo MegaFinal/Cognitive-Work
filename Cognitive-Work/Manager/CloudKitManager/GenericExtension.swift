@@ -196,9 +196,20 @@ extension CloudKitManager {
         return deduplicatedByOwner(users)
     }
     
+    /// Every `UserModel` record of the house, without merging the ones of the same person
+    /// (``fetchHouseUsers(of:)`` keeps one per `ownerRecordName`). Shopping items may reference
+    /// any of them, so ``DebtCalculator`` needs all of them to know who each reference is.
+    func fetchHouseUserRecords() async -> [UserModel] {
+        guard let houseID = (try? await currentHouse())?.recordID else { return [] }
+        
+        let reference = CKRecord.Reference(recordID: houseID, action: .none)
+        let predicate = NSPredicate(format: "house == %@", reference)
+        return await fetchAll(UserModel.self, predicate: predicate)
+    }
+    
     /// Deduplicates users who might have more than one `UserModel` record sharing the same
     /// `ownerRecordName`.
-    private func deduplicatedByOwner(_ users: [UserModel]) -> [UserModel] {
+    func deduplicatedByOwner(_ users: [UserModel]) -> [UserModel] {
         var bestByOwner: [String: UserModel] = [:]
         
         for user in users {
