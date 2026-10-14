@@ -37,6 +37,8 @@ struct OnboardingChoreCard: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "\(chore.name.localizedDefault), \(room.name.localizedDefault)"))
     }
 }
 

@@ -11,6 +11,7 @@ import SwiftUI
 struct PurchasePricePopUp: View {
 
     let itemName: String
+    let quantity: Int
     let onConfirm: (String) -> Void
     let onSkip: () -> Void
     let onCancel: () -> Void
@@ -20,14 +21,24 @@ struct PurchasePricePopUp: View {
 
     private var isValid: Bool { ShopListViewModel.isValidPrice(text) }
 
+    /// "3 × R$5,00 = R$15,00" once a price is typed; otherwise how the price is used.
+    private var totalCaption: String {
+        guard let unit = ShopListViewModel.parsePrice(text), unit > 0 else {
+            return L10n.tr("O preço é por unidade. O total é dividido entre quem vai consumir e aparece em Pendências.")
+        }
+        let format = FloatingPointFormatStyle<Double>.Currency(code: "BRL").locale(L10n.locale)
+        return "\(quantity) × \(unit.formatted(format)) = \((unit * Double(quantity)).formatted(format))"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             toolbar
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Quanto custou?")
+                Text("Quanto custou cada um?")
                     .font(.system(size: 28))
                     .bold()
+                    .accessibilityAddTraits(.isHeader)
 
                 Text(itemName)
                     .font(.system(size: 22))
@@ -39,11 +50,16 @@ struct PurchasePricePopUp: View {
                 Text("R$")
                     .font(.system(size: 26, weight: .semibold))
                     .foregroundStyle(.subTitleGray)
+                    .accessibilityHidden(true)
 
                 TextField("0,00", text: $text)
                     .font(.system(size: 32, weight: .bold))
-                    .keyboardType(.decimalPad)
+                    .priceInput(text: $text)
                     .focused($isFocused)
+                    .voiceOverLabel(L10n.tr("Preço por unidade"))
+                    .voiceOverValue(ShopListViewModel.accessibilityPrice(text))
+                    // Voice Control: "Toque em Preço", then dictate the value.
+                    .voiceControlNames([L10n.tr("Preço"), L10n.tr("Preço por unidade"), L10n.tr("Valor")])
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
@@ -52,10 +68,13 @@ struct PurchasePricePopUp: View {
                     .fill(Color(.systemGray6))
             )
 
-            Text("O valor é dividido entre quem vai consumir e aparece em Pendências.")
+            Text(totalCaption)
                 .font(.system(size: 14))
                 .foregroundStyle(.subTitleGray)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel(
+                    ShopListViewModel.accessibilityPurchaseTotal(text: text, quantity: quantity) ?? totalCaption
+                )
 
             Button(action: onSkip) {
                 Text("Comprar sem valor")
@@ -76,7 +95,14 @@ struct PurchasePricePopUp: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 32))
         .onTapGesture { isFocused = false }
-        .onAppear { isFocused = true }
+        // VoiceOver stays inside the popup; the two-finger "Z" scrub cancels it like the xmark.
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) { onCancel() }
+        .onAppear {
+            isFocused = true
+            VoiceOver.screenChanged()
+        }
     }
 
     private var toolbar: some View {
@@ -90,6 +116,7 @@ struct PurchasePricePopUp: View {
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive(), in: .capsule)
             .accessibilityLabel("Cancelar")
+            .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
 
             Spacer()
 
@@ -106,6 +133,7 @@ struct PurchasePricePopUp: View {
             .disabled(!isValid)
             .opacity(isValid ? 1 : 0.4)
             .accessibilityLabel("Confirmar")
+            .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
         }
         .padding(.top, 5)
     }
@@ -114,6 +142,6 @@ struct PurchasePricePopUp: View {
 #Preview("Preço") {
     ZStack {
         Color.black.opacity(0.45).ignoresSafeArea()
-        PurchasePricePopUp(itemName: "Amaciante", onConfirm: { _ in }, onSkip: {}, onCancel: {})
+        PurchasePricePopUp(itemName: "Amaciante", quantity: 3, onConfirm: { _ in }, onSkip: {}, onCancel: {})
     }
 }

@@ -123,6 +123,8 @@ struct ChoreDetailsCard: View {
             .padding(.top, 8)
             
             actionBar
+                // Drawn on top but read first: close, people, edit.
+                .accessibilitySortPriority(1)
         }
         .task(id: isShowingBack) {
             if isShowingBack && checkList.isEmpty && !(chore.checkListReference ?? []).isEmpty {
@@ -140,6 +142,7 @@ struct ChoreDetailsCard: View {
         .background(.white)
         .clipShape(RoundedRectangle(cornerRadius: 31))
         .shadow(color: .black.opacity(0.14), radius: 20.39595, x: 0, y: 5.80668)
+        .accessibilityElement(children: .contain)
     }
     
     // MARK: - Subviews
@@ -152,12 +155,14 @@ struct ChoreDetailsCard: View {
                 .scaledToFit()
                 .frame(width: width * 0.19, height: height * 0.09)
                 .fontWeight(.thin)
+                .accessibilityDecorative()
             
             Text(chore.localizedName)
                 .font(.system(size: 25))
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
                 .frame(width: width * 0.7)
+                .accessibilityAddTraits(.isHeader)
             
             HStack(spacing: 12) {
                 CapsuleTag(
@@ -182,6 +187,8 @@ struct ChoreDetailsCard: View {
                     verticalPadding: 1.5
                 )
             }
+            .accessibilityElement(children: .ignore)
+            .voiceOverLabel(carouselViewModel.accessibilityTagsText(for: chore))
         }
         .foregroundColor(.black)
     }
@@ -208,6 +215,8 @@ struct ChoreDetailsCard: View {
                         verticalPadding: 1.5
                     )
                 }
+                .accessibilityElement(children: .ignore)
+                .voiceOverLabel(L10n.tr("Cômodo: %@", carouselViewModel.accessibilityRoomName(for: chore)))
                 
                 HStack {
                     Text("Checklist")
@@ -217,11 +226,15 @@ struct ChoreDetailsCard: View {
                     Text(occurrenceDate?.formatted(.dateTime.day().month(.twoDigits).year().locale(L10n.locale)) ?? L10n.tr("Sem data definida"))
                         .font(.system(size: 12))
                 }
+                .accessibilityElement(children: .ignore)
+                .voiceOverLabel(checklistHeaderAccessibilityLabel)
+                .accessibilityAddTraits(.isHeader)
                 
                 VStack(alignment: .leading, spacing: 5) {
                     if isLoadingChecklist {
                         ProgressView()
                             .frame(maxWidth: .infinity)
+                            .voiceOverLabel(L10n.tr("Carregando checklist"))
                     }
                     ForEach($checkList, id: \.id) {$item in
                         ChecklistItemButton(item: $item)
@@ -231,6 +244,17 @@ struct ChoreDetailsCard: View {
         }
         .frame(width: width * 0.75, height: height * 0.24)
         .padding(.top)
+    }
+    
+    /// Spoken checklist header: "Checklist, sexta-feira, 25 de setembro, 2 de 5 itens concluídos".
+    private var checklistHeaderAccessibilityLabel: String {
+        var parts = [L10n.tr("Checklist")]
+        parts.append(occurrenceDate.map(CarouselViewModel.accessibilityDateText) ?? L10n.tr("Sem data definida"))
+        if !checkList.isEmpty {
+            let done = checkList.filter(\.isDone).count
+            parts.append(L10n.tr("%lld de %lld itens concluídos", done, checkList.count))
+        }
+        return parts.joined(separator: ", ")
     }
     
     /// Shorter English labels need less horizontal padding.
@@ -299,6 +323,7 @@ struct ChoreDetailsCard: View {
             }
             
             HapticsManager.notify(.success)
+            VoiceOver.announce(days == 1 ? L10n.tr("Tarefa adiada em 1 dia") : L10n.tr("Tarefa adiada em 1 semana"))
             // The occurrence moved to another day: close the card so it leaves today's list.
             if carouselViewModel.layoutMode == .grid {
                 carouselViewModel.clearFocus()
@@ -317,6 +342,8 @@ struct ChoreDetailsCard: View {
                 Image(systemName: "xmark")
                     .foregroundColor(.black)
             }
+            .voiceOverLabel(L10n.tr("Fechar"))
+            .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar"), L10n.tr("Voltar")])
             .padding(12)
             .clipShape(Circle())
             .glassEffect()
@@ -326,8 +353,12 @@ struct ChoreDetailsCard: View {
             // Renders single avatar view if only 1 responsible user is assigned, or avatar list view when >= 2
             if occurrenceResponsibleUsers.count == 1 {
                 UserProfilePictureTag(user: occurrenceResponsibleUsers.first, widthMultiplier: 0.08)
+                    .accessibilityElement(children: .ignore)
+                    .voiceOverLabel(carouselViewModel.accessibilityResponsibleText(for: occurrenceResponsibleUsers))
             } else {
                 UserProfilePictureList(users: occurrenceResponsibleUsers, widthMultiplier: 0.08)
+                    .accessibilityElement(children: .ignore)
+                    .voiceOverLabel(carouselViewModel.accessibilityResponsibleText(for: occurrenceResponsibleUsers))
             }
             
             NavigationLink {
@@ -341,6 +372,9 @@ struct ChoreDetailsCard: View {
                 Image(systemName: "pencil")
                     .foregroundColor(.white)
             }
+            .voiceOverLabel(L10n.tr("Editar tarefa"))
+            .voiceControlNames([L10n.tr("Editar"), L10n.tr("Editar tarefa"), L10n.tr("Lápis")])
+            .voiceOverHint(isOccurrenceDone ? L10n.tr("Tarefas concluídas não podem ser editadas.") : "")
             .disabled(isOccurrenceDone)
             .padding(12)
             .background(isOccurrenceDone ? Color.gray : Color.blue)
@@ -368,6 +402,7 @@ private struct ChecklistItemButton: View {
             HapticsManager.selection()
             Task {
                 await item.toggle()
+                VoiceOver.announce(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
             }
         } label: {
             HStack {
@@ -383,6 +418,9 @@ private struct ChecklistItemButton: View {
             }
         }
         .buttonStyle(.plain)
+        .voiceOverLabel(item.name.localizedDefault)
+        .voiceOverValue(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
+        .voiceOverHint(L10n.tr("Toque duas vezes para alternar."))
     }
 }
 

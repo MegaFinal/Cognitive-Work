@@ -410,7 +410,7 @@ final class FreeTimeSyncService {
         case FreeTimeStoreError.transient(let reason), FreeTimeStoreError.permanent(let reason):
             return reason
         default:
-            return error.localizedDescription
+            return UserFacingError.message(for: error)
         }
     }
 

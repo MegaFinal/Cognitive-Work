@@ -302,7 +302,7 @@ final class CreateAndEditChoreViewModel {
                 targetAssignments: frequencyChanged ? [] : targetAssignments
             )
         } catch {
-            alert = FormAlert(kind: .saveFailed, message: error.localizedDescription)
+            alert = FormAlert(kind: .saveFailed, message: UserFacingError.message(for: error))
             return false
         }
         

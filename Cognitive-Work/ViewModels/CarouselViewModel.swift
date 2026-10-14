@@ -121,6 +121,22 @@ class CarouselViewModel {
     private let focusSpringResponse: Double = 0.4
     private let focusSpringDamping: Double = 0.75
     
+    // MARK: - Checking for New Users
+    
+    /// Prefix of the `UserDefaults` key holding the members this device already knows about.
+    /// The house ID is appended (see ``allUsersKey(houseID:)``), so each house keeps its own list.
+    private static let allUsers = "chores.allUsers"
+    
+    /// `true` when someone joined the house since the last check. The view sets it back to
+    /// `false` when the pop-up closes (the list is already saved by ``checkNewUser(users:)``).
+    var showNewUserPopUp = false
+    
+    /// Whether this device's user created the house (only the admin can redo the division, so
+    /// only the admin sees the pop-up). `nil` until resolved; resolved once per view model,
+    /// which is rebuilt when the user switches houses.
+    @ObservationIgnored
+    private var isHouseAdmin: Bool?
+    
     // MARK: - Filtering State
     
     var isFilterOn: Bool = false
@@ -555,6 +571,9 @@ class CarouselViewModel {
             self.isLoading = false
         }
         
+        await resolveHouseAdminIfNeeded()
+        checkNewUser(users: self.userModels)
+        
         await RoomModel.migrateStoredColorsIfNeeded(snapshot.rooms)
         await ChoreModel.migrateDurationsToMinutesIfNeeded(snapshot.chores)
     }
@@ -631,6 +650,71 @@ class CarouselViewModel {
             .enumerated()
             .sorted { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }
             .map(\.element)
+    }
+    
+    /// One key per house: switching houses must not compare the new house with the old one.
+    private static func allUsersKey(houseID: String) -> String {
+        "\(allUsers).\(houseID)"
+    }
+    
+    /// Members (`ownerRecordName`) already known in that house. Empty when nothing was saved yet.
+    private func allUsersArray(houseID: String) -> [String] {
+        UserDefaults.standard.array(forKey: Self.allUsersKey(houseID: houseID)) as? [String] ?? []
+    }
+
+    func updateAllUsers(users: [String], houseID: String) {
+        UserDefaults.standard.set(users, forKey: Self.allUsersKey(houseID: houseID))
+    }
+    
+    /// Finds out once whether the user is the house admin, the same way the rest of the app
+    /// does (`HouseModel.isAdmin()`). Needs `await`, so it runs before ``checkNewUser(users:)``,
+    /// which stays synchronous.
+    private func resolveHouseAdminIfNeeded() async {
+        guard isHouseAdmin == nil,
+              let house = try? await CloudKitManager.shared.currentHouse()
+        else { return }
+        isHouseAdmin = await house.isAdmin() == true
+    }
+    
+    /// Opens the "new member" pop-up on demand (from the notification), with the same rule as
+    /// the automatic check: only the admin can redo the division, so residents get nothing.
+    func presentNewUserPopUp() {
+        guard isHouseAdmin == true else { return }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            showNewUserPopUp = true
+        }
+    }
+    
+    /// Compares the house members with the ones saved last time and turns ``showNewUserPopUp``
+    /// on when someone new shows up and the user is the house admin.
+    ///
+    /// People are matched by `ownerRecordName` (the iCloud account), not `recordID`: the same
+    /// person can have more than one `UserModel`, and that must not look like a new member.
+    func checkNewUser(users: [UserModel]) {
+        // Nobody came back (e.g. the fetch failed offline): nothing to compare, and saving an
+        // empty list would throw away what we know.
+        guard !users.isEmpty,
+              let houseID = users.first?.houseReference?.recordID.recordName
+        else { return }
+        
+        let savedUsers = Set(allUsersArray(houseID: houseID))
+        let currentUsers = Set(users.map { $0.ownerRecordName })
+        
+        // Always remember who is in the house *now*, after comparing. This also drops whoever
+        // left, so if they come back later they show up as new again.
+        defer { updateAllUsers(users: Array(currentUsers), houseID: houseID) }
+        
+        // First check in this house (fresh install, or the user just joined): everyone is
+        // already here, so just save the list without showing anything.
+        guard !savedUsers.isEmpty else { return }
+        
+        let newUsers = currentUsers.subtracting(savedUsers)
+        
+        // Residents still get their list updated (by the `defer` above), they just don't see
+        // the pop-up: only the admin can start a new division.
+        if !newUsers.isEmpty, isHouseAdmin == true {
+            showNewUserPopUp = true
+        }
     }
     
     // MARK: - Synchronous Data Helpers

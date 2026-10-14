@@ -31,7 +31,7 @@ struct ShopListItemCard: View {
     }
     
     private var priceText: String? {
-        guard let value = item.value, value > 0 else { return nil }
+        guard let value = item.totalValue else { return nil }
         return value.formatted(.currency(code: "BRL").locale(L10n.locale))
     }
     
@@ -56,6 +56,18 @@ struct ShopListItemCard: View {
         .animation(.snappy, value: item.isBought)
         .contentShape(RoundedRectangle(cornerRadius: 22))
         .onTapGesture(perform: onTap)
+        // One VoiceOver element for the whole card; activating it checks the item off (the
+        // parent adds "Editar" and "Excluir" as named actions).
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(ShopListViewModel.accessibilityLabel(for: item, relatedUsers: relatedUsers))
+        .voiceOverHint(ShopListViewModel.accessibilityToggleName(for: item))
+        .accessibilityAddTraits(.isButton)
+        // Voice Control: "Toque em Arroz" / "Toque em Comprar Arroz"; "Editar" and "Excluir"
+        // via "Mostrar ações para Arroz".
+        .voiceControlNames(ShopListViewModel.voiceControlInputLabels(for: item))
+        .accessibilityAction {
+            toggle()
+        }
     }
     
     // MARK: - Pieces
@@ -88,12 +100,7 @@ struct ShopListItemCard: View {
 
     private var checkButton: some View {
         Button {
-            HapticsManager.notify(item.isBought ? .warning : .success)
-            isToggling = true
-            Task {
-                await onToggle()
-                isToggling = false
-            }
+            toggle()
         } label: {
             ZStack {
                 Image(systemName: item.isBought ? "checkmark.circle.fill" : "circle")
@@ -109,7 +116,18 @@ struct ShopListItemCard: View {
         }
         .buttonStyle(.plain)
         .disabled(isToggling)
-        .accessibilityLabel(item.isBought ? "Marcar como não comprado" : "Marcar como comprado")
+        .voiceOverLabel(item.isBought ? L10n.tr("Marcar como não comprado") : L10n.tr("Marcar como comprado"))
+    }
+
+    /// Checks the item off (or puts it back), from the button or from VoiceOver.
+    private func toggle() {
+        guard !isToggling else { return }
+        HapticsManager.notify(item.isBought ? .warning : .success)
+        isToggling = true
+        Task {
+            await onToggle()
+            isToggling = false
+        }
     }
 }
 

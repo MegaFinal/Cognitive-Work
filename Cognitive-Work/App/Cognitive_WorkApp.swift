@@ -28,6 +28,7 @@ struct Cognitive_WorkApp: App {
                     Onboarding(didOnboard: $didOnboard)
                 }
             }
+            .requiresTermsAcceptance()
             .dynamicTypeSize(.large)
             .environment(\.locale, languageManager.locale)
         }

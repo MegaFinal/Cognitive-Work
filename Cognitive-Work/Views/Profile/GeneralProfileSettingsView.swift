@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 struct GeneralProfileSettingsView: View {
     @Bindable var viewModel: UserProfileViewModel
@@ -14,6 +15,11 @@ struct GeneralProfileSettingsView: View {
     /// Persisted and read by ``HapticsManager`` on every vibration, so the switch applies in
     /// real time. (It used to be a local `@State` that nothing read, reset on every visit.)
     @AppStorage(HapticsManager.storageKey) private var areHapticsEnabled = true
+    
+    /// User's in-app choice. Only effective while the system permission is also granted.
+    @AppStorage("notificationsEnabled") private var areNotificationsEnabled = false
+    @State private var showNotificationsDeniedAlert = false
+    @Environment(\.scenePhase) private var scenePhase
     
     @State private var showDeleteConfirmation = false
     @State private var showAdminDeleteConfirmation = false
@@ -30,10 +36,48 @@ struct GeneralProfileSettingsView: View {
         )
     }
     
+    private var notificationsBinding: Binding<Bool> {
+        Binding(
+            get: { areNotificationsEnabled },
+            set: { isOn in
+                if isOn {
+                    enableNotifications()
+                } else {
+                    areNotificationsEnabled = false
+                }
+            }
+        )
+    }
+    
+    /// Asks for system permission; if the user already denied it, offers to open Settings.
+    private func enableNotifications() {
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let status = await center.notificationSettings().authorizationStatus
+            switch status {
+            case .authorized, .provisional, .ephemeral:
+                areNotificationsEnabled = true
+            case .notDetermined:
+                let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+                areNotificationsEnabled = granted
+            default:
+                areNotificationsEnabled = false
+                showNotificationsDeniedAlert = true
+            }
+        }
+    }
+    
+    /// Keeps the switch honest if the user revoked permission in iOS Settings.
+    private func syncNotificationsWithSystem() async {
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        if status == .denied { areNotificationsEnabled = false }
+    }
+    
     var body: some View {
         VStack(spacing: 30) {
             HStack {
                 Text("Idioma")
+                    .accessibilityHidden(true) // carried by the menu's label
                 
                 Spacer()
                 
@@ -53,11 +97,16 @@ struct GeneralProfileSettingsView: View {
                     }
                 }
                 .foregroundColor(.black)
+                .voiceOverLabel(L10n.tr("Idioma"))
+                .voiceOverValue(languageManager.current.nativeName)
+                // Voice Control: the visible language name first, then the setting's name.
+                .voiceControlNames([languageManager.current.nativeName, L10n.tr("Idioma"), L10n.tr("Língua")])
             }
             
             VStack(alignment: .leading) {
                 HStack {
                     Text("Haptics")
+                        .accessibilityHidden(true) // carried by the toggle's label
                     
                     Spacer()
                     
@@ -65,6 +114,8 @@ struct GeneralProfileSettingsView: View {
                         .toggleStyle(.switch)
                         .padding(.trailing, 7)
                         .frame(width: width * 0.37)
+                        .voiceOverLabel(L10n.tr("Haptics"))
+                        .voiceControlNames([L10n.tr("Haptics"), L10n.tr("Vibração")])
                         .onChange(of: areHapticsEnabled) { _, isOn in
                             // Immediate confirmation that vibrations are back on.
                             if isOn { HapticsManager.impact(.medium) }
@@ -76,16 +127,36 @@ struct GeneralProfileSettingsView: View {
                     .foregroundColor(.secondary)
             }
             
+            // Notifications Toggle
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Notificações")
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: notificationsBinding)
+                        .toggleStyle(.switch)
+                        .padding(.trailing, 7)
+                        .frame(width: width * 0.37)
+                }
+                
+                Text("Receber avisos sobre as tarefas da casa.")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+            }
+            
             // Calendar Toggle
             VStack(alignment: .leading) {
                 HStack {
                     Text("Sincronizar com Calendário")
+                        .accessibilityHidden(true) // carried by the toggle's label
                      
                     Spacer()
                      
                     if viewModel.isSyncingCalendar {
                         ProgressView()
                             .controlSize(.small)
+                            .voiceOverLabel(L10n.tr("Sincronizando"))
                     }
                     
                     Toggle("", isOn: $viewModel.isCalendarSyncEnabled)
@@ -93,6 +164,8 @@ struct GeneralProfileSettingsView: View {
                         .padding(.trailing, 7)
                         .frame(width: width * 0.37)
                         .disabled(viewModel.isSyncingCalendar)
+                        .voiceOverLabel(L10n.tr("Sincronizar com Calendário"))
+                        .voiceControlNames([L10n.tr("Sincronizar com Calendário"), L10n.tr("Calendário")])
                 }
                  
                 Text("Adicionar automaticamente as suas tarefas ao calendário da Apple (Pipa).")
@@ -116,6 +189,7 @@ struct GeneralProfileSettingsView: View {
                 Text("Excluir Perfil")
                     .fontWeight(.semibold)
             }
+            .voiceControlNames([L10n.tr("Excluir Perfil"), L10n.tr("Excluir"), L10n.tr("Apagar")])
             .foregroundColor(.red)
         }
         .padding(.top, 40)
@@ -125,7 +199,22 @@ struct GeneralProfileSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .hidesTabBar()
         
+        .task { await syncNotificationsWithSystem() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await syncNotificationsWithSystem() } }
+        }
+        
         // MARK: - Alerts
+        .alert("Notificações desativadas", isPresented: $showNotificationsDeniedAlert) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Abrir Ajustes") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } message: {
+            Text("Para receber notificações, permita-as nos Ajustes do iPhone.")
+        }
         .alert("Excluir Perfil?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {

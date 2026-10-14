@@ -67,6 +67,8 @@ struct ChoresEmptyState: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            // Title and message read together.
+            .accessibilityElement(children: .combine)
         }
         .padding(.horizontal, 32)
         .frame(maxWidth: .infinity)

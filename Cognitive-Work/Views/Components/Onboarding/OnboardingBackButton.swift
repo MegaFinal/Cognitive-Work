@@ -53,7 +53,10 @@ private struct OnboardingBackButtonModifier: ViewModifier {
                         }
                     }
                     .disabled(isDisabled || viewModel.isLoading || viewModel.isRollingBack)
-                    .accessibilityLabel(Text("Voltar"))
+                    .accessibilityLabel(Text(L10n.tr("Voltar")))
+                    // Voice Control: "Toque em Voltar" for the icon-only chevron.
+                    .voiceControlNames([L10n.tr("Voltar"), L10n.tr("Anterior")])
+                    .voiceOverValue(viewModel.isRollingBack ? L10n.tr("Carregando") : "")
                 }
             }
             .confirmationDialog(

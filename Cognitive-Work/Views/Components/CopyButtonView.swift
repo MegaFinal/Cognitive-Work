@@ -59,6 +59,10 @@ struct CopyButtonView: View {
         .buttonStyle(.plain)
         .disabled(textToCopy == nil)
         .opacity(textToCopy == nil ? Self.disabledOpacity : 1)
+        .voiceOverLabel(textToCopy == nil ? L10n.tr("Nenhum link ainda") : L10n.tr("Copiar"))
+        .voiceOverValue(isCopied ? L10n.tr("Copiado") : (textToCopy ?? ""))
+        // Voice Control: the visible text is a URL nobody can say, so offer short words instead.
+        .voiceControlNames([L10n.tr("Copiar"), L10n.tr("Copiar link"), L10n.tr("Compartilhar")])
     }
 
     // MARK: - Actions
@@ -70,6 +74,7 @@ struct CopyButtonView: View {
         UIPasteboard.general.string = textToCopy
 
         withAnimation { isCopied = true }
+        VoiceOver.announce(L10n.tr("Copiado"))
         Task {
             try? await Task.sleep(for: Self.feedbackDuration)
             withAnimation { isCopied = false }

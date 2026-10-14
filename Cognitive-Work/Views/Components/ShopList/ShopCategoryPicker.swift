@@ -53,7 +53,8 @@ struct ShopCategoryPicker: View {
             .shadow(color: .black.opacity(isSelected ? 0.18 : 0), radius: 3, x: 0, y: 2)
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .voiceOverLabel(category.displayName)
+        .voiceOverTraits(.isSelected, when: isSelected)
     }
 }
 

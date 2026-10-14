@@ -28,6 +28,23 @@ struct DayCell: View {
         }
         .buttonStyle(.plain)
         .disabled(!isSelectable)
+        // "sexta-feira, 25 de setembro" — "Selecionado" — "Muitas tarefas"
+        .voiceOverLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(L10n.locale)))
+        .voiceOverValue(loadDescription)
+        // Voice Control: the number shown in the cell ("Toque em 25"), then "25 de setembro".
+        .voiceControlNames([
+            day.formatted(.dateTime.day().locale(L10n.locale)),
+            day.formatted(.dateTime.day().month(.wide).locale(L10n.locale))
+        ])
+        .voiceOverTraits(.isSelected, when: isSelected)
+        // Days outside the window (or already past) can't be picked: skip them.
+        .accessibilityHidden(!isSelectable)
+    }
+    
+    /// How busy the day is, as shown by the yellow background's strength.
+    private var loadDescription: String {
+        guard isSelectable, opacity > 0 else { return "" }
+        return opacity >= 0.6 ? L10n.tr("Muitas tarefas") : L10n.tr("Poucas tarefas")
     }
 
     private var foreground: Color {

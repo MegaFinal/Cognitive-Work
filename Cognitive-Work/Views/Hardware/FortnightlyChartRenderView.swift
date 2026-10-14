@@ -42,6 +42,8 @@ struct FortnightlyChartRenderView: View {
         }
         .frame(maxWidth: 350, maxHeight: 200, alignment: .top)
         .clipped()
+        // Rendered to an image for the e-paper device; never meant for VoiceOver.
+        .accessibilityHidden(true)
     }
     
     /// A helper subview that generates a color-coded legend for each user.
