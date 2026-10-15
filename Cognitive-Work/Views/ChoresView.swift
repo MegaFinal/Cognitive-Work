@@ -292,28 +292,29 @@ struct ChoresView: View {
                     ? [L10n.tr("Lista"), L10n.tr("Ver como lista"), L10n.tr("Layout")]
                     : [L10n.tr("Carrossel"), L10n.tr("Ver como carrossel"), L10n.tr("Layout")])
                 
-                NavigationLink {
-                    NotificationsView(
-                        onPickChores: {
-                            withAnimation { carouselVM.isShowingUnassignedList = true }
-                        },
-                        onOpenChore: { chore, assignment in
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                choreFromNotification = ChoreOccurrence(chore: chore, assignment: assignment)
-                            }
-                        },
-                        onNewMember: {
-                            carouselVM.presentNewUserPopUp()
-                        }
-                    )
-                } label: {
-                    Image(systemName: "bell")
-                        .font(.system(size: 22))
-                        .foregroundColor(.black)
-                        .padding(8)
-                }
-                .voiceOverLabel(L10n.tr("Notificações"))
-                .voiceControlNames([L10n.tr("Notificações"), L10n.tr("Avisos")])
+                // Acesso às notificações desativado temporariamente
+//                NavigationLink {
+//                    NotificationsView(
+//                        onPickChores: {
+//                            withAnimation { carouselVM.isShowingUnassignedList = true }
+//                        },
+//                        onOpenChore: { chore, assignment in
+//                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+//                                choreFromNotification = ChoreOccurrence(chore: chore, assignment: assignment)
+//                            }
+//                        },
+//                        onNewMember: {
+//                            carouselVM.presentNewUserPopUp()
+//                        }
+//                    )
+//                } label: {
+//                    Image(systemName: "bell")
+//                        .font(.system(size: 22))
+//                        .foregroundColor(.black)
+//                        .padding(8)
+//                }
+//                .voiceOverLabel(L10n.tr("Notificações"))
+//                .voiceControlNames([L10n.tr("Notificações"), L10n.tr("Avisos")])
                 
                 if carouselVM.layoutMode == .list {
                     Menu {

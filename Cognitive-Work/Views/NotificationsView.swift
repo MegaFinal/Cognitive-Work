@@ -36,7 +36,6 @@ struct NotificationsView: View {
                     }
                 }
             }
-            .padding(.horizontal, 30)
             .padding(.top, 20)
         }
         .task { await viewModel.load() }
