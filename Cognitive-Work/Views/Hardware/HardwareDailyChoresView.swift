@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftUI
-import WeatherKit
+//import WeatherKit // desativado (App Review 5.2.5)
 import CloudKit
 
 /// Wall-dashboard view showing every house member's chores for the target day, one column per
@@ -22,7 +22,7 @@ import CloudKit
 /// > it is not what fills the image sent to the device.
 struct HardwareDailyChoresView: View {
     var viewModel = HardwareDailyChoresViewModel()
-    var weatherViewModel = WeatherViewModel()
+//    var weatherViewModel = WeatherViewModel() // WeatherKit desativado
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -56,13 +56,14 @@ struct HardwareDailyChoresView: View {
             
             Spacer()
             
-            HStack(spacing: 10) {
-                Image(systemName: weatherViewModel.weatherIcon)
-                
-                Text(weatherViewModel.averageTemperature)
-            }
-            .font(.title2)
-            .padding(.bottom)
+            // WeatherKit desativado (App Review 5.2.5) - previsão do tempo no cabeçalho
+//            HStack(spacing: 10) {
+//                Image(systemName: weatherViewModel.weatherIcon)
+//
+//                Text(weatherViewModel.averageTemperature)
+//            }
+//            .font(.title2)
+//            .padding(.bottom)
         }
         .padding(.horizontal)
     }
