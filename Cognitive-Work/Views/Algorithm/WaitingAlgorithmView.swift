@@ -1,0 +1,77 @@
+//
+//  WaitingAlgorithmView.swift
+//  Cognitive-Work
+//
+//  Created by anshu Li on 26/08/26.
+//
+
+import SwiftUI
+
+struct WaitingAlgorithmView: View {
+    private let columns = ChoreDTO.columnsMock
+    @State private var isRotating = 0.0
+    
+    var body: some View {
+        ZStack {
+            HStack(alignment: .top, spacing: 16) {
+                ForEach(columns.indices, id: \.self) { index in
+                    InfinityRow(
+                        cards: columns[index],
+                        movesUp: index.isMultiple(of: 2),
+                        speed: 0,
+                        phase: Double(index) * 130
+                    )
+                    .frame(width: 110)
+                }
+            }
+            .frame(width: width, height: height, alignment: .top)
+            .clipped()
+            .opacity(0.6)
+            // Moving cards in the background are decoration.
+            .accessibilityDecorative()
+            
+            VStack(spacing: 30) {
+                Image("loadingIcon")
+                    .rotationEffect(.degrees(isRotating))
+                    .accessibilityDecorative()
+                    .onAppear {
+                        withAnimation(.linear(duration: 1)
+                            .speed(0.1).repeatForever(autoreverses: false)) {
+                                isRotating = 360.0
+                            }
+                    }
+                
+                Text("Levantando escalas")
+                    .font(.system(size: 32))
+                    .bold()
+                
+                VStack(spacing: 15) {
+                    Text("Estamos ponderando, sorteando e dividindo as tarefas entre os moradores")
+//                    Text("Enviaremos uma notificação quando a divisão estiver pronta")
+                }
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            }
+            .frame(width: width * 0.8)
+            .padding(.horizontal, 16)
+            .padding(.top, 36)
+            .padding(.bottom, 24)
+            .background(
+                RoundedRectangle(cornerRadius: 32)
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 3.2, x: 0, y: 4)
+            )
+            // Title and explanation read together, marked as an ongoing state.
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.updatesFrequently)
+        }
+        .ignoresSafeArea()
+        .onAppear {
+            VoiceOver.announce(L10n.tr("Levantando escalas. Aguarde enquanto dividimos as tarefas entre os moradores."))
+        }
+    }
+}
+
+#Preview {
+    WaitingAlgorithmView()
+}

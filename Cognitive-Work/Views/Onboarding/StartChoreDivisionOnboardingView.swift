@@ -1,0 +1,99 @@
+//
+//  StartChoreDivisionOnboardingView.swift
+//  Cognitive-Work
+//
+//  Created by Dayô Araújo on 05/10/26.
+//
+
+import SwiftUI
+
+struct StartChoreDivisionOnboardingView: View {
+    @Binding var viewModel: OnboardingViewModel
+    
+    var body: some View {
+        VStack(spacing: 30) {
+            OnboardingHeader(
+                title: "Hora de começar a divisão de tarefas",
+                description: "Como administrador, você deverá selecionar as tarefas que serão divididas entre todos"
+            )
+            
+            VStack(spacing: 15) {
+                InfoCard(
+                    number: "1",
+                    title: "Defina os cômodos",
+                    description: "Escolha os cômodos que existem na sua casa",
+                    tagColor: .choreBlue,
+                    backgroundColor: .lowOpacityBlue
+                )
+                
+                InfoCard(
+                    number: "2",
+                    title: "Escolha as tarefas",
+                    description: "Selecione as tarefas que serão divididas igualmente entre todos",
+                    tagColor: .choreYellow,
+                    backgroundColor: .lowOpacityYellow
+                )
+                
+                InfoCard(
+                    number: "3",
+                    title: "O Pipa divide!",
+                    description: "O Pipa pega as informações de todos e divide as tarefas da melhor forma possivel!",
+                    tagColor: .chorePurple,
+                    backgroundColor: .lowOpacityPurple
+                )
+            }
+            
+            Spacer()
+            
+            OnboardingProgressButton(
+            text: "Iniciar divisão"
+            ) {
+                viewModel.goToNextView()
+            }
+        }
+        .onboardingBackButton(viewModel: viewModel)
+    }
+}
+
+private struct InfoCard: View {
+    var number: String
+    var title: LocalizedStringKey
+    var description: LocalizedStringKey
+    var tagColor: Color
+    var backgroundColor: Color
+    
+    var body: some View {
+        HStack(spacing: 15) {
+            Text(number)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .padding()
+                .background(
+                    Circle()
+                        .foregroundStyle(tagColor)
+                )
+                .accessibilityLabel(Text(L10n.tr("Etapa %@ de %lld", number, 3)))
+            
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title)
+                    .font(.system(size: 20))
+                    .bold()
+                
+                Text(description)
+            }
+        }
+        .frame(width: width * 0.8)
+        .padding(15)
+        .background(
+            RoundedRectangle(cornerRadius: 32)
+                .foregroundColor(backgroundColor.opacity(0.2))
+        )
+        // Read as one sentence: "Etapa 1 de 3, Defina os cômodos, Escolha os cômodos…".
+        .accessibilityElement(children: .combine)
+    }
+}
+
+#Preview {
+    @Previewable @State var viewModel = OnboardingViewModel()
+    StartChoreDivisionOnboardingView(viewModel: $viewModel)
+}
