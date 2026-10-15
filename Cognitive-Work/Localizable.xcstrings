@@ -8314,6 +8314,7 @@
       }
     },
     "Receber avisos sobre as tarefas da casa." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
