@@ -66,6 +66,10 @@ struct DoughnutChart: View {
                 }
             }
         }
+        // The card reads as one element: "Hoje, 3 de 4 tarefas concluídas, 75%".
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(L10n.tr("Hoje"))
+        .voiceOverValue(viewModel.todayAccessibilityValue)
     }
 }
 

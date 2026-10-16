@@ -29,7 +29,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// and still carries the asset. See ``CloudKitSyncable/listDesiredKeys``.
     static let listDesiredKeys: [CKRecord.FieldKey]? = [
         "name", "ownerRecordName", "tier", "coins", "points", "couponLimit",
-        "badges", "chores", "availableTime", "coupons", "house"
+        "badges", "chores", "availableTime", "coupons", "house",
+        "bannerColor", "bannerPattern", "pixKey"
     ]
     
     /// Identifier of the stored record, or `nil` before the user is saved.
@@ -42,6 +43,12 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     
     /// Optional avatar image.
     var profilePicture: CKAsset?
+    
+    /// Color and texture of the banner behind the profile picture.
+    var banner: ProfileBanner = .default
+    
+    /// The user's Pix key, so housemates can pay what they owe. `nil` until it is set.
+    var pixKey: String?
     
     /// Progression level reached by the user.
     var tier: Tier
@@ -70,9 +77,16 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Maximum number of coupons the user may hold at once.
     var couponLimit: Int
     
+    // [newUser] Disabled until we define what tapping it should do.
+    // /// When this user's record was created. Used as the "joined the house" date.
+    // var joinedAt: Date?
+    
     var isTheHouseOwner: Bool {
         return ownerRecordName == id
     }
+    
+    /// To verifies when new user joins the house
+    var joinedAt: Date?
     
     var chores: [ChoreModel] {
         get async {
@@ -127,12 +141,18 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.couponLimit = couponLimit
         self.tier = Tier(rawValue: record["tier"] as? String ?? "") ?? .tier1
         self.profilePicture = record["profilePicture"] as? CKAsset
+        self.banner = ProfileBanner(
+            storedColor: record["bannerColor"] as? String,
+            storedPattern: record["bannerPattern"] as? String
+        )
+        self.pixKey = record["pixKey"] as? String
         self.badgesReference = record["badges"] as? [CKRecord.Reference] ?? []
         self.choresReference = record["chores"] as? [CKRecord.Reference] ?? []
         self.availableTimeReference = record["availableTime"] as? [CKRecord.Reference]
         self.couponsReference = record["coupons"] as? [CKRecord.Reference]
         self.houseReference = record["house"] as? CKRecord.Reference
         self.ownerRecordName = ownerRecordName
+        self.joinedAt = record.creationDate
     }
     
     /// Creates a new, unsaved user.
@@ -141,6 +161,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     init(
         name: String,
         profilePicture: CKAsset? = nil,
+        banner: ProfileBanner = .default,
+        pixKey: String? = nil,
         tier: Tier,
         coins: Int = 0,
         points: Int = 0,
@@ -156,6 +178,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.recordID = recordID
         self.name = name
         self.profilePicture = profilePicture
+        self.banner = banner
+        self.pixKey = pixKey
         self.tier = tier
         self.coins = coins
         self.points = points
@@ -179,6 +203,10 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         if let profilePicture {
             record["profilePicture"] = profilePicture
         }
+        record["bannerColor"] = banner.color.rawValue
+        record["bannerPattern"] = banner.pattern.rawValue
+        // Written even when `nil`, so removing the key clears it on the record too.
+        record["pixKey"] = pixKey
         record["tier"] = tier.rawValue
         record["coins"] = coins
         record["points"] = points
@@ -256,9 +284,17 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
             guard saveSuccess else { return false }
         }
         
+        let originalRefs = availableTimeReference
         self.availableTimeReference = newRefs
-        
-        guard await CloudKitManager.shared.update(self) else { return false }
+
+        guard await CloudKitManager.shared.update(self) else {
+            // Keep the in-memory model in line with the record that was not updated, so a retry
+            // deletes the right "previous" slots. The slots saved above stay: unreferenced they
+            // are harmless, whereas deleting them after an ambiguous failure could leave the
+            // profile pointing at records that no longer exist.
+            self.availableTimeReference = originalRefs
+            return false
+        }
         
         let previousIDs = previousRefs.map(\.recordID)
         if !previousIDs.isEmpty {

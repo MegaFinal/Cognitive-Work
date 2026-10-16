@@ -25,6 +25,17 @@ struct WaitAcceptLinkOnboardingView: View {
         viewModel.isAcceptingInvite || viewModel.isJoiningHouse
     }
     
+    /// Text of the message that asks the house admin for the invite link. Short, says who is asking
+    /// and where from (the app), and what is wanted, since the admin may get it with no context.
+    /// Resolved with ``L10n`` so it follows the language chosen in the app, not just the device's.
+    private var inviteRequestMessage: String {
+        let name = viewModel.currentUser?.name.trimmingCharacters(in: .whitespaces) ?? ""
+        guard !name.isEmpty else {
+            return L10n.tr("Oi! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠")
+        }
+        return L10n.tr("Oi, aqui é %@! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠", name)
+    }
+    
     // MARK: - Body
     
     var body: some View {
@@ -32,6 +43,7 @@ struct WaitAcceptLinkOnboardingView: View {
             VStack {
                 Image("TocTocPurple")
                     .frame(width: width * 0.64, height: height * 0.19)
+                    .accessibilityDecorative()
                     .padding(.bottom, height * 0.075)
                 OnboardingHeader(
                     title: "Peça o convite para o administrador da casa",
@@ -53,12 +65,14 @@ struct WaitAcceptLinkOnboardingView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.chorePurple)
                     }
+                    .accessibilityElement(children: .combine)
                     .transition(.opacity)
                 } else {
-                    ShareLink(item: String(localized: "eai amigo, cade meu link 🤨🤨")) {
+                    ShareLink(item: inviteRequestMessage) {
                         Label("Pedir o convite por mensagem", systemImage: "square.and.arrow.up")
                             .fontWeight(.semibold)
                     }
+                    .voiceControlNames([L10n.tr("Pedir o convite por mensagem"), L10n.tr("Pedir convite"), L10n.tr("Compartilhar")])
                     .controlSize(.large)
                     .buttonStyle(.glassProminent)
                     .tint(.blue)
@@ -73,9 +87,13 @@ struct WaitAcceptLinkOnboardingView: View {
                     .resizable()
                     .frame(width: height * 1.09, height: height * 1.09)
                     .opacity(0.2)
+                    .accessibilityDecorative()
             }
             .padding(.horizontal, 10)
             .animation(.easeInOut(duration: 0.2), value: isEnteringHouse)
+            .onChange(of: isEnteringHouse) { _, isEntering in
+                if isEntering { VoiceOver.announce(L10n.tr("Entrando na casa...")) }
+            }
             .navigationBarBackButtonHidden()
             .task {
                 // Covers the case where the invite was already accepted while the app was closed.
@@ -91,7 +109,7 @@ struct WaitAcceptLinkOnboardingView: View {
                 
                 viewModel.stateMachine.flow = .invitedWithProfile
                 guard await viewModel.joinHouse() else { return }
-                viewModel.advanceAfterJoiningHouse()
+                await viewModel.advanceAfterJoiningHouse()
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -102,6 +120,8 @@ struct WaitAcceptLinkOnboardingView: View {
                         Image(systemName: "chevron.left")
                     }
                     .disabled(isEnteringHouse)
+                    .accessibilityLabel(Text(L10n.tr("Voltar")))
+                    .voiceControlNames([L10n.tr("Voltar")])
                 }
             }
         }

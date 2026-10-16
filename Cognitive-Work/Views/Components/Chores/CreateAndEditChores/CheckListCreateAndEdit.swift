@@ -31,12 +31,17 @@ struct CheckListCreateAndEdit: View {
                             .foregroundColor(item.isDone ? .black : .gray)
                             .font(.system(size: 17, weight: .semibold))
                     }
+                    .voiceOverLabel(accessibilityName(of: item))
+                    .voiceOverValue(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
+                    .voiceOverHint(L10n.tr("Toque duas vezes para alternar."))
+                    .voiceControlNames([L10n.tr("Marcar %@", accessibilityName(of: item)), L10n.tr("Concluir %@", accessibilityName(of: item))])
                     
                     TextField("Novo item", text: $item.name)
                         .strikethrough(item.isDone, color: .gray)
                         .foregroundColor(item.isDone ? .gray : .black)
                         .font(.system(size: 15))
                         .characterLimit(TextLimits.checklistItem, text: $item.name)
+                        .voiceControlNames([accessibilityName(of: item), L10n.tr("Item")])
                         .focused($focusedItemID, equals: item.id)
                         .submitLabel(.next)
                         .onSubmit {
@@ -51,6 +56,8 @@ struct CheckListCreateAndEdit: View {
                         Image(systemName: "minus.circle.fill")
                             .foregroundColor(.red)
                     }
+                    .voiceOverLabel(L10n.tr("Remover %@", accessibilityName(of: item)))
+                    .voiceControlNames([L10n.tr("Remover"), L10n.tr("Remover %@", accessibilityName(of: item)), L10n.tr("Menos")])
                 }
             }
             Button {
@@ -64,7 +71,15 @@ struct CheckListCreateAndEdit: View {
                 .foregroundColor(.blue)
                 .padding(.top, 5)
             }
+            .voiceOverLabel(L10n.tr("Adicionar item"))
+            .voiceControlNames([L10n.tr("Adicionar item"), L10n.tr("Adicionar"), L10n.tr("Mais")])
         }
+    }
+    
+    /// The item's text, or "Novo item" while it's still blank.
+    private func accessibilityName(of item: CheckItemDTO) -> String {
+        let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? L10n.tr("Novo item") : name
     }
     
     // MARK: - Actions
@@ -97,6 +112,9 @@ struct CheckListCreateAndEdit: View {
     }
     
     private func remove(_ id: UUID) {
+        if let item = localChecklist.first(where: { $0.id == id }) {
+            VoiceOver.announce(L10n.tr("%@ removido", accessibilityName(of: item)))
+        }
         localChecklist.removeAll { $0.id == id }
         if localChecklist.isEmpty {
             hasChecklist = false

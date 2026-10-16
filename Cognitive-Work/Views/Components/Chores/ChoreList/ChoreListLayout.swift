@@ -90,13 +90,7 @@ struct ChoreListLayout: View {
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
         .overlay {
             if viewModel.visibleOccurrences.isEmpty {
-                if viewModel.isLoading {
-                    // Nothing was shown at all while the first fetch ran.
-                    ProgressView("Carregando tarefas")
-                        .controlSize(.large)
-                } else {
-                    emptyState
-                }
+                emptyState
             }
         }
     }
@@ -155,6 +149,12 @@ struct ChoreListLayout: View {
         }
         .buttonStyle(.plain)
         .frame(width: width * 0.92, alignment: .leading)
+        // "Hoje, quinta-feira, 25 de setembro" — header — "expandido, 3 tarefas"
+        .voiceOverLabel(group.accessibilityTitle)
+        .voiceControlNames([group.title])
+        .accessibilityValue(Text(verbatim: "\(isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")), \(L10n.tr("%lld tarefas", group.occurrences.count))"))
+        .voiceOverHint(isCollapsed ? L10n.tr("Toque duas vezes para expandir.") : L10n.tr("Toque duas vezes para recolher."))
+        .accessibilityAddTraits(.isHeader)
     }
     
     /// Shown when there's nothing to list — either the house has no chores, or the active
@@ -199,6 +199,7 @@ struct ChoreListLayout: View {
             revealedOccurrenceID = nil
             return viewModel.removeOccurrenceLocally(chore: occurrence.chore, targetOccurrences: targetOccurrences)
         }
+        VoiceOver.announce(L10n.tr("Tarefa excluída"))
         
         Task {
             await viewModel.persistDelete(chore: occurrence.chore, targetOccurrences: targetOccurrences, restoring: snapshot)
@@ -238,7 +239,8 @@ struct SwipeToDeleteStyle {
 }
 
 /// Wraps a card with a left swipe that slides it aside to reveal a delete button.
-private struct SwipeToDeleteRow<Content: View>: View {
+/// Shared by the chore list and the shopping list.
+struct SwipeToDeleteRow<Content: View>: View {
     
     let id: String
     
@@ -297,6 +299,10 @@ private struct SwipeToDeleteRow<Content: View>: View {
     
     var body: some View {
         content
+            // VoiceOver alternative to the swipe: an "Excluir" action on the row.
+            .accessibilityAction(named: Text(L10n.tr(style.title ?? "Excluir"))) {
+                dismissAndDelete()
+            }
             .background(alignment: .trailing) {
                 deleteButton
                     .offset(x: -offset)
@@ -333,6 +339,8 @@ private struct SwipeToDeleteRow<Content: View>: View {
         .opacity(revealProgress)
         .scaleEffect(0.8 + 0.2 * revealProgress)
         .allowsHitTesting(isRevealed && !isDeleting)
+        // Reached through the row's "Excluir" accessibility action instead.
+        .accessibilityHidden(true)
     }
 
     private var swipeGesture: HorizontalPanGesture {
@@ -393,7 +401,7 @@ private struct SwipeToDeleteRow<Content: View>: View {
 ///
 /// A vertical drag makes this recognizer fail right away (`gestureRecognizerShouldBegin`),
 /// so the enclosing `ScrollView` always gets vertical scrolling
-private struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
+struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
     
     /// Called once, when a horizontal drag is recognized.
     var onBegan: () -> Void
@@ -465,6 +473,17 @@ private struct DayGroup: Identifiable {
         
         let weekday = day.formatted(.dateTime.weekday(.wide).locale(Self.locale))
         return weekday.prefix(1).uppercased() + weekday.dropFirst()
+    }
+    
+    /// Spoken title: "Hoje, quinta-feira, 25 de setembro" (or "Sem data").
+    var accessibilityTitle: String {
+        guard let day else { return title }
+        let longDate = CarouselViewModel.accessibilityDateText(day)
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) || calendar.isDateInTomorrow(day) {
+            return "\(title), \(longDate)"
+        }
+        return longDate
     }
     
     /// "25/09", or `nil` for the undated group.

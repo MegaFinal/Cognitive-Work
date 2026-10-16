@@ -21,6 +21,7 @@ class OnboardingStateMachine {
     private enum StorageKey {
         static let index = "onboarding.index"
         static let flow = "onboarding.flow"
+        static let skippedToCreateOrEnter = "onboarding.skippedToCreateOrEnter"
     }
 
     // MARK: - Properties
@@ -47,6 +48,13 @@ class OnboardingStateMachine {
         didSet { UserDefaults.standard.set(flow.rawValue, forKey: StorageKey.flow) }
     }
 
+    /// True when the user reached "create or enter a house" straight from the welcome screen
+    /// (profile and free time already known, e.g. after leaving a house). "Voltar" from that
+    /// step then returns to the welcome screen instead of the steps that were skipped.
+    var skippedToCreateOrEnter: Bool {
+        didSet { UserDefaults.standard.set(skippedToCreateOrEnter, forKey: StorageKey.skippedToCreateOrEnter) }
+    }
+
     // MARK: - Initialization
 
     /// Initializes the state machine, restoring the previous session's index and flow from `UserDefaults`.
@@ -55,6 +63,7 @@ class OnboardingStateMachine {
 
         let savedFlow = UserDefaults.standard.string(forKey: StorageKey.flow)
         self.flow = savedFlow.flatMap(NavigationFlowsOnboarding.init(rawValue:)) ?? .notDefined
+        self.skippedToCreateOrEnter = UserDefaults.standard.bool(forKey: StorageKey.skippedToCreateOrEnter)
     }
 
     // MARK: - Computed Properties
@@ -122,6 +131,7 @@ class OnboardingStateMachine {
     
     /// The step a "voltar" from ``current`` leads to, or `nil` on the first step.
     var previousStep: OnboardingNavigationSteps? {
+        if skippedToCreateOrEnter, current == .createOrEnterHome { return .welcome }
         let previous = index - 1
         return steps.indices.contains(previous) ? steps[previous] : nil
     }
@@ -160,6 +170,7 @@ class OnboardingStateMachine {
             return
         }
         index = targetIndex
+        if targetIndex == 0 { skippedToCreateOrEnter = false }
         if let newFlow { flow = newFlow }
     }
 
@@ -170,8 +181,19 @@ class OnboardingStateMachine {
     func resetProgress() {
         index = 0
         flow = .notDefined
+        skippedToCreateOrEnter = false
     }
-    
+
+    /// Forgets the persisted progress without needing an instance.
+    ///
+    /// Used when the user leaves or deletes their house, so the onboarding that opens next starts
+    /// from the welcome screen instead of resuming a stale step.
+    static func clearPersistedProgress() {
+        UserDefaults.standard.removeObject(forKey: StorageKey.index)
+        UserDefaults.standard.removeObject(forKey: StorageKey.flow)
+        UserDefaults.standard.removeObject(forKey: StorageKey.skippedToCreateOrEnter)
+    }
+
     func jumpToStep(index: Int) {
         self.index = min(max(index, 0), steps.count - 1)
     }

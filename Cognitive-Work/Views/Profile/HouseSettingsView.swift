@@ -19,8 +19,7 @@ struct HouseSettingsView: View {
     @State private var leaveErrorMessage: String?
     @State private var deleteErrorMessage: String?
     
-    /// Admin-only rows used to pop in after an unannounced CloudKit round trip.
-    @State private var isCheckingAdmin = true
+    private var isCheckingAdmin: Bool { !viewModel.isAdminResolved }
     
     @AppStorage("didOnboard") private var didOnboard: Bool = true
     
@@ -42,8 +41,10 @@ struct HouseSettingsView: View {
                     Text("Adicionar moradores")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Adicionar moradores"), L10n.tr("Convidar"), L10n.tr("Moradores")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
@@ -55,14 +56,17 @@ struct HouseSettingsView: View {
                     Text("Cômodos")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Cômodos")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
             if isCheckingAdmin {
                 ProgressView()
                     .frame(maxWidth: .infinity)
+                    .voiceOverLabel(L10n.tr("Verificando permissões"))
             }
             
             // MARK: - Reset chores assignments
@@ -75,9 +79,11 @@ struct HouseSettingsView: View {
                         Text("Reiniciar divisão de tarefas")
                         Spacer()
                         Image(systemName: "chevron.right")
+                            .accessibilityHidden(true)
                     }
                 }
                 .buttonStyle(.plain)
+                .voiceControlNames([L10n.tr("Reiniciar divisão de tarefas"), L10n.tr("Reiniciar divisão"), L10n.tr("Reiniciar")])
                 .padding(.horizontal)
             }
             
@@ -91,6 +97,7 @@ struct HouseSettingsView: View {
                     Text("Excluir Casa")
                         .fontWeight(.semibold)
                 }
+                .voiceControlNames([L10n.tr("Excluir Casa"), L10n.tr("Excluir"), L10n.tr("Apagar")])
                 .foregroundColor(.red)
             } else if !isCheckingAdmin {
                 // MARK: - Leave house button
@@ -101,6 +108,7 @@ struct HouseSettingsView: View {
                     Text("Sair da Casa")
                         .fontWeight(.semibold)
                 }
+                .voiceControlNames([L10n.tr("Sair da Casa"), L10n.tr("Sair")])
                 .foregroundColor(.red)
             }
         }
@@ -112,6 +120,7 @@ struct HouseSettingsView: View {
         .alert("Excluir Casa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {
+                guard viewModel.isAdminResolved, viewModel.isUserAdmin else { return }
                 isDeletingHouse = true
                 Task {
                     let success = await viewModel.deleteHouse()
@@ -157,7 +166,6 @@ struct HouseSettingsView: View {
         .blockingOperation(isPresented: $isDeletingHouse, message: "Excluindo sua casa...")
         .task {
             await viewModel.checkAdminStatus()
-            isCheckingAdmin = false
         }
         // `deleteErrorMessage` was set on failure but never presented.
         .alert(

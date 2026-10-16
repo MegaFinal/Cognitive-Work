@@ -109,9 +109,9 @@ class HardwareViewModel {
 
         var message: String {
             switch self {
-            case .success: L10n.tr("Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvi!")
-            case .failureWiFi: L10n.tr("Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente.")
-            case .failureParing: L10n.tr("Certifique-se que o Harvi está conectado no WiFi e tente novamente.")
+            case .success: L10n.tr("Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvii!")
+            case .failureWiFi: L10n.tr("Não conseguimos enviar os dados para o Harvii. Confira se o seu celular está conectado à rede HARVII e tente novamente.")
+            case .failureParing: L10n.tr("Certifique-se que o Harvii está conectado no WiFi e tente novamente.")
             }
         }
     }
@@ -220,8 +220,11 @@ class HardwareViewModel {
         let choresViewModel = HardwareDailyChoresViewModel()
         await choresViewModel.setup()
 
+        // ImageRenderer draws outside the app's view tree, so it doesn't inherit the
+        // in-app language set at the root: pass it explicitly.
         let chartView = HardwareDailyChoresView(viewModel: choresViewModel)
             .frame(width: 800, height: 480)
+            .environment(\.locale, L10n.locale)
 
         let renderer = ImageRenderer(content: chartView)
         renderer.scale = 1.0
@@ -238,7 +241,7 @@ class HardwareViewModel {
     
     /// Prepares and sends a static image (rendered from a SwiftUI View) to the ESP32.
     func prepareImageForESP32<Content: View>(view: Content) async throws {
-        let renderer = ImageRenderer(content: view)
+        let renderer = ImageRenderer(content: view.environment(\.locale, L10n.locale))
         renderer.scale = 1.0
         
         guard let image = renderer.uiImage else {
@@ -290,7 +293,7 @@ class HardwareViewModel {
             zoneID: houseRecordID.zoneID,
             parent: houseReference
         ) else {
-            errorMessage = L10n.tr("Erro ao criar nome do host (Harvi).")
+            errorMessage = L10n.tr("Erro ao criar nome do host (Harvii).")
             return false
         }
 
@@ -307,7 +310,7 @@ class HardwareViewModel {
             hardwareHostName = try await CloudKitManager.shared.fetchFirst(HardwareHostNameModel.self)
             hostName = hardwareHostName?.hostName ?? ""
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, doing: .load)
         }
     }
     

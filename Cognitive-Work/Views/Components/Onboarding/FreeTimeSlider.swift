@@ -85,6 +85,34 @@ struct FreeTimeSlider: View {
             .gesture(buildSelectionGesture(in: geometry.size.width))
         }
         .frame(maxWidth: totalWidth, maxHeight: squareSize)
+        // VoiceOver: one adjustable element (swipe up/down) instead of a drag-only row.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(L10n.tr("Tempo livre")))
+        .accessibilityValue(Text(Self.accessibilityValue(for: rating)))
+        .accessibilityAdjustableAction { direction in
+            guard !isLoading else { return }
+            switch direction {
+            case .increment: rating = min(maxRating, rating + 1)
+            case .decrement: rating = max(0, rating - 1)
+            @unknown default: break
+            }
+        }
+        // Voice Control can't swipe-adjust: "Mostrar ações para Tempo livre" offers these instead.
+        .voiceControlNames([L10n.tr("Tempo livre"), L10n.tr("Horas"), L10n.tr("Controle de tempo")])
+        .accessibilityAction(named: Text(L10n.tr("Aumentar"))) {
+            guard !isLoading else { return }
+            rating = min(maxRating, rating + 1)
+        }
+        .accessibilityAction(named: Text(L10n.tr("Diminuir"))) {
+            guard !isLoading else { return }
+            rating = max(0, rating - 1)
+        }
+    }
+
+    /// Spoken value for a slider level ("2 horas", or "Nenhum tempo livre" at zero).
+    static func accessibilityValue(for level: Int) -> String {
+        let freeTime = FreeTimeEnum(level)
+        return freeTime == .none ? L10n.tr("Nenhum tempo livre") : freeTime.displayName
     }
 
     // MARK: - View Builders

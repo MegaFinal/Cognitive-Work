@@ -12,35 +12,19 @@ struct EditProfileView: View {
     @Bindable var viewModel: UserProfileViewModel
     @Environment(\.dismiss) private var dismiss
     
+    /// Whether the banner picker sheet is open.
+    @State private var isPickingBanner = false
+    
     var body: some View {
         VStack(spacing: 40) {
-            // MARK: - Photo Picker
-            PhotosPicker(selection: $viewModel.selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
-                ZStack(alignment: .bottomTrailing) {
-                    if let data = viewModel.displayedImageData, let uiImage = UIImage(data: data) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: width * 0.7, height: width * 0.7)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.25), radius: 7.26429, x: 0, y: 5.38095)
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.gray)
-                            .frame(width: width * 0.7, height: width * 0.7)
-                            .background(.white)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.25), radius: 7.26429, x: 0, y: 5.38095)
-                    }
-                }
-                // `clipShape` only clips the drawing; without this the picker still reacted to
-                // taps on the square corners around the circle.
-                .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .contentShape(Circle())
+            // MARK: - Photo + banner
+            EditableProfileImage(
+                image: viewModel.displayedImageData.flatMap(UIImage.init(data:)),
+                isEditing: true,
+                selection: $viewModel.selectedPhotoItem,
+                banner: viewModel.editedBanner,
+                onEditBanner: { isPickingBanner = true }
+            )
             .disabled(viewModel.isSaving)
             
             // MARK: - Name Textfield
@@ -59,12 +43,27 @@ struct EditProfileView: View {
                 .characterLimit(TextLimits.userName, text: $viewModel.editedName)
                 .submitLabel(.done)
                 .disabled(viewModel.isSaving)
+                // The title is empty (only a placeholder), so name the field explicitly.
+                .voiceOverLabel(L10n.tr("Nome"))
+                // Voice Control: the visible placeholder first ("Toque em Seu Nome").
+                .voiceControlNames([L10n.tr("Seu Nome"), L10n.tr("Nome")])
                 Spacer()
             }
             
             Spacer()
         }
         .padding(.top, 70)
+        .onChange(of: viewModel.isSaving) { _, isSaving in
+            if isSaving { VoiceOver.announce(L10n.tr("Salvando")) }
+        }
+        .sheet(isPresented: $isPickingBanner) {
+            ProfileBannerSheet(
+                banner: viewModel.editedBanner,
+                image: viewModel.displayedImageData.flatMap(UIImage.init(data:))
+            ) { banner in
+                viewModel.editedBanner = banner
+            }
+        }
         .navigationTitle("Editar Perfil")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(viewModel.isSaving)
@@ -77,12 +76,14 @@ struct EditProfileView: View {
             if viewModel.didSaveSuccessfully {
                 SuccessToast(text: "Perfil atualizado")
                     .padding(.top, 12)
+                    .accessibilityHidden(true) // announced in onChange below
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(.spring(duration: 0.35), value: viewModel.didSaveSuccessfully)
         .onChange(of: viewModel.didSaveSuccessfully) { _, didSave in
             guard didSave else { return }
+            VoiceOver.announce(L10n.tr("Perfil atualizado"))
             Task {
                 try? await Task.sleep(nanoseconds: 1_100_000_000)
                 viewModel.didSaveSuccessfully = false
@@ -105,6 +106,8 @@ struct EditProfileView: View {
                 .tint(Color.blue)
                 .buttonStyle(.glassProminent)
                 .disabled(!viewModel.canSave)
+                .voiceOverLabel(L10n.tr("Salvar"))
+                .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
             }
         }
         .hidesTabBar()

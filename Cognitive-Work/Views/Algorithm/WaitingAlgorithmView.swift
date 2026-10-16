@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WaitingAlgorithmView: View {
-    private let columns = ChoreDTO.colunasMock
+    private let columns = ChoreDTO.columnsMock
     @State private var isRotating = 0.0
     
     var body: some View {
@@ -27,10 +27,13 @@ struct WaitingAlgorithmView: View {
             .frame(width: width, height: height, alignment: .top)
             .clipped()
             .opacity(0.6)
+            // Moving cards in the background are decoration.
+            .accessibilityDecorative()
             
             VStack(spacing: 30) {
                 Image("loadingIcon")
                     .rotationEffect(.degrees(isRotating))
+                    .accessibilityDecorative()
                     .onAppear {
                         withAnimation(.linear(duration: 1)
                             .speed(0.1).repeatForever(autoreverses: false)) {
@@ -58,8 +61,14 @@ struct WaitingAlgorithmView: View {
                     .foregroundColor(.white)
                     .shadow(color: .black.opacity(0.2), radius: 3.2, x: 0, y: 4)
             )
+            // Title and explanation read together, marked as an ongoing state.
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.updatesFrequently)
         }
         .ignoresSafeArea()
+        .onAppear {
+            VoiceOver.announce(L10n.tr("Levantando escalas. Aguarde enquanto dividimos as tarefas entre os moradores."))
+        }
     }
 }
 

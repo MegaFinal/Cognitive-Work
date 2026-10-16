@@ -23,6 +23,22 @@ struct ChorePopOverComponent: View {
         .frame(width: width * 0.55, alignment: .leading)
         .frame(minHeight: height * 0.1)
         .clipShape(RoundedRectangle(cornerRadius: 20))
+        // Room, chore name and the three tags read as one sentence.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(accessibilityText)
+    }
+    
+    /// "Cozinha: Lavar a louça. Semanal, prioridade alta, duração curta".
+    private var accessibilityText: String {
+        let tier = ChoreDurationTier.from(minutes: chore.duration)
+        return L10n.tr(
+            "%@: %@. %@, prioridade %@, duração %@",
+            room?.name.localizedDefault ?? L10n.tr("Cômodo"),
+            chore.localizedName,
+            chore.frequency.displayName,
+            chore.priorityTag.displayName,
+            tier.displayText
+        )
     }
     
     private var title: some View {
@@ -32,7 +48,7 @@ struct ChorePopOverComponent: View {
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)
             
-            Text(chore.name.localizedDefault)
+            Text(chore.localizedName)
                 .bold()
                 .font(.title2)
                 .multilineTextAlignment(.leading)

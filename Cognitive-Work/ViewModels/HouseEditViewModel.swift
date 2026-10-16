@@ -16,13 +16,8 @@ final class HouseEditViewModel {
     /// The house currently loaded for display/editing.
     private(set) var house: HouseModel?
 
-    /// True while a house is being fetched.
     private(set) var isLoading = false
 
-    /// True while a delete is in flight.
-    ///
-    /// Kept separate from ``isLoading`` so the two operations can overlap without one
-    /// switching the other's indicator off when it finishes first.
     private(set) var isDeleting = false
 
     /// True while the member is leaving the house.
@@ -30,6 +25,8 @@ final class HouseEditViewModel {
 
     private(set) var errorMessage: String?
     var isUserAdmin: Bool = false
+
+    private(set) var isAdminResolved = false
 
     init(house: HouseModel? = nil) {
         self.house = house
@@ -51,10 +48,12 @@ final class HouseEditViewModel {
         guard let house
         else {
             isUserAdmin = false
+            isAdminResolved = true
             return false
         }
 
         isUserAdmin = await house.isAdmin() == true
+        isAdminResolved = true
         return true
     }
 
@@ -65,7 +64,7 @@ final class HouseEditViewModel {
         isLoading = true
         defer { isLoading = false }
 
-        guard let fetchedHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
+        guard let fetchedHouse = try? await CloudKitManager.shared.currentHouse()
         else {
             errorMessage = "Failed to retrieve the record"
             return
@@ -92,14 +91,28 @@ final class HouseEditViewModel {
         isLeaving = true
         defer { isLeaving = false }
 
+        // The in-house profile (and the free time on it) is removed when the member leaves.
+        // Make sure the private profile holds the current free time first, so the next house gets
+        // it without asking again. Best effort: it never blocks leaving.
+        await FreeTimeSyncService.live().reconcile()
+
         guard (try? await CloudKitManager.shared.leaveCurrentHouse()) == true else {
             errorMessage = CloudKitManager.shared.errorMessage
             return false
         }
 
         house = nil
+        resetAdminState()
         errorMessage = nil
+        prepareOnboardingAfterLosingHouse()
         return true
+    }
+
+    /// Makes the onboarding that opens after leaving or deleting a house start from the welcome
+    /// screen (which leads to "create or enter a house"), not from a stale persisted step.
+    private func prepareOnboardingAfterLosingHouse() {
+        OnboardingStateMachine.clearPersistedProgress()
+        OnboardingRollbackJournal.clear()
     }
 
     // MARK: - Delete
@@ -123,6 +136,10 @@ final class HouseEditViewModel {
         isDeleting = true
         defer { isDeleting = false }
 
+        // The admin's in-house profile is deleted with the house: keep the free time on the
+        // private profile for the next one. Best effort.
+        await FreeTimeSyncService.live().reconcile()
+
         guard await house.deleteAllChildren() else {
             errorMessage = "Failed to delete house children"
             print(errorMessage as Any)
@@ -137,10 +154,18 @@ final class HouseEditViewModel {
         }
 
         self.house = nil
+        resetAdminState()
         errorMessage = nil
+        prepareOnboardingAfterLosingHouse()
         return true
     }
     
+    private func resetAdminState() {
+        isUserAdmin = false
+        isAdminResolved = false
+    }
+    
+
     func getOutOfTheHouse() async {
         guard let house else {
             errorMessage = "Failed to retrieve house"

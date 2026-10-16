@@ -16,6 +16,7 @@ struct ScheduleInfoPopUp: View {
                 Text("EXPLICAÇÃO")
                     .font(.system(size: 13))
                     .bold()
+                    .accessibilityLabel(Text(L10n.tr("Explicação")))
                 
                 Spacer()
                 
@@ -32,12 +33,15 @@ struct ScheduleInfoPopUp: View {
                             in: .capsule
                         )
                 }
+                .accessibilityLabel(Text(L10n.tr("Fechar")))
+                .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
             }
             .padding(.top, 5)
             
             Text("Sua escala está \npronta!")
                 .font(.system(size: 28))
                 .bold()
+                .accessibilityAddTraits(.isHeader)
             
             Text("Dividimos as tarefas de acordo com o tempo livre de cada morador.")
                 .font(.system(size: 16))
@@ -51,6 +55,7 @@ struct ScheduleInfoPopUp: View {
                         .scaledToFit()
                         .frame(width: width * 0.1)
                         .foregroundColor(.choreOrange)
+                        .accessibilityDecorative()
                     
                     VStack(alignment: .leading, spacing: 7) {
                         Text("Vale por 15 dias")
@@ -61,6 +66,7 @@ struct ScheduleInfoPopUp: View {
                             .font(.system(size: 15))
                     }
                 }
+                .accessibilityElement(children: .combine)
                 
                 HStack(spacing: 22) {
                     Image(systemName: "hand.tap")
@@ -68,6 +74,7 @@ struct ScheduleInfoPopUp: View {
                         .scaledToFit()
                         .frame(width: width * 0.08)
                         .foregroundColor(.choreYellow)
+                        .accessibilityDecorative()
                     
                     VStack(alignment: .leading, spacing: 7) {
                         Text("Tarefas à pegar")
@@ -79,6 +86,7 @@ struct ScheduleInfoPopUp: View {
                     }
                     .frame(width: width * 0.6)
                 }
+                .accessibilityElement(children: .combine)
                 
                 HStack(spacing: 11) {
                     Image(systemName: "chart.bar.xaxis")
@@ -86,6 +94,7 @@ struct ScheduleInfoPopUp: View {
                         .scaledToFit()
                         .frame(width: width * 0.11)
                         .foregroundColor(.chorePurple)
+                        .accessibilityDecorative()
                     
                     VStack(alignment: .leading, spacing: 7) {
                         Text("Retrospectiva quinzenal")
@@ -97,6 +106,7 @@ struct ScheduleInfoPopUp: View {
                     }
                     .frame(width: width * 0.6)
                 }
+                .accessibilityElement(children: .combine)
             }
             .padding(.top, 15)
             
@@ -114,6 +124,7 @@ struct ScheduleInfoPopUp: View {
                         in: .capsule
                     )
             }
+            .voiceControlNames([L10n.tr("Ver minha escala"), L10n.tr("Ver escala"), L10n.tr("Escala")])
             .padding(.top, 15)
         }
         .padding(.vertical, 18)
@@ -124,6 +135,11 @@ struct ScheduleInfoPopUp: View {
                 .foregroundColor(.white)
                 .shadow(color: .black.opacity(0.2), radius: 3.2, x: 0, y: 4)
         )
+        // A modal card: VoiceOver stays inside it, and the escape gesture closes it.
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) { onDismiss() }
+        .onAppear { VoiceOver.screenChanged() }
     }
 }
 

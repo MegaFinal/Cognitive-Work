@@ -41,6 +41,10 @@ struct UserProfilePictureTag: View {
                     .clipShape(Circle())
             }
         }
+        // Read as the member's name, not as "image" or the placeholder symbol.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(user?.name ?? L10n.tr("Morador"))
+        .accessibilityAddTraits(.isImage)
         .task(id: user?.recordID) {
             image = await UserProfileCache.shared.image(for: user)
         }

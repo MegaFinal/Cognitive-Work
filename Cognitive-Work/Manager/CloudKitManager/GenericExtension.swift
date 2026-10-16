@@ -59,7 +59,7 @@ extension CloudKitManager {
             markDataChanged()
             return saved
         } catch {
-            errorMessage = "Failed to create \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .create)
             return nil
         }
     }
@@ -92,7 +92,7 @@ extension CloudKitManager {
     ///   fails.
     func fetchRecord<T: CloudKitSyncable>(for item: T) async -> CKRecord? {
         guard let recordID = item.recordID else {
-            errorMessage = "Failed to fetch \(T.recordType): missing recordID"
+            errorMessage = UserFacingError.friendly(technical: "Failed to fetch \(T.recordType): missing recordID")
             return nil
         }
         
@@ -101,7 +101,7 @@ extension CloudKitManager {
         do {
             return try await database.record(for: recordID)
         } catch {
-            errorMessage = "Failed to fetch \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .load)
             return nil
         }
     }
@@ -142,7 +142,7 @@ extension CloudKitManager {
                 fetchedRecords.append(contentsOf: result.values.compactMap { try? $0.get() })
             }
         } catch {
-            errorMessage = "Failed to fetch batch records: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .load)
             return nil
         }
         
@@ -196,9 +196,20 @@ extension CloudKitManager {
         return deduplicatedByOwner(users)
     }
     
+    /// Every `UserModel` record of the house, without merging the ones of the same person
+    /// (``fetchHouseUsers(of:)`` keeps one per `ownerRecordName`). Shopping items may reference
+    /// any of them, so ``DebtCalculator`` needs all of them to know who each reference is.
+    func fetchHouseUserRecords() async -> [UserModel] {
+        guard let houseID = (try? await currentHouse())?.recordID else { return [] }
+        
+        let reference = CKRecord.Reference(recordID: houseID, action: .none)
+        let predicate = NSPredicate(format: "house == %@", reference)
+        return await fetchAll(UserModel.self, predicate: predicate)
+    }
+    
     /// Deduplicates users who might have more than one `UserModel` record sharing the same
     /// `ownerRecordName`.
-    private func deduplicatedByOwner(_ users: [UserModel]) -> [UserModel] {
+    func deduplicatedByOwner(_ users: [UserModel]) -> [UserModel] {
         var bestByOwner: [String: UserModel] = [:]
         
         for user in users {
@@ -261,7 +272,7 @@ extension CloudKitManager {
                 
                 token = changes.moreComing ? changes.changeToken : nil
             } catch {
-                errorMessage = "Failed to scan zone \(zoneID.zoneName): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .load)
                 return []
             }
         } while token != nil
@@ -275,17 +286,10 @@ extension CloudKitManager {
         predicate: NSPredicate,
         desiredKeys: DesiredKeys = .list
     ) async -> [T] {
-        let query = CKQuery(recordType: T.recordType, predicate: predicate)
-        
         do {
-            return try await allRecords(
-                matching: query,
-                in: privateDB,
-                zoneID: houseZoneID,
-                desiredKeys: desiredKeys.resolve(for: T.self)
-            ).compactMap(T.init(record:))
+            return try await fetchPrivateOrThrow(type, predicate: predicate, desiredKeys: desiredKeys)
         } catch {
-            errorMessage = "Failed to fetch \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .load)
             return []
         }
     }
@@ -296,33 +300,75 @@ extension CloudKitManager {
         predicate: NSPredicate,
         desiredKeys: DesiredKeys = .list
     ) async -> [T] {
-        let zones = await sharedZones()
-        guard !zones.isEmpty else { return [] }
-        
         do {
-            return try await withThrowingTaskGroup(of: [T].self) { group in
-                for zone in zones {
-                    group.addTask {
-                        let query = CKQuery(recordType: T.recordType, predicate: predicate)
-                        return try await self.allRecords(
-                            matching: query,
-                            in: self.sharedDB,
-                            zoneID: zone.zoneID,
-                            desiredKeys: desiredKeys.resolve(for: T.self)
-                        ).compactMap(T.init(record:))
-                    }
-                }
-                var all: [T] = []
-                for try await items in group { all.append(contentsOf: items) }
-                return all
-            }
+            return try await fetchSharedOrThrow(type, predicate: predicate, desiredKeys: desiredKeys)
         } catch {
-            errorMessage = "Failed to fetch shared \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .share)
             return []
         }
     }
     
-    /// Runs `query` in one zone and follows the cursor until every page has been read.
+    // MARK: - Strict fetches
+    
+    /// Like ``fetchAll(_:predicate:)``, but throws when CloudKit fails.
+    func fetchAllOrThrow<T: CloudKitSyncable>(
+        _ type: T.Type,
+        predicate: NSPredicate = NSPredicate(value: true)
+    ) async throws -> [T] {
+        async let owned = fetchPrivateOrThrow(type, predicate: predicate, desiredKeys: .list)
+        async let shared = fetchSharedOrThrow(type, predicate: predicate, desiredKeys: .list)
+        return try await owned + shared
+    }
+    
+    /// Like ``fetchHouseUserRecords()``, but throws when CloudKit fails.
+    func fetchHouseUserRecordsOrThrow() async throws -> [UserModel] {
+        guard let houseID = try await currentHouse()?.recordID else { return [] }
+        
+        let reference = CKRecord.Reference(recordID: houseID, action: .none)
+        let predicate = NSPredicate(format: "house == %@", reference)
+        return try await fetchAllOrThrow(UserModel.self, predicate: predicate)
+    }
+    
+    private func fetchPrivateOrThrow<T: CloudKitSyncable>(
+        _ type: T.Type,
+        predicate: NSPredicate,
+        desiredKeys: DesiredKeys
+    ) async throws -> [T] {
+        let query = CKQuery(recordType: T.recordType, predicate: predicate)
+        return try await allRecords(
+            matching: query,
+            in: privateDB,
+            zoneID: houseZoneID,
+            desiredKeys: desiredKeys.resolve(for: T.self)
+        ).compactMap(T.init(record:))
+    }
+    
+    private func fetchSharedOrThrow<T: CloudKitSyncable>(
+        _ type: T.Type,
+        predicate: NSPredicate,
+        desiredKeys: DesiredKeys
+    ) async throws -> [T] {
+        let zones = try await sharedZonesOrThrow()
+        guard !zones.isEmpty else { return [] }
+        
+        return try await withThrowingTaskGroup(of: [T].self) { group in
+            for zone in zones {
+                group.addTask {
+                    let query = CKQuery(recordType: T.recordType, predicate: predicate)
+                    return try await self.allRecords(
+                        matching: query,
+                        in: self.sharedDB,
+                        zoneID: zone.zoneID,
+                        desiredKeys: desiredKeys.resolve(for: T.self)
+                    ).compactMap(T.init(record:))
+                }
+            }
+            var all: [T] = []
+            for try await items in group { all.append(contentsOf: items) }
+            return all
+        }
+    }
+    
     private func allRecords(
         matching query: CKQuery,
         in database: CKDatabase,
@@ -366,7 +412,7 @@ extension CloudKitManager {
     @discardableResult
     func update<T: CloudKitSyncable>(_ item: T) async -> Bool {
         guard let recordID = item.recordID else {
-            errorMessage = "Failed to update \(T.recordType): missing recordID"
+            errorMessage = UserFacingError.friendly(technical: "Failed to update \(T.recordType): missing recordID")
             return false
         }
         
@@ -381,7 +427,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to update \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .save)
             return false
         }
     }
@@ -396,7 +442,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to update \(record.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .save)
             return false
         }
     }
@@ -411,7 +457,7 @@ extension CloudKitManager {
     @discardableResult
     func delete<T: CloudKitSyncable>(_ item: T) async -> Bool {
         guard let recordID = item.recordID else {
-            errorMessage = "Failed to delete \(T.recordType): missing recordID"
+            errorMessage = UserFacingError.friendly(technical: "Failed to delete \(T.recordType): missing recordID")
             return false
         }
         
@@ -425,7 +471,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
     }
@@ -441,7 +487,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to delete \(T.recordType): \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
     }
@@ -472,7 +518,7 @@ extension CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            errorMessage = "Failed to delete records: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
     }
@@ -558,7 +604,7 @@ extension CloudKitManager {
                 
                 token = changes.moreComing ? changes.changeToken : nil
             } catch {
-                errorMessage = "Failed to scan zone \(zoneID.zoneName): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .load)
                 return nil
             }
         } while token != nil
@@ -624,7 +670,7 @@ extension CloudKitManager {
                 
                 token = changes.moreComing ? changes.changeToken : nil
             } catch {
-                errorMessage = "Failed to scan zone \(zoneID.zoneName): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .load)
                 return nil
             }
         } while token != nil

@@ -38,6 +38,11 @@ struct WelcomeOnboardingView: View {
                 Image("pipaOnboarding")
                     .resizable()
                     .frame(width: width * 0.708, height: height * 0.208)
+                    .accessibilityLabel(Text(verbatim: "Pipa"))
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityAction(named: Text(L10n.tr("Continuar"))) { expand() }
+                    // Voice Control: "Mostrar ações para Pipa" lists the swipe-up replacement.
+                    .voiceControlNames(["Pipa", L10n.tr("Logo")])
                 
             }
             .frame(maxHeight: .infinity, alignment: isExpanded ? .top : .center)
@@ -56,11 +61,8 @@ struct WelcomeOnboardingView: View {
         .gesture(
             DragGesture()
                 .onEnded { value in
-                    if value.translation.height < -50 && !isExpanded {
-                        withAnimation(.easeInOut(duration: 0.6)) {
-                            isExpanded = true
-                            isSwipeVisible = false
-                        }
+                    if value.translation.height < -50 {
+                        expand()
                     }
                 }
         )
@@ -85,6 +87,17 @@ struct WelcomeOnboardingView: View {
     }
     
     
+    // MARK: - Actions
+    
+    /// Opens the description panel (swipe up, or the VoiceOver "Continuar" action).
+    private func expand() {
+        guard !isExpanded else { return }
+        withAnimation(.easeInOut(duration: 0.6)) {
+            isExpanded = true
+            isSwipeVisible = false
+        }
+    }
+    
     // MARK: - Subviews
     
     /// A hint prompting the user to swipe up to continue.
@@ -101,6 +114,14 @@ struct WelcomeOnboardingView: View {
         .frame(maxHeight: .infinity, alignment: .bottom)
         .padding(.bottom, height * 0.07)
         .fontWeight(.semibold)
+        // VoiceOver can't swipe up on the screen: this hint becomes a "Continuar" button.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(L10n.tr("Continuar")))
+        .accessibilityHint(Text(L10n.tr("Mostra a apresentação do Pipa")))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { expand() }
+        // Voice Control: the visible hint first, then the short action name.
+        .voiceControlNames([L10n.tr("deslize para continuar!"), L10n.tr("Continuar"), L10n.tr("Deslizar")])
     }
 }
 

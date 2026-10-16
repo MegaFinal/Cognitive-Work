@@ -78,17 +78,24 @@ class CloudKitManager {
     /// In-flight shared-zone listing, deduplicated the same way. `nil` result means the
     /// listing failed and must not be cached.
     @ObservationIgnored
-    private var sharedZonesLookup: Task<[CKRecordZone]?, Never>?
+    private var sharedZonesLookup: Task<[CKRecordZone], Error>?
     
     // MARK: - Data revision
     
     /// Counter that changes whenever house data changes, locally or remotely.
     private(set) var dataRevision: Int = 0
     
-    /// Records that house data changed
+    /// Records that house data changed, locally or remotely.
+    ///
+    /// Also invalidates ``HouseDataStore``, so the next tab that asks for the house data
+    /// fetches it again. For changes pushed from another device the store is invalidated a
+    /// second time by ``HouseDataStore/refreshAfterRemoteChange()``: this method runs a
+    /// moment after the notification, so the second call is what guarantees that the screen
+    /// reacting to the notification never gets the old snapshot.
     func markDataChanged() {
         Task { @MainActor in
             self.dataRevision &+= 1
+            HouseDataStore.shared.invalidate()
         }
     }
     
@@ -140,7 +147,7 @@ class CloudKitManager {
             didEnsureZone = true
             return true
         } catch {
-            errorMessage = "Failed to create zone: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .save)
             return false
         }
     }
@@ -198,26 +205,33 @@ class CloudKitManager {
         return user
     }
     
-    /// Every record zone shared with this account, resolved once per session.
-    func sharedZones() async -> [CKRecordZone] {
+    /// Like ``sharedZones()``, but throws when CloudKit fails instead of returning `[]`
+    /// (which would read as "this account has no shared house"). Resolved once per session;
+    /// simultaneous callers share the same request.
+    func sharedZonesOrThrow() async throws -> [CKRecordZone] {
         if let cachedSharedZones { return cachedSharedZones }
-        if let sharedZonesLookup { return await sharedZonesLookup.value ?? [] }
+        if let sharedZonesLookup { return try await sharedZonesLookup.value }
         
-        let lookup = Task<[CKRecordZone]?, Never> { [weak self] in
-            guard let self else { return nil }
-            do {
-                return try await self.sharedDB.allRecordZones()
-            } catch {
-                self.errorMessage = "Failed to list shared zones: \(error.localizedDescription)"
-                return nil
-            }
+        let lookup = Task<[CKRecordZone], Error> { [weak self] in
+            guard let self else { return [] }
+            return try await self.sharedDB.allRecordZones()
         }
         sharedZonesLookup = lookup
+        defer { sharedZonesLookup = nil }
         
-        let zones = await lookup.value
-        sharedZonesLookup = nil
-        if let zones { cachedSharedZones = zones }
-        return zones ?? []
+        let zones = try await lookup.value
+        cachedSharedZones = zones
+        return zones
+    }
+    
+    /// Every record zone shared with this account, resolved once per session.
+    func sharedZones() async -> [CKRecordZone] {
+        do {
+            return try await sharedZonesOrThrow()
+        } catch {
+            errorMessage = UserFacingError.message(for: error, doing: .share)
+            return []
+        }
     }
     
     /// Drops every session-cached lookup.
@@ -396,7 +410,7 @@ class CloudKitManager {
         } catch let error as CKError where error.code == .unknownItem {
             return nil
         } catch {
-            errorMessage = "Failed to fetch house user: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .load)
             return nil
         }
     }
@@ -438,7 +452,7 @@ class CloudKitManager {
                 .modifyRecords(saving: [house, share], deleting: [])
             return share
         } catch {
-            self.errorMessage = "Failed to create share: \(error.localizedDescription)"
+            self.errorMessage = UserFacingError.message(for: error, doing: .share)
             return nil
         }
     }
@@ -462,7 +476,7 @@ class CloudKitManager {
                 .modifyRecords(saving: [house, share], deleting: [])
             return share
         } catch {
-            self.errorMessage = "Failed to create share: \(error.localizedDescription)"
+            self.errorMessage = UserFacingError.message(for: error, doing: .share)
             return nil
         }
     }
@@ -488,7 +502,7 @@ class CloudKitManager {
                 for: shareReference.recordID
             ) as? CKShare
         } catch {
-            errorMessage = "Failed to fetch share: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .share)
             return nil
         }
     }
@@ -513,8 +527,7 @@ class CloudKitManager {
                     continuation.resume(returning: true)
                     
                 case .failure(let error):
-                    self.errorMessage =
-                    "Failed to accept share invitation: \(error.localizedDescription)"
+                    self.errorMessage = UserFacingError.message(for: error, doing: .share)
                     continuation.resume(returning: false)
                 }
             }
@@ -549,6 +562,7 @@ class CloudKitManager {
         let member = UserModel(
             name: profile.name,
             profilePicture: profilePictureDuplicate,
+            banner: profile.banner,
             tier: profile.tier,
             coins: profile.coins,
             points: profile.points,
@@ -579,7 +593,7 @@ class CloudKitManager {
         
         // O dono não "sai": ele deleta ou para de compartilhar.
         guard share.recordID.zoneID.ownerName != CKCurrentUserDefaultName else {
-            errorMessage = "Failed to leave house: current user is the owner"
+            errorMessage = UserFacingError.friendly(technical: "Failed to leave house: current user is the owner")
             throw CloudKitErrors<Any>.currentHouseOwnerCannotLeaveTheHouse
         }
         
@@ -649,7 +663,7 @@ class CloudKitManager {
             do {
                 try await saveSubscriptionIfNeeded(subscription, in: database)
             } catch {
-                errorMessage = "Failed to save subscription \(subscription.subscriptionID): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .save)
                 if firstError == nil { firstError = error }
             }
         }
@@ -743,7 +757,7 @@ class CloudKitManager {
             markDataChanged()
             return true
         } catch {
-            self.errorMessage = "Batch save failed: \(error.localizedDescription)"
+            self.errorMessage = UserFacingError.message(for: error, doing: .save)
             return false
         }
     }
@@ -784,7 +798,7 @@ class CloudKitManager {
                 await HardwareViewModel.notifyDataChanged()
                 markDataChanged()
             } catch {
-                errorMessage = "Batch update failed: \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .save)
                 print("    batchUpdate FAILED (\(T.recordType)): \(error)")
                 allSucceeded = false
             }
@@ -815,7 +829,7 @@ extension CloudKitManager {
             clearCurrentUser()
             await UserProfileCache.shared.removeAll()
         } catch {
-            errorMessage = "Failed to delete zone: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
         
@@ -851,7 +865,7 @@ extension CloudKitManager {
             do {
                 _ = try await sharedDB.deleteRecord(withID: share.recordID)
             } catch {
-                errorMessage = "Failed to leave house \(house.name): \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .leave)
                 allSucceeded = false
             }
         }

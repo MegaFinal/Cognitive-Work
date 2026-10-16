@@ -25,26 +25,12 @@ struct ContentView: View {
     // MARK: - Body
     
     var body: some View {
-        TabView {
-            ChoresView()
-                .tabItem {
-                    Label("Tarefas", systemImage: "checklist")
-                }
-             
-//            ShopListView()
-//                .tabItem {
-//                    Label("Compras", systemImage: "basket")
-//                }
-            
-            DashboardView()
-                .tabItem {
-                    Label("Progresso", systemImage: "figure.2")
-                }
-            
-            UserProfileView()
-                .tabItem {
-                    Label("Perfil", systemImage: "person.fill")
-                }
+        Group {
+            if viewModel.isLoading {
+                LoadingScreen()
+            } else {
+                tabs
+            }
         }
         .environment(tabBarVisibility)
         .onReceive(NotificationCenter.default.publisher(for: .notAcceptShare)) { cloudMetadata in
@@ -85,8 +71,7 @@ struct ContentView: View {
         .blockingWhileUnlinkingOrphanedHouse()
         
         .task {
-            await viewModel.leaveOrphanedHouses()
-            await viewModel.fetchHouse()
+            await viewModel.bootstrap()
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task { await viewModel.fetchHouse() }
@@ -95,6 +80,32 @@ struct ContentView: View {
             if phase == .active {
                 Task { await viewModel.fetchHouse() }
             }
+        }
+    }
+    
+    // MARK: - Tabs
+    
+    private var tabs: some View {
+        TabView {
+            ChoresView()
+                .tabItem {
+                    Label("Tarefas", systemImage: "checklist")
+                }
+             
+            ShopListView()
+                .tabItem {
+                    Label("Compras", systemImage: "basket")
+                }
+            
+            DashboardView()
+                .tabItem {
+                    Label("Progresso", systemImage: "figure.2")
+                }
+            
+            UserProfileView()
+                .tabItem {
+                    Label("Perfil", systemImage: "person.fill")
+                }
         }
     }
 }

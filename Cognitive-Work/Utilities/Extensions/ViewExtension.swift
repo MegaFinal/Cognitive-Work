@@ -18,7 +18,7 @@ enum TextLimits {
     static let checklistItem = 40
     /// Room names (onboarding cards and the custom-room sheet share it).
     static let roomName = 16
-    static let shopItemName = 30
+    static let shopItemName = 18
     /// Price text, e.g. "99999,99".
     static let price = 9
     /// IEEE 802.11 SSID maximum.
