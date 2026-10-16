@@ -52,9 +52,9 @@ extension CarouselViewModel {
     /// "Prioridade média, duração curta, frequência semanal".
     func accessibilityTagsText(for chore: ChoreModel) -> String {
         [
+            L10n.tr("Frequência %@", chore.frequency.displayName),
             L10n.tr("Prioridade %@", chore.priorityTag.displayName),
-            L10n.tr("Duração %@", ChoreDurationTier.from(minutes: chore.duration).displayText),
-            L10n.tr("Frequência %@", chore.frequency.displayName)
+            L10n.tr("Duração %@", ChoreDurationTier.from(minutes: chore.duration).displayText)
         ].joined(separator: ", ")
     }
 

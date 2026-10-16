@@ -56,6 +56,19 @@ class HouseModel: CloudKitSyncable {
         }
     }
     
+    /// The house's shopping list, `nil` when the house has none, throwing when CloudKit fails
+    /// (``shopList`` returns `nil` in both cases).
+    func loadShopList() async throws -> ShopListModel? {
+        guard let shopListReference else { return nil }
+        guard let lists = await CloudKitManager.shared.fetchRecordsByRecordReference(
+            for: ShopListModel.self,
+            recordReferences: [shopListReference]
+        ) else {
+            throw CKError(.networkFailure)
+        }
+        return lists.first
+    }
+    
     /// The house's shopping list, or `nil` before one has been created.
     var shopList: ShopListModel? {
         get async {
