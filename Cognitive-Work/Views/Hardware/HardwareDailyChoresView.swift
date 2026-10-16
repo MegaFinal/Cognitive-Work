@@ -13,8 +13,9 @@ import CloudKit
 /// Wall-dashboard view showing every house member's chores for the target day, one column per
 /// user, shaded by the room each chore belongs to.
 ///
-/// The image goes to a 4-level grayscale e-paper (see `UIImage.levelBitmap4Gray()`), so the
-/// rooms use the shades of ``EInkRoomStyle`` instead of their app colors, which all collapsed
+/// The image goes to a 4-level grayscale e-paper, converted with
+/// `UIImage.levelBitmap4Gray(halfTones: true)`, which turns those 4 levels into 7 tones. The
+/// rooms use those tones (``EInkRoomStyle``) instead of their app colors, which all collapsed
 /// into similar grays there.
 ///
 /// Which day that is comes from ``HardwareDailyChoresViewModel/dayOffsetFromToday`` — currently
@@ -32,7 +33,6 @@ struct HardwareDailyChoresView: View {
         VStack(alignment: .leading, spacing: 16) {
             header
             userColumns
-            legend
         }
         .padding(.vertical)
         .foregroundStyle(EInkShade.black)
@@ -51,11 +51,11 @@ struct HardwareDailyChoresView: View {
         HStack {
             HStack(alignment: .firstTextBaseline) {
                 Text("Tarefas do Dia,")
-                    .font(.largeTitle)
+                    .font(.title)
                     .bold()
 
                 Text(viewModel.targetDateFormatted)
-                    .font(.title)
+                    .font(.title2)
             }
             
             Spacer()
@@ -84,14 +84,14 @@ struct HardwareDailyChoresView: View {
         .padding(.horizontal)
     }
 
-    /// Room legend, with the same fill and border as the cards.
+    /// Room legend, with the same shade as the cards.
     private var legend: some View {
         HStack(spacing: 20) {
             ForEach(viewModel.roomsInUse) { room in
                 HStack(spacing: 6) {
                     EInkRoomSwatch(style: EInkRoomStyle(room: room))
                     Text(room.name.localizedDefault)
-                        .font(.title2)
+                        .font(.title3)
                         .foregroundStyle(.black)
                 }
             }
@@ -125,7 +125,7 @@ private struct UserDailyChoresColumn: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(group.user.name)
-                    .font(.title)
+                    .font(.title3)
                     .fontWeight(.bold)
                 
                 Spacer()
@@ -157,7 +157,7 @@ private struct UserDailyChoresColumn: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("Sem tarefas por hoje")
-                .font(.title2)
+                .font(.title3)
                 .fontWeight(.bold)
                 // No line limit: wraps onto as many lines as it needs instead of "…".
                 .fixedSize(horizontal: false, vertical: true)
@@ -183,12 +183,12 @@ private struct DailyChoreCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(room?.name.localizedDefault ?? L10n.tr("Sem cômodo"))
-                .font(.title3)
+                .font(.body)
                 .fontWeight(.medium)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(chore.localizedName)
-                .font(.title)
+                .font(.title3)
                 .fontWeight(.bold)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -209,7 +209,7 @@ private struct OverflowStrip: View {
 
     var body: some View {
         Text(verbatim: "+" + L10n.tr("%lld tarefas", count))
-            .font(.title)
+            .font(.title3)
             .fontWeight(.semibold)
             .foregroundColor(EInkShade.darkGray)
             .frame(maxWidth: .infinity)
@@ -220,36 +220,44 @@ private struct OverflowStrip: View {
 
 // MARK: - E-ink palette
 
-/// The four levels the e-paper can show. Each value sits in the middle of the brightness band
-/// `levelBitmap4Gray()` maps it to (0–63, 64–127, 128–191, 192–255), so antialiasing or a slight
-/// rendering difference never pushes a card into the neighbouring level.
+/// The 7 tones the e-paper shows (`UIImage.eInkHalfTones`). Paint only these: the converter
+/// snaps any other gray to the nearest one. The in-between tones come out on the panel as a
+/// fine checkerboard of the two neighbouring levels.
 private enum EInkShade {
-    static let black = Color(white: 0)
-    static let darkGray = Color(white: 96 / 255)
-    static let lightGray = Color(white: 160 / 255)
-    static let white = Color(white: 1)
+    static let black = tone(0)
+    static let blackDarkGray = tone(1)
+    static let darkGray = tone(2)
+    static let darkLightGray = tone(3)
+    static let lightGray = tone(4)
+    /// The lightest shade that still stands out from the white background.
+    static let lightGrayWhite = tone(5)
+    static let white = tone(6)
+
+    private static func tone(_ index: Int) -> Color {
+        Color(white: Double(UIImage.eInkHalfTones[index].brightness) / 255)
+    }
 }
 
 /// How a room's cards look on the e-paper.
 ///
-/// The display has four levels and the background takes white, so only black, dark gray and
-/// light gray stand out as card fills. With five room colors, two shades are shared; the room
-/// name on each card (and the legend) still tells them apart. Text is always the opposite end
-/// of the scale from the fill, for maximum contrast.
+/// Every room color gets its own tone, ordered by how dark the app color is, so the dashboard
+/// keeps a similar feel. Text is white on every tone except the lightest (light gray / white).
 private struct EInkRoomStyle {
     let fill: Color
     let text: Color
 
     init(room: RoomModel?) {
         guard let color = room?.color else {
-            self.init(fill: EInkShade.lightGray, text: EInkShade.black)
+            // The middle tone, unused by the rooms.
+            self.init(fill: EInkShade.darkLightGray, text: EInkShade.white)
             return
         }
-        // Darker app colors get darker shades, so the dashboard keeps a similar feel.
         switch color {
         case .purple: self.init(fill: EInkShade.black, text: EInkShade.white)
-        case .blue, .orange: self.init(fill: EInkShade.darkGray, text: EInkShade.white)
-        case .green, .yellow: self.init(fill: EInkShade.lightGray, text: EInkShade.black)
+        case .blue: self.init(fill: EInkShade.blackDarkGray, text: EInkShade.white)
+        case .orange: self.init(fill: EInkShade.darkGray, text: EInkShade.white)
+        case .green: self.init(fill: EInkShade.lightGray, text: EInkShade.white)
+        case .yellow: self.init(fill: EInkShade.lightGrayWhite, text: EInkShade.black)
         }
     }
 
@@ -259,7 +267,7 @@ private struct EInkRoomStyle {
     }
 }
 
-/// Legend dot with a room's shade.
+/// Legend dot with a room's tone.
 private struct EInkRoomSwatch: View {
     let style: EInkRoomStyle
 
