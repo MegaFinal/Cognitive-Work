@@ -27,9 +27,9 @@ class OnboardingViewModel {
     /// Banner picked for the profile being created.
     var userBanner: ProfileBanner = .default
     /// The name of the house being created
-    var houseName: String = "Minha Casa"
+    var houseName: String = L10n.tr("Minha Casa")
     /// A short description of the house being created
-    var houseDescription: String = "Organização Doméstica"
+    var houseDescription: String = L10n.tr("Organização Doméstica")
     
     /// Whether an asynchronous CloudKit operation is currently in progress
     var isLoading: Bool = false
