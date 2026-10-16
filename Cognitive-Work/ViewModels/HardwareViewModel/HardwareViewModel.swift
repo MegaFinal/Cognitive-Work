@@ -232,7 +232,8 @@ class HardwareViewModel {
         guard let image = renderer.uiImage else {
             throw NSError(domain: "HardwareViewModel", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Failed to render the chart view."])
         }
-        guard let imageData = image.levelBitmap4Gray() else {
+        // The dashboard uses the in-between tones to tell the rooms apart.
+        guard let imageData = image.levelBitmap4Gray(halfTones: true) else {
             throw NSError(domain: "HardwareViewModel", code: 1002, userInfo: [NSLocalizedDescriptionKey: "Failed to convert the chart image into e-paper format."])
         }
         
