@@ -11,7 +11,11 @@ import WeatherKit
 import CloudKit
 
 /// Wall-dashboard view showing every house member's chores for the target day, one column per
-/// user, colored by the room each chore belongs to.
+/// user, shaded by the room each chore belongs to.
+///
+/// The image goes to a 4-level grayscale e-paper (see `UIImage.levelBitmap4Gray()`), so the
+/// rooms use the shades of ``EInkRoomStyle`` instead of their app colors, which all collapsed
+/// into similar grays there.
 ///
 /// Which day that is comes from ``HardwareDailyChoresViewModel/dayOffsetFromToday`` — currently
 /// tomorrow, on purpose, while the e-paper flow is being tested.
@@ -31,7 +35,8 @@ struct HardwareDailyChoresView: View {
             legend
         }
         .padding(.vertical)
-        // Rendered to an image for the e-paper device; never meant for VoiceOver.
+        .foregroundStyle(EInkShade.black)
+        .environment(\.colorScheme, .light)
         .accessibilityHidden(true)
         .task {
             guard viewModel.userGroups.isEmpty else { return }
@@ -46,12 +51,11 @@ struct HardwareDailyChoresView: View {
         HStack {
             HStack(alignment: .firstTextBaseline) {
                 Text("Tarefas do Dia,")
-                    .font(.title)
+                    .font(.largeTitle)
                     .bold()
-                // Was `todayDateFormatted`, which printed `Date()` while the table below listed
-                // the target day — so the header contradicted its own content.
+
                 Text(viewModel.targetDateFormatted)
-                    .font(.title2)
+                    .font(.title)
             }
             
             Spacer()
@@ -80,16 +84,15 @@ struct HardwareDailyChoresView: View {
         .padding(.horizontal)
     }
 
-    /// Color legend
+    /// Room legend, with the same fill and border as the cards.
     private var legend: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 20) {
             ForEach(viewModel.roomsInUse) { room in
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(room.color.uiColor)
-                        .frame(width: 10, height: 10)
+                    EInkRoomSwatch(style: EInkRoomStyle(room: room))
                     Text(room.name.localizedDefault)
-                        .font(.footnote)
+                        .font(.title2)
+                        .foregroundStyle(.black)
                 }
             }
         }
@@ -122,15 +125,16 @@ private struct UserDailyChoresColumn: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(group.user.name)
-                    .font(.title3)
+                    .font(.title)
                     .fontWeight(.bold)
                 
                 Spacer()
                 
                 Text(group.shareOfDayFormatted)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.title3)
+                    .foregroundStyle(.black)
             }
+            .padding(.trailing, 5)
 
             if group.chores.isEmpty {
                 emptyState
@@ -153,7 +157,7 @@ private struct UserDailyChoresColumn: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("Sem tarefas por hoje")
-                .font(.subheadline)
+                .font(.title2)
                 .fontWeight(.bold)
                 // No line limit: wraps onto as many lines as it needs instead of "…".
                 .fixedSize(horizontal: false, vertical: true)
@@ -161,44 +165,40 @@ private struct UserDailyChoresColumn: View {
             // Makes card expand when there's only one chore
             Spacer(minLength: 0)
         }
-        .foregroundColor(.gray.opacity(0.7))
+        // Plain white with dark gray text: no fill or border, so it never reads as a room.
+        .foregroundColor(EInkShade.darkGray)
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(.gray.opacity(0.2))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(EInkShade.white)
     }
 }
 
-/// A single chore, styled with the background color of the room it belongs to
+/// A single chore, styled with the e-ink style of the room it belongs to
 private struct DailyChoreCard: View {
     var chore: ChoreModel
     var room: RoomModel?
 
-    private var backgroundColor: Color {
-        room?.color.uiColor ?? Color(.systemGray4)
-    }
+    private var style: EInkRoomStyle { EInkRoomStyle(room: room) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(room?.name.localizedDefault ?? L10n.tr("Sem cômodo"))
-                .font(.caption)
+                .font(.title3)
                 .fontWeight(.medium)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(chore.localizedName)
-                .font(.headline)
+                .font(.title)
                 .fontWeight(.bold)
-                // No line limit: long names (mostly in English) wrap onto as many lines as
-                // they need instead of being cut with "…".
                 .fixedSize(horizontal: false, vertical: true)
 
             // Makes card expand when there's only one chore
             Spacer(minLength: 0)
         }
-        .foregroundColor(.white)
+        .foregroundColor(style.text)
         .padding(10)
         .frame(maxWidth: .infinity, minHeight: 55, alignment: .topLeading)
-        .background(backgroundColor)
+        .background(style.fill)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
@@ -209,111 +209,149 @@ private struct OverflowStrip: View {
 
     var body: some View {
         Text(verbatim: "+" + L10n.tr("%lld tarefas", count))
-            .font(.caption)
+            .font(.title)
             .fontWeight(.semibold)
-            .foregroundColor(.secondary)
+            .foregroundColor(EInkShade.darkGray)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 2)
-            .background(Color(.systemGray5))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .background(EInkShade.white)
     }
 }
 
+// MARK: - E-ink palette
 
-//
-//#if DEBUG
-//
-//// MARK: - Dados de exemplo
-//
-///// Os dados ficam numa função normal (e não dentro do `#Preview`) porque o corpo do
-///// `#Preview` é um result builder: `return`, `var` mutado, `func` locais e
-///// atribuições soltas (`x.recordID = ...`) quebram a compilação lá dentro.
-//@MainActor
-//private enum HardwareDailyChoresPreviewData {
-//
-//    static func makeViewModel() -> HardwareDailyChoresViewModel {
-//        // MARK: rooms
-//        func makeRoom(_ name: String, color: RoomColor, id: String) -> RoomModel {
-//            var room = RoomModel(name: name, symbol: "fish", color: color)
-//            room.recordID = CKRecord.ID(recordName: "preview-\(id)")
-//            return room
-//        }
-//
-//        let banheiro      = makeRoom("Banheiro",        color: .purple, id: "banheiro")
-//        let cozinha       = makeRoom("Cozinha",         color: .blue,   id: "cozinha")
-//        let salaDeEstar   = makeRoom("Sala de estar",   color: .green,  id: "sala")
-//        let areaDeServico = makeRoom("Área de serviço", color: .yellow, id: "area")
-//        let quarto        = makeRoom("Quarto",          color: .orange, id: "quarto")
-//
-//        // MARK: users
-//        func makeUser(_ name: String) -> UserModel {
-//            let user = UserModel(name: name, tier: .tier1, ownerRecordName: "preview-\(name)")
-//            user.recordID = CKRecord.ID(recordName: "preview-user-\(name)")
-//            return user
-//        }
-//
-//        let jones   = makeUser("Jones")
-//        let isabela = makeUser("Isabela")
-//        let carol   = makeUser("Carol")
-//        let anshu   = makeUser("Anshu")
-//        let dayo    = makeUser("Dayô") // sem tarefas: mostra o "Sem tarefas por hoje"
-//
-//        // MARK: chores
-//        func makeChore(_ name: String, room: RoomModel, responsible: UserModel, duration: Double) -> ChoreModel {
-//            let chore = ChoreModel(
-//                name: name,
-//                description: "",
-//                dueDate: Date(),
-//                frequency: .daily,
-//                duration: duration,
-//                isPublic: true,
-//                priorityTag: .medium,
-//                currentResponsible: responsible.recordID.map { CKRecord.Reference(recordID: $0, action: .none) },
-//                roomReference: room.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
-//            )
-//            chore.recordID = CKRecord.ID(recordName: "preview-chore-\(UUID().uuidString)")
-//            return chore
-//        }
-//
-//        let chores: [ChoreModel] = [
-//            // Jones
-//            makeChore("Lavar Box",               room: banheiro,      responsible: jones,   duration: 15),
-//            makeChore("Lavar louça do domingo",  room: cozinha,       responsible: jones,   duration: 20),
-//            makeChore("Regar as plantas",        room: quarto,        responsible: jones,   duration: 10),
-//
-//            // Isabela
-//            makeChore("Lavar roupas brancas",    room: areaDeServico, responsible: isabela, duration: 40),
-//            makeChore("Lavar chão",              room: banheiro,      responsible: isabela, duration: 15),
-//            makeChore("Tirar o lixo",            room: banheiro,      responsible: isabela, duration: 5),
-//
-//            // Carol
-//            makeChore("Lavar louça do jantar",   room: cozinha,       responsible: carol,   duration: 20),
-//            makeChore("Passar pano",             room: salaDeEstar,   responsible: carol,   duration: 15),
-//            makeChore("Dobrar as roupas",        room: areaDeServico, responsible: carol,   duration: 25),
-//
-//            // Anshu (5 tarefas: testa o limite de 3 cards + faixa "+2 tarefas")
-//            makeChore("Jogar água nas plantas",  room: quarto,        responsible: anshu,   duration: 5),
-//            makeChore("Tirar o lixo",            room: cozinha,       responsible: anshu,   duration: 5),
-//            makeChore("Cozinhar almoço",         room: cozinha,       responsible: anshu,   duration: 45),
-//            makeChore("Lavar panelas",           room: cozinha,       responsible: anshu,   duration: 20),
-//            makeChore("Organizar geladeira",     room: cozinha,       responsible: anshu,   duration: 15),
-//        ]
-//
-//        return HardwareDailyChoresViewModel(
-//            chores: chores,
-//            users: [jones, isabela, carol, anshu, dayo],
-//            rooms: [banheiro, cozinha, salaDeEstar, areaDeServico, quarto]
-//        )
-//    }
-//}
-//
-//// MARK: - Preview
-//
-//// A view usa GeometryReader, então precisa de um tamanho definido (senão colapsa).
-//// Ajuste width/height para a resolução real do seu e-paper.
-//#Preview("Painel (paisagem)", traits: .fixedLayout(width: 800, height: 480)) {
-//    HardwareDailyChoresView(viewModel: HardwareDailyChoresPreviewData.makeViewModel())
-//        .background(Color.white)
-//}
-//
-//#endif
+/// The four levels the e-paper can show. Each value sits in the middle of the brightness band
+/// `levelBitmap4Gray()` maps it to (0–63, 64–127, 128–191, 192–255), so antialiasing or a slight
+/// rendering difference never pushes a card into the neighbouring level.
+private enum EInkShade {
+    static let black = Color(white: 0)
+    static let darkGray = Color(white: 96 / 255)
+    static let lightGray = Color(white: 160 / 255)
+    static let white = Color(white: 1)
+}
+
+/// How a room's cards look on the e-paper.
+///
+/// The display has four levels and the background takes white, so only black, dark gray and
+/// light gray stand out as card fills. With five room colors, two shades are shared; the room
+/// name on each card (and the legend) still tells them apart. Text is always the opposite end
+/// of the scale from the fill, for maximum contrast.
+private struct EInkRoomStyle {
+    let fill: Color
+    let text: Color
+
+    init(room: RoomModel?) {
+        guard let color = room?.color else {
+            self.init(fill: EInkShade.lightGray, text: EInkShade.black)
+            return
+        }
+        // Darker app colors get darker shades, so the dashboard keeps a similar feel.
+        switch color {
+        case .purple: self.init(fill: EInkShade.black, text: EInkShade.white)
+        case .blue, .orange: self.init(fill: EInkShade.darkGray, text: EInkShade.white)
+        case .green, .yellow: self.init(fill: EInkShade.lightGray, text: EInkShade.black)
+        }
+    }
+
+    private init(fill: Color, text: Color) {
+        self.fill = fill
+        self.text = text
+    }
+}
+
+/// Legend dot with a room's shade.
+private struct EInkRoomSwatch: View {
+    let style: EInkRoomStyle
+
+    var body: some View {
+        Circle()
+            .fill(style.fill)
+            .frame(width: 22, height: 22)
+    }
+}
+
+@MainActor
+private enum HardwareDailyChoresPreviewData {
+
+    static func makeViewModel() -> HardwareDailyChoresViewModel {
+        // MARK: rooms
+        func makeRoom(_ name: String, color: RoomColor, id: String) -> RoomModel {
+            var room = RoomModel(name: name, symbol: "fish", color: color)
+            room.recordID = CKRecord.ID(recordName: "preview-\(id)")
+            return room
+        }
+
+        let banheiro      = makeRoom("Banheiro",        color: .purple, id: "banheiro")
+        let cozinha       = makeRoom("Cozinha",         color: .blue,   id: "cozinha")
+        let salaDeEstar   = makeRoom("Sala de estar",   color: .green,  id: "sala")
+        let areaDeServico = makeRoom("Área de serviço", color: .yellow, id: "area")
+        let quarto        = makeRoom("Quarto",          color: .orange, id: "quarto")
+
+        // MARK: users
+        func makeUser(_ name: String) -> UserModel {
+            let user = UserModel(name: name, tier: .tier1, ownerRecordName: "preview-\(name)")
+            user.recordID = CKRecord.ID(recordName: "preview-user-\(name)")
+            return user
+        }
+
+        let jones   = makeUser("Jones")
+        let isabela = makeUser("Isabela")
+        let carol   = makeUser("Carol")
+        let anshu   = makeUser("Anshu")
+        let dayo    = makeUser("Dayô") // sem tarefas: mostra o "Sem tarefas por hoje"
+
+        // MARK: chores
+        func makeChore(_ name: String, room: RoomModel, responsible: UserModel, duration: Double) -> ChoreModel {
+            let chore = ChoreModel(
+                name: name,
+                description: "",
+                dueDate: Date(),
+                frequency: .daily,
+                duration: duration,
+                isPublic: true,
+                priorityTag: .medium,
+                currentResponsible: responsible.recordID.map { CKRecord.Reference(recordID: $0, action: .none) },
+                roomReference: room.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+            )
+            chore.recordID = CKRecord.ID(recordName: "preview-chore-\(UUID().uuidString)")
+            return chore
+        }
+
+        let chores: [ChoreModel] = [
+            // Jones
+            makeChore("Lavar Box",               room: banheiro,      responsible: jones,   duration: 15),
+            makeChore("Lavar louça do domingo",  room: cozinha,       responsible: jones,   duration: 20),
+            makeChore("Regar as plantas",        room: quarto,        responsible: jones,   duration: 10),
+
+            // Isabela
+            makeChore("Lavar roupas brancas",    room: areaDeServico, responsible: isabela, duration: 40),
+            makeChore("Lavar chão",              room: banheiro,      responsible: isabela, duration: 15),
+            makeChore("Tirar o lixo",            room: banheiro,      responsible: isabela, duration: 5),
+
+            // Carol
+            makeChore("Lavar louça do jantar",   room: cozinha,       responsible: carol,   duration: 20),
+            makeChore("Passar pano",             room: salaDeEstar,   responsible: carol,   duration: 15),
+            makeChore("Dobrar as roupas",        room: areaDeServico, responsible: carol,   duration: 25),
+
+            // Anshu (5 tarefas: testa o limite de 3 cards + faixa "+2 tarefas")
+            makeChore("Jogar água nas plantas",  room: quarto,        responsible: anshu,   duration: 5),
+            makeChore("Tirar o lixo",            room: cozinha,       responsible: anshu,   duration: 5),
+            makeChore("Cozinhar almoço",         room: cozinha,       responsible: anshu,   duration: 45),
+            makeChore("Lavar panelas",           room: cozinha,       responsible: anshu,   duration: 20),
+            makeChore("Organizar geladeira",     room: cozinha,       responsible: anshu,   duration: 15),
+        ]
+
+        return HardwareDailyChoresViewModel(
+            chores: chores,
+            users: [jones, isabela, carol, anshu, dayo],
+            rooms: [banheiro, cozinha, salaDeEstar, areaDeServico, quarto]
+        )
+    }
+}
+
+// MARK: - Preview
+
+#Preview("Painel (paisagem)", traits: .fixedLayout(width: 800, height: 480)) {
+    HardwareDailyChoresView(viewModel: HardwareDailyChoresPreviewData.makeViewModel())
+        .background(Color.white)
+}

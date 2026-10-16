@@ -118,28 +118,31 @@ class DashboardViewModel {
         await load(afterRemoteChange: true)
     }
     
-    /// Builds every card from ``HouseDataStore``. The store fetches only if it is stale, so
-    /// opening the tab (or reacting to a change that another tab already loaded) costs no
-    /// extra request.
+    /// Builds every card from ``HouseDataStore``.=
     @MainActor
     func load(afterRemoteChange: Bool = false) async {
         let store = HouseDataStore.shared
-        var snapshot = afterRemoteChange
-            ? await store.refreshAfterRemoteChange()
-            : await store.load()
         
-        // A fetch that was already running when the change arrived can return the old data.
-        // The store flags that snapshot as stale, so ask once more to get the new one.
-        if !store.isUpToDate, !Task.isCancelled {
-            snapshot = await store.load()
+        if let cached = store.snapshot, needsRebuild(for: cached) {
+            await build(from: cached)
+            guard !Task.isCancelled else { return }
         }
+        
+        let snapshot = afterRemoteChange
+            ? await store.refreshAfterRemoteChange()
+            : await store.loadLatest()
         guard !Task.isCancelled else { return }
         
-        guard needsRebuild(for: snapshot) else {
+        if needsRebuild(for: snapshot) {
+            await build(from: snapshot)
+        } else {
             isLoading = false
-            return
         }
-        
+    }
+    
+    /// Rebuilds every card from `snapshot`.
+    @MainActor
+    private func build(from snapshot: HouseSnapshot) async {
         // `snapshot.houseUser` comes from CloudKitManager's per-session cache, which is never
         // refreshed: it is a different object from the one ScoreManager updates, so its points
         // stay frozen. The same record inside `userRecords` was fetched in this very pass.

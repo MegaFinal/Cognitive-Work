@@ -60,6 +60,10 @@ struct DashboardView: View {
             .opacity(viewModel.isLoading ? 0 : 1)
             // Invisible while loading, so VoiceOver must not reach it either.
             .accessibilityHidden(viewModel.isLoading)
+            // Only on a cold start without data in memory; otherwise the cards draw at once.
+            .overlay {
+                if viewModel.isLoading { ProgressView() }
+            }
         }
         // Local changes: `markDataChanged()` bumps `dataRevision`.
         .task(id: CloudKitManager.shared.dataRevision) {

@@ -121,32 +121,10 @@ struct ChoreCardListStyle: View {
                         .padding(.leading, 4)
                         .padding(.bottom, 8)
                         
-                        HStack(spacing: 8) {
-                            // MARK: - Tags
-                            CapsuleTag(
-                                tagName: chore.frequency.displayName,
-                                tagColor: chore.frequency.color,
-                                textColor: chore.frequency.textColor,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                            
-                            CapsuleTag(
-                                tagName: chore.priorityTag.displayName,
-                                tagColor: chore.priorityTag.color,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                            
-                            CapsuleTag(
-                                tagName: ChoreDurationTier.from(minutes: chore.duration).displayText,
-                                tagColor: ChoreDurationTier.from(minutes: chore.duration).color,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                        }
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        // MARK: - Tags
+                        ChoreTagsRow(chore: chore, spacing: 8, horizontalPadding: 7.0, verticalPadding: 1.0)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                     
                     // MARK: - Room name, chore name and completion button
