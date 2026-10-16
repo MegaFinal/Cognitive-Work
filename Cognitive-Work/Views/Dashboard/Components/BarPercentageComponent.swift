@@ -212,7 +212,7 @@ struct BarPercentageComponent: View {
     
     // MARK: - Chart Caption
     
-    private func caption(_ text: String,_ color: Color) -> some View {
+    private func caption(_ text: LocalizedStringKey, _ color: Color) -> some View {
         HStack(spacing: 6) {
             Circle()
                 .frame(width: width * 0.03)

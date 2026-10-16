@@ -56,7 +56,7 @@ struct DevicePairView: View {
         // The button only shows a spinner while pairing: say it out loud. The result comes in
         // the alert below, which VoiceOver reads by itself.
         .onChange(of: hardwareViewModel.isPairing) { _, isPairing in
-            if isPairing { VoiceOver.announce(L10n.tr("Pareando com o Harvi…")) }
+            if isPairing { VoiceOver.announce(L10n.tr("Pareando com o Harvii…")) }
         }
         .alert(
             hardwareViewModel.conectionResult?.title ?? "",

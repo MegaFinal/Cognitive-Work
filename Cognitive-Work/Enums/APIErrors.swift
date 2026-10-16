@@ -17,7 +17,7 @@ enum APIErrors: String, Error {
         case .invalidURL:      return L10n.tr("Não foi possível encontrar o dispositivo externo. Confira o IP.")
         case .unableToEncode:  return L10n.tr("Erro ao preparar os dados.")
         case .invalidResponse: return L10n.tr("O dispositivo externo não respondeu como esperado.")
-        case .invalidData:  return "Resposta do dispositivo externo em formato inesperado."
+        case .invalidData:     return L10n.tr("Resposta do dispositivo externo em formato inesperado.")
         case .unknownError: return L10n.tr("Erro desconhecido.")
         }
     }
