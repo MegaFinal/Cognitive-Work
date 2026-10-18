@@ -23,45 +23,21 @@ struct ChoresViewButtonsSection: View {
         HStack {
             Spacer()
             
-            Button {
+            FloatingActionButton(systemImage: "hand.tap", symbolSize: 32, foreground: .black, tint: nil) {
                 carouselViewModel.toggleUnassignedList()
-            } label: {
-                Image(systemName: "hand.tap")
-                    .font(.system(size: 32))
-                    .padding(17)
-                    .foregroundColor(.black)
-                    .contentShape(Circle())
             }
-            .buttonStyle(.plain)
             .voiceOverLabel(L10n.tr("Tarefas para pegar"))
             .voiceControlNames([L10n.tr("Tarefas para pegar"), L10n.tr("Pegar tarefa"), L10n.tr("Tarefas sem responsável")])
             .voiceOverHint(L10n.tr("Mostra as tarefas sem responsável."))
             .voiceOverValue(carouselViewModel.isShowingUnassignedList ? L10n.tr("expandido") : L10n.tr("recolhido"))
-            .glassEffect(
-                .regular.interactive(),
-                in: .circle
-            )
             
-            
-            Button {
+            FloatingActionButton(systemImage: "plus") {
                 showCreateView = true
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 28))
-                    .foregroundColor(.white)
-                    .padding(20)
-                    .contentShape(Circle())
             }
-            .buttonStyle(.plain)
             .voiceOverLabel(L10n.tr("Nova tarefa"))
             .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Nova tarefa"), L10n.tr("Adicionar tarefa")])
-            .glassEffect(
-                .regular.interactive().tint(.black),
-                in: .circle
-            )
         }
-        .padding(.horizontal, 30)
-        .padding(.bottom)
+        .floatingActionPlacement()
         .navigationDestination(isPresented: $showCreateView) {
             CreateAndEditChoreView(
                 originalModel: ChoreModel(

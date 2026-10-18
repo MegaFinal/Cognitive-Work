@@ -71,9 +71,6 @@ struct PixKeySettingsView: View {
         }
         .animation(.spring(duration: 0.35), value: showSavedToast)
         .animation(.snappy, value: viewModel.pixKeyError)
-        .overlay {
-            if viewModel.isSaving { ProgressView() }
-        }
         .confirmationDialog("Remover chave Pix?", isPresented: $isConfirmingRemoval, titleVisibility: .visible) {
             Button("Remover", role: .destructive) {
                 viewModel.editedPixKey = ""

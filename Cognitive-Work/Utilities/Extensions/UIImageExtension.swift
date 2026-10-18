@@ -285,8 +285,12 @@ extension UIImage {
     ///
     /// 2 bits per pixel means 4 pixels fit in each byte, so the buffer is (width × height) / 4 bytes.
     ///
+    /// - Parameter halfTones: When `true`, also shows the three tones *between* the four levels
+    ///   (see ``eInkHalfTones``) as a checkerboard of the two neighbouring levels, which the eye
+    ///   reads as the shade in between: 7 tones instead of 4. Done here, on the final pixel grid,
+    ///   because a pattern drawn in SwiftUI can land half a pixel off and blend into one gray.
     /// - Returns: The Data object of 96,000 bytes.
-    func levelBitmap4Gray() -> Data? {
+    func levelBitmap4Gray(halfTones: Bool = false) -> Data? {
 
         // ------------------------------------- Setup variables -------------------------------------
         // Same source-buffer setup as levelBitmap — see that function for the details.
@@ -334,6 +338,11 @@ extension UIImage {
 
         var grayBuffer = [UInt8](repeating: 0, count: bytesTotal)
 
+        // Half-tone mode: for each brightness, the level of the even and of the odd pixels.
+        let halfToneTable: [(even: UInt8, odd: UInt8)] = halfTones
+            ? (0...255).map { UIImage.halfToneLevels(forBrightness: $0) }
+            : []
+
         for y in 0..<ePaperHeight {
             for x in 0..<ePaperWidth {
 
@@ -350,7 +359,10 @@ extension UIImage {
                 // Maps brightness to a 2-bit value:
                 //   0 = black, 1 = dark gray, 2 = light gray, 3 = white
                 let level: UInt8
-                if brightness < 64 {
+                if halfTones {
+                    let levels = halfToneTable[brightness]
+                    level = (x + y) & 1 == 0 ? levels.even : levels.odd
+                } else if brightness < 64 {
                     level = 0            // black
                 } else if brightness < 128 {
                     level = 1            // dark gray
@@ -375,5 +387,24 @@ extension UIImage {
         }
 
         return Data(grayBuffer)   // 96,000 bytes
+    }
+
+    /// The 7 tones ``levelBitmap4Gray(halfTones:)`` can show: the brightness a view should paint
+    /// (0–255) and the 2-bit levels used on even and odd pixels (0 black … 3 white). Equal levels
+    /// are the panel's own tones; different ones are the checkerboard tones between them.
+    static let eInkHalfTones: [(brightness: Int, even: UInt8, odd: UInt8)] = [
+        (0, 0, 0),      // black
+        (48, 0, 1),     // black / dark gray
+        (96, 1, 1),     // dark gray
+        (128, 1, 2),    // dark gray / light gray
+        (160, 2, 2),    // light gray
+        (208, 2, 3),    // light gray / white
+        (255, 3, 3),    // white
+    ]
+
+    /// The tone nearest to `brightness`, as the levels of its even and odd pixels.
+    private static func halfToneLevels(forBrightness brightness: Int) -> (even: UInt8, odd: UInt8) {
+        let tone = eInkHalfTones.min { abs($0.brightness - brightness) < abs($1.brightness - brightness) }!
+        return (tone.even, tone.odd)
     }
 }
