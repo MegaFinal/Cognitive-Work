@@ -66,4 +66,14 @@ enum Recurrence: String, CaseIterable, Hashable {
         case .undefined: return L10n.tr("indefinida")
         }
     }
+
+    /// How many times a chore of this frequency happens in one cycle (two weeks). Used to price
+    /// coupons (see ``CouponPricing``).
+    var occurrencesPerCycle: Double {
+        switch self {
+        case .daily: return 14
+        case .weekly: return 2
+        case .fortnightly, .monthly, .none, .undefined: return 1
+        }
+    }
 }

@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct RetroView: View {
+    /// Loaded by the presenting screen before the retrospective opens.
+    let viewModel: RetroViewModel
     @State var isExpanded: Bool = false
     @State var isRetroDone: Bool = false
     @State var page = 0
@@ -36,7 +38,7 @@ struct RetroView: View {
                                     .tag(0)
                                 RetroStreakView(page: $page, isRetroDone: $isRetroDone)
                                     .tag(1)
-                                RetroPointsView(page: $page, isRetroDone: $isRetroDone)
+                                RetroPointsView(page: $page, isRetroDone: $isRetroDone, viewModel: viewModel)
                                     .tag(2)
                                 RetroRoomsView(isExpanded: $isExpanded, isRetroDone: $isRetroDone)
                                     .tag(3)
@@ -333,6 +335,7 @@ private struct RetroStreakView: View {
 private struct RetroPointsView: View {
     @Binding var page: Int
     @Binding var isRetroDone: Bool
+    let viewModel: RetroViewModel
     
     var body: some View {
         VStack {
@@ -362,6 +365,10 @@ private struct RetroPointsView: View {
                 .font(.callout)
                 .foregroundStyle(.gray) //arrumar o cinza depois
                 .padding(.bottom, height * 0.093)
+
+            // Coins earned by rank in the cycle that ended.
+            RetroCoinsRedeemButton(viewModel: viewModel)
+                .padding(.bottom, height * 0.014)
 
             
             Button {
@@ -553,5 +560,5 @@ struct RetroNewChoresDivision: View {
 }
 
 #Preview {
-    RetroView()
+    RetroView(viewModel: RetroViewModel())
 }

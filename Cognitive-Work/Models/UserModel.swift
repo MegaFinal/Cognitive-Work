@@ -50,14 +50,28 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// The user's Pix key, so housemates can pay what they owe. `nil` until it is set.
     var pixKey: String?
     
-    /// Progression level reached by the user.
+    /// Rank in the current cycle. Always derived from ``points``; not saved.
     var tier: Tier
     
-    /// Currency available to redeem coupons.
+    /// Legacy coin balance.
+    ///
+    /// > Important: no longer the source of truth — coins live in ``CoinWalletModel``, which only
+    /// > the purchase and payout flows write. This field is still written by every
+    /// > ``populate(record:)`` (e.g. each profile edit), so a value read here can be stale.
+    /// > It only seeds a wallet the first time one is created.
     var coins: Int
     
-    /// Score accumulated from completed chores.
-    var points: Int
+    /// Points in the current cycle — an in-memory copy of the person's ``UserScoreModel``.
+    ///
+    /// > Important: not saved by ``populate(record:)``. Points change only through
+    /// > ``ScoreManager`` and ``CycleSettlementService``, which write the ``UserScoreModel``;
+    /// > ``HouseDataStore`` copies it here on every load. Decoding a record reads its old `points`
+    /// > field (the legacy value, which seeds the score the first time one is created).
+    ///
+    /// ``tier`` follows it: every change recomputes the rank (see ``Tier/init(points:)``).
+    var points: Int {
+        didSet { tier = Tier(points: points) }
+    }
     
     /// References to the badges the user has earned.
     var badgesReference: [CKRecord.Reference]?
@@ -119,15 +133,15 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
-    /// - Returns: `nil` when `name`, `coins`, `points`, or `couponLimit` is missing.
+    /// - Returns: `nil` when `name`, `coins`, or `couponLimit` is missing.
     ///
-    /// Unknown or missing ``Tier`` values fall back to `.tier1`; missing collections decode as
-    /// empty or `nil` rather than failing.
+    /// `points` is the legacy field (0 when absent, as on records created after scores moved to
+    /// ``UserScoreModel``) and ``tier`` is derived from it; missing collections decode as empty or
+    /// `nil` rather than failing.
     required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
             let coins = record["coins"] as? Int,
-            let points = record["points"] as? Int,
             let couponLimit = record["couponLimit"] as? Int,
             let ownerRecordName = record["ownerRecordName"] as? String
         else {
@@ -137,9 +151,12 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.recordID = record.recordID
         self.name = name
         self.coins = coins
+        let points = record["points"] as? Int ?? 0
         self.points = points
         self.couponLimit = couponLimit
-        self.tier = Tier(rawValue: record["tier"] as? String ?? "") ?? .tier1
+        // The rank is derived from the points, not read from the record, so it is right even
+        // for records saved before ranks followed the points.
+        self.tier = Tier(points: points)
         self.profilePicture = record["profilePicture"] as? CKAsset
         self.banner = ProfileBanner(
             storedColor: record["bannerColor"] as? String,
@@ -207,9 +224,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         record["bannerPattern"] = banner.pattern.rawValue
         // Written even when `nil`, so removing the key clears it on the record too.
         record["pixKey"] = pixKey
-        record["tier"] = tier.rawValue
         record["coins"] = coins
-        record["points"] = points
+        // `points` and `tier` are deliberately not written: they live in `UserScoreModel`.
         if let badgesReference {
             record["badges"] = badgesReference
         }

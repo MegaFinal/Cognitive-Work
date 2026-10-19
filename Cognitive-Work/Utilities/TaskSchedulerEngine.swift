@@ -38,6 +38,10 @@ struct TaskSchedulerEngine {
         // houseZoneID is independent of chores/users, so initiate it early to run concurrently with the next two steps
         async let houseTask = CloudKitManager.shared.fetchFirst(HouseModel.self)
         
+        // Coupon holders are spared their chore in this division (see `CouponExemption`).
+        // Must be read before this run records its own cycle below.
+        async let exemptionsTask = Self.loadCouponExemptions()
+        
         // Chores scheduled before the fix above may still be pointing at daily-assignment
         // records that live in the wrong zone and are now unreadable. Clear those stale
         // references so they're picked up by the `recurringChores` filter below and
@@ -54,7 +58,9 @@ struct TaskSchedulerEngine {
             windowEnd: windowEnd
         )
         // houseZoneID's result is only truly needed here (used by commitScheduleResults), by which time it is most likely ready
-        let houseZoneID = (try? await houseTask)?.recordID?.zoneID
+        let house = try? await houseTask
+        let houseZoneID = house?.recordID?.zoneID
+        let exemptions = await exemptionsTask
         
         // Define the set of recurring frequencies
         let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly, .monthly]
@@ -83,9 +89,17 @@ struct TaskSchedulerEngine {
         
         // Divide the sorted chores into two categories:
         // - Chores that already have a specific assigned responsible user
-        let assignedChores = sortedChores.filter { $0.currentResponsibleReference != nil }
+        // A chore whose fixed responsible holds its coupon is handed to someone else this time,
+        // so it is scheduled as a free chore.
+        let isSparedResponsible: (ChoreModel) -> Bool = { chore in
+            guard let choreID = chore.recordID,
+                  let responsibleID = chore.currentResponsibleReference?.recordID
+            else { return false }
+            return exemptions[choreID]?.contains(responsibleID) ?? false
+        }
+        let assignedChores = sortedChores.filter { $0.currentResponsibleReference != nil && !isSparedResponsible($0) }
         // - "Free" chores without a defined responsible person, requiring automatic system assignment
-        let freeChores = sortedChores.filter { $0.currentResponsibleReference == nil }
+        let freeChores = sortedChores.filter { $0.currentResponsibleReference == nil || isSparedResponsible($0) }
         
         // Initialize remaining capacity and minutes already assigned to each user
         var remainingCapacity = context.initialRemainingCapacity()
@@ -101,7 +115,8 @@ struct TaskSchedulerEngine {
             context: context,
             now: now,
             remainingCapacity: &remainingCapacity,
-            userAssignedMinutes: &userAssignedMinutes
+            userAssignedMinutes: &userAssignedMinutes,
+            excludedUsersByChore: exemptions
         )
 
         // Schedule chores that already have a specific responsible user
@@ -122,11 +137,18 @@ struct TaskSchedulerEngine {
             now: now,
             windowEnd: windowEnd,
             remainingCapacity: &remainingCapacity,
-            userAssignedMinutes: &userAssignedMinutes
+            userAssignedMinutes: &userAssignedMinutes,
+            excludedUsersByChore: exemptions
         )
         
         // Commit and save the final schedule results to the cloud
         await commitScheduleResults(allResults, users: users, houseZoneID: houseZoneID)
+        
+        // Record the cycle this division covers: `now` through the last day of the window.
+        if let houseID = house?.recordID,
+           let lastDay = calendar.date(byAdding: .day, value: -1, to: windowEnd) {
+            await HouseCycleModel.recordNewDivision(start: now, end: lastDay, houseID: houseID)
+        }
         
         // toogle shouldBeIncluded chores so they can be included on the next 14 days and persists on cloudkit
         await withTaskGroup(of: Void.self) { group in
@@ -137,6 +159,17 @@ struct TaskSchedulerEngine {
                 }
             }
         }
+    }
+    
+    // MARK: - Coupons
+    
+    /// Exemptions for the division about to be generated; empty when there is no house yet.
+    private static func loadCouponExemptions() async -> CouponExemption.Map {
+        guard let zoneID = try? await CloudKitManager.shared.currentHouse()?.recordID?.zoneID else {
+            return [:]
+        }
+        let (coupons, cycles) = await CouponExemption.load(houseZoneID: zoneID)
+        return CouponExemption.forNextDivision(coupons: coupons, cycles: cycles)
     }
     
     // MARK: - Prioritization

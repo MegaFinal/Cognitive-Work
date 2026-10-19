@@ -141,8 +141,8 @@ class DashboardViewModel {
         }
         
         // `snapshot.houseUser` comes from CloudKitManager's per-session cache, which is never
-        // refreshed: it is a different object from the one ScoreManager updates, so its points
-        // stay frozen. The same record inside `userRecords` was fetched in this very pass.
+        // refreshed (only its points are, from `UserScoreModel`). The same record inside
+        // `userRecords` was fetched in this very pass.
         let freshUser = snapshot.userRecords.first { $0.recordID == snapshot.houseUser?.recordID }
         user = freshUser ?? snapshot.houseUser
         houseMembers = snapshot.users

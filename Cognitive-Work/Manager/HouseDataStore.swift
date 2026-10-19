@@ -141,15 +141,20 @@ final class HouseDataStore {
         async let privateUser = cloud.fetchMyUser()
         async let shopList = fetchShopList()
         async let shopItems = cloud.fetchAll(ShopListItem.self)
+        // Points live in `UserScoreModel`; they are copied onto the users below.
+        async let scores = cloud.fetchAll(UserScoreModel.self)
 
         let records = await userRecords
+        let currentUser = await houseUser
+        await UserScoreModel.apply(scores, to: records + [currentUser].compactMap { $0 })
+
         return await HouseSnapshot(
             chores: chores,
             users: cloud.deduplicatedByOwner(records),
             userRecords: records,
             rooms: rooms,
             assignments: assignments,
-            houseUser: houseUser,
+            houseUser: currentUser,
             privateUser: privateUser,
             shopList: shopList,
             shopItems: shopItems

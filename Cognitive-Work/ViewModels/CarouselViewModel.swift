@@ -1373,6 +1373,12 @@ class CarouselViewModel {
         
         guard let myUserID = myUser?.recordID else { return }
         
+        // Whoever holds this chore's coupon is spared it in this cycle.
+        if await CouponExemption.isExempt(userID: myUserID, choreID: item.chore.recordID) {
+            errorMessage = L10n.tr("Você tem o cupom dessa tarefa e não pode pegá-la neste ciclo.")
+            return
+        }
+        
         let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
         
         switch item.choreType {
@@ -1565,6 +1571,13 @@ class CarouselViewModel {
             dashboardUser = myUser
         }
         guard let myUserID = myUser?.recordID else { return false }
+        
+        // Whoever holds this chore's coupon is spared it in this cycle.
+        if await CouponExemption.isExempt(userID: myUserID, choreID: item.chore.recordID) {
+            errorMessage = L10n.tr("Você tem o cupom dessa tarefa e não pode pegá-la neste ciclo.")
+            return false
+        }
+        
         let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
         let chore = item.chore
         

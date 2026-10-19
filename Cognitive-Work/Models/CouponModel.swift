@@ -21,6 +21,10 @@ struct CouponModel: CloudKitSyncable {
     var lastUser: CKRecord.Reference?
     var task: CKRecord.Reference?
     
+    /// Key of the ``HouseCycleModel`` in which ``currentUser`` bought the coupon. The purchase
+    /// spares its holder this chore in the next division generated after that cycle.
+    var purchasedCycleKey: String?
+    
     init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
@@ -36,10 +40,11 @@ struct CouponModel: CloudKitSyncable {
         self.name = name
         self.isOnSale = isOnSale
         self.price = price
-        self.tier = Tier(rawValue: tier) ?? Tier.tier1
+        self.tier = Tier(stored: tier)
         self.currentUser = record["currentUser"] as? CKRecord.Reference
         self.lastUser = record["lastUser"] as? CKRecord.Reference
         self.task = record["task"] as? CKRecord.Reference
+        self.purchasedCycleKey = record["purchasedCycleKey"] as? String
     }
     
     init(
@@ -75,5 +80,54 @@ struct CouponModel: CloudKitSyncable {
         if let task {
             record["task"] = task
         }
+        if let purchasedCycleKey {
+            record["purchasedCycleKey"] = purchasedCycleKey
+        }
+    }
+}
+
+/// Every chore has one coupon, created together with it and listed under the chore's room in the
+/// rewards tab.
+extension CouponModel {
+
+    /// The rank a coupon gets from the chore's ``ChoreModel/score``: the harder the chore, the
+    /// higher the rank, from ``Tier/bronze1`` to ``Tier/diamond3`` in steps of 4 points
+    /// (scores start at about 8). ``Tier/master`` is not given to coupons.
+    static func tier(forScore score: Int) -> Tier {
+        let ranks = Tier.allCases.filter { $0 != .master }
+        let index = min(max((score - 8) / 4, 0), ranks.count - 1)
+        return ranks[index]
+    }
+
+    /// Whether the coupon can be bought in the cycle `latestCycleKey`.
+    ///
+    /// A coupon has one holder at a time. Once a newer cycle exists the purchase has been used
+    /// (or is being used), so anyone can buy it again for the following division.
+    func isAvailable(latestCycleKey: String) -> Bool {
+        guard isOnSale else { return false }
+        guard currentUser != nil, let purchasedCycleKey else { return true }
+        return purchasedCycleKey < latestCycleKey
+    }
+
+    /// Whether `userID` bought this coupon during the cycle `cycleKey`.
+    func isHeld(by userID: CKRecord.ID, inCycle cycleKey: String) -> Bool {
+        currentUser?.recordID == userID && purchasedCycleKey == cycleKey
+    }
+
+    /// A coupon for `chore`, priced by ``CouponPricing`` and pointing at it through ``task``.
+    ///
+    /// The reference uses `.deleteSelf`, so CloudKit deletes the coupon whenever the chore is
+    /// deleted, whichever screen deletes it (including the onboarding rollback).
+    ///
+    /// - Parameter choreRecordID: Record ID of the chore; it may not be saved yet.
+    init(for chore: ChoreModel, choreRecordID: CKRecord.ID) {
+        let score = max(chore.score, 1)
+        self.init(
+            name: chore.name,
+            isOnSale: true,
+            price: CouponPricing.current.price(for: chore),
+            tier: CouponModel.tier(forScore: score),
+            task: CKRecord.Reference(recordID: choreRecordID, action: .deleteSelf)
+        )
     }
 }
