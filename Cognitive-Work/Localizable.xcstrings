@@ -73,6 +73,17 @@
         }
       }
     },
+    "%@ por pessoa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ per person"
+          }
+        }
+      }
+    },
     "%@ removido" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -942,6 +953,16 @@
         }
       }
     },
+    "Adicionar com IA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add with AI"
+          }
+        }
+      }
+    },
     "Adicionar cômodo" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -970,6 +991,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add item"
+          }
+        }
+      }
+    },
+    "Adicionar itens (%lld)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add items (%lld)"
           }
         }
       }
@@ -1606,6 +1638,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "low"
+          }
+        }
+      }
+    },
+    "Baixando o modelo de voz…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading the voice model…"
           }
         }
       }
@@ -2879,6 +2922,16 @@
         }
       }
     },
+    "Descreva o item, a quantidade, o preço e para quem é." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe the item, the quantity, the price and who it's for."
+          }
+        }
+      }
+    },
     "Descrição" : {
       "localizations" : {
         "en" : {
@@ -3405,6 +3458,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Chore"
+          }
+        }
+      }
+    },
+    "Editar texto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit text"
           }
         }
       }
@@ -4054,6 +4117,16 @@
         }
       }
     },
+    "Escreva um item por linha, com quantidade, preço e para quem é." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write one item per line, with quantity, price and who it's for."
+          }
+        }
+      }
+    },
     "Escritório" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4300,6 +4373,26 @@
         }
       }
     },
+    "Ex.:\n2kg de arroz, R$ 25, eu e Ana\ndetergente para todos\n1 L de leite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g.:\n2 kg of rice, R$ 25, me and Ana\ndish soap for everyone\n1 L of milk"
+          }
+        }
+      }
+    },
+    "Ex.: 2kg de arroz, R$ 25, eu e Ana" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g.: 2 kg of rice, R$ 25, me and Ana"
+          }
+        }
+      }
+    },
     "Excluindo cômodo..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4510,6 +4603,17 @@
         }
       }
     },
+    "Falar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speak"
+          }
+        }
+      }
+    },
     "Falha na conexão" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4691,6 +4795,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Generating link"
+          }
+        }
+      }
+    },
+    "Gerar itens" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create items"
           }
         }
       }
@@ -4878,6 +4993,17 @@
         }
       }
     },
+    "IA" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI"
+          }
+        }
+      }
+    },
     "Ícone" : {
       "localizations" : {
         "en" : {
@@ -4904,6 +5030,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Language"
+          }
+        }
+      }
+    },
+    "Idioma da fala" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speech language"
           }
         }
       }
@@ -4937,6 +5074,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "important"
+          }
+        }
+      }
+    },
+    "Incluir %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Include %@"
           }
         }
       }
@@ -5827,6 +5975,17 @@
         }
       }
     },
+    "Microfone" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone"
+          }
+        }
+      }
+    },
     "Microinterações" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6169,6 +6328,17 @@
         }
       }
     },
+    "Não entendi. Tente de novo." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I didn't catch that. Try again."
+          }
+        }
+      }
+    },
     "Não foi possível acessar sua conta do iCloud. Verifique se você está conectado e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6364,6 +6534,16 @@
         }
       }
     },
+    "Não foi possível preencher. Preencha manualmente." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't fill it in. Please fill it in manually."
+          }
+        }
+      }
+    },
     "Não foi possível preparar o convite" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6480,6 +6660,17 @@
         }
       }
     },
+    "Não foi possível usar o microfone." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't use the microphone."
+          }
+        }
+      }
+    },
     "Nenhum" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6497,6 +6688,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No default room was selected for the home."
+          }
+        }
+      }
+    },
+    "Nenhum item encontrado. Tente escrever de outro jeito." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No items found. Try writing it differently."
           }
         }
       }
@@ -7282,6 +7484,28 @@
         }
       }
     },
+    "Ouvindo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening"
+          }
+        }
+      }
+    },
+    "Ouvindo… toque para parar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening… tap to stop"
+          }
+        }
+      }
+    },
     "pacote" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7494,6 +7718,49 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "To use %@ you need to accept the Terms of Use. If you change your mind, just review them again: the home will be waiting for you."
+          }
+        }
+      }
+    },
+    "Para: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For: %@"
+          }
+        }
+      }
+    },
+    "Para: todos (não informado)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For: everyone (not specified)"
+          }
+        }
+      }
+    },
+    "Parar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
+          }
+        }
+      }
+    },
+    "Parar de ouvir" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop listening"
           }
         }
       }
@@ -7787,6 +8054,17 @@
         }
       }
     },
+    "Permita o microfone e o reconhecimento de fala nos Ajustes." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow the microphone and speech recognition in Settings."
+          }
+        }
+      }
+    },
     "Permitir Notificações" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7913,6 +8191,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Price per unit (R$ 0.00)"
+          }
+        }
+      }
+    },
+    "Preencher" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fill in"
+          }
+        }
+      }
+    },
+    "Preencher com IA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fill in with AI"
           }
         }
       }
@@ -8367,6 +8665,17 @@
         }
       }
     },
+    "Reconhecimento de fala indisponível agora." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speech recognition isn't available right now."
+          }
+        }
+      }
+    },
     "Recusa os termos e fecha o acesso ao app" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8693,6 +9002,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Review terms"
+          }
+        }
+      }
+    },
+    "Revise os itens antes de adicionar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the items before adding them."
           }
         }
       }
@@ -9333,6 +9652,17 @@
         }
       }
     },
+    "Sugerido automaticamente" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggested automatically"
+          }
+        }
+      }
+    },
     "Tarefa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9831,6 +10161,17 @@
         }
       }
     },
+    "Toque duas vezes para editar." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-tap to edit."
+          }
+        }
+      }
+    },
     "Toque duas vezes para expandir." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9938,12 +10279,34 @@
         }
       }
     },
+    "Toque para falar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to speak"
+          }
+        }
+      }
+    },
     "Total" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Total"
+          }
+        }
+      }
+    },
+    "Transcrevendo…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcribing…"
           }
         }
       }

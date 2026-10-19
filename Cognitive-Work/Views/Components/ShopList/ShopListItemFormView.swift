@@ -12,6 +12,8 @@ import CloudKit
 enum ShopListItemFormMode {
     case create
     case edit(ShopListItem)
+    /// edited values back through `onConfirm` and saves nothing.
+    case draft(ShopItemSuggestion, onConfirm: (ShopItemSuggestion) -> Void)
 }
 
 /// The sheet used to add a shopping item or edit an existing one.
@@ -34,6 +36,37 @@ struct ShopListItemFormView: View {
     @State private var saveErrorMessage: String?
     @State private var isConfirmingDelete = false
     @FocusState private var isNameFocused: Bool
+
+    // MARK: Apple Intelligence state
+
+    // The AI button next to the name opens a prompt; what the person describes there
+    // ("2kg de arroz") fills name, category, quantity and unit in one go.
+
+    /// Fields the form can pre-fill from an AI suggestion.
+    private enum SuggestedField {
+        case category, quantity, unit, price, consumers
+    }
+
+    /// Whether the AI button shows in this form; set once when it appears (create mode only).
+    @State private var canSuggest = false
+    /// The last suggestion applied; fields still holding its values show the sparkles icon.
+    @State private var suggestion: ShopItemSuggestion?
+    /// Whether the AI prompt (``AIItemPromptSheet``) is on screen.
+    @State private var isShowingAIPrompt = false
+    /// What the person types in the AI prompt.
+    @State private var aiInput = ""
+    /// Whether a request is running; the button shows a spinner meanwhile.
+    @State private var isSuggesting = false
+    /// Whether the last request returned nothing; shows a hint to fill in by hand.
+    @State private var aiDidFail = false
+    /// The running request, cancelled if the sheet closes.
+    @State private var suggestionTask: Task<Void, Never>?
+
+    /// Editing a suggestion from the AI review: shows like editing, but nothing is saved here.
+    private var isDraft: Bool {
+        if case .draft = mode { return true }
+        return false
+    }
 
     private var isEditing: Bool {
         if case .edit = mode { return true }
@@ -75,20 +108,29 @@ struct ShopListItemFormView: View {
 
                     validationWarning
 
-                    section("Categoria") {
+                    // Sparkles mark values filled in by the AI button.
+                    section("Categoria", isSuggested: isSuggested(.category)) {
                         ShopCategoryPicker(selection: $category)
                     }
 
-                    section("Quantidade") {
+                    // Same as above for quantity and unit.
+                    section("Quantidade", isSuggested: isSuggested(.quantity) || isSuggested(.unit)) {
                         quantityCard
                     }
 
-                    section("Valor (opcional)") {
+                    section("Valor (opcional)", isSuggested: isSuggested(.price)) {
                         priceField
                     }
 
-                    section("Quem vai consumir/pagar") {
+                    section("Quem vai consumir/pagar", isSuggested: isSuggested(.consumers)) {
                         ResponsibleUserPicker(availableUsers: availableUsers, selectedUsers: $relatedUsers)
+                        // How much each person pays, computed in code with the same equal split
+                        // as the debts screen.
+                        if let shareText {
+                            Text(shareText)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.subTitleGray)
+                        }
                     }
 
                     if isEditing {
@@ -99,7 +141,7 @@ struct ShopListItemFormView: View {
                 .padding(.vertical)
             }
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(isEditing ? "Editar item" : "Novo item")
+            .navigationTitle(isEditing || isDraft ? "Editar item" : "Novo item")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -128,8 +170,8 @@ struct ShopListItemFormView: View {
                         .tint(.blue)
                         .buttonStyle(.glassProminent)
                         .disabled(!missingFields.isEmpty)
-                        .voiceOverLabel(isEditing ? L10n.tr("Salvar") : L10n.tr("Adicionar item"))
-                        .voiceControlNames(isEditing
+                        .voiceOverLabel(isEditing || isDraft ? L10n.tr("Salvar") : L10n.tr("Adicionar item"))
+                        .voiceControlNames(isEditing || isDraft
                             ? [L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")]
                             : [L10n.tr("Confirmar"), L10n.tr("Adicionar item"), L10n.tr("OK")])
                         .voiceOverHint(missingFields.first?.warning ?? "")
@@ -142,7 +184,22 @@ struct ShopListItemFormView: View {
         .interactiveDismissDisabled(isSaving)
         .task {
             populateFromMode()
-            if !isEditing { isNameFocused = true }
+            if !isEditing && !isDraft { isNameFocused = true }
+            // AI button only when creating, and only if the model can run here.
+            canSuggest = !isEditing && !isDraft && viewModel.canSuggestItemDetails
+        }
+        // No request keeps running after the sheet closes.
+        .onDisappear {
+            suggestionTask?.cancel()
+        }
+        // The AI prompt: type or speak the item, check the text, then confirm. The housemates'
+        // names help the speech recognizer hear them right.
+        .sheet(isPresented: $isShowingAIPrompt) {
+            ItemIntelligentSheet(
+                text: $aiInput,
+                contextualStrings: availableUsers.map(\.name),
+                onConfirm: requestSuggestion
+            )
         }
         .dismissKeyboardOnTap()
         .onChange(of: visibleWarning) { _, warning in
@@ -202,9 +259,48 @@ struct ShopListItemFormView: View {
                     .frame(height: 1.5)
                     .foregroundStyle(.gray.opacity(0.5))
                     .accessibilityHidden(true)
+
+                // Shown when the AI couldn't fill in the item; the form stays as it was.
+                if aiDidFail {
+                    Text("Não foi possível preencher. Preencha manualmente.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.subTitleGray)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+
+            if canSuggest {
+                aiButton
             }
         }
         .animation(.snappy, value: category)
+        .animation(.snappy, value: aiDidFail)
+    }
+
+    /// Opens the AI prompt, pre-filled with the name typed so far.
+    private var aiButton: some View {
+        Button {
+            aiInput = trimmedName
+            aiDidFail = false
+            isShowingAIPrompt = true
+        } label: {
+            Group {
+                if isSuggesting {
+                    ProgressView()
+                } else {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(category.color)
+                }
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .disabled(isSuggesting)
+        .voiceOverLabel(L10n.tr("Preencher com IA"))
+        .voiceControlNames([L10n.tr("Preencher com IA"), L10n.tr("IA")])
     }
 
     /// The warning on screen, if any; VoiceOver announces it whenever it appears or changes.
@@ -225,15 +321,30 @@ struct ShopListItemFormView: View {
     }
 
     /// A titled block of the form.
+    ///
+    /// Changed: `isSuggested` shows a sparkles icon next to the title while the block holds
+    /// values pre-filled by the on-device model.
     private func section<Content: View>(
         _ title: LocalizedStringKey,
+        isSuggested: Bool = false,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.system(size: 15))
-                .fontWeight(.semibold)
-                .accessibilityAddTraits(.isHeader)
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+                    .accessibilityAddTraits(.isHeader)
+
+                if isSuggested {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.subTitleGray)
+                        .transition(.opacity)
+                        .voiceOverLabel(L10n.tr("Sugerido automaticamente"))
+                }
+            }
+            .animation(.snappy, value: isSuggested)
 
             content()
         }
@@ -329,6 +440,82 @@ struct ShopListItemFormView: View {
         .disabled(isSaving)
     }
 
+    // MARK: - Apple Intelligence
+    // Added: everything in this section pre-fills the form from the on-device model. Nothing is
+    // saved until the person taps confirm, and any failure simply leaves the form as it is.
+
+    /// Whether `field` still shows the value the AI filled in. Once the person changes it, the
+    /// value differs and the sparkles icon goes away.
+    private func isSuggested(_ field: SuggestedField) -> Bool {
+        guard let suggestion else { return false }
+        switch field {
+        case .category: return category == suggestion.category
+        case .quantity: return quantity == suggestion.quantity
+        case .unit: return unitMeasurement == suggestion.unit
+        case .price:
+            guard let unitPrice = suggestion.unitPrice else { return false }
+            return valueText == ShopListViewModel.priceInputText(for: unitPrice)
+        case .consumers:
+            guard let consumers = suggestion.consumers else { return false }
+            return Set(relatedUsers.map(\.id)) == Set(consumers.map(\.id))
+        }
+    }
+
+    /// "R$ 12,50 por pessoa": the item's total split equally between the people it's for, rounded
+    /// to cents like ``DebtCalculator``. `nil` without a price or without anyone selected.
+    private var shareText: String? {
+        ShopListViewModel.shareText(
+            unitPrice: ShopListViewModel.parsePrice(valueText),
+            quantity: quantity,
+            consumerCount: relatedUsers.count
+        )
+    }
+
+    /// Sends what the person typed in the AI prompt to the on-device model.
+    private func requestSuggestion() {
+        let input = aiInput
+        suggestionTask?.cancel()
+        suggestionTask = Task {
+            isSuggesting = true
+            defer { isSuggesting = false }
+
+            let result = await viewModel.suggestItemDetails(
+                for: input,
+                housemates: availableUsers,
+                currentUser: currentUser,
+                selectedConsumers: relatedUsers
+            )
+            guard !Task.isCancelled else { return }
+
+            if let result {
+                applySuggestion(result)
+            } else {
+                aiDidFail = true
+                VoiceOver.announce(L10n.tr("Não foi possível preencher. Preencha manualmente."))
+            }
+        }
+    }
+
+    /// Fills name, category, quantity and unit, plus price and people when the person mentioned
+    /// them. The person asked for it with the button, so those fields are replaced; they can still
+    /// change any of them before saving.
+    private func applySuggestion(_ result: ShopItemSuggestion) {
+        suggestion = result
+        withAnimation(.snappy) {
+            if !result.name.isEmpty { name = result.name }
+            category = result.category
+            quantity = result.quantity
+            unitMeasurement = result.unit
+            if let unitPrice = result.unitPrice {
+                valueText = ShopListViewModel.priceInputText(for: unitPrice)
+            }
+            if let consumers = result.consumers {
+                relatedUsers = consumers
+            }
+        }
+        HapticsManager.notify(.success)
+    }
+
     // MARK: - Actions
 
     /// Currency placeholder in the app's language/region format (e.g. "R$ 0,00").
@@ -338,6 +525,20 @@ struct ShopListItemFormView: View {
 
     /// Seeds the form's local state from the item being edited.
     private func populateFromMode() {
+        // A draft from the AI review fills the form with the suggestion's values. People not
+        // mentioned show as the whole house, the same default the review uses when saving.
+        if case .draft(let suggestion, _) = mode {
+            name = suggestion.name
+            category = suggestion.category
+            quantity = suggestion.quantity
+            unitMeasurement = suggestion.unit
+            relatedUsers = suggestion.consumers ?? availableUsers
+            if let unitPrice = suggestion.unitPrice {
+                valueText = ShopListViewModel.priceInputText(for: unitPrice)
+            }
+            return
+        }
+
         guard case .edit(let item) = mode else { return }
         name = item.name
         category = item.category
@@ -350,6 +551,23 @@ struct ShopListItemFormView: View {
     }
 
     private func save() async {
+        // A draft goes back to the AI review with the edited values; nothing reaches CloudKit yet.
+        if case .draft(let original, let onConfirm) = mode {
+            let price = ShopListViewModel.parsePrice(valueText) ?? 0
+            onConfirm(ShopItemSuggestion(
+                input: original.input,
+                name: trimmedName,
+                quantity: quantity,
+                unit: unitMeasurement,
+                category: category,
+                unitPrice: price > 0 ? price : nil,
+                consumers: relatedUsers
+            ))
+            HapticsManager.notify(.success)
+            dismiss()
+            return
+        }
+
         isSaving = true
         defer { isSaving = false }
 

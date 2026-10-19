@@ -17,6 +17,11 @@ struct ShopListView: View {
     @State private var editingItem: ShopListItem?
     @State private var isShowingPendingPayments = false
 
+    /// Whether the "add several items with AI" sheet is open.
+    @State private var isPresentingAIBatch = false
+    /// Whether the AI button shows: the on-device model can run on this device and language.
+    @State private var canUseAI = false
+
     /// Which card is swiped open; shared so only one can be open at a time.
     @State private var revealedItemID: String?
 
@@ -49,12 +54,19 @@ struct ShopListView: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            addButton
+            // The AI button sits right above "+", centred on it.
+            VStack(spacing: 12) {
+                if canUseAI {
+                    aiBatchButton
+                }
+                addButton
+            }
         }
         .background(Color(.white).ignoresSafeArea())
         .overlay { purchasePriceOverlay }
         .animation(.easeInOut(duration: 0.25), value: viewModel.purchasePrompt?.id)
         .task {
+            canUseAI = viewModel.canSuggestItemDetails
             guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
         }
@@ -72,6 +84,10 @@ struct ShopListView: View {
                 viewModel: viewModel
             )
         }
+        // Several items at once with the on-device model, reviewed before saving.
+        .sheet(isPresented: $isPresentingAIBatch) {
+            AddMoreItensInteligence(viewModel: viewModel)
+        }
         .sheet(item: $editingItem) { item in
             ShopListItemFormView(
                 mode: .edit(item),
@@ -83,7 +99,8 @@ struct ShopListView: View {
         .alert(
             "Não foi possível concluir",
             isPresented: Binding(
-                get: { viewModel.errorMessage != nil && !isPresentingAddItem && editingItem == nil },
+                // The AI sheet shows its own errors.
+                get: { viewModel.errorMessage != nil && !isPresentingAddItem && editingItem == nil && !isPresentingAIBatch },
                 set: { if !$0 { viewModel.clearError() } }
             )
         ) {
@@ -308,6 +325,26 @@ struct ShopListView: View {
             editingItem = item
         }
         // "Excluir" comes from SwipeToDeleteRow itself (it calls onDelete above).
+    }
+
+    /// Opens ``ShopListAIBatchSheet`` to add several items from one text.
+    private var aiBatchButton: some View {
+        Button {
+            HapticsManager.selection()
+            isPresentingAIBatch = true
+        } label: {
+            Image(systemName: "sparkles")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.black)
+                .padding(14)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .disabled(!viewModel.canAddItems)
+        .voiceOverLabel(L10n.tr("Adicionar com IA"))
+        .voiceControlNames([L10n.tr("Adicionar com IA"), L10n.tr("IA")])
+        .transition(.scale.combined(with: .opacity))
     }
 
     private var addButton: some View {
