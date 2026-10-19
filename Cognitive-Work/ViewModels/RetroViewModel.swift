@@ -2,7 +2,7 @@
 //  RetroViewModel.swift
 //  Cognitive-Work
 //
-//  Created by Claude on 19/10/26.
+//  Created by Jonas Melo on 19/10/26.
 //
 
 import Foundation

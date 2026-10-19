@@ -2,7 +2,7 @@
 //  CoinsBalanceCard.swift
 //  Cognitive-Work
 //
-//  Created by Claude on 15/10/26.
+//  Created by Jonas Melo on 15/10/26.
 //
 
 import SwiftUI

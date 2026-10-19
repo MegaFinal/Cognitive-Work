@@ -2,7 +2,7 @@
 //  GamificationView.swift
 //  Cognitive-Work
 //
-//  Created by Claude on 15/10/26.
+//  Created by Jonas Melo on 15/10/26.
 //
 
 import SwiftUI
@@ -25,96 +25,55 @@ struct GamificationView: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            header
-
-            CoinsBalanceCard(coins: viewModel.coins)
-                .padding(.horizontal, 30)
-
-            NavigationLink {
-                RankHistoryView()
-            } label: {
-                rankRow
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 30)
-
-            if viewModel.rooms.isEmpty {
-                if viewModel.hasLoaded {
-                    emptyState(
-                        title: "Nenhum cômodo ainda",
-                        message: "Quando a casa tiver cômodos, os cupons de cada um aparecem aqui."
-                    )
-                } else {
-                    Spacer()
-                }
-            } else {
-                roomPicker
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 20) {
+                header
+                
+                // Current rank last; swipe right for the past cycles.
+                RankCarousel(points: viewModel.points, history: viewModel.rankHistory)
+                
+                CoinsBalanceCard(coins: viewModel.coins)
                     .padding(.horizontal, 30)
-
-                couponList
+                
+                if viewModel.rooms.isEmpty {
+                    if viewModel.hasLoaded {
+                        emptyState(
+                            title: "Nenhum cômodo ainda",
+                            message: "Quando a casa tiver cômodos, os cupons de cada um aparecem aqui."
+                        )
+                    } else {
+                        Spacer()
+                    }
+                } else {
+                    roomPicker
+                        .padding(.horizontal, 30)
+                    
+                    couponList
+                }
+            }
+            .background(Color(.white).ignoresSafeArea())
+            .task {
+                guard !viewModel.hasLoaded else { return }
+                await viewModel.setup()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+                viewModel.requestRefresh()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                viewModel.requestRefresh()
+            }
+            .alert(
+                "Não foi possível comprar",
+                isPresented: Binding(
+                    get: { viewModel.alertMessage != nil },
+                    set: { if !$0 { viewModel.alertMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.alertMessage ?? "")
             }
         }
-        .background(Color(.white).ignoresSafeArea())
-        .task {
-            guard !viewModel.hasLoaded else { return }
-            await viewModel.setup()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            viewModel.requestRefresh()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            viewModel.requestRefresh()
-        }
-        .alert(
-            "Não foi possível comprar",
-            isPresented: Binding(
-                get: { viewModel.alertMessage != nil },
-                set: { if !$0 { viewModel.alertMessage = nil } }
-            )
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.alertMessage ?? "")
-        }
-    }
-
-    // MARK: - Rank
-
-    /// Current rank and the way to the history of past ranks.
-    private var rankRow: some View {
-        let tier = Tier(points: viewModel.points)
-        return HStack(spacing: 12) {
-            Image(tier.imageName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 36, height: 36)
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(tier.displayName)
-                    .font(.system(size: 17))
-                    .fontWeight(.bold)
-                    .foregroundStyle(.titleGray)
-                Text("Ver histórico de ranks")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.subTitleGray)
-            }
-
-            Spacer(minLength: 0)
-
-            Image(systemName: "chevron.right")
-                .foregroundStyle(.subTitleGray)
-                .accessibilityHidden(true)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(
-            Color(.systemGray6).opacity(0.5),
-            in: RoundedRectangle(cornerRadius: 20, style: .continuous)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Header
@@ -254,6 +213,49 @@ struct GamificationView: View {
 #Preview {
     GamificationView(viewModel: GamificationViewModel(
         previewCoins: 45,
+        previewPoints: 85,
+        previewHistory: [
+            RankHistoryModel(
+                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
+                cycleKey: "2026-10-03",
+                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
+                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
+                tier: Tier(points: 160),
+                points: 10
+            ),
+            RankHistoryModel(
+                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
+                cycleKey: "2026-10-03",
+                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
+                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
+                tier: Tier(points: 160),
+                points: 100
+            ),
+            RankHistoryModel(
+                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
+                cycleKey: "2026-10-03",
+                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
+                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
+                tier: Tier(points: 160),
+                points: 200
+            ),
+            RankHistoryModel(
+                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
+                cycleKey: "2026-10-03",
+                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
+                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
+                tier: Tier(points: 160),
+                points: 300
+            ),
+            RankHistoryModel(
+                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
+                cycleKey: "2026-10-03",
+                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
+                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
+                tier: Tier(points: 160),
+                points: 400
+            )
+        ],
         rooms: [
             RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange),
             RoomModel(name: "Sala", symbol: "sofa", color: .purple),

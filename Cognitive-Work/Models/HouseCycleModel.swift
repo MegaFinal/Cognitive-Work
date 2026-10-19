@@ -2,7 +2,7 @@
 //  HouseCycleModel.swift
 //  Cognitive-Work
 //
-//  Created by Claude on 16/10/26.
+//  Created by Jonas Melo on 16/10/26.
 //
 
 import Foundation

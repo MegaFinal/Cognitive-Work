@@ -2,7 +2,7 @@
 //  GamificationViewModel.swift
 //  Cognitive-Work
 //
-//  Created by Claude on 15/10/26.
+//  Created by Jonas Melo on 15/10/26.
 //
 
 import Foundation
@@ -27,6 +27,9 @@ final class GamificationViewModel {
 
     /// The signed-in user's points, for the rank shown on the screen.
     private(set) var points: Int = 0
+
+    /// The signed-in user's rank at the end of each past cycle, oldest first.
+    private(set) var rankHistory: [RankHistoryModel] = []
 
     /// Record name of the coupon being bought, so its button shows progress.
     private(set) var buyingCouponName: String?
@@ -69,8 +72,16 @@ final class GamificationViewModel {
 
     init() {}
 
-    init(previewCoins: Int, rooms: [RoomModel], couponsByRoomName: [String: [CouponModel]]) {
+    init(
+        previewCoins: Int,
+        previewPoints: Int = 0,
+        previewHistory: [RankHistoryModel] = [],
+        rooms: [RoomModel],
+        couponsByRoomName: [String: [CouponModel]]
+    ) {
         self.coins = previewCoins
+        self.points = previewPoints
+        self.rankHistory = previewHistory
         self.rooms = rooms
         for room in rooms {
             couponsByRoom[Self.key(for: room)] = couponsByRoomName[room.name] ?? []
@@ -136,7 +147,7 @@ final class GamificationViewModel {
     }
 
     private func load() async {
-        let snapshot = await HouseDataStore.shared.load()
+        var snapshot = await HouseDataStore.shared.load()
         let house = try? await CloudKitManager.shared.currentHouse()
         let coupons = await CloudKitManager.shared.fetchAll(CouponModel.self)
             .filter { coupon in house?.recordID.map { coupon.recordID?.zoneID == $0.zoneID } ?? true }
@@ -146,7 +157,11 @@ final class GamificationViewModel {
         if let houseID = house?.recordID {
             cycles = await HouseCycleModel.fetchAll(inHouseZone: houseID.zoneID)
             // Automatic part of the payout: pending payouts for every cycle that ended.
-            await CycleSettlementService().prepareClosedCycles(cycles, members: snapshot.users, houseID: houseID)
+            let settled = await CycleSettlementService().prepareClosedCycles(cycles, members: snapshot.users, houseID: houseID)
+            if settled > 0 {
+                // A cycle was just settled: the points were reset, so the snapshot is outdated.
+                snapshot = await HouseDataStore.shared.load(force: true)
+            }
             if let userID = snapshot.houseUser?.recordID {
                 balance = await CoinWalletModel.balance(for: userID, legacyCoins: snapshot.houseUser?.coins ?? 0)
             }
@@ -164,6 +179,8 @@ final class GamificationViewModel {
 
         houseUser = snapshot.houseUser
         points = snapshot.houseUser?.points ?? 0
+        // Loaded with the rest of the house data (`HouseDataStore`).
+        rankHistory = snapshot.pastRanks(of: snapshot.houseUser)
         rooms = snapshot.rooms
 
         // coupon -> chore -> room. Only coupons on sale are offered.

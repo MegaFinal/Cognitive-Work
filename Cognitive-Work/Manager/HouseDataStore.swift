@@ -30,6 +30,21 @@ struct HouseSnapshot {
 
     /// Every shopping item visible to the user (the list keeps those whose parent it is).
     let shopItems: [ShopListItem]
+    /// Every member's rank at the end of each past cycle (``RankHistoryModel``).
+    let rankHistory: [RankHistoryModel]
+
+    /// `user`'s past cycles, oldest first.
+    ///
+    /// Matches every house record of the same person (see ``userRecords``): the history is
+    /// written for the record ``users`` keeps, which may not be the one in ``houseUser``.
+    func pastRanks(of user: UserModel?) -> [RankHistoryModel] {
+        guard let user else { return [] }
+        var ids = Set(userRecords.filter { $0.ownerRecordName == user.ownerRecordName }.compactMap(\.recordID))
+        if let userID = user.recordID { ids.insert(userID) }
+        return rankHistory
+            .filter { ids.contains($0.user.recordID) }
+            .sorted { $0.cycleKey < $1.cycleKey }
+    }
 }
 
 /// Loads the house data once and serves it to every tab.
@@ -143,6 +158,7 @@ final class HouseDataStore {
         async let shopItems = cloud.fetchAll(ShopListItem.self)
         // Points live in `UserScoreModel`; they are copied onto the users below.
         async let scores = cloud.fetchAll(UserScoreModel.self)
+        async let rankHistory = cloud.fetchAll(RankHistoryModel.self)
 
         let records = await userRecords
         let currentUser = await houseUser
@@ -157,7 +173,8 @@ final class HouseDataStore {
             houseUser: currentUser,
             privateUser: privateUser,
             shopList: shopList,
-            shopItems: shopItems
+            shopItems: shopItems,
+            rankHistory: rankHistory
         )
     }
 

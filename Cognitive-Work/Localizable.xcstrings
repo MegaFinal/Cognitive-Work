@@ -84,6 +84,16 @@
         }
       }
     },
+    "%@, %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
     "%@, %@ e mais %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10515,9 +10525,6 @@
           }
         }
       }
-    },
-    "Ver histórico de ranks" : {
-
     },
     "Ver minha escala" : {
       "localizations" : {
