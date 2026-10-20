@@ -54,6 +54,16 @@ struct HouseSnapshot {
             .filter { ids.contains($0.user.recordID) }
             .sorted { $0.cycleKey < $1.cycleKey }
     }
+
+    /// Returned when the very first load fails. It is never stored in ``HouseDataStore``, so
+    /// the next load tries again.
+    static let empty = HouseSnapshot(
+        chores: [], users: [], userRecords: [], rooms: [], assignments: [],
+        houseUser: nil, privateUser: nil, shopList: nil, shopItems: []
+    )
+
+    /// Whether this is ``empty``, i.e. no data could be loaded yet (not "the house is empty").
+    var isPlaceholder: Bool { id == Self.empty.id }
 }
 
 /// Loads the house data once and serves it to every tab.
@@ -79,7 +89,7 @@ final class HouseDataStore {
     /// The fetch currently running, so simultaneous callers wait for it instead of starting
     /// their own.
     @ObservationIgnored
-    private var inFlight: Task<HouseSnapshot, Never>?
+    private var inFlight: Task<HouseSnapshot?, Never>?
 
     /// Identifies the newest fetch. An older one that finishes late must not overwrite it.
     @ObservationIgnored
@@ -99,7 +109,7 @@ final class HouseDataStore {
     func load(force: Bool = false) async -> HouseSnapshot {
         if !force {
             if let snapshot, !isStale { return snapshot }
-            if let inFlight { return await inFlight.value }
+            if let inFlight { return await inFlight.value ?? snapshot ?? .empty }
         }
         return await fetch()
     }
@@ -107,6 +117,16 @@ final class HouseDataStore {
     /// The snapshot already in memory, or a first load if there is none yet.
     func current() async -> HouseSnapshot {
         if let snapshot { return snapshot }
+        return await load()
+    }
+
+    /// The freshest data available: like ``load(force:)``, but if the snapshot it got was
+    /// already outdated when it arrived (a change landed while that fetch was running), asks
+    /// once more. Screens that must reflect the latest change should use this.
+    @discardableResult
+    func loadLatest() async -> HouseSnapshot {
+        let snapshot = await load()
+        guard !isUpToDate, !Task.isCancelled else { return snapshot }
         return await load()
     }
 
@@ -122,7 +142,7 @@ final class HouseDataStore {
     @discardableResult
     func refreshAfterRemoteChange() async -> HouseSnapshot {
         invalidate()
-        return await load()
+        return await loadLatest()
     }
 
     /// Forgets everything, e.g. when a different account or house takes over.
@@ -141,26 +161,41 @@ final class HouseDataStore {
         latestFetchID = fetchID
         let invalidationsAtStart = invalidationCount
 
-        let task = Task { await Self.download() }
+        let task = Task<HouseSnapshot?, Never> {
+            do {
+                return try await Self.download()
+            } catch {
+                print("HouseDataStore: refresh failed, keeping the previous data. \(error)")
+                return nil
+            }
+        }
         inFlight = task
-        let result = await task.value
+        let downloaded = await task.value
 
-        guard latestFetchID == fetchID else { return snapshot ?? result }
-
-        snapshot = result
-        isStale = invalidationCount != invalidationsAtStart
+        guard latestFetchID == fetchID else { return snapshot ?? downloaded ?? .empty }
         inFlight = nil
-        return result
+
+        // A failed refresh must not wipe what is on screen: keep the previous snapshot and stay
+        // stale, so the next load (tab opened, push, back to foreground) tries again.
+        guard let downloaded else {
+            isStale = true
+            return snapshot ?? .empty
+        }
+
+        snapshot = downloaded
+        isStale = invalidationCount != invalidationsAtStart
+        return downloaded
     }
 
-    /// Every request the tabs need, running in parallel.
-    private nonisolated static func download() async -> HouseSnapshot {
+    /// Every request the tabs need, running in parallel. Throws if any of them fails, so a
+    /// network error is never mistaken for an empty house.
+    private nonisolated static func download() async throws -> HouseSnapshot {
         let cloud = CloudKitManager.shared
 
-        async let chores = cloud.fetchAll(ChoreModel.self)
-        async let userRecords = cloud.fetchHouseUserRecords()
-        async let rooms = cloud.fetchAll(RoomModel.self)
-        async let assignments = cloud.fetchAll(RecurrentAssignmentModel.self)
+        async let chores = cloud.fetchAllOrThrow(ChoreModel.self)
+        async let userRecords = cloud.fetchHouseUserRecordsOrThrow()
+        async let rooms = cloud.fetchAllOrThrow(RoomModel.self)
+        async let assignments = cloud.fetchAllOrThrow(RecurrentAssignmentModel.self)
         async let houseUser = cloud.currentHouseUser()
         async let privateUser = cloud.fetchMyUser()
         async let shopList = fetchShopList()

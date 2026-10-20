@@ -188,13 +188,12 @@ struct ChoresView: View {
                 
                 // MARK: - Pick Unassigned Chore Card Overlay
                 if let item = carouselVM.itemAwaitingDate {
-                    Color.clear
-                        .contentShape(Rectangle())
+                    Color.black.opacity(0.45)
                         .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture { }
                         .zIndex(2999)
-                        .onTapGesture {
-                            carouselVM.dismissPickCard()
-                        }
+                        .transition(.opacity)
                         .accessibilityHidden(true)
                     
                     VStack {
@@ -292,28 +291,29 @@ struct ChoresView: View {
                     ? [L10n.tr("Lista"), L10n.tr("Ver como lista"), L10n.tr("Layout")]
                     : [L10n.tr("Carrossel"), L10n.tr("Ver como carrossel"), L10n.tr("Layout")])
                 
-                NavigationLink {
-                    NotificationsView(
-                        onPickChores: {
-                            withAnimation { carouselVM.isShowingUnassignedList = true }
-                        },
-                        onOpenChore: { chore, assignment in
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                choreFromNotification = ChoreOccurrence(chore: chore, assignment: assignment)
-                            }
-                        },
-                        onNewMember: {
-                            carouselVM.presentNewUserPopUp()
-                        }
-                    )
-                } label: {
-                    Image(systemName: "bell")
-                        .font(.system(size: 22))
-                        .foregroundColor(.black)
-                        .padding(8)
-                }
-                .voiceOverLabel(L10n.tr("Notificações"))
-                .voiceControlNames([L10n.tr("Notificações"), L10n.tr("Avisos")])
+                // Acesso às notificações desativado temporariamente
+//                NavigationLink {
+//                    NotificationsView(
+//                        onPickChores: {
+//                            withAnimation { carouselVM.isShowingUnassignedList = true }
+//                        },
+//                        onOpenChore: { chore, assignment in
+//                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+//                                choreFromNotification = ChoreOccurrence(chore: chore, assignment: assignment)
+//                            }
+//                        },
+//                        onNewMember: {
+//                            carouselVM.presentNewUserPopUp()
+//                        }
+//                    )
+//                } label: {
+//                    Image(systemName: "bell")
+//                        .font(.system(size: 22))
+//                        .foregroundColor(.black)
+//                        .padding(8)
+//                }
+//                .voiceOverLabel(L10n.tr("Notificações"))
+//                .voiceControlNames([L10n.tr("Notificações"), L10n.tr("Avisos")])
                 
                 if carouselVM.layoutMode == .list {
                     Menu {
@@ -440,38 +440,30 @@ struct ChoresView: View {
 
 /// Renders statistics paired with a title tag.
 private struct ProgressIndicatorCard: View {
-    
-    /// Short label indicating the metric meaning (a localization key).
     var title: LocalizedStringKey
-    
     /// Formatted data result (e.g., "1h 30m").
     var data: String
-    
-    /// Visual thematic backdrop color applying depth over UI layouts.
     var color: Color = .gray
     
-    
     var body: some View {
-        VStack {
+        VStack(spacing: 5) {
+            Spacer()
             Text(title)
                 .font(.system(size: 12))
                 .fontWeight(.medium)
                 .foregroundColor(.white.opacity(0.8))
-                .padding(.top, 10)
-            
-            Spacer()
             
             Text(data)
                 .font(.system(size: 15))
                 .fontWeight(.bold)
                 .foregroundColor(.white)
-                .padding(.bottom, 25)
+            Spacer()
         }
-        .frame(width: width * 0.28, height: height * 0.088)
+        .frame(maxWidth: .infinity)
+        .frame(height: height * 0.088)
         .background(color)
         .clipShape(RoundedRectangle(cornerRadius: 21))
         .shadow(color: .black.opacity(0.25), radius: 4.07717, x: 0, y: 1.23551)
-        // Read as "Tempo médio, 1h30".
         .accessibilityElement(children: .combine)
     }
 }

@@ -208,30 +208,30 @@ private struct SettingsButtonsSection: View {
 //            } label: {
 //                Text("Conectar com meu Hardware")
 //            }
-//            .padding(.horizontal)
+//            .padding(.horizontal)caso tenha
         }
-//        .sheet(item: $hardwareSheet) { sheet in
-//            Group {
-//                switch sheet {
-//                case .existing:
-//                    ExistingIPView(
-//                        viewModelHardware: $viewModelHardware,
-//                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
-//                    )
-//                case .pair:
-//                    NavigationStack {
-//                        DevicePairView(
-//                            hardwareViewModel: viewModelHardware,
-//                            onClose: { hardwareSheet = nil }
-//                        )
-//                    }
-//                case .wifi:
-//                    WifiCredentialsView(viewModel: viewModelHardware)
-//                }
-//            }
-//            .presentationDetents([.medium ])
-//            .presentationDragIndicator(.visible)
-//        }
+        .sheet(item: $hardwareSheet) { sheet in
+            Group {
+                switch sheet {
+                case .existing:
+                    ExistingIPView(
+                        viewModelHardware: $viewModelHardware,
+                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+                    )
+                case .pair:
+                    NavigationStack {
+                        DevicePairView(
+                            hardwareViewModel: viewModelHardware,
+                            onClose: { hardwareSheet = nil }
+                        )
+                    }
+                case .wifi:
+                    WifiCredentialsView(viewModel: viewModelHardware)
+                }
+            }
+            .presentationDetents([.medium ])
+            .presentationDragIndicator(.visible)
+        }
     }
 }
 

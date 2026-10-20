@@ -293,10 +293,22 @@ class ShopListItem: CloudKitSyncable, Identifiable {
 
         settleLocally(for: debtorID)
 
-        guard await CloudKitManager.shared.update(self) else {
+        guard let record = await CloudKitManager.shared.fetchRecord(for: self) else {
             settledUsersReference = previous
             return false
         }
+
+        var merged = record["settledUsers"] as? [CKRecord.Reference] ?? []
+        if !merged.contains(where: { $0.recordID == debtorID }) {
+            merged.append(CKRecord.Reference(recordID: debtorID, action: .none))
+        }
+        record["settledUsers"] = merged
+
+        guard await CloudKitManager.shared.update(record: record) else {
+            settledUsersReference = previous
+            return false
+        }
+        settledUsersReference = merged
         return true
     }
 

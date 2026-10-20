@@ -306,7 +306,7 @@ func scheduleNewRecurringChore(
           !chore.isDone,
           let choreID = chore.recordID,
           (chore.dailyAssignmentsReference ?? []).isEmpty
-    else { return }
+            else { return }
     
     let start = pickedDate ?? Date()
     let days = occurrenceDays(for: chore.frequency, from: start, through: cycleEnd)
@@ -612,10 +612,10 @@ func repairOrphanedRecurringAssignments(in chores: [ChoreModel]) async {
 func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], houseZoneID: CKRecordZone.ID?) async {
     // Validate the Record Zone to prevent data from falling back to the default private zone, which breaks multi-device sharing.
     guard let zoneID = houseZoneID else { return }
-
+    
     var recordsToSave: [CKRecord] = []
     var choresByUser: [CKRecord.ID: [CKRecord.Reference]] = [:]
-
+    
     for result in results {
         guard let choreID = result.chore.recordID else { continue }
         var savedRefs: [CKRecord.Reference] = []
@@ -639,11 +639,11 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
             result.chore.dailyAssignmentsReference = (result.chore.dailyAssignmentsReference ?? []) + savedRefs
         }
     }
-
+    
     if !recordsToSave.isEmpty {
         await CloudKitManager.shared.batchSave(records: recordsToSave, zoneID: zoneID)
     }
-
+    
     let choresToUpdate = results.map { $0.chore }
     var usersToUpdate: [UserModel] = []
     for user in users {
@@ -659,7 +659,7 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
         user.choresReference = existingRefs + dedupedNewRefs
         usersToUpdate.append(user)
     }
-
+    
     // Use async let to concurrently update Chores and Users, improving network efficiency.
     async let choresDone: Bool = {
         let r = await CloudKitManager.shared.batchUpdate(choresToUpdate)
@@ -676,40 +676,58 @@ func commitScheduleResults(_ results: [ScheduleResult], users: [UserModel], hous
 
 // MARK: - Reset Before Re-Division
 
-/// Clears every today-onward, not-yet-completed assignment and due date before a fresh
-/// division runs, so the engine starts clean instead of layering new assignments on top of
-/// the old ones. Completed occurrences are left untouched — they're history, not something
-/// to reschedule.
+/// Clears the schedule from tomorrow on so the division starts from scratch; today is left untouched.
+/// Recurring chores are reopened, pending one-off chores lose their date, and completed
+/// one-off chores are deleted (except today's).
 ///
 /// - Parameter chores: Every chore currently loaded.
 @MainActor
 func resetUpcomingSchedule(for chores: [ChoreModel]) async {
     let calendar = Calendar.current
     let today = calendar.startOfDay(for: Date())
+    guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) else { return }
     
     var recordsToDelete: [CKRecord.ID] = []
     var zoneID: CKRecordZone.ID?
     var choresToUpdate: [ChoreModel] = []
+    var choresToDelete: [ChoreModel] = []
     
-    for chore in chores where !chore.isDone {
+    for chore in chores {
+        
+        // Completed one-off chores are deleted on a new division; today's stay until the next one.
+        if chore.frequency == .none, chore.isDone
+        {
+            choresToDelete.append(chore)
+            continue
+        }
+        
+        var changed = false
+        
+        // Every chore enters the new division, so none stays done besides .none recurrence.
+        if chore.isDone && chore.frequency != .none {
+            chore.isDone = false
+            chore.userThatHaveDoneReference = nil
+            changed = true
+        }
+        
         if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
             let existing = await chore.dailyAssignments
-            let toRemove = existing.filter { $0.day >= today && !$0.isCompleted }
+            let removeIDs = existing.filter { $0.day >= tomorrow }.compactMap(\.recordID)
             
-            guard !toRemove.isEmpty else { continue }
-            
-            let removeIDs = toRemove.compactMap { $0.recordID }
-            if zoneID == nil { zoneID = removeIDs.first?.zoneID }
-            recordsToDelete.append(contentsOf: removeIDs)
-            
-            let removedSet = Set(removeIDs)
-            chore.dailyAssignmentsReference = refs.filter { !removedSet.contains($0.recordID) }
-            choresToUpdate.append(chore)
+            if !removeIDs.isEmpty {
+                if zoneID == nil { zoneID = removeIDs.first?.zoneID }
+                recordsToDelete.append(contentsOf: removeIDs)
+                
+                let removedSet = Set(removeIDs)
+                chore.dailyAssignmentsReference = refs.filter { !removedSet.contains($0.recordID) }
+                changed = true
+            }
         }
-        else if chore.frequency == .none, chore.dueDate != nil {
-            chore.dueDate = nil
-            choresToUpdate.append(chore)
+        else if chore.frequency == .none, !chore.isDone, let dueDate = chore.dueDate, !calendar.isDateInToday(dueDate) {            chore.dueDate = nil
+            changed = true
         }
+        
+        if changed { choresToUpdate.append(chore) }
     }
     
     if !recordsToDelete.isEmpty, let zoneID {
@@ -718,5 +736,9 @@ func resetUpcomingSchedule(for chores: [ChoreModel]) async {
     
     if !choresToUpdate.isEmpty {
         await CloudKitManager.shared.batchUpdate(choresToUpdate)
+    }
+    
+    for chore in choresToDelete {
+        await chore.delete()
     }
 }

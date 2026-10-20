@@ -41,7 +41,11 @@ struct ShopListView: View {
         VStack(alignment: .leading, spacing: 20) {
             header
 
-            if viewModel.hasLoaded && viewModel.items.isEmpty {
+            if !viewModel.hasLoaded {
+                // Only on a cold start without data in memory; otherwise the cached list shows at once.
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.isListEmpty {
                 ShopListEmptyState()
                     .frame(maxHeight: .infinity)
             } else {
@@ -307,30 +311,17 @@ struct ShopListView: View {
         .accessibilityAction(named: Text(verbatim: L10n.tr("Editar"))) {
             editingItem = item
         }
-        // "Excluir" comes from SwipeToDeleteRow itself (it calls onDelete above).
     }
 
     private var addButton: some View {
-        Button {
+        FloatingActionButton(systemImage: "plus") {
             HapticsManager.selection()
             isPresentingAddItem = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 28))
-                .foregroundColor(.white)
-                .padding(20)
-                .contentShape(Circle())
         }
-        .buttonStyle(.plain)
-        .glassEffect(
-            .regular.interactive().tint(.black),
-            in: .circle
-        )
         .disabled(!viewModel.canAddItems)
         .voiceOverLabel(L10n.tr("Adicionar item"))
         .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Adicionar item")])
-        .padding(.horizontal, 30)
-        .padding(.bottom)
+        .floatingActionPlacement()
     }
 }
 
@@ -385,10 +376,6 @@ private struct ShopListEmptyState: View {
             .font(.system(size: size, weight: .bold))
             .foregroundStyle(.choreYellow)
             .scaleEffect(isAnimating ? 1.15 : 0.85)
-            .animation(
-                .easeInOut(duration: 1.4).repeatForever(autoreverses: true),
-                value: isAnimating
-            )
     }
 }
 

@@ -94,6 +94,12 @@ final class ShopListViewModel {
         items.filter { $0.isBought && !isFullySettled($0) }
     }
 
+    /// Whether the list has nothing to show. Not `items.isEmpty`: fully settled items stay in
+    /// ``items`` (for the debts) but are hidden, so a list with only those would render blank.
+    var isListEmpty: Bool {
+        pendingItems.isEmpty && boughtItems.isEmpty
+    }
+
     /// Whether `item` was bought with a price shared with others and every one of them already
     /// paid the buyer. People are matched by `ownerRecordName`, like ``DebtCalculator``, since
     /// the same person may have more than one user record.
@@ -208,17 +214,21 @@ final class ShopListViewModel {
     @ObservationIgnored
     private var appliedSnapshotID: UUID?
 
-    /// Shows the house data already loaded by ``HouseDataStore`` (a first load if none yet).
+    /// Shows the house data already in memory right away (loaded by the app's initial
+    /// loading), then brings it up to date if it went stale in the meantime. Waiting for the
+    /// network before showing anything is what left the tab blank for a while.
     func setup() async {
         guard !isPreview else { hasLoaded = true; return }
-        let snapshot = await HouseDataStore.shared.load()
-        guard !Task.isCancelled else { return }
-        apply(snapshot)
+        if let cached = HouseDataStore.shared.snapshot {
+            apply(cached)
+        }
+        await refresh()
     }
 
+    /// Applies the freshest house data. The store only fetches if its data is stale.
     func refresh() async {
         guard !isPreview else { return }
-        let snapshot = await HouseDataStore.shared.load()
+        let snapshot = await HouseDataStore.shared.loadLatest()
         guard !Task.isCancelled else { return }
         apply(snapshot)
     }
@@ -231,14 +241,19 @@ final class ShopListViewModel {
         refreshTask?.cancel()
         refreshTask = Task { [weak self] in
             try? await Task.sleep(for: debounce)
+            guard !Task.isCancelled else { return }
+            let snapshot = await HouseDataStore.shared.refreshAfterRemoteChange()
             guard !Task.isCancelled, let self else { return }
-            await self.refresh()
+            self.apply(snapshot)
         }
     }
+
+    private static var missingListMessage: String { L10n.tr("Essa casa ainda não tem uma lista de compras.") }
 
     /// Replaces the screen's state with `snapshot`, unless it was already applied.
     private func apply(_ snapshot: HouseSnapshot) {
         defer { hasLoaded = true }
+        guard !snapshot.isPlaceholder else { return }
         guard snapshot.id != appliedSnapshotID else { return }
         appliedSnapshotID = snapshot.id
 
@@ -249,10 +264,11 @@ final class ShopListViewModel {
         guard let shopList = snapshot.shopList else {
             list = nil
             items = []
-            errorMessage = L10n.tr("Essa casa ainda não tem uma lista de compras.")
+            errorMessage = Self.missingListMessage
             return
         }
 
+        if errorMessage == Self.missingListMessage { errorMessage = nil }
         list = shopList
         items = shopList.belonging(to: snapshot.shopItems)
     }

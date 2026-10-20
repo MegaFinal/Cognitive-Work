@@ -190,32 +190,8 @@ struct PickUnassignedChoreCard: View {
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.black)
             
-            HStack(spacing: 16) {
-                CapsuleTag(
-                    tagName: chore.frequency.displayName,
-                    tagColor: chore.frequency.color,
-                    textColor: chore.frequency.textColor,
-                    horizontalPadding: 6,
-                    verticalPadding: 1.5
-                )
-                
-                CapsuleTag(
-                    tagName: chore.priorityTag.displayName,
-                    tagColor: chore.priorityTag.color,
-                    horizontalPadding: 6,
-                    verticalPadding: 1.5
-                )
-                
-                let durationTier = ChoreDurationTier.from(minutes: chore.duration)
-                CapsuleTag(
-                    tagName: durationTier.displayText,
-                    tagColor: durationTier.color,
-                    horizontalPadding: 6,
-                    verticalPadding: 1.5
-                )
-                
-                Spacer()
-            }
+            ChoreTagsRow(chore: chore, spacing: 16, horizontalPadding: 6, verticalPadding: 1.5)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(8)
         .frame(maxWidth: .infinity, alignment: .leading)

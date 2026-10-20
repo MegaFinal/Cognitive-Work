@@ -78,7 +78,7 @@ class CloudKitManager {
     /// In-flight shared-zone listing, deduplicated the same way. `nil` result means the
     /// listing failed and must not be cached.
     @ObservationIgnored
-    private var sharedZonesLookup: Task<[CKRecordZone]?, Never>?
+    private var sharedZonesLookup: Task<[CKRecordZone], Error>?
     
     // MARK: - Data revision
     
@@ -205,26 +205,33 @@ class CloudKitManager {
         return user
     }
     
-    /// Every record zone shared with this account, resolved once per session.
-    func sharedZones() async -> [CKRecordZone] {
+    /// Like ``sharedZones()``, but throws when CloudKit fails instead of returning `[]`
+    /// (which would read as "this account has no shared house"). Resolved once per session;
+    /// simultaneous callers share the same request.
+    func sharedZonesOrThrow() async throws -> [CKRecordZone] {
         if let cachedSharedZones { return cachedSharedZones }
-        if let sharedZonesLookup { return await sharedZonesLookup.value ?? [] }
+        if let sharedZonesLookup { return try await sharedZonesLookup.value }
         
-        let lookup = Task<[CKRecordZone]?, Never> { [weak self] in
-            guard let self else { return nil }
-            do {
-                return try await self.sharedDB.allRecordZones()
-            } catch {
-                self.errorMessage = UserFacingError.message(for: error, doing: .share)
-                return nil
-            }
+        let lookup = Task<[CKRecordZone], Error> { [weak self] in
+            guard let self else { return [] }
+            return try await self.sharedDB.allRecordZones()
         }
         sharedZonesLookup = lookup
+        defer { sharedZonesLookup = nil }
         
-        let zones = await lookup.value
-        sharedZonesLookup = nil
-        if let zones { cachedSharedZones = zones }
-        return zones ?? []
+        let zones = try await lookup.value
+        cachedSharedZones = zones
+        return zones
+    }
+    
+    /// Every record zone shared with this account, resolved once per session.
+    func sharedZones() async -> [CKRecordZone] {
+        do {
+            return try await sharedZonesOrThrow()
+        } catch {
+            errorMessage = UserFacingError.message(for: error, doing: .share)
+            return []
+        }
     }
     
     /// Drops every session-cached lookup.

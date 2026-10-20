@@ -22,12 +22,12 @@ struct WifiCredentialsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Conectar Harvi")
+                        Text("Conectar Harvii")
                             .font(.largeTitle)
                             .bold()
                             .accessibilityAddTraits(.isHeader)
 
-                        Text("Para que seja possível conectar o Harvi ao WiFi da sua casa, entre no WiFi ESP32, com senha 12345678, retorne ao app e envie o nome e senha do WiFi.")
+                        Text("Para que seja possível conectar o Harvii ao WiFi da sua casa, entre no WiFi HARVII, com senha 12345678, retorne ao app e envie o nome e senha do WiFi.")
                             .foregroundStyle(.secondary)
                     }
                     
@@ -96,7 +96,7 @@ struct WifiCredentialsView: View {
             .dismissKeyboardOnTap()
             // Sending takes a few seconds behind a spinner; the result arrives as an alert.
             .onChange(of: viewModel.isSending) { _, isSending in
-                if isSending { VoiceOver.announce(L10n.tr("Enviando dados do WiFi para o Harvi…")) }
+                if isSending { VoiceOver.announce(L10n.tr("Enviando dados do WiFi para o Harvii…")) }
             }
         }
     }
