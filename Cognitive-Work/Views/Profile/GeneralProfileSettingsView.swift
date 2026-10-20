@@ -128,22 +128,22 @@ struct GeneralProfileSettingsView: View {
             }
             
             // Notifications Toggle
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Notificações")
-                    
-                    Spacer()
-                    
-                    Toggle("", isOn: notificationsBinding)
-                        .toggleStyle(.switch)
-                        .padding(.trailing, 7)
-                        .frame(width: width * 0.37)
-                }
-                
-                Text("Receber avisos sobre as tarefas da casa.")
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-            }
+//            VStack(alignment: .leading) {
+//                HStack {
+//                    Text("Notificações")
+//                    
+//                    Spacer()
+//                    
+//                    Toggle("", isOn: notificationsBinding)
+//                        .toggleStyle(.switch)
+//                        .padding(.trailing, 7)
+//                        .frame(width: width * 0.37)
+//                }
+//                
+//                Text("Receber avisos sobre as tarefas da casa.")
+//                    .font(.system(size: 15))
+//                    .foregroundColor(.secondary)
+//            }
             
             // Calendar Toggle
             VStack(alignment: .leading) {
