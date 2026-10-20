@@ -12,7 +12,8 @@ import CloudKit
 ///
 /// Rules checked on the server's current values:
 /// - the coupon is on sale and has no holder for the latest cycle (one holder per coupon);
-/// - the buyer holds no other coupon of the same room in this cycle (one per room);
+/// - the buyer holds no other coupon of the same room in this cycle (one per room); a coupon a
+///   division already used doesn't count;
 /// - the buyer's wallet covers the price (the balance never goes negative).
 ///
 /// The coupon, the buyer's ``CoinWalletModel`` and their ``CouponHoldModel`` for the room are
@@ -105,10 +106,20 @@ final class CouponPurchaseService {
             // 3. One coupon per room per cycle.
             let holdID = CouponHoldModel.recordID(userID: buyerID, roomID: roomID)
             let existingHold = try await store.fetch([holdID])[holdID]
+            // The hold only counts while its coupon is still the buyer's and unused.
             if let existingHold,
                let hold = CouponHoldModel(record: existingHold),
                hold.cycleKey == cycleKey {
-                throw PurchaseError.roomLimitReached
+                let heldID = hold.coupon.recordID
+                let held: CouponModel?
+                if heldID == couponID {
+                    held = coupon
+                } else {
+                    held = try await store.fetch([heldID])[heldID].flatMap(CouponModel.init(record:))
+                }
+                if held?.isHeld(by: buyerID, inCycle: cycleKey) == true {
+                    throw PurchaseError.roomLimitReached
+                }
             }
 
             // 4. Funds.
@@ -122,6 +133,7 @@ final class CouponPurchaseService {
             coupon.lastUser = coupon.currentUser
             coupon.currentUser = buyerReference
             coupon.purchasedCycleKey = cycleKey
+            coupon.consumedCycleKey = nil
             coupon.price = price
             coupon.populate(record: couponRecord)
 

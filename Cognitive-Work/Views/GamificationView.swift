@@ -57,7 +57,7 @@ struct GamificationView: View {
                 await viewModel.setup()
             }
             .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-                viewModel.requestRefresh()
+                viewModel.requestRefresh(catchUp: true)
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                 viewModel.requestRefresh()
@@ -150,6 +150,7 @@ struct GamificationView: View {
     private var couponList: some View {
         let coupons = viewModel.selectedCoupons
         let color = viewModel.selectedRoom?.color ?? .yellow
+        let symbol = viewModel.selectedRoom?.symbol ?? "house"
 
         if coupons.isEmpty {
             emptyState(
@@ -158,11 +159,12 @@ struct GamificationView: View {
             )
         } else {
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: 18) {
                     ForEach(coupons, id: \.recordID) { coupon in
                         CouponCard(
                             coupon: coupon,
                             roomColor: color,
+                            roomSymbol: symbol,
                             isAffordable: viewModel.canAfford(coupon),
                             state: viewModel.state(of: coupon),
                             isBuying: viewModel.buyingCouponName == (coupon.recordID?.recordName ?? coupon.name),

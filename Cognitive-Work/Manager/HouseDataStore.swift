@@ -33,6 +33,15 @@ struct HouseSnapshot {
     /// Every member's rank at the end of each past cycle (``RankHistoryModel``).
     let rankHistory: [RankHistoryModel]
 
+    /// The house's coupons (``CouponModel``), on sale or not.
+    let coupons: [CouponModel]
+
+    /// The house's division cycles (``HouseCycleModel``), in no particular order.
+    let cycles: [HouseCycleModel]
+
+    /// The house record, or `nil` while the user has no house.
+    let houseID: CKRecord.ID?
+
     /// `user`'s past cycles, oldest first.
     ///
     /// Matches every house record of the same person (see ``userRecords``): the history is
@@ -159,6 +168,12 @@ final class HouseDataStore {
         // Points live in `UserScoreModel`; they are copied onto the users below.
         async let scores = cloud.fetchAll(UserScoreModel.self)
         async let rankHistory = cloud.fetchAll(RankHistoryModel.self)
+        async let house = try? cloud.currentHouse()
+        async let allCoupons = cloud.fetchAll(CouponModel.self)
+
+        // The cycles are read per house zone, so they wait for the house; the rest keeps running.
+        let houseID = await house?.recordID
+        async let cycles = fetchCycles(inHouseZone: houseID?.zoneID)
 
         let records = await userRecords
         let currentUser = await houseUser
@@ -174,8 +189,18 @@ final class HouseDataStore {
             privateUser: privateUser,
             shopList: shopList,
             shopItems: shopItems,
-            rankHistory: rankHistory
+            rankHistory: rankHistory,
+            coupons: allCoupons.filter { coupon in
+                houseID.map { coupon.recordID?.zoneID == $0.zoneID } ?? true
+            },
+            cycles: cycles,
+            houseID: houseID
         )
+    }
+
+    private nonisolated static func fetchCycles(inHouseZone zoneID: CKRecordZone.ID?) async -> [HouseCycleModel] {
+        guard let zoneID else { return [] }
+        return await HouseCycleModel.fetchAll(inHouseZone: zoneID)
     }
 
     private nonisolated static func fetchShopList() async -> ShopListModel? {

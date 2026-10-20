@@ -136,47 +136,65 @@ final class GamificationViewModel {
     }
 
     /// Coalesces refresh requests and cancels the previous one.
-    func requestRefresh(debounce: Duration = .milliseconds(250)) {
+    ///
+    /// With `catchUp`, reloads once more after ``catchUpDelay``: a change made on another device
+    /// (a division, a purchase) can be announced here before CloudKit's queries return it.
+    func requestRefresh(debounce: Duration = .milliseconds(250), catchUp: Bool = false) {
         guard !isPreview else { return }
         refreshTask?.cancel()
         refreshTask = Task { [weak self] in
             try? await Task.sleep(for: debounce)
             guard !Task.isCancelled, let self else { return }
             await self.refresh()
+
+            guard catchUp else { return }
+            try? await Task.sleep(for: Self.catchUpDelay)
+            guard !Task.isCancelled else { return }
+            // The first reload refilled the shared cache; this one has to ask CloudKit again.
+            HouseDataStore.shared.invalidate()
+            await self.refresh()
         }
     }
+
+    /// Wait before the second reload of ``requestRefresh(debounce:catchUp:)``.
+    static let catchUpDelay: Duration = .seconds(3)
 
     private func load() async {
         var snapshot = await HouseDataStore.shared.load()
-        let house = try? await CloudKitManager.shared.currentHouse()
-        let coupons = await CloudKitManager.shared.fetchAll(CouponModel.self)
-            .filter { coupon in house?.recordID.map { coupon.recordID?.zoneID == $0.zoneID } ?? true }
+        guard !Task.isCancelled else { return }
 
-        var cycles: [HouseCycleModel] = []
+        // Rooms, coupons and rank come from the shared cache (`HouseDataStore`), so they show at
+        // once; only the payouts and the balance are read here, after.
+        apply(snapshot)
+
+        guard let houseID = snapshot.houseID else {
+            coins = snapshot.houseUser?.coins ?? 0
+            return
+        }
+
+        // Automatic part of the payout: pending payouts for every cycle that ended.
+        let settled = await CycleSettlementService().prepareClosedCycles(snapshot.cycles, members: snapshot.users, houseID: houseID)
+        if settled > 0 {
+            // A cycle was just settled: the points were reset, so the snapshot is outdated.
+            snapshot = await HouseDataStore.shared.load(force: true)
+        }
+
         var balance = snapshot.houseUser?.coins ?? 0
-        if let houseID = house?.recordID {
-            cycles = await HouseCycleModel.fetchAll(inHouseZone: houseID.zoneID)
-            // Automatic part of the payout: pending payouts for every cycle that ended.
-            let settled = await CycleSettlementService().prepareClosedCycles(cycles, members: snapshot.users, houseID: houseID)
-            if settled > 0 {
-                // A cycle was just settled: the points were reset, so the snapshot is outdated.
-                snapshot = await HouseDataStore.shared.load(force: true)
-            }
-            if let userID = snapshot.houseUser?.recordID {
-                balance = await CoinWalletModel.balance(for: userID, legacyCoins: snapshot.houseUser?.coins ?? 0)
-            }
+        if let userID = snapshot.houseUser?.recordID {
+            balance = await CoinWalletModel.balance(for: userID, legacyCoins: snapshot.houseUser?.coins ?? 0)
         }
         guard !Task.isCancelled else { return }
 
-        houseID = house?.recordID
-        latestCycleKey = HouseCycleModel.latest(cycles)?.key
         coins = balance
-        apply(snapshot, coupons: coupons)
+        if settled > 0 { apply(snapshot) }
     }
 
-    private func apply(_ snapshot: HouseSnapshot, coupons: [CouponModel]) {
+    private func apply(_ snapshot: HouseSnapshot) {
         defer { hasLoaded = true }
 
+        houseID = snapshot.houseID
+        latestCycleKey = HouseCycleModel.latest(snapshot.cycles)?.key
+        let coupons = snapshot.coupons
         houseUser = snapshot.houseUser
         points = snapshot.houseUser?.points ?? 0
         // Loaded with the rest of the house data (`HouseDataStore`).

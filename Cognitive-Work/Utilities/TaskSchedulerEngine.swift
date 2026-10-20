@@ -40,7 +40,8 @@ struct TaskSchedulerEngine {
         
         // Coupon holders are spared their chore in this division (see `CouponExemption`).
         // Must be read before this run records its own cycle below.
-        async let exemptionsTask = Self.loadCouponExemptions()
+        let newCycleKey = HouseCycleModel.key(for: now)
+        async let couponsTask = Self.loadCouponsToApply(newCycleKey: newCycleKey)
         
         // Chores scheduled before the fix above may still be pointing at daily-assignment
         // records that live in the wrong zone and are now unreadable. Clear those stale
@@ -60,7 +61,8 @@ struct TaskSchedulerEngine {
         // houseZoneID's result is only truly needed here (used by commitScheduleResults), by which time it is most likely ready
         let house = try? await houseTask
         let houseZoneID = house?.recordID?.zoneID
-        let exemptions = await exemptionsTask
+        let appliedCoupons = await couponsTask
+        let exemptions = CouponExemption.exemptions(from: appliedCoupons)
         
         // Define the set of recurring frequencies
         let recurringFrequencies: Set<Recurrence> = [.daily, .weekly, .fortnightly, .monthly]
@@ -147,7 +149,11 @@ struct TaskSchedulerEngine {
         // Record the cycle this division covers: `now` through the last day of the window.
         if let houseID = house?.recordID,
            let lastDay = calendar.date(byAdding: .day, value: -1, to: windowEnd) {
-            await HouseCycleModel.recordNewDivision(start: now, end: lastDay, houseID: houseID)
+            let recorded = await HouseCycleModel.recordNewDivision(start: now, end: lastDay, houseID: houseID)
+            // The coupons this division applied are used up: they can be bought again.
+            if recorded {
+                await CouponExemption.consume(appliedCoupons, inCycle: newCycleKey)
+            }
         }
         
         // toogle shouldBeIncluded chores so they can be included on the next 14 days and persists on cloudkit
@@ -163,13 +169,13 @@ struct TaskSchedulerEngine {
     
     // MARK: - Coupons
     
-    /// Exemptions for the division about to be generated; empty when there is no house yet.
-    private static func loadCouponExemptions() async -> CouponExemption.Map {
+    /// Coupons the division about to be generated applies; empty when there is no house yet.
+    private static func loadCouponsToApply(newCycleKey: String) async -> [CouponModel] {
         guard let zoneID = try? await CloudKitManager.shared.currentHouse()?.recordID?.zoneID else {
-            return [:]
+            return []
         }
         let (coupons, cycles) = await CouponExemption.load(houseZoneID: zoneID)
-        return CouponExemption.forNextDivision(coupons: coupons, cycles: cycles)
+        return CouponExemption.toApply(coupons: coupons, cycles: cycles, newCycleKey: newCycleKey)
     }
     
     // MARK: - Prioritization

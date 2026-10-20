@@ -7,6 +7,16 @@
     "%@" : {
 
     },
+    "%@ %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
     "%@ ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2278,9 +2288,6 @@
           }
         }
       }
-    },
-    "Comprar" : {
-
     },
     "Comprar %@" : {
       "extractionState" : "stale",

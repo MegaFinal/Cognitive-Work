@@ -24,6 +24,11 @@ struct CouponModel: CloudKitSyncable {
     /// Key of the ``HouseCycleModel`` in which ``currentUser`` bought the coupon. The purchase
     /// spares its holder this chore in the next division generated after that cycle.
     var purchasedCycleKey: String?
+
+    /// Key of the cycle whose division used this purchase (spared ``currentUser`` the chore), or
+    /// `nil` while it hasn't been used. Set by ``CouponExemption/consume(_:inCycle:store:)``,
+    /// cleared by the next purchase. A used coupon can be bought again, even in the same cycle.
+    var consumedCycleKey: String?
     
     init?(record: CKRecord) {
         guard
@@ -45,6 +50,7 @@ struct CouponModel: CloudKitSyncable {
         self.lastUser = record["lastUser"] as? CKRecord.Reference
         self.task = record["task"] as? CKRecord.Reference
         self.purchasedCycleKey = record["purchasedCycleKey"] as? String
+        self.consumedCycleKey = record["consumedCycleKey"] as? String
     }
     
     init(
@@ -83,6 +89,8 @@ struct CouponModel: CloudKitSyncable {
         if let purchasedCycleKey {
             record["purchasedCycleKey"] = purchasedCycleKey
         }
+        // Always written: a new purchase has to clear it.
+        record["consumedCycleKey"] = consumedCycleKey
     }
 }
 
@@ -101,17 +109,19 @@ extension CouponModel {
 
     /// Whether the coupon can be bought in the cycle `latestCycleKey`.
     ///
-    /// A coupon has one holder at a time. Once a newer cycle exists the purchase has been used
-    /// (or is being used), so anyone can buy it again for the following division.
+    /// A coupon has one holder at a time, until a division uses the purchase
+    /// (``consumedCycleKey``); then anyone can buy it again. A purchase from an older cycle that
+    /// was never marked as used counts as used too.
     func isAvailable(latestCycleKey: String) -> Bool {
         guard isOnSale else { return false }
         guard currentUser != nil, let purchasedCycleKey else { return true }
+        if consumedCycleKey != nil { return true }
         return purchasedCycleKey < latestCycleKey
     }
 
-    /// Whether `userID` bought this coupon during the cycle `cycleKey`.
+    /// Whether `userID` bought this coupon during the cycle `cycleKey` and no division used it yet.
     func isHeld(by userID: CKRecord.ID, inCycle cycleKey: String) -> Bool {
-        currentUser?.recordID == userID && purchasedCycleKey == cycleKey
+        currentUser?.recordID == userID && purchasedCycleKey == cycleKey && consumedCycleKey == nil
     }
 
     /// A coupon for `chore`, priced by ``CouponPricing`` and pointing at it through ``task``.

@@ -87,7 +87,7 @@ struct GamificationSchemaSeedTests {
         ))
     }
 
-    /// Adds the new `purchasedCycleKey` field to the existing `CouponModel` type.
+    /// Adds the `purchasedCycleKey` and `consumedCycleKey` fields to the existing `CouponModel` type.
     @Test func seedCouponModelPurchasedCycleKey() async {
         var coupon = CouponModel(
             name: "schema-seed-coupon",
@@ -99,6 +99,7 @@ struct GamificationSchemaSeedTests {
             task: placeholder("chore")
         )
         coupon.purchasedCycleKey = "2026-01-01"
+        coupon.consumedCycleKey = "2026-01-01"
         await seed(coupon)
     }
 }

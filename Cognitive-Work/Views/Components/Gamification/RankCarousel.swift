@@ -189,11 +189,10 @@ private struct RankItem {
         return Double(progress.pointsIntoDivision) / Double(Tier.pointsPerDivision)
     }
 
-    /// Color of the arc. The current cycle is always yellow. A past cycle shows how close it got
-    /// to the next division: red (far), orange, yellow, green (almost there), and Mestre's pink
-    /// once it reached the top.
+    /// Color of the arc, for the current cycle and the past ones alike: how close the cycle is (or
+    /// got) to the next division, red (far), orange, yellow, green (almost there), and Mestre's
+    /// pink once it reached the top.
     var tint: Color {
-        if isCurrent { return .choreYellow }
         if progress.tier == .master { return .rankMasterPink }
         switch fraction {
         case ..<0.25: return .tagRed

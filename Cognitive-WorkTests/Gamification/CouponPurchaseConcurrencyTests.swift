@@ -225,11 +225,75 @@ struct CouponPurchaseConcurrencyTests {
         let bought = F.cycle(start: F.day(2026, 10, 2))
         let next = F.cycle(start: F.day(2026, 10, 17))
 
-        // Generating the division after the purchase cycle: Ana is left out.
-        #expect(CouponExemption.forNextDivision(coupons: [coupon], cycles: [bought])[dishes] == [ana])
-        // While that next division runs, she still may not pick the chore…
+        // Generating the division after the purchase cycle: Ana is left out…
+        #expect(CouponExemption.forNextDivision(coupons: [coupon], cycles: [bought], newCycleKey: next.key)[dishes] == [ana])
+        // …and that division uses the coupon.
+        coupon.consumedCycleKey = next.key
+        // While it runs, she still may not pick the chore…
         #expect(CouponExemption.active(coupons: [coupon], cycles: [bought, next])[dishes] == [ana])
+        // …the coupon can be bought again…
+        #expect(coupon.isAvailable(latestCycleKey: next.key))
+        #expect(!coupon.isHeld(by: ana, inCycle: "2026-10-02"))
         // …and the division after it no longer spares her.
-        #expect(CouponExemption.forNextDivision(coupons: [coupon], cycles: [bought, next])[dishes] == nil)
+        #expect(CouponExemption.forNextDivision(coupons: [coupon], cycles: [bought, next], newCycleKey: "2026-10-31")[dishes] == nil)
+    }
+
+    /// Generating the division again on the day the latest one was generated rewrites the same
+    /// cycle (same key): the coupon is used all the same, and stays applied to the replacement.
+    @Test func couponIsUsedWhenTheDivisionIsGeneratedAgainTheSameDay() {
+        let ana = F.id("ana")
+        let latest = F.cycle(start: F.day(2026, 10, 21))
+        var coupon = CouponModel(name: "dishes", isOnSale: true, price: 26, tier: .bronze1,
+                                 currentUser: CKRecord.Reference(recordID: ana, action: .none),
+                                 task: CKRecord.Reference(recordID: dishes, action: .none))
+        coupon.purchasedCycleKey = latest.key
+
+        #expect(CouponExemption.forNextDivision(coupons: [coupon], cycles: [latest], newCycleKey: latest.key)[dishes] == [ana])
+        coupon.consumedCycleKey = latest.key
+
+        // Used: free to buy again although the cycle didn't change.
+        #expect(coupon.isAvailable(latestCycleKey: latest.key))
+        #expect(!coupon.isHeld(by: ana, inCycle: latest.key))
+        // Generated once more the same day: still applied, not lost.
+        #expect(CouponExemption.forNextDivision(coupons: [coupon], cycles: [latest], newCycleKey: latest.key)[dishes] == [ana])
+        #expect(CouponExemption.active(coupons: [coupon], cycles: [latest])[dishes] == [ana])
+        // A later division doesn't apply it again.
+        let later = F.cycle(start: F.day(2026, 11, 4))
+        #expect(CouponExemption.forNextDivision(coupons: [coupon], cycles: [latest], newCycleKey: later.key)[dishes] == nil)
+    }
+
+    @Test func usedCouponAndItsRoomCanBeBoughtAgainInTheSameCycle() async {
+        let ana = F.id("ana"), bia = F.id("bia")
+        let store = makeStore(wallets: [ana: 500, bia: 500])
+        _ = await buy(dishesCoupon, by: ana, in: store)
+
+        let bought = store.stored(dishesCoupon).flatMap(CouponModel.init(record:))
+        await CouponExemption.consume([bought].compactMap { $0 }, inCycle: cycleKey, store: store)
+        #expect(store.stored(dishesCoupon).flatMap(CouponModel.init(record:))?.consumedCycleKey == cycleKey)
+
+        // Ana's kitchen hold no longer counts, and the coupon itself is free.
+        let anaBuysStove = await buy(stoveCoupon, by: ana, in: store)
+        let biaBuysDishes = await buy(dishesCoupon, by: bia, in: store)
+
+        #expect((try? anaBuysStove.get()) != nil)
+        #expect((try? biaBuysDishes.get()) != nil)
+        let coupon = store.stored(dishesCoupon).flatMap(CouponModel.init(record:))
+        #expect(coupon?.currentUser?.recordID == bia)
+        #expect(coupon?.consumedCycleKey == nil)
+    }
+
+    @Test func consumingLeavesANewPurchaseAlone() async {
+        let ana = F.id("ana"), bia = F.id("bia")
+        let store = makeStore(wallets: [ana: 500, bia: 500])
+        _ = await buy(dishesCoupon, by: ana, in: store)
+        let anasPurchase = store.stored(dishesCoupon).flatMap(CouponModel.init(record:))
+
+        // Bia bought it in the next cycle before the division marked Ana's purchase as used.
+        _ = await buy(dishesCoupon, by: bia, in: store, cycle: "2026-10-17")
+        await CouponExemption.consume([anasPurchase].compactMap { $0 }, inCycle: "2026-10-17", store: store)
+
+        let coupon = store.stored(dishesCoupon).flatMap(CouponModel.init(record:))
+        #expect(coupon?.currentUser?.recordID == bia)
+        #expect(coupon?.consumedCycleKey == nil)
     }
 }

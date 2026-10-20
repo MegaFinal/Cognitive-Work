@@ -135,10 +135,40 @@ struct HouseCycleModel: CloudKitSyncable, Equatable {
 
 extension HouseCycleModel {
 
-    /// Every cycle of the house in `zoneID`.
-    static func fetchAll(inHouseZone zoneID: CKRecordZone.ID) async -> [HouseCycleModel] {
-        await CloudKitManager.shared.fetchAll(HouseCycleModel.self)
+    /// Cycles this device saved in the last ``recentSaveWindow``, by record ID.
+    ///
+    /// A CloudKit query only returns a record once the server has indexed it, a few seconds after
+    /// the save. Without these, every screen that reloads right after a division (the rewards tab
+    /// above all) would still read the old cycles, and the coupons that division used would keep
+    /// showing as the user's until the app was reopened.
+    private static var recentlySaved: [CKRecord.ID: (cycle: HouseCycleModel, savedAt: Date)] = [:]
+
+    /// How long a cycle saved by this device overrides what the query returns.
+    private static let recentSaveWindow: TimeInterval = 120
+
+    /// Every cycle of the house in `zoneID`, including the ones this device just saved.
+    static func fetchAll(inHouseZone zoneID: CKRecordZone.ID, now: Date = .now) async -> [HouseCycleModel] {
+        let fetched = await CloudKitManager.shared.fetchAll(HouseCycleModel.self)
             .filter { $0.recordID?.zoneID == zoneID }
+        return mergingRecentlySaved(into: fetched, zoneID: zoneID, now: now)
+    }
+
+    /// `fetched` with the cycles saved by this device in the last ``recentSaveWindow`` in place of
+    /// (or added to) what the query returned.
+    private static func mergingRecentlySaved(
+        into fetched: [HouseCycleModel],
+        zoneID: CKRecordZone.ID,
+        now: Date
+    ) -> [HouseCycleModel] {
+        recentlySaved = recentlySaved.filter { now.timeIntervalSince($0.value.savedAt) < recentSaveWindow }
+        guard !recentlySaved.isEmpty else { return fetched }
+
+        let kept = fetched.filter { cycle in
+            guard let id = cycle.recordID else { return true }
+            return recentlySaved[id] == nil
+        }
+        let saved = recentlySaved.values.map { $0.cycle }.filter { $0.recordID?.zoneID == zoneID }
+        return kept + saved
     }
 
     /// Records the cycle of a division just generated. See ``cyclesToSave(newStart:newEnd:existing:calendar:)``.
@@ -159,6 +189,16 @@ extension HouseCycleModel {
             return record
         }
 
-        return await CloudKitManager.shared.batchSave(records: records, zoneID: zoneID, savePolicy: .allKeys)
+        let didSave = await CloudKitManager.shared.batchSave(records: records, zoneID: zoneID, savePolicy: .allKeys)
+        if didSave {
+            // Readers see these right away, before the query catches up (see `recentlySaved`).
+            let now = Date.now
+            for (cycle, record) in zip(toSave, records) {
+                var saved = cycle
+                saved.recordID = record.recordID
+                recentlySaved[record.recordID] = (saved, now)
+            }
+        }
+        return didSave
     }
 }
