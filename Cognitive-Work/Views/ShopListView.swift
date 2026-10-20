@@ -376,10 +376,6 @@ private struct ShopListEmptyState: View {
             .font(.system(size: size, weight: .bold))
             .foregroundStyle(.choreYellow)
             .scaleEffect(isAnimating ? 1.15 : 0.85)
-            .animation(
-                .easeInOut(duration: 1.4).repeatForever(autoreverses: true),
-                value: isAnimating
-            )
     }
 }
 

@@ -10918,6 +10918,186 @@
           }
         }
       }
+    },
+    "Você realizou %lld de %lld \n tarefas da sua escala" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You did %lld of %lld \n chores in your schedule"
+          }
+        }
+      }
+    },
+    "Você mandou muito bem!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You did great!"
+          }
+        }
+      }
+    },
+    "Faltou pouco para completar tudo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You almost finished everything"
+          }
+        }
+      }
+    },
+    "continue assim!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "keep it up!"
+          }
+        }
+      }
+    },
+    "quase lá!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "almost there!"
+          }
+        }
+      }
+    },
+    "%lld dias" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld days"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld dia"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld dias"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Continue assim!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep it up!"
+          }
+        }
+      }
+    },
+    "ganhos com as tarefas que você concluiu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "earned from the chores you completed"
+          }
+        }
+      }
+    },
+    "Cada tarefa feita conta!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every chore you do counts!"
+          }
+        }
+      }
+    },
+    "%lld cômodos" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld room"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rooms"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld cômodo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld cômodos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%@ foi onde você mais trabalhou." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is where you worked the most."
+          }
+        }
+      }
+    },
+    "Nenhuma tarefa concluída nesses 15 dias" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No chores completed in these 15 days"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
