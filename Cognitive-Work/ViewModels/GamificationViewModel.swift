@@ -161,7 +161,8 @@ final class GamificationViewModel {
 
     private func load() async {
         var snapshot = await HouseDataStore.shared.load()
-        guard !Task.isCancelled else { return }
+        // Nothing could be loaded yet (not an empty house): keep the screen as is until the next try.
+        guard !Task.isCancelled, !snapshot.isPlaceholder else { return }
 
         // Rooms, coupons and rank come from the shared cache (`HouseDataStore`), so they show at
         // once; only the payouts and the balance are read here, after.

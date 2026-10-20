@@ -11,11 +11,11 @@ import CloudKit
 /// The retrospective's "Resgatar moedas" button: confirms the user's pending cycle payouts and
 /// credits them to their wallet (see ``CycleSettlementService``).
 ///
-/// The data comes from ``RetroViewModel``, which the presenting screen loads before the
+/// The data comes from ``RetroCoinsViewModel``, which the presenting screen loads before the
 /// retrospective opens. Shows nothing when there is nothing to redeem.
 struct RetroCoinsRedeemButton: View {
 
-    let viewModel: RetroViewModel
+    let viewModel: RetroCoinsViewModel
 
     var body: some View {
         VStack(spacing: 6) {

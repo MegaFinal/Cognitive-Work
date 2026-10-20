@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct RetroView: View {
-    /// Loaded by the presenting screen before the retrospective opens.
-    let viewModel: RetroViewModel
+    /// Coins to redeem; loaded by the presenting screen before the retrospective opens.
+    let coinsViewModel: RetroCoinsViewModel
     @State var isExpanded: Bool = false
     @State var isRetroDone: Bool = false
     @State var page = 0
@@ -33,16 +33,23 @@ struct RetroView: View {
                         RetroAlert(isExpanded: $isExpanded, isRetroDone: $isRetroDone)
                     }
                     else if isExpanded && !isRetroDone {
-                        VStack(spacing: 12){
-                            TabView(selection: $page) {
-                                RetroPercentageOfDoneView(page: $page, isRetroDone: $isRetroDone)
-                                    .tag(0)
-                                RetroStreakView(page: $page, isRetroDone: $isRetroDone)
-                                    .tag(1)
-                                RetroPointsView(page: $page, isRetroDone: $isRetroDone, viewModel: viewModel)
-                                    .tag(2)
-                                RetroRoomsView(isExpanded: $isExpanded, isRetroDone: $isRetroDone)
-                                    .tag(3)
+                        if viewModel.isLoading {
+                            ProgressView()
+                        } else {
+                            VStack(spacing: 12){
+                                TabView(selection: $page) {
+                                    RetroPercentageOfDoneView(page: $page, viewModel: viewModel)
+                                        .tag(0)
+                                    RetroStreakView(page: $page, streakDays: viewModel.streakDays)
+                                        .tag(1)
+                                    RetroPointsView(page: $page, points: viewModel.points, coinsViewModel: coinsViewModel)
+                                        .tag(2)
+                                    RetroRoomsView(isExpanded: $isExpanded, isRetroDone: $isRetroDone, chartItens: viewModel.rooms)
+                                        .tag(3)
+                                }
+                                .tabViewStyle(.page(indexDisplayMode: .never))
+                                
+                                PageIndicator(count: 4, current: $page)
                             }
                         }
                     }
@@ -348,8 +355,9 @@ private struct RetroStreakView: View {
 
 private struct RetroPointsView: View {
     @Binding var page: Int
-    @Binding var isRetroDone: Bool
-    let viewModel: RetroViewModel
+    let points: Int
+    let coinsViewModel: RetroCoinsViewModel
+    @Environment(\.dismiss) private var dismissRetro
     
     var body: some View {
         VStack {
@@ -381,7 +389,7 @@ private struct RetroPointsView: View {
                 .padding(.bottom, height * 0.093)
 
             // Coins earned by rank in the cycle that ended.
-            RetroCoinsRedeemButton(viewModel: viewModel)
+            RetroCoinsRedeemButton(viewModel: coinsViewModel)
                 .padding(.bottom, height * 0.014)
 
             
@@ -577,5 +585,5 @@ struct RetroNewChoresDivision: View {
 }
 
 #Preview {
-    RetroView(viewModel: RetroViewModel())
+    RetroView(coinsViewModel: RetroCoinsViewModel())
 }

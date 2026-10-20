@@ -2,98 +2,121 @@
 //  RetroViewModel.swift
 //  Cognitive-Work
 //
-//  Created by Jonas Melo on 19/10/26.
-//
 
-import Foundation
+import SwiftUI
 import CloudKit
-import Observation
 
-/// What the retrospective reads from CloudKit: the coins the user can redeem for the cycles that
-/// ended.
+/// The retrospective numbers: my chores in the 15 days before the current cycle.
 ///
-/// Owned by the screen that presents the retrospective (``NotificationsView``), which calls
-/// ``load()`` as soon as it appears, so the retrospective opens with everything ready. Loading also
-/// settles the closed cycles (``CycleSettlementService/prepareClosedCycles(_:members:houseID:today:)``):
-/// payouts, rank history and the reset of every member's rank exist even if nobody opened the
-/// rewards tab.
-@MainActor
+/// Reads from `HouseDataStore`, so it usually costs no CloudKit request. Only recurring
+/// occurrences count: completed one-off chores are deleted when a new division is generated.
 @Observable
-final class RetroViewModel {
+class RetroViewModel {
 
-    /// Coins from closed cycles not redeemed yet.
-    private(set) var pendingAmount = 0
-    private(set) var didRedeem = false
-    private(set) var isWorking = false
-    private(set) var errorText: String?
+    private(set) var completedCount = 0
+    private(set) var totalCount = 0
+    /// Longest run of days in the period with every one of my occurrences completed.
+    private(set) var streakDays = 0
+    /// Points of the occurrences I completed in the period.
+    private(set) var points = 0
+    /// Completed occurrences per room, most first.
+    private(set) var rooms: [RetroChartItemDTO] = []
+    private(set) var isLoading = true
 
-    private struct Context {
-        let houseID: CKRecord.ID
-        let user: UserModel
-        let cycles: [HouseCycleModel]
+    private let calendar = Calendar.current
+
+    /// Share of my occurrences completed, `0...100`.
+    var percentage: Double {
+        totalCount == 0 ? 0 : Double(completedCount) / Double(totalCount) * 100
     }
 
-    @ObservationIgnored private var context: Context?
-    @ObservationIgnored private var loadTask: Task<Void, Never>?
+    var topRoomName: String? { rooms.first?.roomName }
 
-    // MARK: - Loading
+    func load(now: Date = Date()) async {
+        defer { isLoading = false }
 
-    /// Loads once. Calls made while (or after) it runs wait for that same load instead of
-    /// starting another one.
-    func load() async {
-        if let loadTask {
-            await loadTask.value
-            return
-        }
-        let task = Task { await self.performLoad() }
-        loadTask = task
-        await task.value
-    }
-
-    /// Loads again from scratch (pull to refresh).
-    func reload() async {
-        loadTask = nil
-        await load()
-    }
-
-    private func performLoad() async {
-        guard let houseID = try? await CloudKitManager.shared.currentHouse()?.recordID,
-              let user = await CloudKitManager.shared.currentHouseUser(),
-              let userID = user.recordID
+        let snapshot = await HouseDataStore.shared.load()
+        guard let me = snapshot.houseUser,
+              let period = previousPeriod(assignments: snapshot.assignments, now: now)
         else { return }
 
-        async let fetchedCycles = HouseCycleModel.fetchAll(inHouseZone: houseID.zoneID)
-        async let fetchedMembers = CloudKitManager.shared.fetchHouseUsers()
-        let (cycles, members) = await (fetchedCycles, fetchedMembers)
+        // The same person may have more than one UserModel (same ownerRecordName).
+        let myIDs = Set(
+            ([me] + snapshot.users.filter { $0.ownerRecordName == me.ownerRecordName })
+                .compactMap { $0.recordID }
+        )
+        let choresByID = Dictionary(
+            snapshot.chores.compactMap { chore in chore.recordID.map { ($0, chore) } },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let roomsByID = Dictionary(
+            snapshot.rooms.compactMap { room in room.recordID.map { ($0, room) } },
+            uniquingKeysWith: { first, _ in first }
+        )
 
-        let service = CycleSettlementService()
-        await service.prepareClosedCycles(cycles, members: members, houseID: houseID)
+        let mine = snapshot.assignments.filter { assignment in
+            period.contains(calendar.startOfDay(for: assignment.day))
+            && (assignment.userReferences ?? []).contains { myIDs.contains($0.recordID) }
+        }
+        let completed = mine.filter(\.isCompleted)
 
-        let payouts = await service.payouts(for: userID, cycles: cycles)
-        context = Context(houseID: houseID, user: user, cycles: cycles)
-        pendingAmount = payouts.filter { $0.status == .pending }.reduce(0) { $0 + $1.amount }
+        totalCount = mine.count
+        completedCount = completed.count
+        streakDays = longestStreak(of: mine, in: period)
+
+        var pointsSum = 0
+        var countByRoom: [CKRecord.ID: Int] = [:]
+        for assignment in completed {
+            guard let choreID = assignment.choreReference?.recordID,
+                  let chore = choresByID[choreID] else { continue }
+            pointsSum += chore.score
+            if let roomID = chore.roomReference?.recordID {
+                countByRoom[roomID, default: 0] += 1
+            }
+        }
+        points = pointsSum
+        rooms = countByRoom
+            .compactMap { roomID, count -> RetroChartItemDTO? in
+                guard let room = roomsByID[roomID] else { return nil }
+                return RetroChartItemDTO(roomName: room.name, numOfChores: count, roomColor: room.color.uiColor)
+            }
+            .sorted { $0.numOfChores > $1.numOfChores }
     }
 
-    // MARK: - Redeeming
+    /// The 15 days before the current cycle. Same cycle rule as the "Sua retrospectiva
+    /// chegou" notification: the current cycle starts on the last occurrence day − 14.
+    private func previousPeriod(assignments: [RecurrentAssignmentModel], now: Date) -> Range<Date>? {
+        let today = calendar.startOfDay(for: now)
+        guard let lastDay = assignments.map({ calendar.startOfDay(for: $0.day) }).max(),
+              let cycleStart = calendar.date(byAdding: .day, value: -14, to: lastDay)
+        else { return nil }
 
-    /// Confirms the user's pending payouts and credits them to their wallet.
-    func redeem() async {
-        guard let context, let userID = context.user.recordID, !isWorking else { return }
-        isWorking = true
-        defer { isWorking = false }
+        let end = min(cycleStart, today)
+        guard let start = calendar.date(byAdding: .day, value: -15, to: end) else { return nil }
+        return start..<end
+    }
 
-        do {
-            _ = try await CycleSettlementService().confirmPendingPayouts(
-                for: userID,
-                cycles: context.cycles,
-                houseID: context.houseID,
-                legacyCoins: context.user.coins
-            )
-            didRedeem = true
-            pendingAmount = 0
-            errorText = nil
-        } catch {
-            errorText = L10n.tr("Não foi possível resgatar agora. Tente de novo.")
+    /// Days with nothing of mine left undone keep the streak; days without chores don't break it.
+    private func longestStreak(of assignments: [RecurrentAssignmentModel], in period: Range<Date>) -> Int {
+        guard !assignments.isEmpty else { return 0 }
+
+        let daysWithPending = Set(
+            assignments.filter { !$0.isCompleted }.map { calendar.startOfDay(for: $0.day) }
+        )
+
+        var longest = 0
+        var current = 0
+        var day = period.lowerBound
+        while day < period.upperBound {
+            if daysWithPending.contains(day) {
+                current = 0
+            } else {
+                current += 1
+                longest = max(longest, current)
+            }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
         }
+        return longest
     }
 }

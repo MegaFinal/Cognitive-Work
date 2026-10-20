@@ -59,7 +59,8 @@ struct HouseSnapshot {
     /// the next load tries again.
     static let empty = HouseSnapshot(
         chores: [], users: [], userRecords: [], rooms: [], assignments: [],
-        houseUser: nil, privateUser: nil, shopList: nil, shopItems: []
+        houseUser: nil, privateUser: nil, shopList: nil, shopItems: [],
+        rankHistory: [], coupons: [], cycles: [], houseID: nil
     )
 
     /// Whether this is ``empty``, i.e. no data could be loaded yet (not "the house is empty").
@@ -210,11 +211,11 @@ final class HouseDataStore {
         let houseID = await house?.recordID
         async let cycles = fetchCycles(inHouseZone: houseID?.zoneID)
 
-        let records = await userRecords
+        let records = try await userRecords
         let currentUser = await houseUser
         await UserScoreModel.apply(scores, to: records + [currentUser].compactMap { $0 })
 
-        return await HouseSnapshot(
+        return try await HouseSnapshot(
             chores: chores,
             users: cloud.deduplicatedByOwner(records),
             userRecords: records,
