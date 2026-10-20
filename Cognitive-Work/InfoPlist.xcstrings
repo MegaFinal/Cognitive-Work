@@ -73,14 +73,14 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "We use the local network to find and communicate with Harvii."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Usamos a rede local para encontrar e se comunicar com o Harvi."
+            "value" : "Usamos a rede local para encontrar e se comunicar com o Harvii."
           }
         }
       }
