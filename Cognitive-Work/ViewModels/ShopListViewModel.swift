@@ -94,6 +94,12 @@ final class ShopListViewModel {
         items.filter { $0.isBought && !isFullySettled($0) }
     }
 
+    /// Whether the list has nothing to show. Not `items.isEmpty`: fully settled items stay in
+    /// ``items`` (for the debts) but are hidden, so a list with only those would render blank.
+    var isListEmpty: Bool {
+        pendingItems.isEmpty && boughtItems.isEmpty
+    }
+
     /// Whether `item` was bought with a price shared with others and every one of them already
     /// paid the buyer. People are matched by `ownerRecordName`, like ``DebtCalculator``, since
     /// the same person may have more than one user record.
