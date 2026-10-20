@@ -15,6 +15,16 @@
         }
       }
     },
+    "%@ %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
     "%@ ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -109,6 +119,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ removed"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
           }
         }
       }
@@ -1958,13 +1978,13 @@
         }
       }
     },
-    "Brilhos" : {
-      "extractionState" : "manual",
+    "Bronze" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sparkles"
+            "value" : "Bronze"
           }
         }
       }
@@ -2162,6 +2182,9 @@
         }
       }
     },
+    "Carregando…" : {
+
+    },
     "Carro" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2335,6 +2358,9 @@
           }
         }
       }
+    },
+    "Ciclos anteriores" : {
+
     },
     "Clique nas tarefas para saber mais." : {
       "localizations" : {
@@ -3349,6 +3375,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A free day!"
+          }
+        }
+      }
+    },
+    "Diamante" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diamond"
           }
         }
       }
@@ -4488,6 +4525,16 @@
         }
       }
     },
+    "Esse cômodo ainda não tem cupons disponíveis." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This room has no coupons available yet."
+          }
+        }
+      }
+    },
     "Esse item não foi encontrado. Ele pode ter sido removido." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5182,16 +5229,8 @@
         }
       }
     },
-    "hoje" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "today"
-          }
-        }
-      }
+    "Histórico de ranks" : {
+
     },
     "Hoje" : {
       "localizations" : {
@@ -6195,6 +6234,17 @@
         }
       }
     },
+    "Mestre" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Master"
+          }
+        }
+      }
+    },
     "Microinterações" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6271,6 +6321,20 @@
           }
         }
       }
+    },
+    "Moedas insuficientes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not enough coins"
+          }
+        }
+      }
+    },
+    "Moedas resgatadas" : {
+
     },
     "Morador" : {
       "extractionState" : "stale",
@@ -6602,6 +6666,9 @@
         }
       }
     },
+    "Não foi possível comprar" : {
+
+    },
     "Não foi possível concluir" : {
       "localizations" : {
         "en" : {
@@ -6932,6 +6999,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "None"
+          }
+        }
+      }
+    },
+    "Nenhum cômodo ainda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rooms yet"
           }
         }
       }
@@ -7726,6 +7803,17 @@
         }
       }
     },
+    "Ouro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gold"
+          }
+        }
+      }
+    },
     "Outro" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8328,6 +8416,17 @@
         }
       }
     },
+    "Platina" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platinum"
+          }
+        }
+      }
+    },
     "Podar plantas" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8346,6 +8445,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Few chores"
+          }
+        }
+      }
+    },
+    "Prata" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Silver"
           }
         }
       }
@@ -8539,6 +8649,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wed"
+          }
+        }
+      }
+    },
+    "Quando a casa tiver cômodos, os cupons de cada um aparecem aqui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once the house has rooms, each room's coupons show up here."
           }
         }
       }
@@ -8866,6 +8986,16 @@
         }
       }
     },
+    "Recompensas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rewards"
+          }
+        }
+      }
+    },
     "Recusa os termos e fecha o acesso ao app" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9143,6 +9273,9 @@
           }
         }
       }
+    },
+    "Resgatar %lld moedas" : {
+
     },
     "Responsáveis" : {
       "localizations" : {
@@ -9495,6 +9628,16 @@
         }
       }
     },
+    "Sem cupons por aqui" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No coupons here"
+          }
+        }
+      }
+    },
     "Sem data" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9634,6 +9777,9 @@
         }
       }
     },
+    "Seu histórico aparece aqui quando o primeiro ciclo terminar." : {
+
+    },
     "Seu nome" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9683,6 +9829,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your progress"
+          }
+        }
+      }
+    },
+    "Seu saldo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your balance"
           }
         }
       }
@@ -10524,6 +10680,17 @@
         }
       }
     },
+    "Trocar cômodo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change room"
+          }
+        }
+      }
+    },
     "Trocar de casa" : {
       "localizations" : {
         "en" : {
@@ -10585,6 +10752,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change the towels"
+          }
+        }
+      }
+    },
+    "Troque suas moedas por cupons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trade your coins for coupons"
           }
         }
       }
@@ -10995,15 +11172,10 @@
       }
     },
     "Você" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You"
-          }
-        }
-      }
+
+    },
+    "Você chegou ao rank máximo" : {
+
     },
     "você consegue!" : {
       "localizations" : {

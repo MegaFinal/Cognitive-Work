@@ -563,9 +563,9 @@ class CloudKitManager {
             name: profile.name,
             profilePicture: profilePictureDuplicate,
             banner: profile.banner,
-            tier: profile.tier,
+            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
+            tier: .bronze1,
             coins: profile.coins,
-            points: profile.points,
             house: CKRecord.Reference(recordID: houseID, action: .none),
             couponLimit: profile.couponLimit,
             ownerRecordName: ownerName

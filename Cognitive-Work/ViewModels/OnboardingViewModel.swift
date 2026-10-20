@@ -218,9 +218,9 @@ class OnboardingViewModel {
             name: user.name,
             profilePicture: assetCopy,
             banner: user.banner,
-            tier: user.tier,
+            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
+            tier: .bronze1,
             coins: user.coins,
-            points: user.points,
             badges: user.badgesReference,
             tasks: user.choresReference,
             // Free time is no longer copied from the private profile: those records live outside
@@ -440,6 +440,7 @@ class OnboardingViewModel {
         })
         
         var recordsToCreate: [CKRecord] = []
+        var couponRecords: [CKRecord] = []
         
         for choreDTO in selectedChores {
             // The room the chore was picked under (set on selection). Matching by name alone
@@ -481,10 +482,18 @@ class OnboardingViewModel {
             record.parent = parentReference
             
             recordsToCreate.append(record)
+            
+            // The chore's coupon, saved in the same batch. Its `task` reference deletes it
+            // together with the chore, so the rollback journal only needs the chore.
+            let coupon = CouponModel(for: choreModel, choreRecordID: record.recordID)
+            let couponRecord = CKRecord(recordType: CouponModel.recordType, zoneID: zoneID)
+            coupon.populate(record: couponRecord)
+            couponRecord.parent = CKRecord.Reference(recordID: record.recordID, action: .none)
+            couponRecords.append(couponRecord)
         }
         
         if !recordsToCreate.isEmpty {
-            let success = await CloudKitManager.shared.batchSave(records: recordsToCreate, zoneID: zoneID)
+            let success = await CloudKitManager.shared.batchSave(records: recordsToCreate + couponRecords, zoneID: zoneID)
             if success {
                 rollbackJournal.createdChores += recordsToCreate.map { OnboardingRollbackJournal.StoredRecordID($0.recordID) }
             } else {
@@ -1045,9 +1054,9 @@ class OnboardingViewModel {
             name: profile.name,
             profilePicture: assetCopy,
             banner: profile.banner,
-            tier: profile.tier,
+            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
+            tier: .bronze1,
             coins: profile.coins,
-            points: profile.points,
             house: houseReference,
             couponLimit: profile.couponLimit,
             ownerRecordName: ownerRecordName

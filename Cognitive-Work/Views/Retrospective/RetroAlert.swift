@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct RetroView: View {
+    /// Coins to redeem; loaded by the presenting screen before the retrospective opens.
+    let coinsViewModel: RetroCoinsViewModel
     @State var isExpanded: Bool = false
     @State var isRetroDone: Bool = false
     @State var page = 0
@@ -40,7 +42,7 @@ struct RetroView: View {
                                         .tag(0)
                                     RetroStreakView(page: $page, streakDays: viewModel.streakDays)
                                         .tag(1)
-                                    RetroPointsView(page: $page, points: viewModel.points)
+                                    RetroPointsView(page: $page, points: viewModel.points, coinsViewModel: coinsViewModel)
                                         .tag(2)
                                     RetroRoomsView(isExpanded: $isExpanded, isRetroDone: $isRetroDone, chartItens: viewModel.rooms)
                                         .tag(3)
@@ -354,6 +356,7 @@ private struct RetroStreakView: View {
 private struct RetroPointsView: View {
     @Binding var page: Int
     let points: Int
+    let coinsViewModel: RetroCoinsViewModel
     @Environment(\.dismiss) private var dismissRetro
     
     var body: some View {
@@ -384,6 +387,10 @@ private struct RetroPointsView: View {
                 .font(.callout)
                 .foregroundStyle(.gray) //arrumar o cinza depois
                 .padding(.bottom, height * 0.093)
+
+            // Coins earned by rank in the cycle that ended.
+            RetroCoinsRedeemButton(viewModel: coinsViewModel)
+                .padding(.bottom, height * 0.014)
 
             
             Button {
@@ -578,5 +585,5 @@ struct RetroNewChoresDivision: View {
 }
 
 #Preview {
-    RetroView()
+    RetroView(coinsViewModel: RetroCoinsViewModel())
 }

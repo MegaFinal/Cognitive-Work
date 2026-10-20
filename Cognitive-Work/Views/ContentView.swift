@@ -102,6 +102,11 @@ struct ContentView: View {
                     Label("Progresso", systemImage: "figure.2")
                 }
             
+            GamificationView()
+                .tabItem {
+                    Label("Recompensas", systemImage: "gift")
+                }
+            
             UserProfileView()
                 .tabItem {
                     Label("Perfil", systemImage: "person.fill")

@@ -385,6 +385,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
             dueDate = pickedDate
         }
         
+        let isNewChore = recordID == nil
         if recordID == nil {
             guard let createdChore = await CloudKitManager.shared.create(self, zoneID: zoneID, parent: parentReference),
                   let createdRecordID = createdChore.recordID
@@ -400,6 +401,13 @@ class ChoreModel: CloudKitSyncable, Identifiable {
             throw ChoreSaveError.cloudKit(nil)
         }
         let choreReference = CKRecord.Reference(recordID: choreRecordID, action: .none)
+        
+        // Every new chore comes with its coupon. The chore is already saved, so a coupon that
+        // fails to save doesn't undo it; the error is left in `CloudKitManager.errorMessage`.
+        if isNewChore {
+            let coupon = CouponModel(for: self, choreRecordID: choreRecordID)
+            await CloudKitManager.shared.create(coupon, zoneID: zoneID, parent: choreReference)
+        }
         
         let checklistDrafts = choreDTO.hasChecklist
             ? choreDTO.checklist.filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }

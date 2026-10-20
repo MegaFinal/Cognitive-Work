@@ -14,6 +14,8 @@ struct NotificationsView: View {
     var onNewMember: () -> Void = {}
     
     @State private var viewModel = NotificationsViewModel()
+    /// Loaded together with the notifications, so the retrospective opens ready.
+    @State private var retroCoinsViewModel = RetroCoinsViewModel()
     @State private var isShowingRetro = false
     @State private var isShowingDashboard = false
     @Environment(\.dismiss) private var dismiss
@@ -40,13 +42,17 @@ struct NotificationsView: View {
         }
         .scrollIndicators(.hidden)
         .task { await viewModel.load() }
-        .refreshable { await viewModel.load(force: true) }
+        .task { await retroCoinsViewModel.load() }
+        .refreshable {
+            await viewModel.load(force: true)
+            await retroCoinsViewModel.reload()
+        }
         .onDisappear { viewModel.markAllAsSeen() }
         .navigationDestination(isPresented: $isShowingDashboard) {
             DashboardView()
         }
         .fullScreenCover(isPresented: $isShowingRetro) {
-            RetroView()
+            RetroView(coinsViewModel: retroCoinsViewModel)
                 .presentationBackground(.clear)
         }
     }
