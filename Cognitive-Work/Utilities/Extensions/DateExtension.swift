@@ -124,10 +124,19 @@ extension Date {
         return dateFormatter.string(from: self)
     }
     
-    /// Day and abbreviated month in Portuguese, without a dot.
-    /// Ex.: Sep 28, 2026 → "28 set" | Oct 1, 2026 → "1 out"
+    /// Day and abbreviated month in the app's language, without a dot.
+    /// Ex.: Sep 28, 2026 → "28 set" (pt-BR) | "Sep 28" (en)
     var shortDayMonth: String {
-        DateFormatter.dayMonth
+        let formatter = DateFormatter.dayMonth
+        if formatter.locale != L10n.locale {
+            formatter.locale = L10n.locale
+            if L10n.locale.language.languageCode == .portuguese {
+                formatter.dateFormat = "d MMM"
+            } else {
+                formatter.setLocalizedDateFormatFromTemplate("MMMd")
+            }
+        }
+        return formatter
             .string(from: self)
             .replacingOccurrences(of: ".", with: "")
     }
@@ -144,7 +153,8 @@ extension Date {
 }
 
 private extension DateFormatter {
-    /// Reused formatter (creating a DateFormatter is expensive) for "day + abbreviated month" in pt_BR.
+    /// Reused formatter (creating a DateFormatter is expensive) for "day + abbreviated month".
+    /// Its locale and format are set by `shortDayMonth` to match the app's language.
     /// Ex.: Sep 28, 2026 → "28 set." (the dot is removed in `shortDayMonth`)
     static let dayMonth: DateFormatter = {
         let formatter = DateFormatter()
