@@ -45,7 +45,7 @@ struct ShopListView: View {
                 // Only on a cold start without data in memory; otherwise the cached list shows at once.
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.items.isEmpty {
+            } else if viewModel.isListEmpty {
                 ShopListEmptyState()
                     .frame(maxHeight: .infinity)
             } else {
