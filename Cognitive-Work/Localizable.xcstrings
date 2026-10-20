@@ -4,9 +4,6 @@
     "" : {
 
     },
-    "%@" : {
-
-    },
     "%@ · cerca de %lld min" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -91,6 +88,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ is overdue"
+          }
+        }
+      }
+    },
+    "%@ foi onde você mais trabalhou." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is where you worked the most."
           }
         }
       }
@@ -252,6 +259,46 @@
         }
       }
     },
+    "%lld cômodos" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld room"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rooms"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld cômodo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld cômodos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld de %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -292,6 +339,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld of %lld public chores are unassigned, %@"
+          }
+        }
+      }
+    },
+    "%lld dias" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld days"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld dia"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld dias"
+                }
+              }
+            }
           }
         }
       }
@@ -620,28 +707,6 @@
         }
       }
     },
-    "3 horas" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3 hours"
-          }
-        }
-      }
-    },
-    "30 minutos" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 minutes"
-          }
-        }
-      }
-    },
     "×%lld" : {
 
     },
@@ -649,6 +714,7 @@
 
     },
     "0 dias" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -754,6 +820,17 @@
         }
       }
     },
+    "3 horas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 hours"
+          }
+        }
+      }
+    },
     "3h" : {
       "localizations" : {
         "en" : {
@@ -776,6 +853,7 @@
       }
     },
     "4 pontos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -817,11 +895,23 @@
       }
     },
     "6 cômodos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "6 rooms"
+          }
+        }
+      }
+    },
+    "30 minutos" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 minutes"
           }
         }
       }
@@ -899,6 +989,7 @@
       }
     },
     "A cozinha foi onde você mais trabalhou." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1197,6 +1288,7 @@
       }
     },
     "adquiridos por ter notado algo na casa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1889,6 +1981,7 @@
       }
     },
     "Cada coisa que você reparou conta!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1905,6 +1998,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Each housemate needs to fill in their free time before the chores are split."
+          }
+        }
+      }
+    },
+    "Cada tarefa feita conta!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every chore you do counts!"
           }
         }
       }
@@ -2687,6 +2790,26 @@
         }
       }
     },
+    "continue assim!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "keep it up!"
+          }
+        }
+      }
+    },
+    "Continue assim!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep it up!"
+          }
+        }
+      }
+    },
     "Continue com seu iCloud" : {
       "localizations" : {
         "en" : {
@@ -2930,17 +3053,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "short"
-          }
-        }
-      }
-    },
-    "Duração estimada: %lld min" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Estimated duration: %lld min"
           }
         }
       }
@@ -3480,6 +3592,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duration %@"
+          }
+        }
+      }
+    },
+    "Duração estimada: %lld min" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estimated duration: %lld min"
           }
         }
       }
@@ -4735,6 +4858,16 @@
         }
       }
     },
+    "Faltou pouco para completar tudo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You almost finished everything"
+          }
+        }
+      }
+    },
     "Fecha os detalhes da tarefa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4872,6 +5005,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Frequency %@"
+          }
+        }
+      }
+    },
+    "ganhos com as tarefas que você concluiu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "earned from the chores you completed"
           }
         }
       }
@@ -6878,6 +7021,16 @@
         }
       }
     },
+    "Nenhuma tarefa concluída nesses 15 dias" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No chores completed in these 15 days"
+          }
+        }
+      }
+    },
     "Nenhuma tarefa corresponde ao filtro selecionado." : {
       "localizations" : {
         "en" : {
@@ -8501,6 +8654,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bedroom"
+          }
+        }
+      }
+    },
+    "quase lá!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "almost there!"
           }
         }
       }
@@ -10905,6 +11068,16 @@
         }
       }
     },
+    "Você mandou muito bem!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You did great!"
+          }
+        }
+      }
+    },
     "Você não deve nada" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10948,7 +11121,18 @@
         }
       }
     },
+    "Você realizou %lld de %lld \n tarefas da sua escala" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You did %lld of %lld \n chores in your schedule"
+          }
+        }
+      }
+    },
     "Você realizou 0 de 20 \n tarefas da sua escala" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

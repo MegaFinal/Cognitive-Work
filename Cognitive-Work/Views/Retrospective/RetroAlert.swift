@@ -11,6 +11,7 @@ struct RetroView: View {
     @State var isExpanded: Bool = false
     @State var isRetroDone: Bool = false
     @State var page = 0
+    @State private var viewModel = RetroViewModel()
     /// Closes the presenting fullScreenCover; used by VoiceOver's escape gesture.
     @Environment(\.dismiss) private var dismissRetro
     var body: some View {
@@ -30,20 +31,24 @@ struct RetroView: View {
                         RetroAlert(isExpanded: $isExpanded, isRetroDone: $isRetroDone)
                     }
                     else if isExpanded && !isRetroDone {
-                        VStack(spacing: 12){
-                            TabView(selection: $page) {
-                                RetroPercentageOfDoneView(page: $page, isRetroDone: $isRetroDone)
-                                    .tag(0)
-                                RetroStreakView(page: $page, isRetroDone: $isRetroDone)
-                                    .tag(1)
-                                RetroPointsView(page: $page, isRetroDone: $isRetroDone)
-                                    .tag(2)
-                                RetroRoomsView(isExpanded: $isExpanded, isRetroDone: $isRetroDone)
-                                    .tag(3)
+                        if viewModel.isLoading {
+                            ProgressView()
+                        } else {
+                            VStack(spacing: 12){
+                                TabView(selection: $page) {
+                                    RetroPercentageOfDoneView(page: $page, viewModel: viewModel)
+                                        .tag(0)
+                                    RetroStreakView(page: $page, streakDays: viewModel.streakDays)
+                                        .tag(1)
+                                    RetroPointsView(page: $page, points: viewModel.points)
+                                        .tag(2)
+                                    RetroRoomsView(isExpanded: $isExpanded, isRetroDone: $isRetroDone, chartItens: viewModel.rooms)
+                                        .tag(3)
+                                }
+                                .tabViewStyle(.page(indexDisplayMode: .never))
+                                
+                                PageIndicator(count: 4, current: $page)
                             }
-                            .tabViewStyle(.page(indexDisplayMode: .never))
-                            
-                            PageIndicator(count: 4, current: $page)
                         }
                     }
                     else if !isExpanded && isRetroDone{
@@ -61,6 +66,7 @@ struct RetroView: View {
         }
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) { dismissRetro() }
+        .task { await viewModel.load() }
         // Each step swaps the whole content: let VoiceOver re-read it from the top.
         .onChange(of: isExpanded) { VoiceOver.screenChanged() }
         .onChange(of: isRetroDone) { VoiceOver.screenChanged() }
@@ -205,8 +211,26 @@ private struct RetroAlert: View {
 
 private struct RetroPercentageOfDoneView: View {
     @Binding var page: Int
-    @Binding var isRetroDone: Bool
-    @State var percentage: Double = 0.0
+    let viewModel: RetroViewModel
+    @Environment(\.dismiss) private var dismissRetro
+    
+    private var percentage: Double { viewModel.percentage }
+    
+    private var subtitle: LocalizedStringKey {
+        switch percentage {
+        case 80...: "Você mandou muito bem!"
+        case 50..<80: "Faltou pouco para completar tudo"
+        default: "Vamos tentar de novo na próxima"
+        }
+    }
+    
+    private var cheer: LocalizedStringKey {
+        switch percentage {
+        case 80...: "continue assim!"
+        case 50..<80: "quase lá!"
+        default: "você consegue!"
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -220,27 +244,25 @@ private struct RetroPercentageOfDoneView: View {
                     .voiceOverLabel(L10n.tr("%@ das tarefas concluídas", ChartA11y.percent(percentage / 100)))
                     .accessibilityAddTraits(.isHeader)
                 
-                Text("Você realizou 0 de 20 \n tarefas da sua escala")
+                Text("Você realizou \(viewModel.completedCount) de \(viewModel.totalCount) \n tarefas da sua escala")
                     .font(.title)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, height * 0.008)
                 
-                Text("Vamos tentar de novo na próxima")
+                Text(subtitle)
                     .font(.callout)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.subTitleGray) //Arrumar depois a cor
                 
                 Spacer()
                 
-                Text("você consegue!")
+                Text(cheer)
                     .bold()
                     .font(.system(size: 40))
                     .padding(.bottom, height * 0.018)
                 
                 Button {
-                    withAnimation {
-                        isRetroDone = true
-                    }
+                    dismissRetro()
                 } label: {
                     Text("ver depois")
                         .fontWeight(.semibold)
@@ -269,7 +291,8 @@ private struct RetroPercentageOfDoneView: View {
 
 private struct RetroStreakView: View {
     @Binding var page: Int
-    @Binding var isRetroDone: Bool
+    let streakDays: Int
+    @Environment(\.dismiss) private var dismissRetro
     
     var body: some View {
         VStack {
@@ -279,11 +302,11 @@ private struct RetroStreakView: View {
             Image(systemName: "flame.fill")
                 .resizable()
                 .frame(width: width * 0.54, height: height * 0.3)
-                .foregroundStyle(.gray)
+                .foregroundStyle(streakDays > 0 ? Color.choreOrange : Color.gray)
                 .padding(.bottom, height * 0.037)
                 .accessibilityDecorative()
             
-            Text("0 dias")
+            Text("\(streakDays) dias")
                 .bold()
                 .font(.system(size: 64))
                 .padding(.bottom, height * 0.014)
@@ -295,16 +318,14 @@ private struct RetroStreakView: View {
                 .multilineTextAlignment(.center)
                 .padding(.bottom, height * 0.014)
             
-            Text("Dá para começar ainda hoje!")
+            Text(streakDays > 0 ? "Continue assim!" : "Dá para começar ainda hoje!")
                 .font(.callout)
                 .foregroundStyle(.gray) //arrumar o cinza depois
                 .padding(.bottom, height * 0.093)
 
             
             Button {
-                withAnimation {
-                    isRetroDone = true
-                }
+                dismissRetro()
             } label: {
                 Text("ver depois")
                     .fontWeight(.semibold)
@@ -332,7 +353,8 @@ private struct RetroStreakView: View {
 
 private struct RetroPointsView: View {
     @Binding var page: Int
-    @Binding var isRetroDone: Bool
+    let points: Int
+    @Environment(\.dismiss) private var dismissRetro
     
     var body: some View {
         VStack {
@@ -346,28 +368,26 @@ private struct RetroPointsView: View {
                 .padding(.bottom, height * 0.037)
                 .accessibilityDecorative()
             
-            Text("4 pontos")
+            Text("\(points) pontos")
                 .bold()
                 .font(.system(size: 64))
                 .padding(.bottom, height * 0.014)
                 .accessibilityAddTraits(.isHeader)
             
-            Text("adquiridos por ter notado algo na casa")
+            Text("ganhos com as tarefas que você concluiu")
                 .fontWeight(.regular)
                 .font(.title)
                 .multilineTextAlignment(.center)
                 .padding(.bottom, height * 0.014)
             
-            Text("Cada coisa que você reparou conta!")
+            Text("Cada tarefa feita conta!")
                 .font(.callout)
                 .foregroundStyle(.gray) //arrumar o cinza depois
                 .padding(.bottom, height * 0.093)
 
             
             Button {
-                withAnimation {
-                    isRetroDone = true
-                }
+                dismissRetro()
             } label: {
                 Text("ver depois")
                     .fontWeight(.semibold)
@@ -411,14 +431,8 @@ struct RetroRoomsView: View {
     @Binding var isExpanded: Bool
     @Binding var isRetroDone: Bool
     
-    @State var chartItens: [RetroChartItemDTO] = [
-        RetroChartItemDTO(roomName: "Cozinha", numOfChores: 8, roomColor: .choreBlue),
-        RetroChartItemDTO(roomName: "Sala", numOfChores: 5, roomColor: .choreGreen),
-        RetroChartItemDTO(roomName: "Banheiro", numOfChores: 6, roomColor: .choreOrange),
-        RetroChartItemDTO(roomName: "Quarto", numOfChores: 4, roomColor: .chorePurple),
-        RetroChartItemDTO(roomName: "Lavanderia", numOfChores: 3, roomColor: .choreYellow),
-        RetroChartItemDTO(roomName: "Área externa", numOfChores: 2, roomColor: .choreBlue)
-    ]
+    /// Completed chores per room, most first (see ``RetroViewModel/rooms``).
+    let chartItens: [RetroChartItemDTO]
     
     var maxNumOfChores: Int {
         chartItens.map(\.numOfChores).max() ?? 0
@@ -426,50 +440,61 @@ struct RetroRoomsView: View {
     
     var body: some View {
         VStack {
-            Text("6 cômodos")
-                .bold()
-                .font(.system(size: 64))
-                .padding(.top, height * 0.071)
-                .accessibilityAddTraits(.isHeader)
-            
-            Text("A cozinha foi onde você mais trabalhou.")
-                .font(.title)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, height * 0.02)
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(chartItens) { item in
-                        Text("\(item.roomName)")
-                            .font(.body)
-                            .fontWeight(.semibold)
-                            .padding(.bottom, 0.01)
-                            // Read by the bar below, together with its value.
-                            .accessibilityHidden(true)
-                        
-                        Capsule()
-                            .frame(width: (width * 0.877) * CGFloat(item.numOfChores) / CGFloat(maxNumOfChores), height: height * 0.041)
-                            .foregroundStyle(item.roomColor)
-                            .overlay(alignment: .leading) {
-                                Text("\(item.numOfChores) tarefas")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal)
-                            }
-                            .padding(.bottom, 0.02)
-                            // One element per room: "Cozinha, 8 tarefas".
-                            .accessibilityElement(children: .ignore)
-                            .voiceOverLabel(item.roomName.localizedDefault)
-                            .voiceOverValue(L10n.tr("%lld tarefas", item.numOfChores))
-                    }
-                }
-                Spacer()
+            if let topRoom = chartItens.first {
+                Text("\(chartItens.count) cômodos")
+                    .bold()
+                    .font(.system(size: 64))
+                    .padding(.top, height * 0.071)
+                    .accessibilityAddTraits(.isHeader)
+                
+                Text("\(topRoom.roomName.localizedDefault) foi onde você mais trabalhou.")
+                    .font(.title)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, height * 0.02)
+            } else {
+                Text("Nenhuma tarefa concluída nesses 15 dias")
+                    .bold()
+                    .font(.title)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, height * 0.071)
+                    .accessibilityAddTraits(.isHeader)
             }
-            .padding(.horizontal, width * 0.061)
-            .accessibilityElement(children: .contain)
-            .voiceOverLabel(L10n.tr("Tarefas por cômodo"))
-            .accessibilityChartDescriptor(roomsChartDescriptor)
+            
+            if !chartItens.isEmpty {
+                HStack {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(chartItens) { item in
+                            Text(item.roomName.localizedDefault)
+                                .font(.body)
+                                .fontWeight(.semibold)
+                                .padding(.bottom, 0.01)
+                                // Read by the bar below, together with its value.
+                                .accessibilityHidden(true)
+                        
+                            Capsule()
+                                .frame(width: (width * 0.877) * CGFloat(item.numOfChores) / CGFloat(maxNumOfChores), height: height * 0.041)
+                                .foregroundStyle(item.roomColor)
+                                .overlay(alignment: .leading) {
+                                    Text("\(item.numOfChores) tarefas")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal)
+                                }
+                                .padding(.bottom, 0.02)
+                                // One element per room: "Cozinha, 8 tarefas".
+                                .accessibilityElement(children: .ignore)
+                                .voiceOverLabel(item.roomName.localizedDefault)
+                                .voiceOverValue(L10n.tr("%lld tarefas", item.numOfChores))
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, width * 0.061)
+                .accessibilityElement(children: .contain)
+                .voiceOverLabel(L10n.tr("Tarefas por cômodo"))
+                .accessibilityChartDescriptor(roomsChartDescriptor)
+            }
             
             Spacer()
 
