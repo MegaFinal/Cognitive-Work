@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @State var viewModel = DashboardViewModel()
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         NavigationStack {
@@ -47,15 +48,36 @@ struct DashboardView: View {
                             isUnassignedChores: true
                         )
                     }
+                    // New content version = new identity: the charts are recreated and draw the
+                    // rebuilt data. Applied inside the ScrollView so the scroll position is kept.
+                    .id(viewModel.contentVersion)
+                }
+                .refreshable {
+                    await viewModel.reloadAfterRemoteChange()
                 }
             }
             .disabled(viewModel.isLoading)
             .opacity(viewModel.isLoading ? 0 : 1)
             // Invisible while loading, so VoiceOver must not reach it either.
             .accessibilityHidden(viewModel.isLoading)
+            // Only on a cold start without data in memory; otherwise the cards draw at once.
+            .overlay {
+                if viewModel.isLoading { ProgressView() }
+            }
         }
+        // Local changes: `markDataChanged()` bumps `dataRevision`.
         .task(id: CloudKitManager.shared.dataRevision) {
             await viewModel.loadIfNeeded()
+        }
+        // Changes made on another device (the CKDatabaseSubscription push posts this).
+        .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
+            Task { await viewModel.reloadAfterRemoteChange() }
+        }
+        // Pushes can be missed while the app is suspended, and "today" may have rolled over.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await viewModel.reloadAfterRemoteChange() }
+            }
         }
     }
     

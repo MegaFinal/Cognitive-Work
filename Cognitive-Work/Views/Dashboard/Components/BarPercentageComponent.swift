@@ -174,6 +174,9 @@ struct BarPercentageComponent: View {
             Text(viewModel.myCognitiveShareText)
                 .font(.system(size: 64, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
+                // Keeps "100%" on one line: the number shrinks instead of dropping the "%" down.
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
             
             Text("do esforço mental da casa esta semana foi seu")
                 .font(.footnote)
@@ -209,7 +212,7 @@ struct BarPercentageComponent: View {
     
     // MARK: - Chart Caption
     
-    private func caption(_ text: String,_ color: Color) -> some View {
+    private func caption(_ text: LocalizedStringKey, _ color: Color) -> some View {
         HStack(spacing: 6) {
             Circle()
                 .frame(width: width * 0.03)
@@ -232,3 +235,13 @@ struct BarPercentageComponent: View {
     return BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
 }
 
+
+#Preview("Divisão da casa – 100%") {
+    let viewModel = DashboardViewModel()
+    viewModel.myCognitiveShare = 1.0
+    viewModel.idealCognitiveShare = 1.0
+    viewModel.myCognitiveShareText = "100%"
+    viewModel.idealCognitiveShareText = "100%"
+    
+    return BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
+}

@@ -90,6 +90,10 @@ class DashboardViewModel {
     
     var isLoading: Bool = true
     
+    /// Changes every time the cards are rebuilt from a new snapshot. The view uses it as an
+    /// `.id(_:)` so the charts are recreated and always draw the freshly built data.
+    var contentVersion: Int = 0
+    
     /// The ``HouseDataStore`` snapshot the cached data was built from. `nil` until the first load.
     private var loadedSnapshotID: UUID?
     
@@ -108,19 +112,42 @@ class DashboardViewModel {
         await load()
     }
     
-    /// Builds every card from ``HouseDataStore``. The store fetches only if it is stale, so
-    /// opening the tab (or reacting to a change that another tab already loaded) costs no
-    /// extra request.
-    func load() async {
-        let snapshot = await HouseDataStore.shared.load()
-        guard !Task.isCancelled else { return }
+    /// Brings the cards up to date after CloudKit reported a change (push, app back in the
+    /// foreground, pull to refresh). Always asks the store for fresh data.
+    func reloadAfterRemoteChange() async {
+        await load(afterRemoteChange: true)
+    }
+    
+    /// Builds every card from ``HouseDataStore``.=
+    @MainActor
+    func load(afterRemoteChange: Bool = false) async {
+        let store = HouseDataStore.shared
         
-        guard needsRebuild(for: snapshot) else {
-            isLoading = false
-            return
+        if let cached = store.snapshot, needsRebuild(for: cached) {
+            await build(from: cached)
+            guard !Task.isCancelled else { return }
         }
         
-        user = snapshot.houseUser
+        let snapshot = afterRemoteChange
+            ? await store.refreshAfterRemoteChange()
+            : await store.loadLatest()
+        guard !Task.isCancelled else { return }
+        
+        if needsRebuild(for: snapshot) {
+            await build(from: snapshot)
+        } else {
+            isLoading = false
+        }
+    }
+    
+    /// Rebuilds every card from `snapshot`.
+    @MainActor
+    private func build(from snapshot: HouseSnapshot) async {
+        // `snapshot.houseUser` comes from CloudKitManager's per-session cache, which is never
+        // refreshed: it is a different object from the one ScoreManager updates, so its points
+        // stay frozen. The same record inside `userRecords` was fetched in this very pass.
+        let freshUser = snapshot.userRecords.first { $0.recordID == snapshot.houseUser?.recordID }
+        user = freshUser ?? snapshot.houseUser
         houseMembers = snapshot.users
         chores = snapshot.chores
         assignments = snapshot.assignments
@@ -129,11 +156,12 @@ class DashboardViewModel {
         refresh()
         await schedule.setup(users: snapshot.users, chores: snapshot.chores,
                              assignments: snapshot.assignments, rooms: snapshot.rooms,
-                             me: snapshot.houseUser)
+                             me: user)
         guard !Task.isCancelled else { return }
         
         loadedSnapshotID = snapshot.id
         loadedDay = Calendar.current.startOfDay(for: .now)
+        contentVersion &+= 1
         isLoading = false
     }
     func refresh() {

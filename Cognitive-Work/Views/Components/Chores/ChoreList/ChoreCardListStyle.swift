@@ -58,6 +58,30 @@ struct ChoreCardListStyle: View {
         }
     }
     
+    /// Avatars shown before the "+N" badge takes over.
+    private let maxVisibleUsers = 2
+    
+    private var visibleResponsibleUsers: [UserModel] {
+        Array(occurrenceResponsibleUsers.prefix(maxVisibleUsers))
+    }
+    
+    private var hiddenResponsibleCount: Int {
+        max(0, occurrenceResponsibleUsers.count - maxVisibleUsers)
+    }
+    
+    /// Circle with "+N", sized like an avatar.
+    private var overflowBadge: some View {
+        let side = width * 0.07
+        return Text("+\(hiddenResponsibleCount)")
+            .font(.system(size: side * 0.4, weight: .semibold))
+            .minimumScaleFactor(0.6)
+            .lineLimit(1)
+            .foregroundColor(.black)
+            .frame(width: side, height: side)
+            .background(Color(white: 0.9))
+            .clipShape(Circle())
+    }
+    
     var isOccurrenceDone: Bool {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
@@ -83,40 +107,24 @@ struct ChoreCardListStyle: View {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 10) {
                         HStack(spacing: -10) {
-                            ForEach(occurrenceResponsibleUsers, id: \.recordID) { user in
+                            ForEach(visibleResponsibleUsers, id: \.recordID) { user in
                                 UserProfilePictureTag(user: user, widthMultiplier: 0.07)
+                                    .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
+                            }
+                            
+                            // Users that don't fit are summarized as "+N".
+                            if hiddenResponsibleCount > 0 {
+                                overflowBadge
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
                         }
                         .padding(.leading, 4)
                         .padding(.bottom, 8)
                         
-                        HStack(spacing: 8) {
-                            // MARK: - Tags
-                            CapsuleTag(
-                                tagName: chore.frequency.displayName,
-                                tagColor: chore.frequency.color,
-                                textColor: chore.frequency.textColor,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                            
-                            CapsuleTag(
-                                tagName: chore.priorityTag.displayName,
-                                tagColor: chore.priorityTag.color,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                            
-                            CapsuleTag(
-                                tagName: ChoreDurationTier.from(minutes: chore.duration).displayText,
-                                tagColor: ChoreDurationTier.from(minutes: chore.duration).color,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                        }
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        // MARK: - Tags
+                        ChoreTagsRow(chore: chore, spacing: 8, horizontalPadding: 7.0, verticalPadding: 1.0)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                     
                     // MARK: - Room name, chore name and completion button
