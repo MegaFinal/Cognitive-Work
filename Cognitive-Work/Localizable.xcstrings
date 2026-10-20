@@ -1963,13 +1963,13 @@
         }
       }
     },
-    "Certifique-se que o Harvi está conectado no WiFi e tente novamente." : {
+    "Certifique-se que o Harvii está conectado no WiFi e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Make sure Harvi is connected to Wi-Fi and try again."
+            "value" : "Make sure Harvii is connected to Wi-Fi and try again."
           }
         }
       }
@@ -2358,7 +2358,6 @@
       }
     },
     "Conectar com meu Hardware" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2378,12 +2377,12 @@
         }
       }
     },
-    "Conectar Harvi" : {
+    "Conectar Harvii" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connect Harvi"
+            "value" : "Connect Harvii"
           }
         }
       }
@@ -3526,24 +3525,24 @@
         }
       }
     },
-    "Enviando dados do WiFi para o Harvi…" : {
+    "Enviando dados do WiFi para o Harvii…" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sending Wi-Fi details to Harvi…"
+            "value" : "Sending Wi-Fi details to Harvii…"
           }
         }
       }
     },
-    "Enviando imagem para o Harvi…" : {
+    "Enviando imagem para o Harvii…" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sending image to Harvi…"
+            "value" : "Sending image to Harvii…"
           }
         }
       }
@@ -3644,13 +3643,13 @@
         }
       }
     },
-    "Erro ao criar nome do host (Harvi)." : {
+    "Erro ao criar nome do host (Harvii)." : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Error creating the host name (Harvi)."
+            "value" : "Error creating the host name (Harvii)."
           }
         }
       }
@@ -4908,24 +4907,24 @@
         }
       }
     },
-    "Imagem enviada para o Harvi" : {
+    "Imagem enviada para o Harvii" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Image sent to Harvi"
+            "value" : "Image sent to Harvii"
           }
         }
       }
     },
-    "Imagem que será enviada ao Harvi" : {
+    "Imagem que será enviada ao Harvii" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Image that will be sent to Harvi"
+            "value" : "Image that will be sent to Harvii"
           }
         }
       }
@@ -6076,13 +6075,13 @@
         }
       }
     },
-    "Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente." : {
+    "Não conseguimos enviar os dados para o Harvii. Confira se o seu celular está conectado à rede HARVII e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We couldn't send the data to Harvi. Make sure your phone is connected to the HARVI network and try again."
+            "value" : "We couldn't send the data to Harvii. Make sure your phone is connected to the HARVII network and try again."
           }
         }
       }
@@ -6320,13 +6319,13 @@
         }
       }
     },
-    "Não foi possível falar com o Harvi. Segure o botão BOOT por 5 segundos para resetar direto no dispositivo." : {
+    "Não foi possível falar com o Harvii. Segure o botão BOOT por 5 segundos para resetar direto no dispositivo." : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't reach Harvi. Hold the BOOT button for 5 seconds to reset it directly on the device."
+            "value" : "Couldn't reach Harvii. Hold the BOOT button for 5 seconds to reset it directly on the device."
           }
         }
       }
@@ -6889,12 +6888,12 @@
         }
       }
     },
-    "O Harvi vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo." : {
+    "O Harvii vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Harvi will forget the Wi-Fi and every phone in the home will need to set it up and pair again."
+            "value" : "Harvii will forget the Wi-Fi and every phone in the home will need to set it up and pair again."
           }
         }
       }
@@ -7457,12 +7456,12 @@
         }
       }
     },
-    "Para que seja possível conectar o Harvi ao WiFi da sua casa, entre no WiFi ESP32, com senha 12345678, retorne ao app e envie o nome e senha do WiFi." : {
+    "Para que seja possível conectar o Harvii ao WiFi da sua casa, entre no WiFi HARVII, com senha 12345678, retorne ao app e envie o nome e senha do WiFi." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To connect Harvi to your home Wi-Fi, join the ESP32 Wi-Fi network (password 12345678), come back to the app and send your Wi-Fi name and password."
+            "value" : "To connect Harvii to your home Wi-Fi, join the HARVII Wi-Fi network (password 12345678), come back to the app and send your Wi-Fi name and password."
           }
         }
       }
@@ -7520,13 +7519,13 @@
         }
       }
     },
-    "Pareando com o Harvi…" : {
+    "Pareando com o Harvii…" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pairing with Harvi…"
+            "value" : "Pairing with Harvii…"
           }
         }
       }
@@ -8594,13 +8593,13 @@
         }
       }
     },
-    "Resetando o Harvi…" : {
+    "Resetando o Harvii…" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Resetting Harvi…"
+            "value" : "Resetting Harvii…"
           }
         }
       }
@@ -8615,22 +8614,22 @@
         }
       }
     },
-    "Resetar o Harvi" : {
+    "Resetar o Harvii" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reset Harvi"
+            "value" : "Reset Harvii"
           }
         }
       }
     },
-    "Resetar o Harvi?" : {
+    "Resetar o Harvii?" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reset Harvi?"
+            "value" : "Reset Harvii?"
           }
         }
       }
@@ -9124,13 +9123,13 @@
         }
       }
     },
-    "Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvi!" : {
+    "Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvii!" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pairing succeeded — your phone is now connected to Harvi!"
+            "value" : "Pairing succeeded — your phone is now connected to Harvii!"
           }
         }
       }
@@ -10582,6 +10581,341 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Go back to the previous step?"
+          }
+        }
+      }
+    },
+    "Não foi possível encontrar sua casa. Tente novamente." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find your home. Please try again."
+          }
+        }
+      }
+    },
+    "Não foi possível criar o cômodo. Verifique sua conexão e tente novamente." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't create the room. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "Não foi possível excluir as tarefas do cômodo. Verifique sua conexão e tente novamente." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't delete the room's chores. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "Não foi possível excluir o cômodo. Verifique sua conexão e tente novamente." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't delete the room. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "Não foi possível carregar a casa. Verifique sua conexão." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load your home. Check your connection."
+          }
+        }
+      }
+    },
+    "Não foi possível desfazer esta etapa. Verifique sua conexão e tente novamente." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't undo this step. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "%lld tarefas a pegar hoje" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chore to pick up today"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld chores to pick up today"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tarefa a pegar hoje"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tarefas a pegar hoje"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Ninguém pegou %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nobody picked up %@"
+          }
+        }
+      }
+    },
+    "%@ está atrasado" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is overdue"
+          }
+        }
+      }
+    },
+    "%@ · cerca de %lld min" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · about %lld min"
+          }
+        }
+      }
+    },
+    "%lld novas notificações" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld new notification"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld new notifications"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld nova notificação"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld novas notificações"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Bastões" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sticks"
+          }
+        }
+      }
+    },
+    "Resposta do dispositivo externo em formato inesperado." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unexpected response format from the external device."
+          }
+        }
+      }
+    },
+    "Você" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        }
+      }
+    },
+    "Resto da casa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest of the home"
+          }
+        }
+      }
+    },
+    "tarefas sem dono" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "unassigned chores"
+          }
+        }
+      }
+    },
+    "tarefas de moradores" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "housemates' chores"
+          }
+        }
+      }
+    },
+    "Minha Casa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Home"
+          }
+        }
+      }
+    },
+    "Organização Doméstica" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Organization"
+          }
+        }
+      }
+    },
+    "Nuvens" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clouds"
+          }
+        }
+      }
+    },
+    "Meia-lua" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Half-moon"
+          }
+        }
+      }
+    },
+    "Brilhos" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sparkles"
+          }
+        }
+      }
+    },
+    "Estrelas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stars"
+          }
+        }
+      }
+    },
+    "hoje" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        }
+      }
+    },
+    "Registrar pagamento" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record payment"
           }
         }
       }

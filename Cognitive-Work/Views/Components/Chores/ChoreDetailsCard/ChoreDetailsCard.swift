@@ -164,31 +164,9 @@ struct ChoreDetailsCard: View {
                 .frame(width: width * 0.7)
                 .accessibilityAddTraits(.isHeader)
             
-            HStack(spacing: 12) {
-                CapsuleTag(
-                    tagName: chore.priorityTag.displayName,
-                    tagColor: chore.priorityTag.color,
-                    horizontalPadding: 10.0,
-                    verticalPadding: 1.5
-                )
-                
-                CapsuleTag(
-                    tagName: ChoreDurationTier.from(minutes: chore.duration).displayText,
-                    tagColor: ChoreDurationTier.from(minutes: chore.duration).color,
-                    horizontalPadding: 10.0,
-                    verticalPadding: 1.5
-                )
-                
-                CapsuleTag(
-                    tagName: chore.frequency.displayName,
-                    tagColor: chore.frequency.color,
-                    textColor: chore.frequency.textColor,
-                    horizontalPadding: 10.0,
-                    verticalPadding: 1.5
-                )
-            }
-            .accessibilityElement(children: .ignore)
-            .voiceOverLabel(carouselViewModel.accessibilityTagsText(for: chore))
+            ChoreTagsRow(chore: chore, spacing: 12, horizontalPadding: 10.0, verticalPadding: 1.5)
+                .accessibilityElement(children: .ignore)
+                .voiceOverLabel(carouselViewModel.accessibilityTagsText(for: chore))
         }
         .foregroundColor(.black)
     }

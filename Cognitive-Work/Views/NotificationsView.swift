@@ -38,6 +38,7 @@ struct NotificationsView: View {
             }
             .padding(.top, 20)
         }
+        .scrollIndicators(.hidden)
         .task { await viewModel.load() }
         .refreshable { await viewModel.load(force: true) }
         .onDisappear { viewModel.markAllAsSeen() }
