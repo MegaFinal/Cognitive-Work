@@ -48,6 +48,10 @@ final class GamificationViewModel {
     /// Coupons available in each room, by ``key(for:)``.
     private var couponsByRoom: [String: [CouponModel]] = [:]
 
+    /// Room key (``key(for:)``) of each coupon in ``couponsByRoom``, by the coupon's record name.
+    @ObservationIgnored
+    private var roomKeyByCoupon: [String: String] = [:]
+
     @ObservationIgnored
     private var appliedSnapshotID: UUID?
 
@@ -63,6 +67,17 @@ final class GamificationViewModel {
 
     @ObservationIgnored
     private var refreshTask: Task<Void, Never>?
+
+    /// Coupons this device bought in the last ``recentPurchaseWindow``, by record name, as they
+    /// are after the purchase.
+    ///
+    /// A CloudKit query returns a changed record only once the server has indexed the change, a
+    /// few seconds after the save, so the reload right after a purchase would still list the
+    /// coupon as for sale. These take the place of what the query returned until then.
+    @ObservationIgnored
+    private var recentPurchases: [String: (coupon: CouponModel, boughtAt: Date)] = [:]
+
+    private static let recentPurchaseWindow: TimeInterval = 120
 
     /// `true` inside Xcode previews, where CloudKit can't run.
     @ObservationIgnored
@@ -112,10 +127,26 @@ final class GamificationViewModel {
 
     func state(of coupon: CouponModel) -> CouponCard.PurchaseState {
         guard let latestCycleKey else { return .available }
-        if let myID = houseUser?.recordID, coupon.isHeld(by: myID, inCycle: latestCycleKey) {
+        let myID = houseUser?.recordID
+        if let myID, coupon.isHeld(by: myID, inCycle: latestCycleKey) {
             return .ownedByMe
         }
-        return coupon.isAvailable(latestCycleKey: latestCycleKey) ? .available : .taken
+        guard coupon.isAvailable(latestCycleKey: latestCycleKey) else { return .taken }
+        // One coupon per room per cycle (the purchase service checks it again on the server).
+        if let myID, holdsAnotherCoupon(inRoomOf: coupon, userID: myID, cycleKey: latestCycleKey) {
+            return .roomLimitReached
+        }
+        return .available
+    }
+
+    /// Whether `userID` holds, unused, a coupon other than `coupon` in the same room this cycle.
+    private func holdsAnotherCoupon(inRoomOf coupon: CouponModel, userID: CKRecord.ID, cycleKey: String) -> Bool {
+        guard let name = coupon.recordID?.recordName,
+              let roomKey = roomKeyByCoupon[name]
+        else { return false }
+        return (couponsByRoom[roomKey] ?? []).contains { other in
+            other.recordID?.recordName != name && other.isHeld(by: userID, inCycle: cycleKey)
+        }
     }
 
     /// Stable across refreshes, unlike ``RoomModel/id``, which changes on every fetch.
@@ -195,7 +226,7 @@ final class GamificationViewModel {
 
         houseID = snapshot.houseID
         latestCycleKey = HouseCycleModel.latest(snapshot.cycles)?.key
-        let coupons = snapshot.coupons
+        let coupons = withRecentPurchases(snapshot.coupons)
         houseUser = snapshot.houseUser
         points = snapshot.houseUser?.points ?? 0
         // Loaded with the rest of the house data (`HouseDataStore`).
@@ -219,17 +250,21 @@ final class GamificationViewModel {
         }
 
         var grouped: [String: [CouponModel]] = [:]
+        var roomByCoupon: [String: String] = [:]
         let pricing = CouponPricing.current
         for var coupon in coupons where coupon.isOnSale {
             guard let choreName = coupon.task?.recordID.recordName,
                   let roomKey = roomKeyByChore[choreName]
             else { continue }
-            // The price follows the chore's current frequency and duration.
-            if let chore = choreByName[choreName], state(of: coupon) == .available {
+            // The price follows the chore's current frequency and duration, until it's bought.
+            if let chore = choreByName[choreName],
+               latestCycleKey.map({ coupon.isAvailable(latestCycleKey: $0) }) ?? true {
                 coupon.price = pricing.price(for: chore)
             }
             grouped[roomKey, default: []].append(coupon)
+            if let name = coupon.recordID?.recordName { roomByCoupon[name] = roomKey }
         }
+        roomKeyByCoupon = roomByCoupon
         couponsByRoom = grouped
 
         if selectedRoom == nil {
@@ -240,19 +275,23 @@ final class GamificationViewModel {
     // MARK: - Buying
 
     /// Buys `coupon` for the signed-in user, then reloads.
-    func buy(_ coupon: CouponModel) async {
-        guard buyingCouponName == nil else { return }
+    ///
+    /// - Returns: Whether the purchase went through. On failure ``alertMessage`` says why.
+    @discardableResult
+    func buy(_ coupon: CouponModel) async -> Bool {
+        guard buyingCouponName == nil else { return false }
         guard let couponID = coupon.recordID,
               let buyerID = houseUser?.recordID,
               let houseID
         else {
             alertMessage = L10n.tr("Não foi possível concluir a compra. Tente de novo.")
-            return
+            return false
         }
 
         buyingCouponName = coupon.recordID?.recordName ?? coupon.name
         defer { buyingCouponName = nil }
 
+        var didBuy = false
         do {
             let receipt = try await CouponPurchaseService().purchase(
                 couponID: couponID,
@@ -262,6 +301,8 @@ final class GamificationViewModel {
                 legacyCoins: houseUser?.coins ?? 0
             )
             coins = receipt.newBalance
+            rememberPurchase(of: coupon, by: buyerID, price: receipt.price)
+            didBuy = true
         } catch let error as CouponPurchaseService.PurchaseError {
             alertMessage = error.userMessage
         } catch {
@@ -270,5 +311,39 @@ final class GamificationViewModel {
 
         HouseDataStore.shared.invalidate()
         await load()
+        return didBuy
+    }
+
+    /// Keeps `coupon` as the purchase just saved it (see ``recentPurchases``).
+    private func rememberPurchase(of coupon: CouponModel, by buyerID: CKRecord.ID, price: Int) {
+        guard let name = coupon.recordID?.recordName else { return }
+        var bought = coupon
+        bought.lastUser = coupon.currentUser
+        bought.currentUser = CKRecord.Reference(recordID: buyerID, action: .none)
+        bought.purchasedCycleKey = latestCycleKey
+        bought.consumedCycleKey = nil
+        bought.price = price
+        recentPurchases[name] = (bought, .now)
+    }
+
+    /// `coupons` with this device's recent purchases in place of the versions the query returned,
+    /// until the query catches up (or ``recentPurchaseWindow`` passes).
+    private func withRecentPurchases(_ coupons: [CouponModel], now: Date = .now) -> [CouponModel] {
+        recentPurchases = recentPurchases.filter { now.timeIntervalSince($0.value.boughtAt) < Self.recentPurchaseWindow }
+        guard !recentPurchases.isEmpty else { return coupons }
+
+        return coupons.map { fetched in
+            guard let name = fetched.recordID?.recordName,
+                  let bought = recentPurchases[name]?.coupon
+            else { return fetched }
+            // The query already has the purchase: no need to keep it any longer.
+            if fetched.currentUser?.recordID == bought.currentUser?.recordID,
+               fetched.purchasedCycleKey == bought.purchasedCycleKey,
+               fetched.consumedCycleKey == nil {
+                recentPurchases[name] = nil
+                return fetched
+            }
+            return bought
+        }
     }
 }

@@ -13,6 +13,12 @@ struct GamificationView: View {
 
     @State private var viewModel: GamificationViewModel
 
+    /// Key (``couponKey(_:)``) of the coupon brought to the center of the screen, if any.
+    @State private var focusedCouponKey: String?
+
+    /// Lets a ticket fly from the list to the center and back.
+    @Namespace private var ticketNamespace
+
     init(viewModel: GamificationViewModel? = nil) {
         self._viewModel = State(initialValue: viewModel ?? GamificationViewModel())
     }
@@ -21,6 +27,9 @@ struct GamificationView: View {
         NavigationStack {
             content
                 .toolbar(.hidden, for: .navigationBar)
+                // The focused coupon takes the whole screen.
+                .toolbar(focusedCouponKey == nil ? .automatic : .hidden, for: .tabBar)
+                .overlay { focusedCouponOverlay }
         }
     }
 
@@ -161,19 +170,76 @@ struct GamificationView: View {
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 18) {
                     ForEach(coupons, id: \.recordID) { coupon in
-                        CouponCard(
-                            coupon: coupon,
-                            roomColor: color,
-                            roomSymbol: symbol,
-                            isAffordable: viewModel.canAfford(coupon),
-                            state: viewModel.state(of: coupon),
-                            isBuying: viewModel.buyingCouponName == (coupon.recordID?.recordName ?? coupon.name),
-                            onBuy: { Task { await viewModel.buy(coupon) } }
-                        )
+                        let key = Self.couponKey(coupon)
+                        if focusedCouponKey == key {
+                            // Keeps its place while the ticket is at the center.
+                            Color.clear
+                                .frame(height: CouponTicket.height)
+                                .accessibilityHidden(true)
+                        } else {
+                            CouponCard(
+                                coupon: coupon,
+                                roomColor: color,
+                                roomSymbol: symbol,
+                                isAffordable: viewModel.canAfford(coupon),
+                                state: viewModel.state(of: coupon),
+                                isBuying: viewModel.buyingCouponName == key,
+                                onSelect: { focusCoupon(key) }
+                            )
+                            .matchedGeometryEffect(id: key, in: ticketNamespace)
+                        }
                     }
                 }
                 .padding(.horizontal, 30)
                 .padding(.bottom, 24)
+            }
+        }
+    }
+
+    // MARK: - Focused coupon
+
+    /// Identifies a coupon on screen; the same value ``GamificationViewModel/buyingCouponName`` uses.
+    static func couponKey(_ coupon: CouponModel) -> String {
+        coupon.recordID?.recordName ?? coupon.name
+    }
+
+    private func focusCoupon(_ key: String) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+            focusedCouponKey = key
+        }
+    }
+
+    private func closeFocusedCoupon() {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+            focusedCouponKey = nil
+        }
+    }
+
+    /// The chosen coupon at the center, over a white background. Tapping outside it closes it.
+    @ViewBuilder
+    private var focusedCouponOverlay: some View {
+        if let key = focusedCouponKey,
+           let coupon = viewModel.selectedCoupons.first(where: { Self.couponKey($0) == key }) {
+            ZStack {
+                Color.white
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { closeFocusedCoupon() }
+                    .accessibilityHidden(true)
+                    .transition(.opacity)
+
+                FocusedCouponView(
+                    coupon: coupon,
+                    roomColor: viewModel.selectedRoom?.color ?? .yellow,
+                    roomSymbol: viewModel.selectedRoom?.symbol ?? "house",
+                    isAffordable: viewModel.canAfford(coupon),
+                    state: viewModel.state(of: coupon),
+                    isBuying: viewModel.buyingCouponName == key,
+                    namespace: ticketNamespace,
+                    matchID: key,
+                    onBuy: { await viewModel.buy(coupon) },
+                    onClose: { closeFocusedCoupon() }
+                )
             }
         }
     }
