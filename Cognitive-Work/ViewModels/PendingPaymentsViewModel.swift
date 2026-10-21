@@ -21,6 +21,7 @@ final class PendingPaymentsViewModel {
         let cents: String
     }
 
+    /// The shopping list's data (items and members) the debts come from.
     private let shopList: ShopListViewModel
 
     /// Which side of the debts is listed. The matching summary card is highlighted.
@@ -32,12 +33,14 @@ final class PendingPaymentsViewModel {
     /// True while a settlement is being saved.
     private(set) var isSettling = false
 
+    /// An error to show, or `nil`.
     private(set) var errorMessage: String?
 
     /// See ``ShopListViewModel``: previews can't reach CloudKit.
     @ObservationIgnored
     private let isPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 
+    /// Creates the view model on top of the shopping list's data.
     init(shopList: ShopListViewModel) {
         self.shopList = shopList
     }
@@ -48,6 +51,7 @@ final class PendingPaymentsViewModel {
     /// refresh that still carries the old record can't bring a paid debt back.
     private var settledKeys: Set<String> = []
 
+    /// Every open debt, worked out from the list (minus the ones settled in this session).
     private var ledger: DebtLedger {
         DebtCalculator.ledger(
             items: shopList.items,
@@ -64,8 +68,10 @@ final class PendingPaymentsViewModel {
         return (value * 100).rounded() / 100
     }
 
+    /// Title of the balance card.
     var balanceTitle: String { L10n.tr("Saldo") }
 
+    /// What the balance means: the house owes you, you owe the house, or all clear.
     var balanceCaption: String {
         if balance > 0 { return L10n.tr("A casa te deve") }
         if balance < 0 { return L10n.tr("Você deve à casa") }
@@ -103,10 +109,12 @@ final class PendingPaymentsViewModel {
         return (open + paid).sorted { position($0) < position($1) }
     }
 
+    /// Whether `group` was marked as paid in this session.
     func isPaid(_ group: DebtGroup) -> Bool {
         paidGroups[group.id] != nil
     }
 
+    /// The total on one side of the debts.
     func total(for direction: DebtDirection) -> Double {
         ledger.total(for: direction)
     }
@@ -118,6 +126,7 @@ final class PendingPaymentsViewModel {
 
     // MARK: - Texts
 
+    /// "Você deve" or "Te devem", translated.
     func title(for direction: DebtDirection) -> String {
         switch direction {
         case .youOwe: return L10n.tr("Você deve")
@@ -130,6 +139,7 @@ final class PendingPaymentsViewModel {
         group.counterparty.name
     }
 
+    /// Title shown when the selected side has no debts.
     var emptyTitle: String {
         switch selectedDirection {
         case .youOwe: return L10n.tr("Você não deve nada")
@@ -137,6 +147,7 @@ final class PendingPaymentsViewModel {
         }
     }
 
+    /// Message shown when there are no debts.
     var emptyMessage: String {
         L10n.tr("Quando uma compra com valor for dividida entre os moradores, ela aparece aqui.")
     }
@@ -174,11 +185,13 @@ final class PendingPaymentsViewModel {
         return settleButtonTitle(for: group)
     }
 
+    /// Title of the "mark as paid" confirmation.
     var confirmationTitle: String {
         guard let group = settlementRequest else { return "" }
         return L10n.tr("Marcar %@ de %@ como pago?", currencyText(group.total), group.counterparty.name)
     }
 
+    /// Message of the "mark as paid" confirmation.
     var confirmationMessage: String {
         switch settlementRequest?.direction {
         case .owedToYou: return L10n.tr("Isso marca que a pessoa já te pagou. Não dá para desfazer.")
@@ -191,12 +204,14 @@ final class PendingPaymentsViewModel {
     /// True for a moment after the Pix "copia e cola" is copied. The view shows a "copiado" toast.
     private(set) var isPixCopied = false
 
+    /// Hides the "Pix copiado" message after a moment.
     @ObservationIgnored
     private var pixCopiedTask: Task<Void, Never>?
 
     /// Name of the housemate who has no Pix key yet, or `nil`. The view explains it in an alert.
     var missingPixKeyName: String?
 
+    /// Explains that the housemate has no Pix key yet.
     var missingPixKeyMessage: String {
         L10n.tr("%@ ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix.", missingPixKeyName ?? "")
     }
@@ -212,6 +227,7 @@ final class PendingPaymentsViewModel {
         }
     }
 
+    /// Copies the housemate's Pix "copia e cola" code with the amount, or asks them to add a key.
     private func copyPix(for group: DebtGroup) {
         guard let key = group.counterparty.pixKey.flatMap(PixPayload.normalizedKey) else {
             missingPixKeyName = group.counterparty.name
@@ -236,15 +252,18 @@ final class PendingPaymentsViewModel {
 
     // MARK: - Settling
 
+    /// Asks the user to confirm settling `group`.
     func requestSettlement(of group: DebtGroup) {
         guard !isPaid(group) else { return }
         settlementRequest = group
     }
 
+    /// Closes the confirmation without settling.
     func cancelSettlement() {
         settlementRequest = nil
     }
 
+    /// Clears the error.
     func clearError() {
         errorMessage = nil
     }

@@ -8,17 +8,31 @@
 import Foundation
 import CloudKit
 
+/// A coupon that spares its holder from one chore in the next division.
+///
+/// Every chore has one coupon (see the extension below). A member buys it with coins in the
+/// rewards tab; the next division gives that chore to someone else. Once the division used it,
+/// anyone can buy it again.
 struct CouponModel: CloudKitSyncable {
+    /// The CloudKit record type.
     static var recordType: String = "CouponModel"
     
+    /// The CloudKit record ID. `nil` until the model is saved.
     var recordID: CKRecord.ID?
     
+    /// The coupon's name (the chore's name).
     var name: String
+    /// Whether the coupon can be bought at all.
     var isOnSale: Bool
+    /// Price in coins (see ``CouponPricing``).
     var price: Int
+    /// The coupon's rank, from how hard the chore is (see ``tier(forScore:)``).
     var tier: Tier
+    /// The member who bought the coupon most recently. `nil` if nobody bought it yet.
     var currentUser: CKRecord.Reference?
+    /// The member who held the coupon before ``currentUser``.
     var lastUser: CKRecord.Reference?
+    /// The chore the coupon is for. Deleting the chore deletes the coupon.
     var task: CKRecord.Reference?
     
     /// Key of the ``HouseCycleModel`` in which ``currentUser`` bought the coupon. The purchase
@@ -30,6 +44,7 @@ struct CouponModel: CloudKitSyncable {
     /// cleared by the next purchase. A used coupon can be bought again, even in the same cycle.
     var consumedCycleKey: String?
     
+    /// Creates the model from a CloudKit record. Returns `nil` when a required field is missing.
     init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
@@ -53,6 +68,7 @@ struct CouponModel: CloudKitSyncable {
         self.consumedCycleKey = record["consumedCycleKey"] as? String
     }
     
+    /// Creates a new coupon, not saved yet.
     init(
         name: String,
         isOnSale: Bool,
@@ -72,6 +88,7 @@ struct CouponModel: CloudKitSyncable {
         self.task = task
     }
     
+    /// Copies the model's fields into `record`, before saving it.
     func populate(record: CKRecord) {
         record["name"] = self.name
         record["isOnSale"] = self.isOnSale

@@ -8,16 +8,23 @@
 import SwiftUI
 import CloudKit
 
+/// A chore's card on the generated schedule screen: room and chore name, the room icon, and
+/// who does it with the chore's priority and duration.
 struct ChoreCard: View {
     
+    /// The chore on the card.
     let chore: ChoreModel
+    /// The member responsible, if any.
     let user: UserModel?
+    /// The chore's room, if known.
     let room: RoomModel?
     
     var body: some View {
         VStack(spacing: 30) {
+            // MARK: - Room and chore name
             title
             
+            // MARK: - Room icon, responsible member and tags
             HStack {
                 Image(systemName: room?.symbol ?? chore.symbolName)
                     .resizable()
@@ -56,6 +63,7 @@ struct ChoreCard: View {
         )
     }
     
+    /// Room name over the chore name.
     private var title: some View {
         VStack {
             Text(room?.name.localizedDefault ?? L10n.tr("Cômodo"))
@@ -68,7 +76,9 @@ struct ChoreCard: View {
     }
 }
 
+/// The right side of ``ChoreCard``: the responsible member's avatar and the priority and duration tags.
 private struct ChorePriority: View {
+    /// The chore whose tags are shown.
     let chore: ChoreModel
     /// Was `@State`: SwiftUI keeps a `@State` value across re-renders and ignores the new one
     /// passed in by the parent, so every card kept showing the first selected user's photo.
@@ -76,9 +86,11 @@ private struct ChorePriority: View {
     
     var body: some View {
         HStack {
+            // MARK: - Divider line
             Rectangle()
                 .frame(width: 2)
             
+            // MARK: - Avatar and tags
             VStack(alignment: .leading) {
                 UserProfilePictureTag(user: user, widthMultiplier: 0.08)
 
@@ -100,6 +112,7 @@ private struct ChorePriority: View {
         .frame(height: 100)
     }
     
+    /// The chore's duration group.
     private var tier: ChoreDurationTier {
         ChoreDurationTier.from(minutes: chore.duration)
     }

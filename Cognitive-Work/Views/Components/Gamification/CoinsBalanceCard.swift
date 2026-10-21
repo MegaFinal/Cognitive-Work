@@ -10,20 +10,24 @@ import SwiftUI
 /// The user's coin balance: the coin piglet on a soft gray card, like the dashboard's points card.
 struct CoinsBalanceCard: View {
 
+    /// The user's coin balance.
     var coins: Int
 
+    /// "1 moeda" or "N moedas", translated.
     private var coinsText: String {
         coins == 1 ? L10n.tr("1 moeda") : L10n.tr("%lld moedas", coins)
     }
 
     var body: some View {
         HStack(spacing: 16) {
+            // MARK: - Piggy bank
             Image("RetroPigCoin")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 72, height: 72)
                 .accessibilityHidden(true)
 
+            // MARK: - "Seu saldo" and the amount
             VStack(alignment: .leading, spacing: 2) {
                 Text("Seu saldo")
                     .font(.system(size: 15))
@@ -42,6 +46,7 @@ struct CoinsBalanceCard: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity)
+        // MARK: - Card background
         .background(
             Color(.systemGray6).opacity(0.5),
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)

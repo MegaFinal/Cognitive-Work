@@ -7,14 +7,22 @@
 
 import SwiftUI
 
+/// One day of ``CustomCalendar``: the day number in a circle that is black when selected and
+/// yellow (stronger for busier days) otherwise.
 struct DayCell: View {
+    /// The day.
     let day: Date
+    /// How strong the yellow background is (how busy the day is), from `0` to `1`.
     var opacity: Double = 0
+    /// Whether the day can be picked (inside the window and not in the past).
     var isSelectable: Bool = true
+    /// Whether the day is the selected one.
     var isSelected: Bool = false
+    /// Runs when the day is tapped.
     var action: () -> Void = {}
 
     var body: some View {
+        // MARK: - Day number in a circle
         Button(action: action) {
             Text(day.formatted(.dateTime.day()))
                 .font(.system(size: 15))
@@ -28,6 +36,7 @@ struct DayCell: View {
         }
         .buttonStyle(.plain)
         .disabled(!isSelectable)
+        // MARK: - Accessibility
         // "sexta-feira, 25 de setembro" — "Selecionado" — "Muitas tarefas"
         .voiceOverLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(L10n.locale)))
         .voiceOverValue(loadDescription)
@@ -47,11 +56,13 @@ struct DayCell: View {
         return opacity >= 0.6 ? L10n.tr("Muitas tarefas") : L10n.tr("Poucas tarefas")
     }
 
+    /// The number's color: white when selected, gray when it can't be picked.
     private var foreground: Color {
         if isSelected { return .white }
         return isSelectable ? .black : .gray
     }
 
+    /// The circle's color: black when selected, yellow by busyness otherwise.
     private var background: Color {
         if isSelected { return .black }
         guard isSelectable else { return .clear }

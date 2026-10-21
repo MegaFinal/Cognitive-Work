@@ -15,11 +15,14 @@ import SwiftUI
 /// - "Editar" in the toolbar makes the cards wiggle and shows a delete badge on each one;
 ///   a long press offers the same actions in a context menu.
 struct RoomsManagementView: View {
+    /// Loads the rooms and creates, edits and deletes them.
     @State private var viewModel: RoomsManagementViewModel
     
     /// Room being edited, or `nil` when the edit sheet is closed.
     @State private var roomBeingEdited: RoomModel?
+    /// Shows the "new room" sheet.
     @State private var isCreatingRoom = false
+    /// The room waiting for the user to confirm its deletion.
     @State private var roomPendingDeletion: RoomModel?
     
     /// Delete mode: cards wiggle and show a delete badge.
@@ -28,8 +31,10 @@ struct RoomsManagementView: View {
     /// Drives the staggered entrance of the cards after the first load.
     @State private var hasAppeared = false
     
+    /// The two-column grid.
     private let columns = [GridItem(spacing: 16), GridItem(spacing: 16)]
     
+    /// Creates the screen for a house's rooms.
     init(house: HouseModel?) {
         _viewModel = State(initialValue: RoomsManagementViewModel(house: house))
     }
@@ -37,6 +42,7 @@ struct RoomsManagementView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 24) {
+                // MARK: - Title, then the loading grid or the rooms
                 header
                 
                 if viewModel.isLoading && viewModel.rooms.isEmpty {
@@ -47,12 +53,14 @@ struct RoomsManagementView: View {
             }
             .padding(.bottom, 30)
         }
+        // MARK: - Pull to refresh and title
         .refreshable {
             await viewModel.load()
         }
         .navigationTitle("Seus cômodos")
         .navigationBarTitleDisplayMode(.inline)
         .hidesTabBar()
+        // MARK: - "Editar" / "OK" and "+" buttons
         .toolbar {
             if !viewModel.rooms.isEmpty {
                 ToolbarItem(placement: .primaryAction) {
@@ -73,6 +81,7 @@ struct RoomsManagementView: View {
                 }
             }
         }
+        // MARK: - Loading (and leaving delete mode when there are no rooms)
         .task {
             await viewModel.load()
             hasAppeared = true
@@ -80,6 +89,7 @@ struct RoomsManagementView: View {
         .onChange(of: viewModel.rooms.isEmpty) { _, isEmpty in
             if isEmpty { isEditing = false }
         }
+        // MARK: - New room and edit room sheets
         .sheet(isPresented: $isCreatingRoom) {
             RoomFormSheet(room: nil) { name, color, symbol, pattern in
                 let didSave = await viewModel.createRoom(name: name, color: color, symbol: symbol, pattern: pattern)
@@ -95,6 +105,7 @@ struct RoomsManagementView: View {
                 return didSave
             }
         }
+        // MARK: - Delete confirmation and error alerts
         .alert(
             deletionTitle,
             isPresented: Binding(
@@ -128,11 +139,13 @@ struct RoomsManagementView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        // MARK: - Deleting overlay
         .blockingOperation(isPresented: $viewModel.isDeleting, message: "Excluindo cômodo...")
     }
     
     // MARK: - Header
     
+    /// The text above the grid (it changes in delete mode).
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(isEditing
@@ -148,9 +161,11 @@ struct RoomsManagementView: View {
     
     // MARK: - Grid
     
+    /// The room cards and the "Novo cômodo" card.
     private var roomsGrid: some View {
         LazyVGrid(columns: columns, spacing: 16) {
             ForEach(Array(viewModel.rooms.enumerated()), id: \.element.id) { index, room in
+                // MARK: Room cards
                 RoomCard(
                     room: room,
                     choreCount: viewModel.choreCount(for: room),
@@ -179,6 +194,7 @@ struct RoomsManagementView: View {
                 .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
             
+            // MARK: "Novo cômodo" card
             AddRoomCard()
                 .onTapGesture {
                     HapticsManager.selection()
@@ -213,16 +229,19 @@ struct RoomsManagementView: View {
     
     // MARK: - Deletion
     
+    /// Asks the user to confirm deleting a room.
     private func askToDelete(_ room: RoomModel) {
         HapticsManager.notify(.warning)
         roomPendingDeletion = room
     }
     
+    /// The delete alert's title: "Excluir \"<room>\"?".
     private var deletionTitle: String {
         guard let roomPendingDeletion else { return "" }
         return L10n.tr("Excluir \"%@\"?", roomPendingDeletion.name.localizedDefault)
     }
     
+    /// The delete alert's message, saying how many chores go with the room.
     private func deletionMessage(for room: RoomModel) -> String {
         let count = viewModel.choreCount(for: room)
         switch count {
@@ -241,15 +260,20 @@ struct RoomsManagementView: View {
 /// A room as a textured card in its color, with its icon, name and chore count — the same
 /// visual language as the onboarding room cards.
 private struct RoomCard: View {
+    /// The room shown.
     let room: RoomModel
+    /// How many chores the room has.
     let choreCount: Int
+    /// Whether delete mode is on (wiggle and delete badge).
     let isEditing: Bool
     /// 1 or -1, so neighbouring cards wiggle in opposite directions.
     let wiggleDirection: Double
+    /// Asks to delete the room.
     let onDelete: () -> Void
     /// Opens the edit sheet; used as the card's VoiceOver default action.
     var onEdit: (() -> Void)? = nil
     
+    /// Flips back and forth to make the card wiggle.
     @State private var isWiggling = false
     
     /// How far the card tilts while wiggling (0 when not in delete mode).
@@ -259,6 +283,7 @@ private struct RoomCard: View {
     
     var body: some View {
         ZStack(alignment: .topLeading) {
+            // MARK: - Card (wiggling in delete mode)
             card
                 .rotationEffect(.degrees(isWiggling ? wiggleAmplitude : -wiggleAmplitude))
                 .animation(
@@ -272,6 +297,7 @@ private struct RoomCard: View {
                     isWiggling = editing
                 }
             
+            // MARK: - Delete badge
             if isEditing {
                 Button(action: onDelete) {
                     Image(systemName: "minus")
@@ -290,6 +316,7 @@ private struct RoomCard: View {
         }
     }
     
+    /// The textured card: icon, name and the chore count tag.
     private var card: some View {
         ZStack {
             VStack(spacing: 14) {
@@ -339,6 +366,7 @@ private struct RoomCard: View {
         .voiceControlNames([room.name.localizedDefault, L10n.tr("Editar %@", room.name.localizedDefault)])
     }
     
+    /// "Nenhuma tarefa", "1 tarefa" or "N tarefas".
     private var choreCountText: String {
         switch choreCount {
         case 0: L10n.tr("Nenhuma tarefa")
@@ -406,24 +434,38 @@ private extension View {
 ///
 /// Also used by the onboarding (see ``NewRoomSheet``), so both screens create rooms the same way.
 struct RoomFormSheet: View {
+    /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
     
+    /// The room to edit, or `nil` to create one.
     let room: RoomModel?
     /// Persists the form. Returns `true` when the sheet can close.
     let onSave: @MainActor (_ name: String, _ color: RoomColor, _ symbol: String, _ pattern: RoomTexturePattern) async -> Bool
     
+    /// The name being typed.
     @State private var name: String
+    /// The color picked.
     @State private var selectedColor: RoomColor
+    /// The icon picked.
     @State private var selectedSymbol: String
+    /// The texture picked.
     @State private var selectedPattern: RoomTexturePattern
+    /// `true` while saving.
     @State private var isSaving = false
+    /// Shows the "couldn't save" message.
     @State private var didFailToSave = false
     /// Bumped on every save failure to shake the name field.
     @State private var failureCount = 0
+    /// Focuses the name field when creating a room.
     @FocusState private var isNameFocused: Bool
     
+    /// Six columns for the icon grid.
     private let symbolColumns = Array(repeating: GridItem(spacing: 12), count: 6)
     
+    /// Creates the sheet.
+    /// - Parameters:
+    ///   - room: The room to edit, or `nil` to create one.
+    ///   - onSave: Saves the form. Returns `true` when the sheet can close.
     init(room: RoomModel?, onSave: @escaping @MainActor (_ name: String, _ color: RoomColor, _ symbol: String, _ pattern: RoomTexturePattern) async -> Bool) {
         self.room = room
         self.onSave = onSave
@@ -433,8 +475,10 @@ struct RoomFormSheet: View {
         _selectedPattern = State(initialValue: room?.texturePattern ?? .fallback)
     }
     
+    /// Whether it edits an existing room.
     private var isEditingRoom: Bool { room != nil }
     
+    /// Default room types (Quarto, Cozinha…) can only change their name.
     private var isLookLocked: Bool {
         guard let room else { return false }
         return RoomsManagementViewModel.isDefaultType(room)
@@ -446,14 +490,17 @@ struct RoomFormSheet: View {
         selectedPattern.resolved(for: selectedColor)
     }
     
+    /// The name without spaces at the ends.
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespaces)
     }
     
+    /// Whether the name is reserved for the house-wide room.
     private var isReservedName: Bool {
         RoomsManagementViewModel.isReservedName(trimmedName)
     }
     
+    /// Whether the form can be saved.
     private var canSave: Bool {
         !trimmedName.isEmpty && !isReservedName && !isSaving
     }
@@ -462,6 +509,7 @@ struct RoomFormSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
+                    // MARK: - Preview, name, and look pickers (locked for default rooms)
                     hero
                     nameField
                     
@@ -483,6 +531,7 @@ struct RoomFormSheet: View {
             .scrollBounceBehavior(.basedOnSize)
             .navigationTitle(isEditingRoom ? "Editar Cômodo" : "Novo Cômodo")
             .navigationBarTitleDisplayMode(.inline)
+            // MARK: - Cancel and save buttons
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -564,6 +613,7 @@ struct RoomFormSheet: View {
     
     // MARK: - Name
     
+    /// The big name field with its underline and error messages; shakes when saving fails.
     private var nameField: some View {
         VStack(spacing: 6) {
             TextField("Nome do Cômodo", text: $name)
@@ -606,6 +656,7 @@ struct RoomFormSheet: View {
     
     // MARK: - Color
     
+    /// One textured circle per room color.
     private var colorPicker: some View {
         VStack(alignment: .leading, spacing: 14) {
             sectionTitle("Cor")
@@ -658,6 +709,7 @@ struct RoomFormSheet: View {
     
     // MARK: - Symbol
     
+    /// The grid of icons a custom room can use.
     private var symbolPicker: some View {
         VStack(alignment: .leading, spacing: 14) {
             sectionTitle("Ícone")
@@ -704,6 +756,7 @@ struct RoomFormSheet: View {
         .padding(.horizontal, 24)
     }
     
+    /// A section's bold title.
     private func sectionTitle(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.system(size: 20, weight: .bold))
@@ -712,6 +765,7 @@ struct RoomFormSheet: View {
     
     // MARK: - Save
     
+    /// Saves the form; closes the sheet on success, or shakes and shows the error.
     private func save() {
         guard !isSaving else { return }
         isNameFocused = false
@@ -736,13 +790,16 @@ struct RoomFormSheet: View {
 
 /// Horizontal shake used when saving fails. Animating `shakes` by 1 plays one shake.
 nonisolated private struct ShakeEffect: GeometryEffect {
+    /// How many shakes have played (animated).
     var shakes: CGFloat
     
+    /// Lets SwiftUI animate `shakes`.
     var animatableData: CGFloat {
         get { shakes }
         set { shakes = newValue }
     }
     
+    /// Moves the view sideways following a sine wave.
     func effectValue(size: CGSize) -> ProjectionTransform {
         let offset = 10 * sin(shakes * .pi * 4)
         return ProjectionTransform(CGAffineTransform(translationX: offset, y: 0))
@@ -751,7 +808,9 @@ nonisolated private struct ShakeEffect: GeometryEffect {
 
 /// Gray card that pulses while the rooms load.
 private struct PulsingPlaceholder: View {
+    /// Seconds before this card starts pulsing (so they pulse one after the other).
     let delay: Double
+    /// Flips to make the card pulse.
     @State private var isDimmed = false
     
     var body: some View {
@@ -775,9 +834,13 @@ extension RoomTextureBackground {
 
 /// A color option shown as a small textured circle of that color.
 struct ColorSwatch: View {
+    /// The color shown.
     let color: RoomColor
+    /// The texture shown on it.
     let pattern: RoomTexturePattern
+    /// Whether this color is picked.
     let isSelected: Bool
+    /// Picks this color.
     let action: () -> Void
     
     var body: some View {
@@ -815,10 +878,15 @@ struct ColorSwatch: View {
 
 /// A texture option: a rounded tile of the selected color with that texture, and its name.
 struct PatternSwatch: View {
+    /// The color of the tile.
     let color: RoomColor
+    /// The texture shown.
     let pattern: RoomTexturePattern
+    /// Whether this texture is picked.
     let isSelected: Bool
+    /// Whether this texture exists in the color (otherwise it's faded and can't be picked).
     let isAvailable: Bool
+    /// Picks this texture.
     let action: () -> Void
     
     var body: some View {

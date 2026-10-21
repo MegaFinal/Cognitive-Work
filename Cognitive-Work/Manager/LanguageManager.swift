@@ -9,9 +9,12 @@ import SwiftUI
 
 /// Languages the app ships translations for.
 enum AppLanguage: String, CaseIterable, Identifiable {
+    /// Brazilian Portuguese (the app's original language).
     case portuguese = "pt-BR"
+    /// English.
     case english = "en"
 
+    /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
 
     /// Locale used for lookups and for every date/number format in the app.
@@ -37,8 +40,10 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 @Observable
 final class LanguageManager {
 
+    /// The single instance used by the app.
     static let shared = LanguageManager()
 
+    /// The `UserDefaults` key where the chosen language is saved.
     private static let storageKey = "appLanguage"
 
     /// The language currently applied to the app.
@@ -48,8 +53,10 @@ final class LanguageManager {
     @ObservationIgnored
     private(set) var bundle: Bundle = .main
 
+    /// The locale of ``current``, for formatting dates and numbers.
     var locale: Locale { current.locale }
 
+    /// Loads the saved language (or the device's default) and its translations.
     private init() {
         let stored = UserDefaults.standard.string(forKey: Self.storageKey).flatMap(AppLanguage.init(rawValue:))
         current = stored ?? .systemDefault
@@ -72,6 +79,7 @@ final class LanguageManager {
         return bundle.localizedString(forKey: key, value: key, table: nil)
     }
 
+    /// The translations bundle of `language`, or the main bundle when none is found.
     private static func bundle(for language: AppLanguage) -> Bundle {
         let candidates = [language.rawValue, language.rawValue.replacingOccurrences(of: "-", with: "_"), String(language.rawValue.prefix(2))]
         for candidate in candidates {

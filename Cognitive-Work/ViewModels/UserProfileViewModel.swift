@@ -10,23 +10,35 @@ import PhotosUI
 import _PhotosUI_SwiftUI
 import CloudKit
 
+/// Drives the profile tab: shows the user's profile and saves edits to the name, picture,
+/// banner, Pix key and calendar sync.
 @Observable
 final class UserProfileViewModel {
     
+    /// The user's private profile (outside the house).
     private(set) var privateUser: UserModel?
+    /// The user's record inside the house.
     private(set) var user: UserModel?
+    /// `true` while the profile loads.
     private(set) var isLoading: Bool = false
     
+    /// `true` while the edit sheet is open.
     var isEditing = false
+    /// `true` while saving.
     var isSaving = false
+    /// An error to show, or `nil`.
     var errorMessage: String?
     /// Set to `true` right after ``saveChanges()`` persists successfully, so the view can show
     /// a brief success confirmation. The view resets it once that confirmation is dismissed.
     var didSaveSuccessfully = false
     
+    /// The name being edited.
     var editedName: String = ""
+    /// The banner being edited.
     var editedBanner: ProfileBanner = .default
+    /// The picture being edited, as image data.
     var editedProfilePicture: Data?
+    /// The photo picked in the photo picker; loading it fills ``editedProfilePicture``.
     var selectedPhotoItem: PhotosPickerItem? {
         didSet { loadSelectedPhoto() }
     }
@@ -83,6 +95,7 @@ final class UserProfileViewModel {
         }
     }
     
+    /// Creates the view model with the house user already known (previews and tests).
     init(user: UserModel? = nil, onAccountDeleted: @escaping () -> Void = {}) {
         self.user = user
         self.onAccountDeleted = onAccountDeleted
@@ -91,10 +104,12 @@ final class UserProfileViewModel {
     /// Called after a successful account deletion. Forwarded into `DeleteAccountButton`.
     let onAccountDeleted: () -> Void
     
+    /// Creates the view model; the profile is loaded later.
     init(onAccountDeleted: @escaping () -> Void = {}) {
         self.onAccountDeleted = onAccountDeleted
     }
     
+    /// The picture to show: the edited one while editing, otherwise the saved one.
     var displayedImageData: Data? {
         if isEditing {
             return editedProfilePicture
@@ -118,6 +133,7 @@ final class UserProfileViewModel {
         return privateUser?.banner ?? user?.banner ?? .default
     }
     
+    /// Whether the edit sheet has changes not saved yet.
     var hasUnsavedChanges: Bool {
         guard let privateUser else { return false }
         return editedName != privateUser.name
@@ -125,6 +141,7 @@ final class UserProfileViewModel {
             || editedProfilePicture != privateUser.profilePicture?.fileURL?.dataRepresentation
     }
     
+    /// Whether "Salvar" is enabled: not saving and the name isn't empty.
     var canSave: Bool {
         !isSaving && !editedName.trimmingCharacters(in: .whitespaces).isEmpty
     }
@@ -155,6 +172,7 @@ final class UserProfileViewModel {
         }
     }
     
+    /// Loads the picked photo's data into ``editedProfilePicture``.
     private func loadSelectedPhoto() {
         guard let selectedPhotoItem else { return }
         Task {
@@ -166,6 +184,7 @@ final class UserProfileViewModel {
     
     // MARK: - Editing Account
     
+    /// Opens the edit sheet, filled with the saved profile.
     func startEditing() {
         editedName = privateUser?.name ?? ""
         editedBanner = privateUser?.banner ?? .default
@@ -182,6 +201,7 @@ final class UserProfileViewModel {
         isEditing = true
     }
     
+    /// Closes the edit sheet without saving.
     func cancelEditing() {
         selectedPhotoItem = nil
         isEditing = false
@@ -272,11 +292,13 @@ final class UserProfileViewModel {
         privateUser?.pixKey ?? user?.pixKey
     }
     
+    /// Fills the Pix key field with the saved key.
     func startEditingPixKey() {
         editedPixKey = savedPixKey ?? ""
         pixKeyError = nil
     }
     
+    /// Whether the Pix key can be saved: not saving, and the key changed.
     var canSavePixKey: Bool {
         guard !isSaving, privateUser != nil else { return false }
         return editedPixKey.trimmingCharacters(in: .whitespacesAndNewlines) != (savedPixKey ?? "")

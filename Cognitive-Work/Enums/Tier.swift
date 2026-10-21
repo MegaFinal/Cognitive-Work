@@ -8,21 +8,27 @@
 /// Ranks, from lowest to highest, in the order of ``allCases``. Each rank's raw value is the name
 /// of its image in the asset catalog (`Assets.xcassets/Tiers`), so it is also what is stored.
 enum Tier: String, CaseIterable {
+    /// Bronze, division 1 (the lowest rank, where every cycle starts).
     case bronze1
     case bronze2
     case bronze3
+    /// Silver (Prata), division 1.
     case silver1
     case silver2
     case silver3
+    /// Gold (Ouro), division 1.
     case gold1
     case gold2
     case gold3
+    /// Platinum (Platina), division 1.
     case platinum1
     case platinum2
     case platinum3
+    /// Diamond (Diamante), division 1.
     case diamond1
     case diamond2
     case diamond3
+    /// Master (Mestre): the top rank, with no divisions.
     case master = "Master"
     
     // MARK: - Legacy
@@ -113,14 +119,19 @@ extension Tier {
 
     /// Where `points` stand inside the current division.
     struct Progress: Equatable {
+        /// The rank for these points.
         let tier: Tier
         /// Points earned since the current division started.
         let pointsIntoDivision: Int
         /// Points still missing for the next step, or `nil` at Mestre.
         let pointsToNext: Int?
+        /// The rank after ``tier``, or `nil` at Mestre.
         let nextTier: Tier?
     }
 
+    /// The rank of `points` and how far they are from the next rank.
+    /// - Parameter points: The member's points in the current cycle. Negative values count as zero.
+    /// - Returns: The rank, the points inside its division and the points missing for the next one.
     static func progress(forPoints points: Int) -> Progress {
         let points = max(points, 0)
         let tier = Tier(points: points)

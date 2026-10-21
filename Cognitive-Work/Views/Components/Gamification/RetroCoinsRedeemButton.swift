@@ -8,17 +8,21 @@
 import SwiftUI
 import CloudKit
 
-/// The retrospective's "Resgatar moedas" button: confirms the user's pending cycle payouts and
-/// credits them to their wallet (see ``CycleSettlementService``).
+/// A "Resgatar moedas" button: confirms the user's pending cycle payouts and credits them to
+/// their wallet (see ``CycleSettlementService``).
+///
+/// > Note: The retrospective no longer uses it: its coins page redeems with its own button.
 ///
 /// The data comes from ``RetroCoinsViewModel``, which the presenting screen loads before the
 /// retrospective opens. Shows nothing when there is nothing to redeem.
 struct RetroCoinsRedeemButton: View {
 
+    /// The coins to redeem and the redeem action.
     let viewModel: RetroCoinsViewModel
 
     var body: some View {
         VStack(spacing: 6) {
+            // MARK: - Redeemed confirmation, or the redeem button
             if viewModel.didRedeem {
                 Label("Moedas resgatadas", systemImage: "checkmark.circle.fill")
                     .font(.system(size: 17))
@@ -43,6 +47,7 @@ struct RetroCoinsRedeemButton: View {
                 .disabled(viewModel.isWorking)
             }
 
+            // MARK: - Error
             if let errorText = viewModel.errorText {
                 Text(errorText)
                     .font(.footnote)

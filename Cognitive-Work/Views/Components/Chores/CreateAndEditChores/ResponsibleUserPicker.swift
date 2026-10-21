@@ -27,6 +27,7 @@ struct ResponsibleUserPicker: View {
     
     var body: some View {
         HStack(spacing: 5) {
+            // MARK: - Selected members (tap one to remove it)
             ForEach(selectedUsers) { selectedUser in
                 UserProfilePictureTag(user: selectedUser, widthMultiplier: 0.1)
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
@@ -45,6 +46,7 @@ struct ResponsibleUserPicker: View {
                     }
             }
             
+            // MARK: - "+" menu to add or remove members
             Menu {
                 ForEach(availableUsers) { user in
                     Button {

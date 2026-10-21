@@ -11,6 +11,7 @@ import CloudKit
 /// A single entry in a chore's checklist.
 @Observable
 class CheckItemModel: CloudKitSyncable, Identifiable {
+    /// Identifier for SwiftUI lists: the record name once saved, otherwise a new random ID.
     var id: String {
         recordID?.recordName ?? UUID().uuidString
     }
@@ -22,9 +23,6 @@ class CheckItemModel: CloudKitSyncable, Identifiable {
     var recordID: CKRecord.ID?
     
     /// Label shown to the user.
-    ///
-    /// > Note: Persisted under the `checkItemName` key, unlike the other models, which use
-    /// > `name`. Keep this in mind when writing queries.
     var name: String
     
     /// Whether the item has been checked off.
@@ -65,6 +63,7 @@ class CheckItemModel: CloudKitSyncable, Identifiable {
         record["isDone"] = isDone
     }
     
+    /// Checks or unchecks the item and saves the change in CloudKit.
     func toggle() async {
         self.isDone.toggle()
         await CloudKitManager.shared.update(self)

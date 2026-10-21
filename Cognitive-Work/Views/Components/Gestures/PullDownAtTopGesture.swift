@@ -31,7 +31,7 @@ struct PullDownAtTopGesture: ViewModifier {
     @State private var isAtTop: Bool = true
     
     /// Current vertical translation of the in-progress drag (0 while idle, dragging up,
-    /// or the drag didn't start at the top).x
+    /// or the drag didn't start at the top).
     @State private var translation: CGFloat = 0
     
     /// Whether we've already captured `isAtTop` for the drag currently in progress.
@@ -40,6 +40,7 @@ struct PullDownAtTopGesture: ViewModifier {
     /// Snapshot of `isAtTop` taken at the very start of the current drag.
     @State private var gestureStartedAtTop = false
     
+    /// Adds the rubber-band offset, the scroll-position tracking and the drag gesture.
     func body(content: Content) -> some View {
         content
         // Small rubber-band feedback while dragging; purely visual.

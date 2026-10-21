@@ -7,8 +7,14 @@
 
 import SwiftUI
 
+/// The row of dots under the retrospective's pages: one dot per page, the current one highlighted.
+///
+/// Tapping a dot opens that page. VoiceOver reads it as one adjustable element ("Página 2 de 4");
+/// Voice Control users can say "Próxima" or "Anterior".
 struct PageIndicator: View {
+    /// How many pages there are.
     let count: Int
+    /// The current page (0-based).
     @Binding var current: Int
     /// VoiceOver pages with the adjustable action; everyone else (Voice Control) gets
     /// the invisible "Anterior" / "Próxima" elements next to the dots.
@@ -16,6 +22,7 @@ struct PageIndicator: View {
 
     var body: some View {
         HStack(spacing: 8) {
+            // MARK: - Dots
             ForEach(0..<count, id: \.self) { i in
                 Capsule()
                     .fill(i == current ? Color.primary : Color.secondary.opacity(0.3))
@@ -24,6 +31,7 @@ struct PageIndicator: View {
             }
         }
         .animation(.spring(duration: 0.3), value: current)
+        // MARK: - Accessibility: one adjustable element with next/previous actions
         // One adjustable element: swipe up/down to change page.
         .accessibilityElement(children: .ignore)
         .voiceOverLabel(L10n.tr("Página"))
@@ -44,6 +52,7 @@ struct PageIndicator: View {
             Button(L10n.tr("Anterior")) { if current > 0 { current -= 1 } }
         }
         // Voice Control can't use adjustable actions: "Toque em Próxima" / "Toque em Anterior".
+        // MARK: - Voice Control: invisible previous/next buttons beside the dots
         .overlay(alignment: .leading) {
             if !voiceOverEnabled && current > 0 {
                 DashboardVoiceControlButton(
@@ -70,9 +79,11 @@ struct PageIndicator: View {
 struct DashboardVoiceControlButton: View {
     /// Spoken names; the first is also the accessibility label.
     let labels: [String]
+    /// Runs when the element is activated.
     let action: () -> Void
 
     var body: some View {
+        // MARK: - Invisible, touch-transparent element
         Color.clear
             .frame(width: 28, height: 28)
             .allowsHitTesting(false)

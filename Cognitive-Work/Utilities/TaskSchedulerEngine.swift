@@ -7,6 +7,10 @@ import Foundation
 import CloudKit
 
 // MARK: - Engine
+/// Generates the division of chores: who does what, on which day, for the next 15 days.
+///
+/// Respects each member's free time and the coupons bought in the cycle, and records the new
+/// cycle (``HouseCycleModel``) once the division is saved.
 struct TaskSchedulerEngine {
     
     /// Schedules unassigned and recurring chores for all given users within a 14-day horizon.

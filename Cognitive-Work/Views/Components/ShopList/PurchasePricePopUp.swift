@@ -10,15 +10,23 @@ import SwiftUI
 /// Asks how much an item cost when it's checked off without a price.
 struct PurchasePricePopUp: View {
 
+    /// The item's name.
     let itemName: String
+    /// How many were bought (to show the total).
     let quantity: Int
+    /// Runs with the typed price on ✓.
     let onConfirm: (String) -> Void
+    /// Runs on "Comprar sem valor".
     let onSkip: () -> Void
+    /// Runs on ✕ (doesn't buy).
     let onCancel: () -> Void
 
+    /// The typed price.
     @State private var text = ""
+    /// Whether the price field has the keyboard.
     @FocusState private var isFocused: Bool
 
+    /// Whether the typed text is a valid price.
     private var isValid: Bool { ShopListViewModel.isValidPrice(text) }
 
     /// "3 × R$5,00 = R$15,00" once a price is typed; otherwise how the price is used.
@@ -32,8 +40,10 @@ struct PurchasePricePopUp: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // MARK: - ✕ and ✓ buttons
             toolbar
 
+            // MARK: - Title and item name
             VStack(alignment: .leading, spacing: 6) {
                 Text("Quanto custou cada um?")
                     .font(.system(size: 28))
@@ -46,6 +56,7 @@ struct PurchasePricePopUp: View {
                     .lineLimit(2)
             }
 
+            // MARK: - Price field
             HStack(spacing: 8) {
                 Text("R$")
                     .font(.system(size: 26, weight: .semibold))
@@ -68,6 +79,7 @@ struct PurchasePricePopUp: View {
                     .fill(Color(.systemGray6))
             )
 
+            // MARK: - Total or explanation
             Text(totalCaption)
                 .font(.system(size: 14))
                 .foregroundStyle(.subTitleGray)
@@ -76,6 +88,7 @@ struct PurchasePricePopUp: View {
                     ShopListViewModel.accessibilityPurchaseTotal(text: text, quantity: quantity) ?? totalCaption
                 )
 
+            // MARK: - "Comprar sem valor"
             Button(action: onSkip) {
                 Text("Comprar sem valor")
                     .font(.system(size: 16, weight: .semibold))
@@ -105,6 +118,7 @@ struct PurchasePricePopUp: View {
         }
     }
 
+    /// The ✕ (cancel) and ✓ (confirm) buttons.
     private var toolbar: some View {
         HStack {
             Button(action: onCancel) {

@@ -7,7 +7,9 @@
 
 import SwiftUI
 
-/// Constrains standard logical mapping translating room properties explicitly to `SwiftUI.Color`.
+/// The colors a room can have. Chores, cards and tags of a room use its color.
+///
+/// The raw value is the name saved in CloudKit.
 enum RoomColor: String, CaseIterable, Identifiable {
     case purple = "purple"
     case orange = "orange"
@@ -15,6 +17,7 @@ enum RoomColor: String, CaseIterable, Identifiable {
     case green = "green"
     case blue = "blue"
     
+    /// Identifier for SwiftUI lists (the raw value).
     var id: String { self.rawValue }
     
     /// The palette color for this case (see the asset catalog's `Colors` group).
@@ -45,7 +48,7 @@ enum RoomColor: String, CaseIterable, Identifiable {
     /// Rooms saved by older builds may hold `"red"`, `"white"` or `"pink"`. Failing on those made
     /// ``RoomModel/init(record:)`` return `nil`, which dropped the whole room — and every chore
     /// pointing at it rendered as an unknown (gray) room. Legacy values are now mapped to the
-    /// closest current color 
+    /// closest current color.
     init?(storedValue: String?) {
         guard let storedValue else { return nil }
         

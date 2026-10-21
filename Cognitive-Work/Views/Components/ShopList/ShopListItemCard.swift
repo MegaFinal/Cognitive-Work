@@ -8,21 +8,26 @@
 import SwiftUI
 import CloudKit
 
-/// One shopping list entry
+/// One item of the shopping list: the category tile, name and amount, the avatars of who it's
+/// for, and a check button to mark it as bought. Tapping the card opens the edit form.
 struct ShopListItemCard: View {
     
+    /// The item shown.
     var item: ShopListItem
     
     /// Resolved by the parent from ``ShopListViewModel/houseUsers`` instead of each card
     /// firing its own CloudKit request.
     var relatedUsers: [UserModel]
     
+    /// Checks or unchecks the item (marks it as bought or not).
     var onToggle: () async -> Void
+    /// Opens the item's edit form.
     var onTap: () -> Void
     
     /// Blocks double taps while the change is being saved.
     @State private var isToggling = false
     
+    /// The item's category.
     private var category: ShopItemCategory { item.category }
     
     /// "2 unidades", with the unit in the right plural.
@@ -30,6 +35,7 @@ struct ShopListItemCard: View {
         "\(item.quantity) \(item.unitMeasurement.getDisplayName(for: Double(item.quantity)))"
     }
     
+    /// The total price as money, or `nil` without a price.
     private var priceText: String? {
         guard let value = item.totalValue else { return nil }
         return value.formatted(.currency(code: "BRL").locale(L10n.locale))
@@ -37,8 +43,10 @@ struct ShopListItemCard: View {
     
     var body: some View {
         HStack(spacing: 15) {
+            // MARK: - Category tile
             categoryTile
             
+            // MARK: - Name, amount and avatars
             VStack(alignment: .leading) {
                 details
                 avatars
@@ -46,6 +54,7 @@ struct ShopListItemCard: View {
             
             Spacer()
             
+            // MARK: - Check button
             VStack(alignment: .trailing, spacing: 25) {
                 
                 checkButton
@@ -77,6 +86,7 @@ struct ShopListItemCard: View {
         ShopCategoryTile(category: category)
     }
     
+    /// Name (struck through when bought) and amount.
     private var details: some View {
         VStack(alignment: .leading) {
             Text(item.name)
@@ -89,6 +99,7 @@ struct ShopListItemCard: View {
         }
     }
     
+    /// The avatars of who the item is for.
     private var avatars: some View {
         HStack(spacing: -8) {
             ForEach(relatedUsers, id: \.recordID) { user in
@@ -98,6 +109,7 @@ struct ShopListItemCard: View {
         }
     }
 
+    /// The round check button (spinner while saving).
     private var checkButton: some View {
         Button {
             toggle()
@@ -136,11 +148,14 @@ struct ShopListItemCard: View {
 /// The square behind a category's icon: the category's soft color with its texture on top.
 struct ShopCategoryTile: View {
     
+    /// The category shown.
     let category: ShopItemCategory
         
+    /// The icon's size.
     private let iconSide: CGFloat = 32
     
     var body: some View {
+        // MARK: - Category color, texture and icon
         RoundedRectangle(cornerRadius: 22)
             .foregroundColor(category.color)
             .overlay {

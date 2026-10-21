@@ -9,17 +9,23 @@ import Foundation
 import CloudKit
 import SwiftUI
 
+/// Loads (and, when asked, generates) the division of chores shown on the schedule screen.
 @Observable
 @MainActor
 
 final class ScheduleViewModel {    
+    /// The house members.
     var users: [UserModel] = []
+    /// Every chore of the house.
     var chores: [ChoreModel] = []
+    /// An error to show, or `nil`.
     var errorMessage: String?
+    /// `true` while loading or generating.
     var isLoading = true
     
     /// Assignments and rooms handed in up front; `nil` means ``FortnightlyView`` fetches them.
     private(set) var assignments: [RecurrentAssignmentModel]?
+    /// The house's rooms, when handed in up front.
     private(set) var rooms: [RoomModel]?
     
     /// Whether the data was handed in up front, in which case nothing is fetched or generated.
@@ -52,6 +58,7 @@ final class ScheduleViewModel {
         self.knownChoreIDs = []
     }
     
+    /// Fetches the members and chores, including the chores known by ID.
     private func setup() async {
         async let fetchUsers = CloudKitManager.shared.fetchHouseUsers()
         async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
@@ -83,6 +90,7 @@ final class ScheduleViewModel {
         } + fetchedByID
     }
     
+    /// Clears the upcoming schedule and generates a new division. Does nothing with preloaded data.
     func generateSchedule() async {
         guard !isPreloaded else { return }
         isLoading = true
@@ -92,6 +100,8 @@ final class ScheduleViewModel {
         isLoading = false
     }
     
+    /// Loads the schedule, generating a new division first when `shouldGenerate` is `true`.
+    /// Does nothing with preloaded data.
     func loadSchedule(shouldGenerate: Bool) async {
         guard !isPreloaded else { return }
         isLoading = true

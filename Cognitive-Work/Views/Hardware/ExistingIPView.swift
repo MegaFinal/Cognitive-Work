@@ -10,12 +10,17 @@ import SwiftUI
 /// Shown when this phone is already paired: lets the user test the device, disconnect
 /// this phone or reset the device for the whole house.
 struct ExistingIPView: View {
+    /// The device connection's view model.
     @Binding var viewModelHardware: HardwareViewModel
+    /// Closes the screen.
     @Environment(\.dismiss) private var dismiss
 
+    /// The user's photo, sent to the device's screen.
     var profileImage: UIImage?
 
+    /// An error to show, or `nil`.
     @State private var errorMessage: String?
+    /// Shows the "Resetar o Harvii?" confirmation.
     @State private var showResetConfirmation = false
     
     /// In-flight states: both actions talk to the device over the network and took several
@@ -25,12 +30,14 @@ struct ExistingIPView: View {
 
     var body: some View {
         VStack(spacing: 20) {
+            // MARK: - Photo that will be sent
             avatarView
                 .frame(width: 100, height: 100)
                 .accessibilityElement(children: .ignore)
                 .voiceOverLabel(L10n.tr("Imagem que será enviada ao Harvii"))
                 .accessibilityAddTraits(.isImage)
 
+            // MARK: - "Enviar imagem"
             Button {
                 isSendingImage = true
                 VoiceOver.announce(L10n.tr("Enviando imagem para o Harvii…"))
@@ -65,12 +72,14 @@ struct ExistingIPView: View {
             .voiceControlNames([L10n.tr("Enviar imagem"), L10n.tr("Enviar")])
             .disabled(isSendingImage || isResetting)
 
+            // MARK: - "Desconectar este celular"
             Button("Desconectar este celular") {
                 viewModelHardware.disconnectThisPhone()
                 dismiss()
             }
             .voiceControlNames([L10n.tr("Desconectar este celular"), L10n.tr("Desconectar")])
 
+            // MARK: - "Resetar o Harvii"
             Button(role: .destructive) {
                 showResetConfirmation = true
             } label: {
@@ -85,6 +94,7 @@ struct ExistingIPView: View {
             .voiceControlNames([L10n.tr("Resetar o Harvii"), L10n.tr("Resetar")])
             .disabled(isSendingImage || isResetting)
         }
+        // MARK: - Reset confirmation
         .confirmationDialog(
             "Resetar o Harvii?",
             isPresented: $showResetConfirmation,
@@ -106,6 +116,7 @@ struct ExistingIPView: View {
         } message: {
             Text("O Harvii vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo.")
         }
+        // MARK: - Error alert
         .alert("Ops", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -116,6 +127,7 @@ struct ExistingIPView: View {
         }
     }
 
+    /// The user's photo in a circle, or a placeholder.
     private var avatarView: some View {
         Group {
             if let profileImage {
@@ -133,6 +145,7 @@ struct ExistingIPView: View {
         .clipShape(Circle())
     }
 
+    /// The photo at the size it is rendered for the device.
     private var avatarForDevice: some View {
         avatarView
             .frame(width: 100, height: 100)

@@ -7,8 +7,12 @@
 
 import SwiftUI
 
+/// The progress tab: today's ring, the points, how the house's work is split, the current
+/// division and the chores nobody owns.
 struct DashboardView: View {
+    /// Builds every card from the house's data.
     @State var viewModel = DashboardViewModel()
+    /// Whether the app is active (the data reloads when it comes back).
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
@@ -16,11 +20,13 @@ struct DashboardView: View {
             
             VStack(spacing: 16) {
                 
+                // MARK: - Title and current division dates
                 header
                 
                 ScrollView {
                     VStack(spacing: 16) {
                         
+                        // MARK: - Today ring and points
                         HStack(spacing: 16) {
                             DoughnutChart(viewModel: $viewModel)
                             PointsComponent(
@@ -28,20 +34,20 @@ struct DashboardView: View {
                             )
                         }
                         
-                        // MARK: - House cognitive division
+                        // MARK: - How the house's work is split
                         BarPercentageComponent(
                             viewModel: viewModel,
                             isUnassignedChores: false
                         )
                         
-                        // MARK: - Current Division
+                        // MARK: - Current division
                         UserCurrentDivisionComponent(
                             periodStart: viewModel.periodStart,
                             sharedViewModel: viewModel.schedule
                         )
                             .padding(.horizontal, 16)
                         
-                        // MARK: - Unassigned chore
+                        // MARK: - Chores nobody owns
                         // This will be replaced when the pending chores section is finalized.
                         BarPercentageComponent(
                             viewModel: viewModel,
@@ -56,6 +62,7 @@ struct DashboardView: View {
                     await viewModel.reloadAfterRemoteChange()
                 }
             }
+            // MARK: - Hidden while loading, with a spinner
             .disabled(viewModel.isLoading)
             .opacity(viewModel.isLoading ? 0 : 1)
             // Invisible while loading, so VoiceOver must not reach it either.
@@ -65,6 +72,7 @@ struct DashboardView: View {
                 if viewModel.isLoading { ProgressView() }
             }
         }
+        // MARK: - Reloading on local changes, pushes and returning to the app
         // Local changes: `markDataChanged()` bumps `dataRevision`.
         .task(id: CloudKitManager.shared.dataRevision) {
             await viewModel.loadIfNeeded()
@@ -81,6 +89,7 @@ struct DashboardView: View {
         }
     }
     
+    /// "Seu progresso" and the current division's dates.
     private var header: some View {
         VStack(alignment: .leading) {
             Text("Seu progresso")

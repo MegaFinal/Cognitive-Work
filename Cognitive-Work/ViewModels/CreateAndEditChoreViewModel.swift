@@ -17,7 +17,9 @@ final class CreateAndEditChoreViewModel {
     
     /// Fixed at init, so it never flips while a new chore is being saved.
     enum Mode: Equatable {
+        /// Creating a new chore.
         case create
+        /// Editing an existing chore.
         case edit
     }
     
@@ -25,15 +27,22 @@ final class CreateAndEditChoreViewModel {
     
     /// A failure presented to the user while the form stays open.
     struct FormAlert: Identifiable, Equatable {
+        /// Which action failed.
         enum Kind: Equatable {
+            /// Saving the chore failed.
             case saveFailed
+            /// Deleting the chore failed.
             case deleteFailed
         }
         
+        /// Identifier for SwiftUI alerts.
         let id = UUID()
+        /// Which action failed.
         let kind: Kind
+        /// What went wrong, already user-facing.
         let message: String
         
+        /// The alert's title, translated.
         var title: String {
             switch kind {
             case .saveFailed: return L10n.tr("Não foi possível salvar")
@@ -50,38 +59,59 @@ final class CreateAndEditChoreViewModel {
     /// The occurrence(s) of a recurring chore this screen was opened for, if any.
     let targetAssignments: [RecurrentAssignmentModel]
     
+    /// The chores screen's view model, refreshed after saving or deleting.
     private let carouselViewModel: CarouselViewModel
     
+    /// Saves and deletes in CloudKit.
     private let cloudKit: CloudKitManager
+    /// Gives points for creating chores.
     private let scoreManager: ScoreManager
     
+    /// Gives the current date (fixed in tests).
     private let now: () -> Date
     
+    /// Whether the form creates or edits a chore.
     let mode: Mode
     
     // MARK: - Form state
     
-    /// The editable copy of the chore
+    /// The editable copy of the chore.
     var draft: ChoreDTO
     
+    /// The date picked in the form (for one-off and weekly-or-rarer chores).
     var selectedDate: Date?
     
+    /// The house's rooms, to pick from.
     private(set) var availableRooms: [RoomModel] = []
     
+    /// The house members, to pick the responsible ones from.
     private(set) var availableHouseUsers: [UserModel]
     
+    /// The signed-in member's record inside the house.
     private(set) var currentHouseUser: UserModel?
     
+    /// `true` once rooms and members are loaded.
     private(set) var isLoaded = false
     
+    /// `true` while saving.
     private(set) var isSaving = false
     
+    /// `true` while deleting.
     private(set) var isDeleting = false
     
+    /// An error to show, or `nil`.
     var alert: FormAlert?
     
     // MARK: - Init
     
+    /// - Parameters:
+    ///   - originalModel: The chore to edit, or a new unsaved one to create.
+    ///   - availableHouseUsers: The house members.
+    ///   - carouselViewModel: The chores screen's view model.
+    ///   - targetAssignments: The occurrence(s) the form was opened for, if any.
+    ///   - cloudKit: Saves and deletes in CloudKit.
+    ///   - scoreManager: Gives points.
+    ///   - now: Gives the current date.
     init(
         originalModel: ChoreModel,
         availableHouseUsers: [UserModel],
@@ -106,48 +136,59 @@ final class CreateAndEditChoreViewModel {
     
     // MARK: - Derived state
     
+    /// Only an existing chore can be deleted.
     var showsDeleteButton: Bool {
         mode == .edit
     }
     
+    /// Whether the name has any text.
     var hasValidName: Bool {
         !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
+    /// Whether a room was picked.
     var hasRoom: Bool {
         draft.room != nil
     }
     
+    /// Whether the chore has the date it needs (daily chores and edits don't need one).
     var hasDate: Bool {
         mode == .edit || draft.frequency == .daily || selectedDate != nil
     }
     
+    /// Whether the "Confirmar" button is enabled.
     var canConfirm: Bool {
         isLoaded && hasValidName && hasRoom && hasDate && !isSaving && !isDeleting
     }
     
+    /// Whether to warn that a room is missing.
     var showsMissingRoomWarning: Bool {
         isLoaded && hasValidName && !hasRoom
     }
     
+    /// Whether to warn that a date is missing.
     var showsMissingDateWarning: Bool {
         isLoaded && hasValidName && hasRoom && !hasDate
     }
     
+    /// Daily chores don't ask for a date.
     var showsDateSection: Bool {
         draft.frequency != .daily
     }
     
+    /// Today: the calendar can't go before it.
     var earliestSelectableDay: Date {
         Calendar.current.startOfDay(for: now())
     }
     
+    /// Explains who will see the chore, depending on whether it is public.
     var visibilityDescription: String {
         draft.isPublic
         ? L10n.tr("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
         : L10n.tr("Tarefa privada: só aparece para você e é atribuída somente a você.")
     }
     
+    /// Members who can be picked as responsible: everyone for a public chore, only the user for a private one.
     var selectableResponsibleUsers: [UserModel] {
         guard !draft.isPublic else { return availableHouseUsers }
         return currentHouseUserInList.map { [$0] } ?? []
@@ -174,6 +215,7 @@ final class CreateAndEditChoreViewModel {
         carouselViewModel.loadOpacity(on: day, in: dateWindow)
     }
     
+    /// The signed-in member as found in ``availableHouseUsers``.
     private var currentHouseUserInList: UserModel? {
         guard let myID = currentHouseUser?.recordID else { return nil }
         return availableHouseUsers.first { $0.recordID == myID } ?? currentHouseUser
@@ -348,6 +390,7 @@ final class CreateAndEditChoreViewModel {
         return true
     }
     
+    /// Gives the points for creating a chore (with a bonus when every detail is filled in).
     private func awardCreationScore() async {
         let score = draft.hasFullDetails
         ? ScoreValues.choreAdded.points + ScoreValues.choreCreatedWithFullDetails.points
@@ -355,6 +398,10 @@ final class CreateAndEditChoreViewModel {
         _ = await scoreManager.assignScoreForMyUser(score: score)
     }
     
+    /// Moves the chosen occurrence to the date picked in the form (weekly or rarer chores).
+    ///
+    /// When editing, the occurrence the form was opened for moves; for a new chore, the occurrence
+    /// closest to the picked date does.
     private func applyPickedDateToOccurrence(isNewChore: Bool) async {
         switch draft.frequency {
         case .weekly, .fortnightly, .monthly: break

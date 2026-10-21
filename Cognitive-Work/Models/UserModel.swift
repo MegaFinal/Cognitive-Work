@@ -8,8 +8,10 @@ import CloudKit
 
 /// A member of a house, including their gamification progress.
 class UserModel: CloudKitSyncable, Identifiable, Hashable {
+    /// Identifier used before the user is saved (when it has no `recordID`).
     private let localID = UUID().uuidString
     
+    /// Identifier for SwiftUI lists: the record name once saved, a local ID before that.
     var id: String {
         recordID?.recordName ?? localID
     }
@@ -36,6 +38,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Identifier of the stored record, or `nil` before the user is saved.
     var recordID: CKRecord.ID?
     
+    /// The record name of the person's iCloud account. The same person can have more than one
+    /// `UserModel` record (a private profile and one inside the house); this value ties them together.
     var ownerRecordName: String
     
     /// Display name shown to other members.
@@ -95,13 +99,15 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     // /// When this user's record was created. Used as the "joined the house" date.
     // var joinedAt: Date?
     
+    /// Whether this record's name is the same as ``ownerRecordName``. Not used by the app.
     var isTheHouseOwner: Bool {
         return ownerRecordName == id
     }
-    
+    /// When this member joined the house. Used for the "entrou na casa" notification.
     /// To verifies when new user joins the house
     var joinedAt: Date?
     
+    /// The member's chores, fetched from CloudKit.
     var chores: [ChoreModel] {
         get async {
             if let choresReference {
@@ -111,6 +117,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         }
     }
     
+    /// The member's free time records, fetched from CloudKit.
     var availableTime: [AvailableTimeModel] {
         get async {
             if let availableTimeReference {
@@ -120,6 +127,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         }
     }
     
+    /// The member's house, fetched from CloudKit. `nil` if not set or not found.
     var house: HouseModel? {
         get async {
             if let houseReference {
@@ -246,6 +254,15 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         
     }
     
+    /// Saves the member's weekly free time for the next weeks and replaces the old records.
+    ///
+    /// Each item of `times` is one weekday (Monday first). For every weekday with free time, one
+    /// ``AvailableTimeModel`` is created per week, for `weeks` weeks.
+    ///
+    /// - Parameters:
+    ///   - times: The free time of each weekday, Monday first.
+    ///   - weeks: How many weeks ahead to create records for.
+    /// - Returns: `false` if the member is not saved yet or CloudKit rejects the save.
     @discardableResult
     func setAvailableTimes(_ times: [AvailableTimeModel], forWeeks weeks: Int = 4) async -> Bool {
         guard let recordID else {
@@ -320,6 +337,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         return true
     }
     
+    /// Saves one free time value as the member's free time (see ``setAvailableTimes(_:forWeeks:)``).
     @discardableResult
     func setAvailableTime(capacityMinutes: Int, day: Date) async -> Bool {
         await setAvailableTimes([
@@ -327,7 +345,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         ])
     }
     
-    // To conform to Hashable
+    /// Two users are equal when they point to the same record (or are the same object, before saving).
     static func == (lhs: UserModel, rhs: UserModel) -> Bool {
         // compare both records
         if let l = lhs.recordID, let r = rhs.recordID { return l == r }
@@ -335,7 +353,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         return lhs === rhs
     }
     
-    // To conform to Hashable -> creates hash
+    /// Hashes the record ID (or the object itself, before saving).
     func hash(into hasher: inout Hasher) {
         if let recordID {
             hasher.combine(recordID)

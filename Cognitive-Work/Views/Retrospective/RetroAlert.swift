@@ -7,17 +7,22 @@
 
 import SwiftUI
 
+/// The retrospective's first card: "Sua retrospectiva chegou!", with the buttons to open it or,
+/// for the admin at the end of a cycle, to skip straight to the new division.
 struct RetroAlert: View {
+    /// The retrospective's view model (shared with the other pages).
     let viewModel: RetroViewModel
     
     var body: some View {
         VStack {
+            // MARK: - Icon
             Image(systemName: "chart.bar.xaxis")
                 .resizable()
                 .frame(width: width * 0.27, height: height * 0.089)
                 .foregroundStyle(.choreYellow)
                 .padding(.bottom, height * 0.05)
             
+            // MARK: - Title and subtitle
             Text("Sua retrospectiva chegou!")
                 .bold()
                 .font(.largeTitle)
@@ -30,6 +35,7 @@ struct RetroAlert: View {
                 .fontWeight(.regular)
                 .padding(.bottom, height * 0.037)
             
+                // MARK: - Actions: open the retrospective / skip to the new division
                 Button {
                     withAnimation {
                         viewModel.startRetrospective()
@@ -60,6 +66,7 @@ struct RetroAlert: View {
                     .buttonStyle(.glass)
                 }
             
+            // MARK: - Loading or error status
             loadStatus
         }
     }

@@ -12,23 +12,36 @@ import SwiftUI
 /// It only renders what it's given.
 struct DebtGroupSection: View {
 
+    /// The housemate this receipt is about (for the avatar).
     let user: UserModel?
+    /// The housemate's name, shown on top.
     let title: String
+    /// The total as money text.
     let totalText: String
+    /// The items on the receipt.
     let rows: [Row]
+    /// The settle button's title ("Pagar", "Foi pago", "Pago!").
     let settleTitle: String
     /// SF Symbol shown before the button's title, e.g. the checkmark of "Foi pago".
     var settleSystemImage: String? = nil
+    /// Whether it is already settled (black button, disabled).
     let isPaid: Bool
+    /// `true` while settling is being saved (faded button).
     let isSettling: Bool
+    /// Called when the settle button is tapped.
     let onSettle: () -> Void
 
     /// The "register the payment" confirmation, shown as a popover coming out of the button.
     var isConfirmingSettlement: Bool = false
+    /// The popover's title.
     var confirmationTitle: String = ""
+    /// The popover's warning text.
     var confirmationMessage: String = ""
+    /// The popover's confirm button title.
     var confirmationButtonTitle: String = ""
+    /// Called when the user confirms.
     var onConfirmSettlement: () -> Void = {}
+    /// Called when the user cancels or closes the popover.
     var onCancelSettlement: () -> Void = {}
 
     /// VoiceOver texts; each falls back to what's on screen when `nil`.
@@ -41,29 +54,38 @@ struct DebtGroupSection: View {
     /// "Pago" once settled.
     var settleAccessibilityValue: String = ""
 
+    /// One item line of the receipt.
     struct Row: Identifiable {
+        /// A unique id for the list.
         let id: String
+        /// The item's name.
         let name: String
+        /// The amount as money text.
         let amountText: String
         /// The amount as VoiceOver should read it; `amountText` when `nil`.
         var accessibilityAmount: String? = nil
     }
 
+    /// The radius of the two half-circle bites on the receipt's sides.
     private let notchRadius: CGFloat = 5
 
+    /// Where the bites go: lined up with the tear line (measured from the header's height).
     @State private var notchY: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // MARK: - Avatar, name and settle button
             header
                 .padding(.bottom, 18)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                     notchY = 20 + height + 18 + 1
                 }
 
+            // MARK: - Tear line
             tearLine
                 .padding(.bottom, 18)
 
+            // MARK: - Items and total
             VStack(alignment: .leading, spacing: 18) {
                 itemRows
                 
@@ -80,6 +102,7 @@ struct DebtGroupSection: View {
         .padding(.horizontal, 22)
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
+        // MARK: - Receipt background
         .background {
             ReceiptShape(notchRadius: notchRadius, notchY: notchY)
                 .fill(.choreYellow.opacity(0.2))
@@ -90,6 +113,7 @@ struct DebtGroupSection: View {
 
     // MARK: - Pieces
 
+    /// The avatar, the name and the settle button.
     private var header: some View {
         HStack(spacing: 12) {
             UserProfilePictureTag(user: user, widthMultiplier: 0.08)
@@ -118,6 +142,7 @@ struct DebtGroupSection: View {
             .accessibilityHidden(true)
     }
 
+    /// One line per item: the name and the amount.
     private var itemRows: some View {
         VStack(spacing: 12) {
             ForEach(rows) { row in
@@ -207,6 +232,7 @@ struct DebtGroupSection: View {
         isPaid ? [settleTitle] : [settleTitle, L10n.tr("Pagar %@", title)]
     }
 
+    /// The settle button's look: optional icon and title on a blue (or black once paid) capsule.
     private var settleLabel: some View {
         HStack(spacing: 6) {
             if let settleSystemImage {
@@ -222,6 +248,7 @@ struct DebtGroupSection: View {
             .background(Capsule().fill(isPaid ? Color.black : Color.blue))
     }
 
+    /// A straight horizontal line across the middle of its frame.
     private struct Line: Shape {
         func path(in rect: CGRect) -> Path {
             var path = Path()

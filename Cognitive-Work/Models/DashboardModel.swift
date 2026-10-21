@@ -9,32 +9,37 @@ import Foundation
 import SwiftUI
 import CloudKit
 
-/// `DashboardModel` keeps only the chores that are due today and assigned to `user`, out of
-/// chores/assignments the caller already fetched
+/// Today's progress of one member: their chores for today, how many are left and how much time
+/// they still need. Shown in the progress cards.
+///
+/// Works only on chores and occurrences the caller already fetched (no CloudKit requests).
 @Observable
 class DashboardModel: Identifiable {
 
+    /// The member this progress is about.
     var user: UserModel
+    /// Every chore the member has today, done or not.
     var todayChores: [ChoreModel] = []
 
-    /// Today's chores that are still pending
+    /// Today's chores that are still pending.
     var toDoList: [ChoreModel] = []
 
     // MARK: - Formatted Data
 
-    /// The number of pending chores
+    /// The number of pending chores.
     var toDo: Int = 0
 
     /// Time still needed for today's pending chores (e.g. `"1h30"`). Goes down as chores are
     /// marked done and back up when they're undone.
     var totalTimeFormatted: String = "0h00"
 
-    /// The fraction, from `0.0` to `1.0`, of today's chores that are marked as done
+    /// The fraction, from `0.0` to `1.0`, of today's chores that are marked as done.
     var completionPercentage: Double = 0.0
 
-    /// (e.g. `"75%"`)
+    /// ``completionPercentage`` as text, formatted for the app's language (e.g. `"75%"`).
     var completionPercentageString: String = "0%"
 
+    /// Creates an empty progress for `user`. Call ``setup(chores:assignments:)`` to fill it.
     init(user: UserModel) {
         self.user = user
     }

@@ -19,6 +19,7 @@ struct CreateProfileOnboardingView: View {
     /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
+    /// Not used: the name is typed into ``OnboardingViewModel/userName``.
     @State private var usernameText: String = ""
     
     /// Image chosen through the system photo picker, before it is converted.
@@ -34,6 +35,7 @@ struct CreateProfileOnboardingView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // MARK: - Header
             OnboardingHeader(
                 title: "Quem é você na casa?",
                 description: "Escolha uma foto e um nome para utilizar no app",
@@ -42,6 +44,7 @@ struct CreateProfileOnboardingView: View {
             
             Spacer(minLength: 16)
             
+            // MARK: - Photo with banner
             EditableProfileImage(
                 image: viewModel.userProfilePicture,
                 isEditing: true,
@@ -52,6 +55,7 @@ struct CreateProfileOnboardingView: View {
             )
             .disabled(viewModel.isLoading)
             
+            // MARK: - Name field
             TextField("Nome", text: $viewModel.userName)
                 .textFieldStyle(.plain)
                 .font(.system(size: 43, weight: .bold))
@@ -67,6 +71,7 @@ struct CreateProfileOnboardingView: View {
             
             Spacer(minLength: 16)
             
+            // MARK: - "Continuar": saves the profile (and joins the house when invited)
             OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: viewModel.userName.trimmingCharacters(in: .whitespaces).isEmpty) {
                 Task {
                     viewModel.isLoading = true
@@ -86,6 +91,7 @@ struct CreateProfileOnboardingView: View {
             .padding(.bottom, height * 0.02)
         }
         .padding(.horizontal, width * 0.0565)
+        // MARK: - Error alert
         .alert("Não deu para criar o perfil", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -94,6 +100,7 @@ struct CreateProfileOnboardingView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        // MARK: - Loading the picked photo
         .onChange(of: isLoadingImage) { wasLoading, isLoading in
             if wasLoading && !isLoading { VoiceOver.announce(L10n.tr("Foto atualizada")) }
         }
@@ -112,6 +119,7 @@ struct CreateProfileOnboardingView: View {
                 }
             }
         }
+        // MARK: - Banner picker
         .sheet(isPresented: $isPickingBanner) {
             ProfileBannerSheet(banner: viewModel.userBanner, image: viewModel.userProfilePicture) { banner in
                 viewModel.userBanner = banner

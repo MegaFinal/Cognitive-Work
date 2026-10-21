@@ -36,6 +36,7 @@ protocol AtomicRecordStore: AnyObject {
     func saveAtomically(_ records: [CKRecord]) async throws
 }
 
+/// Errors thrown by an ``AtomicRecordStore``.
 enum AtomicRecordStoreError: Error, Equatable {
     /// Someone else wrote one of the records first. Fetch again and retry.
     case conflict
@@ -51,6 +52,7 @@ enum AtomicRecordStoreError: Error, Equatable {
 @MainActor
 final class CloudKitAtomicRecordStore: AtomicRecordStore {
 
+    /// Gives access to the private and shared CloudKit databases.
     private let manager: CloudKitManager
 
     /// - Parameter manager: Defaults to ``CloudKitManager/shared`` (resolved in the body, since
@@ -59,10 +61,12 @@ final class CloudKitAtomicRecordStore: AtomicRecordStore {
         self.manager = manager ?? .shared
     }
 
+    /// The database that holds `zoneID`: the private one when the user owns the zone, the shared one otherwise.
     private func database(for zoneID: CKRecordZone.ID) -> CKDatabase {
         zoneID.ownerName == CKCurrentUserDefaultName ? manager.privateDB : manager.sharedDB
     }
 
+    /// The records that exist among `ids`, read from the server. All IDs must be in the same zone.
     func fetch(_ ids: [CKRecord.ID]) async throws -> [CKRecord.ID: CKRecord] {
         guard let zoneID = ids.first?.zoneID else { return [:] }
 
@@ -81,6 +85,8 @@ final class CloudKitAtomicRecordStore: AtomicRecordStore {
         return found
     }
 
+    /// Saves every record or none, failing if any of them changed on the server since it was fetched.
+    /// - Throws: ``AtomicRecordStoreError/conflict`` on a concurrent change; other errors as they come.
     func saveAtomically(_ records: [CKRecord]) async throws {
         guard let zoneID = records.first?.recordID.zoneID else { return }
 

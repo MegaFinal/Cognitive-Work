@@ -2,17 +2,9 @@
 //  RetroViewModel.swift
 //  Cognitive-Work
 //
-//  Single source of truth for the retrospective area (RetroView and its pages).
-//  RetroStreakView is intentionally NOT handled here: its page slot exists in the
-//  flow (so the TabView tags stay 0...3) but it has no data and no logic.
+//  Created by Jonas Melo on 29/09/26.
 //
-//  Data flow:
-//
-//    RetroRepository ──snapshot──▶ RetroViewModel ──▶ per-page content structs
-//         (CloudKit)                    │  ▲
-//                                       │  └── intents (public methods) called by the Views
-//                                       └────▶ RetroEvent stream (AsyncStream) for outside listeners
-//
+
 
 import Foundation
 
@@ -27,6 +19,7 @@ enum RetroError: Error, Equatable, LocalizedError {
     /// Any other failure; carries the localized description of the original error.
     case underlying(String)
 
+    /// A short, user-facing message for the error.
     var errorDescription: String? {
         switch self {
         case .userNotFound:
@@ -43,21 +36,31 @@ enum RetroError: Error, Equatable, LocalizedError {
 
 /// One thing the user was supposed to do in the period (a daily assignment or a one-off chore).
 struct RetroWorkItem: Equatable, Sendable {
+    /// The occurrence or chore ID.
     let id: String
+    /// The day it was due.
     let day: Date
+    /// Whether the user did it.
     let isCompleted: Bool
+    /// The ID of the chore's room, if any.
     let roomID: String?
 }
 
+/// A room of the house, as the retrospective needs it.
 struct RetroRoom: Equatable, Sendable, Identifiable {
+    /// The room's record name.
     let id: String
+    /// The room's name.
     let name: String
+    /// The room's color.
     let color: RoomColor
 }
 
 /// Raw data the repository hands to the view model.
 struct RetroSnapshot: Equatable, Sendable {
+    /// The user's work in the period.
     var items: [RetroWorkItem]
+    /// Every room of the house.
     var rooms: [RetroRoom]
     /// Only the house admin may start a new division of chores. Defaults to `false` so a
     /// repository that can't tell never shows the new-division prompt to a resident.
@@ -69,9 +72,12 @@ struct RetroSnapshot: Equatable, Sendable {
 
 /// Closed interval of days the retrospective covers.
 struct RetroPeriod: Equatable, Sendable {
+    /// First moment of the period.
     let start: Date
+    /// Last moment of the period (now, when it was created).
     let end: Date
 
+    /// Whether `date` is inside the period.
     func contains(_ date: Date) -> Bool { date >= start && date <= end }
 
     /// The last `days` days, ending at `now` (the start is the beginning of that first day).
@@ -93,8 +99,10 @@ protocol RetroRepository {
 
 /// Tunable rules. The coins page has its own (`RetroCoinsContent`).
 struct RetroConfiguration: Equatable, Sendable {
+    /// How many days the retrospective looks back.
     var periodDays = 15
 
+    /// The configuration the app uses.
     static let `default` = RetroConfiguration()
 }
 
@@ -136,22 +144,35 @@ enum RetroPage: Int, CaseIterable, Equatable, Sendable {
     var isLast: Bool { self == RetroPage.allCases.last }
 }
 
+/// Whether the retrospective's data is loaded.
 enum RetroLoadState: Equatable {
+    /// Nothing was loaded yet.
     case idle
+    /// Loading.
     case loading
+    /// Loaded; the page contents are ready.
     case loaded
+    /// Loading failed with this error.
     case failed(RetroError)
 }
 
 /// Things other parts of the app can react to without knowing any View.
 enum RetroEvent: Equatable {
+    /// The data finished loading.
     case loaded
+    /// Loading failed.
     case loadFailed(RetroError)
+    /// The user moved to another page.
     case pageChanged(RetroPage)
+    /// The user left the pages without finishing them ("ver depois").
     case retrospectiveSkipped
+    /// The user finished the last page.
     case retrospectiveCompleted
+    /// The admin asked for the automatic division.
     case divisionRequested
+    /// The admin chose to divide later.
     case divisionDeferred
+    /// The admin confirmed the generated schedule.
     case divisionConfirmed
     /// The experience is over and the host should remove it (always the last event of a flow).
     case finished
@@ -161,14 +182,20 @@ enum RetroEvent: Equatable {
 
 /// What `RetroPercentageOfDoneView` needs.
 struct RetroPercentageContent: Equatable {
+    /// Chores (and occurrences) the user did in the period.
     let completedChores: Int
+    /// Chores (and occurrences) the user had in the period.
     let totalChores: Int
     /// 0...100
     let percentage: Double
+    /// "Você realizou X de Y tarefas da sua escala".
     let summary: String
+    /// A short comment on the result.
     let subtitle: String
+    /// The big cheering word at the bottom.
     let closing: String
 
+    /// Shown before the data loads.
     static let empty = RetroPercentageContent(
         completedChores: 0, totalChores: 0, percentage: 0,
         summary: "", subtitle: "", closing: ""
@@ -177,6 +204,7 @@ struct RetroPercentageContent: Equatable {
 
 /// What `RetroRoomsView` needs.
 struct RetroRoomsContent: Equatable {
+    /// One bar of the chart: a room and how many chores the user did there.
     struct Bar: Equatable, Identifiable {
         let id: String
         let roomName: String
@@ -184,12 +212,16 @@ struct RetroRoomsContent: Equatable {
         let choreCount: Int
     }
 
+    /// "N cômodos".
     let title: String
+    /// Names the room the user worked on most.
     let subtitle: String
     /// Sorted by chore count, highest first.
     let bars: [Bar]
+    /// The longest bar's count, to scale the others.
     var maxChoreCount: Int { bars.map(\.choreCount).max() ?? 0 }
 
+    /// Shown before the data loads.
     static let empty = RetroRoomsContent(title: "", subtitle: "", bars: [])
 }
 
@@ -198,6 +230,7 @@ struct RetroRoomsContent: Equatable {
 /// All transformations from raw data to screen content. Pure and stateless, so it is trivial to test.
 enum RetroCalculator {
 
+    /// The percentage page's content: how many of the user's chores in `period` were done.
     static func percentage(items: [RetroWorkItem], period: RetroPeriod) -> RetroPercentageContent {
         let inPeriod = items.filter { period.contains($0.day) }
         let total = inPeriod.count
@@ -264,8 +297,10 @@ enum RetroCalculator {
 /// Each subscription is removed automatically when its consuming task ends or is cancelled.
 @MainActor
 final class RetroEventBus {
+    /// One continuation per open stream.
     private var continuations: [UUID: AsyncStream<RetroEvent>.Continuation] = [:]
 
+    /// A new stream that receives every event sent from now on.
     func makeStream() -> AsyncStream<RetroEvent> {
         let id = UUID()
         let (stream, continuation) = AsyncStream.makeStream(
@@ -278,10 +313,12 @@ final class RetroEventBus {
         return stream
     }
 
+    /// Sends `event` to every open stream.
     func send(_ event: RetroEvent) {
         for continuation in continuations.values { continuation.yield(event) }
     }
 
+    /// Ends every open stream.
     func finish() {
         continuations.values.forEach { $0.finish() }
         continuations.removeAll()
@@ -341,6 +378,7 @@ final class RetroViewModel {
     /// before they are visible, so pages use this (not `onAppear`/`task`) to start their animations.
     func isPageActive(_ page: RetroPage) -> Bool { phase == .pages && currentPage == page }
 
+    /// Whether the current page is the last one (its button concludes the retrospective).
     var isLastPage: Bool { currentPage == RetroPage.allCases.last }
 
     /// Two-way bridge for `TabView(selection:)`. Use with `@Bindable`: `$viewModel.pageIndex`.
@@ -351,17 +389,30 @@ final class RetroViewModel {
 
     // MARK: Dependencies
 
+    /// Where the data comes from.
     private let repository: RetroRepository
+    /// Tunable rules (period length).
     private let configuration: RetroConfiguration
+    /// Gives the current date (fixed in tests).
     private let clock: () -> Date
+    /// The calendar used for days.
     private let calendar: Calendar
+    /// Delivers ``RetroEvent``s to listeners.
     private let eventBus: RetroEventBus
 
+    /// The last loaded data.
     private var snapshot: RetroSnapshot?
+    /// The load started by ``reload()``.
     private var loadTask: Task<Void, Never>?
     /// Incremented on every load; a finished load only applies its result if it is still the latest.
     private var loadGeneration = 0
 
+    /// - Parameters:
+    ///   - repository: Where the data comes from.
+    ///   - configuration: Tunable rules.
+    ///   - calendar: The calendar used for days.
+    ///   - clock: Gives the current date.
+    ///   - eventBus: Delivers events; a new one by default.
     init(
         repository: RetroRepository,
         configuration: RetroConfiguration = .default,
@@ -430,6 +481,7 @@ final class RetroViewModel {
         loadTask = nil
     }
 
+    /// Builds every page's content from `snapshot`.
     private func publishContent(from snapshot: RetroSnapshot, period: RetroPeriod) {
         percentageContent = RetroCalculator.percentage(items: snapshot.items, period: period)
         roomsContent = RetroCalculator.rooms(items: snapshot.items, rooms: snapshot.rooms, period: period)
@@ -522,6 +574,7 @@ final class RetroViewModel {
         }
     }
 
+    /// Ends the experience and tells the host to remove it.
     private func dismiss() {
         phase = .dismissed
         eventBus.send(.finished)

@@ -9,29 +9,29 @@ import SwiftUI
 import PhotosUI
 import CloudKit
 
-/// A screen that displays and manages the current user's profile.
+/// The profile tab: the user's banner, photo and name, and links to the settings screens.
 ///
-/// `UserProfileView` is responsible for loading the current user's information from CloudKit
-/// through ``UserProfileViewModel`` and presenting it in a form-based interface.
-///
-/// The screen supports:
-/// - Viewing and editing the user's display name.
-/// - Viewing and changing the profile picture.
-/// - Displaying information about the user's house.
-/// - Navigating to the hardware Wi-Fi connection flow.
-/// - Deleting the current user's account.
-///
+/// It loads the user through ``UserProfileViewModel`` and offers:
+/// - The pencil button, which opens ``EditProfileView`` (name, photo and banner).
+/// - "Configurações Gerais" (language, haptics, calendar, delete profile).
+/// - "Ajustes da Casa" (members, rooms, reset division, delete or leave the house).
+/// - "Chave Pix" and "Alterar Tempo Livre".
 struct UserProfileView: View {
+    /// The signed-in user's profile.
     @State private var viewModelUser: UserProfileViewModel
+    /// The house settings and the admin status.
     @State private var viewModelHouse = HouseEditViewModel()
+    /// The hardware (Harvii) connection. Its button is hidden for now.
     @State private var viewModelHardware = HardwareViewModel()
+    /// Used by the "Alterar Tempo Livre" screen.
     @State private var viewModelOnboarding = OnboardingViewModel()
     
+    /// Creates the screen. Pass a ready view model for previews.
     init(viewModelUser: UserProfileViewModel = UserProfileViewModel()) {
         self._viewModelUser = State(initialValue: viewModelUser)
     }
     
-    // MARK: - View
+    // MARK: - Banner, photo and name; settings links
     var body: some View {
         NavigationStack {
             VStack(spacing: 50) {
@@ -47,6 +47,7 @@ struct UserProfileView: View {
                 Spacer()
             }
             .ignoresSafeArea()
+            // MARK: - Edit profile button
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     NavigationLink {
@@ -64,7 +65,7 @@ struct UserProfileView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        // MARK: Task
+        // MARK: - Loads the user, the hardware and the admin status
         .task {
             async let loadUserTask: () = viewModelUser.loadUser()
             async let loadIpTask: () = viewModelHardware.fetchHostName()
@@ -72,7 +73,7 @@ struct UserProfileView: View {
             
             _ = await (loadUserTask, loadIpTask, loadAdminTask)
         }
-        // MARK: Alert if didn't save
+        // MARK: - Save error alert and saving spinner
         .alert(
             "Não foi possível salvar",
             isPresented: Binding(
@@ -93,6 +94,7 @@ struct UserProfileView: View {
         }
     }
     
+    /// The banner with the photo (or a placeholder) and the name on top.
     private var userInfo: some View {
         ZStack(alignment: .top) {
             RoomTextureBackground(color: viewModelUser.displayedBanner.color,
@@ -131,16 +133,23 @@ struct UserProfileView: View {
     }
 }
 
+/// The list of settings links, plus the hardware sheet.
 private struct SettingsButtonsSection: View {
+    /// The user's profile.
     var viewModelUser: UserProfileViewModel
+    /// The house settings.
     var viewModelHouse: HouseEditViewModel
+    /// The hardware connection.
     @Binding var viewModelHardware: HardwareViewModel
+    /// Used by the free time screen.
     @Binding var viewModelOnboarding: OnboardingViewModel
     
+    /// The hardware screen shown in the sheet, or `nil`.
     @State private var hardwareSheet: HardwareSheet?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
+            // MARK: - General settings
             NavigationLink {
                 GeneralProfileSettingsView(viewModel: viewModelUser, houseViewModel: viewModelHouse)
             } label: {
@@ -155,6 +164,7 @@ private struct SettingsButtonsSection: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
+            // MARK: - House settings
             NavigationLink {
                 HouseSettingsView(viewModel: viewModelHouse)
             } label: {
@@ -169,6 +179,7 @@ private struct SettingsButtonsSection: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
+            // MARK: - Pix key
             NavigationLink {
                 PixKeySettingsView(viewModel: viewModelUser)
             } label: {
@@ -181,6 +192,7 @@ private struct SettingsButtonsSection: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
+            // MARK: - Free time
             NavigationLink {
                 SelectFreeTimeOnboardingView(viewModel: $viewModelOnboarding, isFromSettings: true)
             } label: {
@@ -196,7 +208,7 @@ private struct SettingsButtonsSection: View {
             .padding(.horizontal)
             
             
-            // MARK: HarviiConnection
+            // MARK: - Hardware connection (hidden for now)
 //            Button {
 //                if viewModelHardware.isPaired {
 //                    hardwareSheet = .existing
@@ -210,6 +222,7 @@ private struct SettingsButtonsSection: View {
 //            }
 //            .padding(.horizontal)caso tenha
         }
+        // MARK: - Hardware sheet
         .sheet(item: $hardwareSheet) { sheet in
             Group {
                 switch sheet {
@@ -237,7 +250,9 @@ private struct SettingsButtonsSection: View {
 
 /// Which hardware screen the sheet shows, decided when the button is tapped.
 private enum HardwareSheet: Identifiable {
+    /// Already paired; connected Wi-Fi; needs Wi-Fi.
     case existing, pair, wifi
+    /// The case itself, for `sheet(item:)`.
     var id: Self { self }
 }
 

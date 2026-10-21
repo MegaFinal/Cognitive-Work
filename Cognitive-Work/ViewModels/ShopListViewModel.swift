@@ -12,12 +12,17 @@ import CloudKit
 
 /// How the list orders (and groups) its items.
 enum ShopListSortOption: String, CaseIterable, Identifiable {
+    /// Grouped by category (aisle).
     case category
+    /// Most recently added first, without groups.
     case addedOrder
+    /// Alphabetical, without groups.
     case name
 
+    /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
 
+    /// The option's name in the sort menu, translated.
     var label: String {
         switch self {
         case .category: return L10n.tr("Categoria")
@@ -26,6 +31,7 @@ enum ShopListSortOption: String, CaseIterable, Identifiable {
         }
     }
 
+    /// SF Symbol of the option in the sort menu.
     var symbol: String {
         switch self {
         case .category: return "square.grid.2x2"
@@ -37,10 +43,15 @@ enum ShopListSortOption: String, CaseIterable, Identifiable {
 
 /// A field the add/edit form requires before it can be saved.
 enum ShopItemField: CaseIterable {
+    /// The item's name.
     case name
+    /// How much to buy.
     case quantity
+    /// The unit of the amount.
     case unit
+    /// The aisle.
     case category
+    /// Who the item is for.
     case consumers
 
     /// What the form tells the user to do, in the same wording as the chore form's warnings
@@ -58,8 +69,11 @@ enum ShopItemField: CaseIterable {
 
 /// A titled group of items, shown as one collapsible section.
 struct ShopListSection: Identifiable {
+    /// Identifier for SwiftUI lists and for remembering collapsed sections.
     let id: String
+    /// The section's title.
     let title: String
+    /// The items in the section.
     let items: [ShopListItem]
 }
 
@@ -68,10 +82,13 @@ struct ShopListSection: Identifiable {
 @Observable
 final class ShopListViewModel {
 
+    /// The house's shopping list, or `nil` before loading or when the house has none.
     private(set) var list: ShopListModel?
 
+    /// Every item of the list, bought or not.
     private(set) var items: [ShopListItem] = []
 
+    /// The house members, one per person.
     private(set) var houseUsers: [UserModel] = []
 
     /// Every user record of the house, also the extra ones of the same person (see
@@ -82,8 +99,10 @@ final class ShopListViewModel {
     /// created here.
     private(set) var currentUser: UserModel?
 
+    /// An error to show, or `nil`.
     private(set) var errorMessage: String?
 
+    /// Items still to buy.
     var pendingItems: [ShopListItem] {
         items.filter { !$0.isBought }
     }
@@ -121,6 +140,7 @@ final class ShopListViewModel {
 
     // MARK: - Presentation
 
+    /// How the list is ordered.
     var sortOption: ShopListSortOption = .category
 
     /// Identifies the "Comprados" section.
@@ -159,6 +179,7 @@ final class ShopListViewModel {
         return items.isEmpty ? nil : ShopListSection(id: Self.boughtSectionID, title: L10n.tr("Comprados"), items: items)
     }
 
+    /// `items` in the order of `option` (newest first for category and added order).
     private static func sort(_ items: [ShopListItem], by option: ShopListSortOption) -> [ShopListItem] {
         switch option {
         case .name:
@@ -168,10 +189,12 @@ final class ShopListViewModel {
         }
     }
 
+    /// Whether `section` is collapsed.
     func isCollapsed(_ section: ShopListSection) -> Bool {
         collapsedSectionIDs.contains(section.id)
     }
 
+    /// Collapses or expands `section`.
     func toggleCollapsed(_ section: ShopListSection) {
         if collapsedSectionIDs.contains(section.id) {
             collapsedSectionIDs.remove(section.id)
@@ -185,6 +208,7 @@ final class ShopListViewModel {
         item.relatedUsers(in: houseUsers)
     }
 
+    /// Creates an empty view model; data comes from ``HouseDataStore``.
     init() {}
 
     /// `true` inside Xcode previews. CloudKit can't run there (no iCloud entitlement), and
@@ -193,6 +217,7 @@ final class ShopListViewModel {
     @ObservationIgnored
     private let isPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 
+    /// Creates a view model with fixed data, for previews.
     init(previewItems: [ShopListItem], houseUsers: [UserModel] = [], currentUser: UserModel? = nil) {
         self.items = previewItems
         self.houseUsers = houseUsers
@@ -248,6 +273,7 @@ final class ShopListViewModel {
         }
     }
 
+    /// Shown when the house has no shopping list.
     private static var missingListMessage: String { L10n.tr("Essa casa ainda não tem uma lista de compras.") }
 
     /// Replaces the screen's state with `snapshot`, unless it was already applied.
@@ -499,6 +525,7 @@ final class ShopListViewModel {
     /// Set while the "how much was it?" popup should be on screen.
     private(set) var purchasePrompt: PurchasePrompt?
 
+    /// Closes the "how much did you pay?" popup without buying.
     func dismissPurchasePrompt() {
         purchasePrompt = nil
     }
@@ -527,6 +554,7 @@ final class ShopListViewModel {
         await setBought(item, price: price)
     }
 
+    /// Marks `item` as bought (or not), saving the price paid when given.
     private func setBought(_ item: ShopListItem, price: Double?) async {
         if isPreview {
             if let price { item.value = price }

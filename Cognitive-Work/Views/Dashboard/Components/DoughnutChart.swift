@@ -8,19 +8,28 @@
 import SwiftUI
 import Charts
 
+/// One slice of ``DoughnutChart``.
 struct Slice: Identifiable {
+    /// Identifier for the chart.
     let id = UUID()
+    /// How many chores the slice stands for.
     let size: Int
+    /// The slice's color.
     let color: Color
 }
 
+/// The "Hoje" card of the progress tab: a doughnut chart of today's chores done, with the
+/// percentage in the middle and "X de Y" below.
 struct DoughnutChart: View {
+    /// The progress tab's view model (gives today's numbers).
     @Binding var viewModel: DashboardViewModel
     
+    /// "X de Y" (done of total).
     private var completedAndAllChores: String {
         "\(viewModel.completedToday) de \(viewModel.totalToday)"
     }
     
+    /// Two slices: done (blue) and still to do (light gray).
     var slices: [Slice] {
         let done = Slice(size: viewModel.completedToday, color: .choreBlue)
         let all = Slice(size: viewModel.totalToday - viewModel.completedToday, color: Color.gray.opacity(0.15))
@@ -29,12 +38,13 @@ struct DoughnutChart: View {
     }
     
     var body: some View {
-        // MARK: - Loading
+        // MARK: - Card background
         ZStack {
             RoundedRectangle(cornerRadius: 20)
                 .foregroundStyle(Color(.systemGray6).opacity(0.5))
                 .frame(width: width * 0.437, height: height * 0.21)
             
+            // MARK: - "Hoje", doughnut with the percentage, and "X de Y"
             do {
                 VStack(spacing: 8) {
                     // Leading-aligned across the card's width (minus its margins) instead of a big

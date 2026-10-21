@@ -11,8 +11,10 @@ import SwiftUI
 /// settling live in ``PendingPaymentsViewModel``.
 struct PendingPaymentsView: View {
 
+    /// The debts, texts and settle actions.
     @State private var viewModel: PendingPaymentsViewModel
 
+    /// Creates the screen with a ready view model (previews).
     init(viewModel: PendingPaymentsViewModel) {
         self._viewModel = State(initialValue: viewModel)
     }
@@ -26,6 +28,7 @@ struct PendingPaymentsView: View {
         let groups = viewModel.groups
 
         VStack(alignment: .leading, spacing: 22) {
+            // MARK: - Balance and the two totals ("Você deve" / "Te devem")
             VStack(spacing: 12) {
                 DebtBalanceCard(
                     title: viewModel.balanceTitle,
@@ -39,6 +42,7 @@ struct PendingPaymentsView: View {
             .padding(.horizontal, 20)
             .padding(.top, 12)
 
+            // MARK: - Empty state, or one section per housemate
             if groups.isEmpty {
                 // Centered in the space under the cards.
                 emptyState
@@ -62,6 +66,7 @@ struct PendingPaymentsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .animation(.snappy, value: viewModel.selectedDirection)
         .animation(.snappy, value: viewModel.groups.map(\.id))
+        // MARK: - "Pix copiado" toast
         .overlay(alignment: .bottom) {
             if viewModel.isPixCopied {
                 pixCopiedToast
@@ -70,6 +75,7 @@ struct PendingPaymentsView: View {
             }
         }
         .animation(.snappy, value: viewModel.isPixCopied)
+        // MARK: - Alerts: missing Pix key and errors
         .alert(
             "Chave Pix não cadastrada",
             isPresented: Binding(
@@ -96,6 +102,7 @@ struct PendingPaymentsView: View {
 
     // MARK: - Pieces
 
+    /// The two total cards; tapping one selects its side.
     private var summaryCards: some View {
         HStack(spacing: 12) {
             ForEach(DebtDirection.allCases) { direction in
@@ -114,6 +121,7 @@ struct PendingPaymentsView: View {
         }
     }
 
+    /// One housemate's section: their items, the net total and the pay/settle button.
     private func section(for group: DebtGroup) -> some View {
         DebtGroupSection(
             user: group.counterparty,
@@ -156,6 +164,7 @@ struct PendingPaymentsView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// Shown when the selected side has no debts.
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "checkmark.circle")

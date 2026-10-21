@@ -22,7 +22,9 @@ import CloudKit
 @MainActor
 final class CycleSettlementService {
 
+    /// Where records are read and saved (CloudKit in the app, in memory in tests).
     private let store: AtomicRecordStore
+    /// How many times a save is retried when another device changed the records at the same time.
     private let maxAttempts: Int
 
     /// - Parameters:
@@ -184,6 +186,7 @@ final class CycleSettlementService {
     /// ago; this keeps every check to a single small read.
     static let settlementWindow = 6
 
+    /// The last ``settlementWindow`` cycles that already ended, oldest first.
     private func recentClosedCycles(_ cycles: [HouseCycleModel], today: Date) -> [HouseCycleModel] {
         Array(HouseCycleModel.closed(cycles, asOf: today).suffix(Self.settlementWindow))
     }
@@ -205,12 +208,15 @@ final class CycleSettlementService {
 
     // MARK: - Confirming
 
+    /// The result of ``confirmPendingPayouts(for:cycles:houseID:legacyCoins:today:)``.
     struct Confirmation: Equatable {
         /// Coins credited by this call; 0 when everything was already confirmed.
         let credited: Int
+        /// The member's balance after the credit.
         let newBalance: Int
     }
 
+    /// Why confirming payouts failed.
     enum SettlementError: Error, Equatable {
         /// The records kept changing between fetch and save.
         case tooManyConflicts

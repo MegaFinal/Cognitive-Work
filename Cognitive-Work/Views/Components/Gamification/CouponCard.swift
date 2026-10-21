@@ -11,7 +11,9 @@ import SwiftUI
 /// center of the screen (``FocusedCouponView``), where it can be bought.
 struct CouponCard: View {
 
+    /// The coupon shown.
     var coupon: CouponModel
+    /// The color of the coupon's room.
     var roomColor: RoomColor
 
     /// SF Symbol of the coupon's room (``RoomModel/symbol``).
@@ -29,9 +31,13 @@ struct CouponCard: View {
     /// Called when the ticket is tapped.
     var onSelect: () -> Void = {}
 
+    /// Whether a coupon can be bought by the user, or why not.
     enum PurchaseState: Equatable {
+        /// For sale and free to buy.
         case available
+        /// The user already bought it this cycle.
         case ownedByMe
+        /// Someone else already bought it this cycle.
         case taken
         /// For sale, but the user already holds another coupon of this room this cycle.
         case roomLimitReached
@@ -64,11 +70,17 @@ struct CouponCard: View {
 /// (``stubOffset``, ``stubRotation``) as if torn off.
 struct CouponTicket: View {
 
+    /// The coupon shown.
     var coupon: CouponModel
+    /// The ticket's color (the room's color).
     var roomColor: RoomColor
+    /// The room's SF Symbol.
     var roomSymbol: String
+    /// Whether the user has enough coins (dimmed when not).
     var isAffordable: Bool
+    /// Whether it can be bought, or why not.
     var state: CouponCard.PurchaseState
+    /// Shows a spinner instead of the star while buying.
     var isBuying: Bool = false
 
     /// How far the stub has been pulled from the rest of the ticket.
@@ -77,9 +89,13 @@ struct CouponTicket: View {
     /// The stub's tilt while it is pulled, around its top-right corner.
     var stubRotation: Angle = .zero
 
+    /// The ticket's height.
     static let height: CGFloat = 148
+    /// The stub's width.
     static let stubWidth: CGFloat = 78
+    /// The radius of the round bites on the outer corners.
     static let cornerRadius: CGFloat = 16
+    /// The radius of the notches at the perforation.
     static let notchRadius: CGFloat = 14
 
     /// Dash and gap of the perforation's line.
@@ -97,6 +113,7 @@ struct CouponTicket: View {
 
     var body: some View {
         HStack(spacing: 0) {
+            // MARK: - Main part with the perforation
             mainSection
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background {
@@ -110,6 +127,7 @@ struct CouponTicket: View {
                         .padding(.vertical, Self.notchRadius + Self.perforationInset)
                 }
 
+            // MARK: - Stub (can be pulled away)
             stub
                 .frame(width: Self.stubWidth)
                 .frame(maxHeight: .infinity)
@@ -120,6 +138,7 @@ struct CouponTicket: View {
                 .rotationEffect(stubRotation, anchor: .topTrailing)
                 .offset(stubOffset)
         }
+        // MARK: - Shadow and dimming
         .foregroundStyle(.white)
         .frame(height: Self.height)
         // One shadow for the whole silhouette, so the seam between the parts doesn't darken.
@@ -181,6 +200,7 @@ struct CouponTicket: View {
         }
     }
 
+    /// The stub: the star (or a spinner) and the price in coins.
     private var stub: some View {
         VStack(spacing: 8) {
             ZStack {
@@ -212,6 +232,7 @@ struct CouponTicket: View {
 
     // MARK: - Texts
 
+    /// The text for a coupon that isn't for sale ("Seu cupom", "Já comprado", ...), or `nil` when it is.
     static func stateText(_ state: CouponCard.PurchaseState) -> String? {
         switch state {
         case .available: return nil
@@ -221,10 +242,12 @@ struct CouponTicket: View {
         }
     }
 
+    /// The price as text: "1 moeda" or "N moedas".
     static func priceText(_ coupon: CouponModel) -> String {
         coupon.price == 1 ? L10n.tr("1 moeda") : L10n.tr("%lld moedas", coupon.price)
     }
 
+    /// The whole ticket as one VoiceOver sentence: name, rank, price and state.
     static func accessibilityText(coupon: CouponModel, state: CouponCard.PurchaseState, isAffordable: Bool) -> String {
         [coupon.name, coupon.tier.displayName, priceText(coupon), stateText(state),
          state == .available && !isAffordable ? L10n.tr("Moedas insuficientes") : nil]
@@ -241,7 +264,9 @@ struct CouponTicket: View {
 /// ticket with its notches at the perforation.
 struct TicketPartShape: Shape {
 
+    /// The radius of the bites on the left corners.
     var leadingRadius: CGFloat
+    /// The radius of the bites on the right corners.
     var trailingRadius: CGFloat
 
     func path(in rect: CGRect) -> Path {
@@ -255,6 +280,7 @@ struct TicketPartShape: Shape {
         return Path(rect).subtracting(cutouts)
     }
 
+    /// A square around a circle of `radius` centered at `center`.
     private static func circle(at center: CGPoint, radius: CGFloat) -> CGRect {
         CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
     }

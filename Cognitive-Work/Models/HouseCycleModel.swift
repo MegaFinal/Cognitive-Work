@@ -22,8 +22,10 @@ import CloudKit
 ///   before the new one starts.
 struct HouseCycleModel: CloudKitSyncable, Equatable {
 
+    /// The CloudKit record type.
     static var recordType: String = "HouseCycleModel"
 
+    /// The CloudKit record ID (`cycle-<key>`). `nil` until the model is saved.
     var recordID: CKRecord.ID?
 
     /// First day of the cycle (start of day).
@@ -36,12 +38,19 @@ struct HouseCycleModel: CloudKitSyncable, Equatable {
     /// value whatever its time zone. Keys sort chronologically as plain strings.
     var key: String
 
+    /// Creates a cycle, moving both dates to the start of their day.
+    /// - Parameters:
+    ///   - startDate: First day of the cycle.
+    ///   - endDate: Last day of the cycle, included.
+    ///   - key: The cycle's key; by default built from `startDate`.
+    ///   - calendar: The calendar used for days.
     init(startDate: Date, endDate: Date, key: String? = nil, calendar: Calendar = .current) {
         self.startDate = calendar.startOfDay(for: startDate)
         self.endDate = calendar.startOfDay(for: endDate)
         self.key = key ?? Self.key(for: startDate, calendar: calendar)
     }
 
+    /// Creates the model from a CloudKit record. Returns `nil` when a field is missing.
     init?(record: CKRecord) {
         guard
             let startDate = record["startDate"] as? Date,
@@ -55,6 +64,7 @@ struct HouseCycleModel: CloudKitSyncable, Equatable {
         self.key = key
     }
 
+    /// Copies the model's fields into `record`, before saving it.
     func populate(record: CKRecord) {
         record["startDate"] = startDate
         record["endDate"] = endDate
@@ -63,6 +73,7 @@ struct HouseCycleModel: CloudKitSyncable, Equatable {
 
     // MARK: - Keys
 
+    /// The key of a cycle that starts on `date`: its day as `yyyy-MM-dd`.
     static func key(for date: Date, calendar: Calendar = .current) -> String {
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         return String(
@@ -71,12 +82,14 @@ struct HouseCycleModel: CloudKitSyncable, Equatable {
         )
     }
 
+    /// The fixed record ID of the cycle with `key` in the house zone `zoneID`.
     static func recordID(forKey key: String, zoneID: CKRecordZone.ID) -> CKRecord.ID {
         CKRecord.ID(recordName: "cycle-\(key)", zoneID: zoneID)
     }
 
     // MARK: - Rules
 
+    /// Whether the cycle already ended: `today` is after its last day.
     func isClosed(asOf today: Date, calendar: Calendar = .current) -> Bool {
         calendar.startOfDay(for: endDate) < calendar.startOfDay(for: today)
     }

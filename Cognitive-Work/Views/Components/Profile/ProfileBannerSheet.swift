@@ -9,15 +9,21 @@ import SwiftUI
 
 /// Sheet where the user picks their profile banner: a color and a texture, the same ones rooms use.
 struct ProfileBannerSheet: View {
+    /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
     
+    /// The user's profile picture, shown over the banner preview.
     let image: UIImage?
     
+    /// Runs with the chosen banner when the user confirms.
     let onConfirm: (ProfileBanner) -> Void
     
+    /// The color being picked.
     @State private var selectedColor: RoomColor
+    /// The texture being picked.
     @State private var selectedPattern: RoomTexturePattern
     
+    /// Creates the sheet starting from the user's current `banner`.
     init(banner: ProfileBanner, image: UIImage? = nil, onConfirm: @escaping (ProfileBanner) -> Void) {
         self.image = image
         self.onConfirm = onConfirm
@@ -25,6 +31,7 @@ struct ProfileBannerSheet: View {
         _selectedPattern = State(initialValue: banner.pattern)
     }
     
+    /// ``selectedPattern``, or the fallback when it doesn't exist in ``selectedColor``.
     private var pattern: RoomTexturePattern {
         selectedPattern.resolved(for: selectedColor)
     }
@@ -33,6 +40,7 @@ struct ProfileBannerSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
+                    // MARK: - Preview, color and texture pickers
                     hero
                     colorPicker
                     patternPicker
@@ -43,6 +51,7 @@ struct ProfileBannerSheet: View {
             .scrollBounceBehavior(.basedOnSize)
             .navigationTitle("Banner do perfil")
             .navigationBarTitleDisplayMode(.inline)
+            // MARK: - Toolbar: cancel / confirm
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -94,6 +103,7 @@ struct ProfileBannerSheet: View {
         .accessibilityAddTraits(.isImage)
     }
     
+    /// The user's photo (or a placeholder) in a circle with a white border.
     private var avatar: some View {
         Group {
             if let image {
@@ -116,6 +126,7 @@ struct ProfileBannerSheet: View {
     
     // MARK: - Color
     
+    /// One swatch per room color.
     private var colorPicker: some View {
         VStack(alignment: .leading, spacing: 14) {
             sectionTitle("Cor")
@@ -138,7 +149,8 @@ struct ProfileBannerSheet: View {
     
     // MARK: - Pattern
     
-    /// One textured tile per pattern, in the selected color. Patterns the asset catalog
+    /// One textured tile per pattern, in the selected color. Patterns the asset catalog doesn't
+    /// have in that color are shown as unavailable.
     private var patternPicker: some View {
         VStack(alignment: .leading, spacing: 14) {
             sectionTitle("Grafismo")
@@ -163,6 +175,7 @@ struct ProfileBannerSheet: View {
         .padding(.horizontal, 24)
     }
     
+    /// A section title ("Cor", "Grafismo").
     private func sectionTitle(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.system(size: 20, weight: .bold))
