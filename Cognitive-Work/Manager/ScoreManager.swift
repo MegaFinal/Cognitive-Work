@@ -6,14 +6,32 @@
 //
 
 import SwiftUI
+import CloudKit
 
+/// Adds and removes points.
+///
+/// Points live in ``UserScoreModel``, never in ``UserModel``. Every change is applied to the
+/// **server's** value: the score is fetched, the points are added to what it holds and it is saved
+/// only if nobody changed it in between (``AtomicRecordStore``); otherwise it is fetched again. So
+/// a device whose copy is out of date (it missed another device's points, or the reset at the end
+/// of a cycle) can't overwrite them, and two devices scoring at once both count.
+///
+/// Points never go below 0.
 @Observable
 class ScoreManager {
     
     static let shared = ScoreManager()
-    
-    private init() {
-        
+
+    @ObservationIgnored private let store: AtomicRecordStore
+    @ObservationIgnored private let maxAttempts = 5
+
+    private convenience init() {
+        self.init(store: CloudKitAtomicRecordStore())
+    }
+
+    /// - Parameter store: Where the user records are read and saved; tests pass an in-memory one.
+    init(store: AtomicRecordStore) {
+        self.store = store
     }
     
     //MARK: private funcs
@@ -34,12 +52,55 @@ class ScoreManager {
         return chore.score >> max(daysUntilDue, 0)
     }
     
+    //MARK: Applying a change
+
+    /// Adds `delta` (negative to remove) to the points stored on the server for `user`, then
+    /// updates `user` with the result.
+    ///
+    /// The first time, the score is created from the legacy `points` field of the user's record.
+    ///
+    /// - Returns: `false` when the user has no record or the score couldn't be saved.
+    @discardableResult
+    func applyPoints(_ delta: Int, to user: UserModel) async -> Bool {
+        guard let userID = user.recordID else { return false }
+        guard delta != 0 else { return true }
+        let scoreID = UserScoreModel.recordID(for: user, userID: userID)
+
+        for _ in 0..<maxAttempts {
+            guard let fetched = try? await store.fetch([scoreID, userID]),
+                  let userRecord = fetched[userID]
+            else { return false }
+
+            let (record, current) = UserScoreModel.record(
+                scoreID,
+                in: fetched,
+                ownerRecordName: user.ownerRecordName,
+                userRecord: userRecord,
+                houseID: user.houseReference?.recordID
+            )
+            let updated = max(current + delta, 0)
+            record["points"] = updated
+
+            do {
+                try await store.saveAtomically([record])
+                user.points = updated
+                HardwareViewModel.notifyDataChanged()
+                return true
+            } catch AtomicRecordStoreError.conflict {
+                // Someone changed this score meanwhile (or created it): start again from the new value.
+                continue
+            } catch {
+                return false
+            }
+        }
+        return false
+    }
+
     //MARK: Assign Score to any User
     
     @discardableResult
     func assignScore(score: Int, for user: UserModel) async -> Bool {
-        user.points += score
-        return await CloudKitManager.shared.update(user)
+        await applyPoints(score, to: user)
     }
 
     @discardableResult
@@ -47,12 +108,7 @@ class ScoreManager {
         let earned = choreScore(for: chore)
         guard earned != 0 else { return true }
 
-        user.points += earned
-        let success = await CloudKitManager.shared.update(user)
-        if !success {
-            user.points -= earned
-        }
-        return success
+        return await applyPoints(earned, to: user)
     }
     
     @discardableResult
@@ -63,12 +119,7 @@ class ScoreManager {
         let earned = choreScore(for: chore)
         guard earned != 0 else { return true }
 
-        user.points += earned
-        let success = await CloudKitManager.shared.update(user)
-        if !success {
-            user.points -= earned
-        }
-        return success
+        return await applyPoints(earned, to: user)
     }
         
     //MARK: Assign Score to My User
@@ -79,12 +130,7 @@ class ScoreManager {
             let earned = choreScore(for: chore)
             guard earned != 0 else { return true }
             
-            myUser.points += earned
-            let success = await CloudKitManager.shared.update(myUser)
-            if !success {
-                myUser.points -= earned
-            }
-            return success
+            return await applyPoints(earned, to: myUser)
         }
         return false
     }
@@ -92,8 +138,7 @@ class ScoreManager {
     @discardableResult
     func assignScoreForMyUser(score: Int) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
-            myUser.points += score
-            return await CloudKitManager.shared.update(myUser)
+            return await applyPoints(score, to: myUser)
         }
         return false
     }
@@ -107,12 +152,7 @@ class ScoreManager {
             let earned = choreScore(for: chore)
             guard earned != 0 else { return true }
             
-            myUser.points += earned
-            let success = await CloudKitManager.shared.update(myUser)
-            if !success {
-                myUser.points -= earned
-            }
-            return success
+            return await applyPoints(earned, to: myUser)
         }
         return false
     }
@@ -121,15 +161,13 @@ class ScoreManager {
     
     @discardableResult
     func removeScore(score: Int, for user: UserModel) async -> Bool {
-        user.points -= score
-        return await CloudKitManager.shared.update(user)
+        await applyPoints(-score, to: user)
     }
     
     @discardableResult
     func removeScoreForMyUser(score: Int) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
-            myUser.points -= score
-            return await CloudKitManager.shared.update(myUser)
+            return await applyPoints(-score, to: myUser)
         }
         return false
     }
@@ -138,15 +176,13 @@ class ScoreManager {
     
     @discardableResult
     func removeScore(chore: ChoreModel, for user: UserModel) async -> Bool {
-        user.points -= choreScore(for: chore)
-        return await CloudKitManager.shared.update(user)
+        await applyPoints(-choreScore(for: chore), to: user)
     }
     
     @discardableResult
     func removeScoreForMyUser(chore: ChoreModel) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
-            myUser.points -= choreScore(for: chore)
-            return await CloudKitManager.shared.update(myUser)
+            return await applyPoints(-choreScore(for: chore), to: myUser)
         }
         return false
     }
@@ -158,9 +194,7 @@ class ScoreManager {
         guard let chore = await assignment.chore
         else { return false }
         
-        user.points -= choreScore(for: chore)
-        
-        return await CloudKitManager.shared.update(user)
+        return await applyPoints(-choreScore(for: chore), to: user)
     }
     
     @discardableResult
@@ -168,8 +202,7 @@ class ScoreManager {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
             guard let chore = await assignment.chore
             else { return false }
-            myUser.points -= choreScore(for: chore)
-            return await CloudKitManager.shared.update(myUser)
+            return await applyPoints(-choreScore(for: chore), to: myUser)
         }
         return false
     }

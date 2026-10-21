@@ -25,10 +25,10 @@ enum CloudKitErrors<T>: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notFound:
-            return "No private or shared record was found for type: \(T.self)"
+            return L10n.tr("Não encontramos esses dados. Eles podem ter sido removidos.")
             
         case .notAuthorized:
-            return "User not authorized to complete request for type: \(T.self)"
+            return L10n.tr("Você não tem permissão para fazer isso.")
             
         case .missingShareURL:
             return L10n.tr("Missing share URL. Não foi possível gerar o link de compartilhamento.")
@@ -49,12 +49,9 @@ enum CloudKitErrors<T>: Error, LocalizedError {
             return L10n.tr("O limite de requisições da Apple foi excedido. Tente novamente mais tarde.")
             
         case .underlying(let error):
-            if let ckError = error as? CKError {
-                return L10n.tr("Erro do CloudKit (Código %lld): %@", ckError.errorCode, ckError.localizedDescription)
-            }
-            return L10n.tr("Erro inesperado: %@", error.localizedDescription)
+            return UserFacingError.message(for: error)
         case .currentHouseOwnerCannotLeaveTheHouse:
-            return "Failed to leave house: current user is the owner"
+            return L10n.tr("Quem criou a casa não pode sair dela.")
         }
     }
 }

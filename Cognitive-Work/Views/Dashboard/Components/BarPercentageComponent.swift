@@ -40,6 +40,7 @@ struct BarPercentageComponent: View {
             
             Text("Divisão da casa")
                 .font(.system(size: 22).bold())
+                .accessibilityAddTraits(.isHeader)
             
             Text("O trabalho de notar, lembrar, decidir e acompanhar é tão importante quanto realizar uma tarefa")
                 .font(.subheadline)
@@ -58,6 +59,8 @@ struct BarPercentageComponent: View {
                     }
                 }
                 .frame(height: height * 0.05)
+                // The percentage above already reads the whole bar (value, ideal and status).
+                .accessibilityHidden(true)
             }
             
             HStack(spacing: 16) {
@@ -65,6 +68,8 @@ struct BarPercentageComponent: View {
                 caption("Resto da casa", .gray.opacity(0.4))
             }
             .padding(.top, 4)
+            // Color legend only; the bar's VoiceOver value already says whose share it is.
+            .accessibilityHidden(true)
         }
     }
     
@@ -79,10 +84,14 @@ struct BarPercentageComponent: View {
                 Text("\(viewModel.unownedPublicCount)")
                     .font(.system(size: 64, weight: .bold, design: .rounded))
                     .foregroundStyle(.orange)
+                    // Read by the title below ("3 tarefas sem dono").
+                    .accessibilityHidden(true)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Tarefas sem dono")
                         .font(.title2.bold())
+                        .voiceOverLabel(L10n.tr("%lld tarefas sem dono", viewModel.unownedPublicCount))
+                        .accessibilityAddTraits(.isHeader)
                     
                     Text("O trabalho de notar, lembrar e distribuir tarefas também faz parte da organização da casa")
                         .font(.subheadline)
@@ -95,6 +104,9 @@ struct BarPercentageComponent: View {
                     unassignedChoresChart
                 }
                 .frame(height: height * 0.05)
+                .accessibilityElement(children: .ignore)
+                .voiceOverLabel(L10n.tr("Gráfico de tarefas sem dono"))
+                .voiceOverValue(viewModel.unownedAccessibilityValue)
             }
             
             HStack(spacing: 16) {
@@ -102,6 +114,7 @@ struct BarPercentageComponent: View {
                 caption("tarefas de moradores", .gray.opacity(0.2))
             }
             .padding(.top, 4)
+            .accessibilityHidden(true)
         }
     }
     
@@ -161,12 +174,20 @@ struct BarPercentageComponent: View {
             Text(viewModel.myCognitiveShareText)
                 .font(.system(size: 64, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
+                // Keeps "100%" on one line: the number shrinks instead of dropping the "%" down.
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
             
             Text("do esforço mental da casa esta semana foi seu")
                 .font(.footnote)
                 .lineLimit(nil)
         }
         .frame(width: width * 0.8)
+        // One element for the number and the bar below it:
+        // "Sua parte do esforço mental da casa esta semana: 40%, ideal 50%, abaixo do ideal".
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(L10n.tr("Sua parte do esforço mental da casa esta semana"))
+        .voiceOverValue(viewModel.cognitiveShareAccessibilityValue)
     }
     
     // MARK: - Expected contribution average as separate positioned views
@@ -191,7 +212,7 @@ struct BarPercentageComponent: View {
     
     // MARK: - Chart Caption
     
-    private func caption(_ text: String,_ color: Color) -> some View {
+    private func caption(_ text: LocalizedStringKey, _ color: Color) -> some View {
         HStack(spacing: 6) {
             Circle()
                 .frame(width: width * 0.03)
@@ -214,3 +235,13 @@ struct BarPercentageComponent: View {
     return BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
 }
 
+
+#Preview("Divisão da casa – 100%") {
+    let viewModel = DashboardViewModel()
+    viewModel.myCognitiveShare = 1.0
+    viewModel.idealCognitiveShare = 1.0
+    viewModel.myCognitiveShareText = "100%"
+    viewModel.idealCognitiveShareText = "100%"
+    
+    return BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
+}

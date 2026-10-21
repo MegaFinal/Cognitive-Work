@@ -56,6 +56,7 @@ struct UserProfileView: View {
                             .foregroundColor(.black)
                     }
                     .accessibilityLabel(Text("Editar Perfil"))
+                    .voiceControlNames([L10n.tr("Editar"), L10n.tr("Editar Perfil")])
                     .disabled(viewModelUser.user == nil)
                 }
             }
@@ -87,14 +88,15 @@ struct UserProfileView: View {
         .overlay {
             if viewModelUser.isSaving {
                 ProgressView()
+                    .voiceOverLabel(L10n.tr("Salvando"))
             }
         }
     }
     
     private var userInfo: some View {
         ZStack(alignment: .top) {
-            Rectangle()
-                .foregroundColor(.orange)
+            RoomTextureBackground(color: viewModelUser.displayedBanner.color,
+                                  pattern: viewModelUser.displayedBanner.pattern)
                 .frame(height: height * 0.26)
                 .shadow(color: .black.opacity(0.14), radius: 16.46937, x: 0, y: 4.68879)
             
@@ -115,17 +117,17 @@ struct UserProfileView: View {
                         .clipShape(Circle())
                 }
                 
-                if viewModelUser.isLoading && viewModelUser.user == nil {
-                    ProgressView()
-                        .frame(height: 50)
-                } else {
-                    Text(viewModelUser.user?.name ?? "")
-                        .font(.system(size: 22))
-                        .bold()
-                }
+                Text(viewModelUser.user?.name ?? "")
+                    .font(.system(size: 22))
+                    .bold()
             }
             .padding(.top, (height * 0.25) - (width * 0.25))
         }
+        // Read the header as one sentence: name, level, points and coins.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(viewModelUser.accessibilityProfileSummary)
+        .voiceControlNames(viewModelUser.accessibilityProfileInputLabels)
+        .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -146,8 +148,10 @@ private struct SettingsButtonsSection: View {
                     Text("Configurações Gerais")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Configurações Gerais"), L10n.tr("Configurações"), L10n.tr("Ajustes")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
@@ -156,6 +160,20 @@ private struct SettingsButtonsSection: View {
             } label: {
                 HStack {
                     Text("Ajustes da Casa")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
+                }
+            }
+            .voiceControlNames([L10n.tr("Ajustes da Casa"), L10n.tr("Casa")])
+            .buttonStyle(.plain)
+            .padding(.horizontal)
+            
+            NavigationLink {
+                PixKeySettingsView(viewModel: viewModelUser)
+            } label: {
+                HStack {
+                    Text("Chave Pix")
                     Spacer()
                     Image(systemName: "chevron.right")
                 }
@@ -170,8 +188,10 @@ private struct SettingsButtonsSection: View {
                     Text("Alterar Tempo Livre")
                     Spacer()
                     Image(systemName: "chevron.right")
+                        .accessibilityHidden(true)
                 }
             }
+            .voiceControlNames([L10n.tr("Alterar Tempo Livre"), L10n.tr("Tempo livre")])
             .buttonStyle(.plain)
             .padding(.horizontal)
             
@@ -188,30 +208,30 @@ private struct SettingsButtonsSection: View {
 //            } label: {
 //                Text("Conectar com meu Hardware")
 //            }
-//            .padding(.horizontal)
+//            .padding(.horizontal)caso tenha
         }
-//        .sheet(item: $hardwareSheet) { sheet in
-//            Group {
-//                switch sheet {
-//                case .existing:
-//                    ExistingIPView(
-//                        viewModelHardware: $viewModelHardware,
-//                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
-//                    )
-//                case .pair:
-//                    NavigationStack {
-//                        DevicePairView(
-//                            hardwareViewModel: viewModelHardware,
-//                            onClose: { hardwareSheet = nil }
-//                        )
-//                    }
-//                case .wifi:
-//                    WifiCredentialsView(viewModel: viewModelHardware)
-//                }
-//            }
-//            .presentationDetents([.medium ])
-//            .presentationDragIndicator(.visible)
-//        }
+        .sheet(item: $hardwareSheet) { sheet in
+            Group {
+                switch sheet {
+                case .existing:
+                    ExistingIPView(
+                        viewModelHardware: $viewModelHardware,
+                        profileImage: viewModelUser.displayedImageData.flatMap { UIImage(data: $0) }
+                    )
+                case .pair:
+                    NavigationStack {
+                        DevicePairView(
+                            hardwareViewModel: viewModelHardware,
+                            onClose: { hardwareSheet = nil }
+                        )
+                    }
+                case .wifi:
+                    WifiCredentialsView(viewModel: viewModelHardware)
+                }
+            }
+            .presentationDetents([.medium ])
+            .presentationDragIndicator(.visible)
+        }
     }
 }
 

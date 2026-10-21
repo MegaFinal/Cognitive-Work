@@ -209,7 +209,7 @@ extension CloudKitManager {
         requireFootprintRemoval: Bool
     ) async -> Bool {
         guard zoneID.ownerName != CKCurrentUserDefaultName else {
-            errorMessage = "Failed to leave house: current user is the owner"
+            errorMessage = UserFacingError.friendly(technical: "Failed to leave house: current user is the owner")
             return false
         }
         
@@ -221,7 +221,7 @@ extension CloudKitManager {
             invalidateSessionCache()
             return true
         } catch {
-            errorMessage = "Failed to read shared house: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .share)
             return false
         }
         
@@ -271,7 +271,7 @@ extension CloudKitManager {
         do {
             try await deleteRecordsIgnoringMissing(Array(myUserIDs), in: sharedDB)
         } catch {
-            errorMessage = "Failed to remove your profile from the house: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             if requireFootprintRemoval { return false }
         }
         
@@ -293,7 +293,7 @@ extension CloudKitManager {
                 try await deleteRecordsIgnoringMissing(Array(shareIDs), in: sharedDB)
                 left = true
             } catch {
-                errorMessage = "Failed to leave house: \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .leave)
             }
         }
         
@@ -304,7 +304,7 @@ extension CloudKitManager {
             } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
                 left = true
             } catch {
-                errorMessage = "Failed to leave house: \(error.localizedDescription)"
+                errorMessage = UserFacingError.message(for: error, doing: .leave)
             }
         }
         
@@ -341,7 +341,7 @@ extension CloudKitManager {
         do {
             zones = try await sharedDB.allRecordZones()
         } catch {
-            errorMessage = "Failed to list shared houses: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .share)
             return false
         }
         
@@ -383,7 +383,7 @@ extension CloudKitManager {
         } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
             // Nothing private left to delete.
         } catch {
-            errorMessage = "Failed to delete your data: \(error.localizedDescription)"
+            errorMessage = UserFacingError.message(for: error, doing: .delete)
             return false
         }
         
@@ -424,8 +424,9 @@ extension CloudKitManager {
     /// the occurrences and one-off chores stayed assigned to nobody-in-particular, never showed
     /// in the unassigned list, and nobody could take them over.
     ///
-    /// - Recurring occurrences not yet completed lose their `user` (and the calendar event id,
-    ///   which belonged to the leaving member's device). Completed ones keep it, as history.
+    /// - Recurring occurrences not yet completed drop the member from `users` (and lose the
+    ///   calendar event id, which belonged to the leaving member's device). Once nobody is left
+    ///   they count as unassigned. Completed ones keep their users, as history.
     /// - One-off chores not yet done drop the member from `currentResponsible` and
     ///   `allResponsibleUsers`; once nobody is left they count as unassigned.
     private func releaseAssignments(of userIDs: Set<CKRecord.ID>, in records: [CKRecord]) async {
@@ -437,10 +438,13 @@ extension CloudKitManager {
             switch record.recordType {
             case RecurrentAssignmentModel.recordType:
                 guard record["isCompleted"] as? Bool == false,
-                      let user = record["user"] as? CKRecord.Reference,
-                      userIDs.contains(user.recordID)
+                      let users = record["users"] as? [CKRecord.Reference]
                 else { continue }
-                record["user"] = nil
+                
+                let kept = users.filter { !userIDs.contains($0.recordID) }
+                guard kept.count != users.count else { continue }
+                
+                record["users"] = kept
                 record["calendarEventIdentifier"] = nil
                 toSave.append(record)
                 

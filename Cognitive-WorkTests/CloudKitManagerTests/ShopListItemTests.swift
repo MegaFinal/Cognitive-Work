@@ -17,7 +17,7 @@ struct ShopListItemTests {
     @Test func createShopListItemSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let shopListItem = ShopListItem(name: "CreatTest", description: "Test", value: 0, quantity: 1, unitMeasuremente: .gram, priorityTag: .high)
+        let shopListItem = ShopListItem(name: "CreatTest", value: 0, quantity: 1, unitMeasurement: .gram)
         let savedItem = await CloudKitManager.shared.create(shopListItem)
         
         print("ERRO:", CloudKitManager.shared.errorMessage as Any)
@@ -31,7 +31,7 @@ struct ShopListItemTests {
     @Test func fetchAllShopListItemSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let shopListItem = ShopListItem(name: "FetchTest", description: "Test", value: 0, quantity: 1, unitMeasuremente: .gram, priorityTag: .high)
+        let shopListItem = ShopListItem(name: "FetchTest", value: 0, quantity: 1, unitMeasurement: .gram)
         let savedItem = await CloudKitManager.shared.create(shopListItem)
         #expect(savedItem != nil)
         
@@ -45,7 +45,7 @@ struct ShopListItemTests {
     @Test func fetchCreatedShopListItemWithPredicateSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let shopListItem = ShopListItem(name: "FetchWithPredicateTest", description: "Test", value: 0, quantity: 1, unitMeasuremente: .gram, priorityTag: .high)
+        let shopListItem = ShopListItem(name: "FetchWithPredicateTest", value: 0, quantity: 1, unitMeasurement: .gram)
         let itemSaved = await CloudKitManager.shared.create(shopListItem)
         #expect(itemSaved != nil)
         
@@ -65,7 +65,7 @@ struct ShopListItemTests {
     @Test func updateShopListItemSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let shopListItem = ShopListItem(name: "UpdateTest", description: "Test", value: 0, quantity: 1, unitMeasuremente: .gram, priorityTag: .high)
+        let shopListItem = ShopListItem(name: "UpdateTest", value: 0, quantity: 1, unitMeasurement: .gram)
         var savedItem = await CloudKitManager.shared.create(shopListItem)
         #expect(savedItem != nil)
         
@@ -85,7 +85,7 @@ struct ShopListItemTests {
     @Test func deleteShopListItemSuccessfullyTest() async throws {
         await CloudKitManager.shared.createZoneIfNeeded()
         
-        let shopListItem = ShopListItem(name: "DeleteTest", description: "Test", value: 0, quantity: 1, unitMeasuremente: .gram, priorityTag: .high)
+        let shopListItem = ShopListItem(name: "DeleteTest", value: 0, quantity: 1, unitMeasurement: .gram)
         let itemSaved = await CloudKitManager.shared.create(shopListItem)
         
         #expect(itemSaved != nil)

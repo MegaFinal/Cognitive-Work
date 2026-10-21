@@ -36,6 +36,9 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     private let pollingInterval: Duration = .seconds(5)
     
+    /// Maximum number of residents shown on each row.
+    private let maxUsersPerRow = 4
+    
     /// CloudKit can't run in Xcode previews (no iCloud entitlement there), and touching it
     /// crashes the preview process. Every network call below is skipped when this is `true`.
     private var isRunningForPreviews: Bool {
@@ -64,27 +67,35 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                 .frame(width: width * 0.84, alignment: .leading)
                 .padding(.top, 30)
                 .padding(.bottom, width * 0.02)
+                .accessibilityLabel(Text(L10n.tr("%lld moradores na casa", houseUsers.count)))
             
             if !hasLoadedUsers {
                 ProgressView()
                     .controlSize(.regular)
+                    .accessibilityLabel(Text(L10n.tr("Carregando moradores")))
             }
                     
-            if !pendingUsers.isEmpty {
-                Text("Em configuração")
-                .font(.subheadline)
-                .fontWeight(.thin)
-                pendingUsersView
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    if !pendingUsers.isEmpty {
+                        Text("Em configuração")
+                        .font(.subheadline)
+                        .fontWeight(.thin)
+                        .accessibilityAddTraits(.isHeader)
+                        pendingUsersView
+                    }
+                    
+                    if !completedUsers.isEmpty {
+                        Text("Moradores prontos")
+                        .font(.subheadline)
+                        .fontWeight(.thin)
+                        .accessibilityAddTraits(.isHeader)
+                        completedUsersView
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            
-            if !completedUsers.isEmpty {
-                Text("Moradores prontos")
-                .font(.subheadline)
-                .fontWeight(.thin)
-                completedUsersView
-            }
-            
-            Spacer()
+            .scrollIndicators(.hidden)
 
             VStack {
                 if !isFromSettings {
@@ -109,6 +120,8 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                         .buttonBorderShape(.circle)
                         .controlSize(.large)
                         .disabled(!pendingUsers.isEmpty)
+                        .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próximo"), L10n.tr("Avançar")])
+                        .voiceOverHint(pendingUsers.isEmpty ? "" : L10n.tr("Disponível quando todos os moradores terminarem a configuração"))
                     }
                     Spacer()
                 }
@@ -158,14 +171,20 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     /// Members who already completed their free time.
     private var completedUsersView: some View {
-        HStack(spacing: 20) {
-            ForEach(completedUsers) { user in
-                ZStack {
-                    Circle()
-                        .foregroundColor(.green)
-                        .frame(width: width * 0.17)
-                    
-                    UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+        VStack(alignment: .leading, spacing: 20) {
+            ForEach(Array(completedUsers.chunked(into: maxUsersPerRow).enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 20) {
+                    ForEach(row) { user in
+                        ZStack {
+                            Circle()
+                                .foregroundColor(.green)
+                                .frame(width: width * 0.17)
+                            
+                            UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(L10n.tr("%@, pronto", user.name)))
+                    }
                 }
             }
         }
@@ -173,14 +192,20 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
     
     /// Members who still need to complete their free time.
     private var pendingUsersView: some View {
-        HStack(spacing: 20) {
-            ForEach(pendingUsers) { user in
-                ZStack {
-                    Circle()
-                        .foregroundColor(.red)
-                        .frame(width: width * 0.17)
-                    
-                    UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+        VStack(alignment: .leading, spacing: 20) {
+            ForEach(Array(pendingUsers.chunked(into: maxUsersPerRow).enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 20) {
+                    ForEach(row) { user in
+                        ZStack {
+                            Circle()
+                                .foregroundColor(.red)
+                                .frame(width: width * 0.17)
+                            
+                            UserProfilePictureTag(user: user, widthMultiplier: 0.15)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(L10n.tr("%@, ainda configurando o tempo livre", user.name)))
+                    }
                 }
             }
         }
@@ -196,6 +221,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                     Text("Compartilhar Convite")
                 }
             }
+            .voiceControlNames([L10n.tr("Compartilhar Convite"), L10n.tr("Compartilhar"), L10n.tr("Convidar")])
         } else if didFailToPrepareInvite && !resolveShare {
             Button {
                 Task { await prepareInvite() }
@@ -204,6 +230,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                     Label("Tentar novamente", systemImage: "arrow.clockwise")
                 }
             }
+            .voiceControlNames([L10n.tr("Tentar novamente"), L10n.tr("Recarregar")])
         } else {
             inviteCapsule(color: .gray) {
                 ProgressView()
@@ -288,10 +315,25 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         
         // Sync fix: publish only if no newer refresh started meanwhile.
         guard generation == refreshGeneration else { return }
+        let wasLoaded = hasLoadedUsers
+        let previousCompletedCount = completedUsers.count
         houseUsers = fetchedUsers
         completedUsers = completed
         pendingUsers = pending
         hasLoadedUsers = true
+        announceProgress(isFirstLoad: !wasLoaded, previousCompletedCount: previousCompletedCount)
+    }
+    
+    /// VoiceOver: says where the wait stands on the first load, then whenever someone finishes
+    /// (the screen polls every few seconds, so it only speaks when something changed).
+    private func announceProgress(isFirstLoad: Bool, previousCompletedCount: Int) {
+        guard !isFromSettings else { return }
+        guard isFirstLoad || completedUsers.count > previousCompletedCount else { return }
+        if pendingUsers.isEmpty {
+            VoiceOver.announce(L10n.tr("Todos os moradores estão prontos"))
+        } else {
+            VoiceOver.announce(L10n.tr("Aguardando os moradores: %lld de %lld prontos", completedUsers.count, houseUsers.count))
+        }
     }
 }
 
@@ -302,4 +344,14 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         viewModel: $mockViewModel,
         isFromSettings: false
     )
+}
+
+private extension Array {
+    /// Splits the array into consecutive slices of at most `size` elements.
+    func chunked(into size: Int) -> [[Element]] {
+        guard size > 0 else { return [self] }
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
+    }
 }

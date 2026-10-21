@@ -42,6 +42,13 @@ private struct BlockingOperationView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
         .interactiveDismissDisabled()
+        // One modal element announcing the operation; VoiceOver can't reach the screen behind.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(L10n.tr(message))
+        .accessibilityAddTraits([.isModal, .updatesFrequently])
+        .onAppear {
+            VoiceOver.announce(L10n.tr(message))
+        }
     }
 }
 

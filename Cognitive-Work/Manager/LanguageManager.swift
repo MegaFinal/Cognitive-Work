@@ -105,7 +105,7 @@ enum L10n {
 
 extension String {
     /// Translates text that comes from the app's default catalog (room names, suggested chore
-    /// names and descriptions) into the current language.
+    /// names and descriptions, see ``DefaultChoreCatalog/defaultTexts``) into the current language.
     ///
     /// Defaults are saved once, in Portuguese (the source language), so they never change when
     /// the user switches language. Translating them when they are *displayed* keeps the stored
@@ -113,8 +113,12 @@ extension String {
     /// user typed) is returned as is, and numbered rooms such as "Quarto 2" translate their base
     /// name and keep the number ("Bedroom 2").
     var localizedDefault: String {
-        let translated = L10n.tr(self)
-        if translated != self { return translated }
+        // Only the app's own default content is translated. Any other catalog key (weekday
+        // abbreviations like "Qua", button titles…) typed by the user stays exactly as written.
+        if DefaultChoreCatalog.defaultTexts.contains(self) {
+            let translated = L10n.tr(self)
+            if translated != self { return translated }
+        }
         
         // "Quarto 2" -> "Bedroom 2"
         guard let space = lastIndex(of: " "),
@@ -122,6 +126,7 @@ extension String {
         else { return self }
         
         let base = String(self[..<space])
+        guard DefaultChoreCatalog.defaultTexts.contains(base) else { return self }
         let translatedBase = L10n.tr(base)
         return translatedBase == base ? self : "\(translatedBase)\(self[space...])"
     }

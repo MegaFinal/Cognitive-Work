@@ -67,6 +67,11 @@ class CarouselViewModel {
     var isLoading: Bool = false
     private var hasFetchedInitially = false
     
+    /// The snapshot of ``HouseDataStore`` this view model last showed, so reopening the tab
+    /// doesn't rebuild everything when nothing changed.
+    @ObservationIgnored
+    private var appliedSnapshotID: UUID?
+    
     /// Set when ``delete(chore:targetOccurrences:)`` fails, so a view can surface it in an
     /// alert. Left for the view to clear back to `nil` once shown.
     var errorMessage: String?
@@ -116,6 +121,22 @@ class CarouselViewModel {
     private let focusSpringResponse: Double = 0.4
     private let focusSpringDamping: Double = 0.75
     
+    // MARK: - Checking for New Users
+    
+    /// Prefix of the `UserDefaults` key holding the members this device already knows about.
+    /// The house ID is appended (see ``allUsersKey(houseID:)``), so each house keeps its own list.
+    private static let allUsers = "chores.allUsers"
+    
+    /// `true` when someone joined the house since the last check. The view sets it back to
+    /// `false` when the pop-up closes (the list is already saved by ``checkNewUser(users:)``).
+    var showNewUserPopUp = false
+    
+    /// Whether this device's user created the house (only the admin can redo the division, so
+    /// only the admin sees the pop-up). `nil` until resolved; resolved once per view model,
+    /// which is rebuilt when the user switches houses.
+    @ObservationIgnored
+    private var isHouseAdmin: Bool?
+    
     // MARK: - Filtering State
     
     var isFilterOn: Bool = false
@@ -139,7 +160,7 @@ class CarouselViewModel {
     private(set) var visibleOccurrences: [ChoreOccurrence] = []
     
     /// How many future occurrences of the same chore the list shows.
-    private let occurrencesPerChore = 20
+    private let occurrencesPerChore = 15
     
     /// Everyone responsible for a one-off chore: its current responsible plus its responsible list.
     private func responsibleUserIDs(of chore: ChoreModel) -> Set<CKRecord.ID> {
@@ -470,6 +491,15 @@ class CarouselViewModel {
         // Restore focus index to the currently focused chore's index if still present; otherwise clear focus.
         if let recID = focusedChoreRecordID, let idx = visibleChores.firstIndex(where: { $0.recordID == recID }) {
             focusedIndex = idx
+            
+            // The focused card may have moved to another index (a finished chore is re-sorted).
+            // Keep the carousel centered on it; otherwise it is left flipped off to the side
+            // while another card takes the center.
+            if layoutMode == .grid {
+                snappedItem = Double(idx)
+                draggingItem = Double(idx)
+                activeIndex = idx
+            }
         } else {
             focusedIndex = nil
             focusedChoreRecordID = nil
@@ -518,37 +548,34 @@ class CarouselViewModel {
     @ObservationIgnored
     private var refreshTask: Task<Void, Never>?
     
-    /// Fetches all chores, users, rooms and assignments in parallel.
-    func fetchAllData() async {
-        if !hasFetchedInitially {
-            await MainActor.run { isLoading = true }
-        }
-        
-        async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        async let fetchUsers = CloudKitManager.shared.fetchHouseUsers()
-        async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
-        async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
-        async let fetchCurrentHouseUser = CloudKitManager.shared.currentHouseUser()
-        
-        let (chores, users, rooms, assignments, currentHouseUser) = await (fetchChores, fetchUsers, fetchRooms, fetchAssignments, fetchCurrentHouseUser)
+    /// Shows the house data held by ``HouseDataStore``.
+    func fetchAllData(afterRemoteChange: Bool = false) async {
+        let snapshot = afterRemoteChange
+            ? await HouseDataStore.shared.refreshAfterRemoteChange()
+            : await HouseDataStore.shared.load()
         
         guard !Task.isCancelled else { return }
+        guard snapshot.id != appliedSnapshotID else { return }
         
         await MainActor.run {
-            self.cardModels = self.choresVisible(chores, to: currentHouseUser, among: users)
-            self.userModels = users
-            self.roomModels = rooms
-            self.dailyAssignments = assignments
-            self.dashboardUser = currentHouseUser
+            self.cardModels = self.choresVisible(snapshot.chores, to: snapshot.houseUser, among: snapshot.users)
+            self.userModels = snapshot.users
+            self.roomModels = snapshot.rooms
+            self.dailyAssignments = snapshot.assignments
+            self.dashboardUser = snapshot.houseUser
             
             self.rebuildDerivedState()
             
+            self.appliedSnapshotID = snapshot.id
             self.hasFetchedInitially = true
             self.isLoading = false
         }
         
-        await RoomModel.migrateStoredColorsIfNeeded(rooms)
-        await ChoreModel.migrateDurationsToMinutesIfNeeded(chores)
+        await resolveHouseAdminIfNeeded()
+        checkNewUser(users: self.userModels)
+        
+        await RoomModel.migrateStoredColorsIfNeeded(snapshot.rooms)
+        await ChoreModel.migrateDurationsToMinutesIfNeeded(snapshot.chores)
     }
     
     /// Refreshes the chores and recurrent assignments after a chore or its responsible user has been modified.
@@ -623,6 +650,71 @@ class CarouselViewModel {
             .enumerated()
             .sorted { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }
             .map(\.element)
+    }
+    
+    /// One key per house: switching houses must not compare the new house with the old one.
+    private static func allUsersKey(houseID: String) -> String {
+        "\(allUsers).\(houseID)"
+    }
+    
+    /// Members (`ownerRecordName`) already known in that house. Empty when nothing was saved yet.
+    private func allUsersArray(houseID: String) -> [String] {
+        UserDefaults.standard.array(forKey: Self.allUsersKey(houseID: houseID)) as? [String] ?? []
+    }
+
+    func updateAllUsers(users: [String], houseID: String) {
+        UserDefaults.standard.set(users, forKey: Self.allUsersKey(houseID: houseID))
+    }
+    
+    /// Finds out once whether the user is the house admin, the same way the rest of the app
+    /// does (`HouseModel.isAdmin()`). Needs `await`, so it runs before ``checkNewUser(users:)``,
+    /// which stays synchronous.
+    private func resolveHouseAdminIfNeeded() async {
+        guard isHouseAdmin == nil,
+              let house = try? await CloudKitManager.shared.currentHouse()
+        else { return }
+        isHouseAdmin = await house.isAdmin() == true
+    }
+    
+    /// Opens the "new member" pop-up on demand (from the notification), with the same rule as
+    /// the automatic check: only the admin can redo the division, so residents get nothing.
+    func presentNewUserPopUp() {
+        guard isHouseAdmin == true else { return }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            showNewUserPopUp = true
+        }
+    }
+    
+    /// Compares the house members with the ones saved last time and turns ``showNewUserPopUp``
+    /// on when someone new shows up and the user is the house admin.
+    ///
+    /// People are matched by `ownerRecordName` (the iCloud account), not `recordID`: the same
+    /// person can have more than one `UserModel`, and that must not look like a new member.
+    func checkNewUser(users: [UserModel]) {
+        // Nobody came back (e.g. the fetch failed offline): nothing to compare, and saving an
+        // empty list would throw away what we know.
+        guard !users.isEmpty,
+              let houseID = users.first?.houseReference?.recordID.recordName
+        else { return }
+        
+        let savedUsers = Set(allUsersArray(houseID: houseID))
+        let currentUsers = Set(users.map { $0.ownerRecordName })
+        
+        // Always remember who is in the house *now*, after comparing. This also drops whoever
+        // left, so if they come back later they show up as new again.
+        defer { updateAllUsers(users: Array(currentUsers), houseID: houseID) }
+        
+        // First check in this house (fresh install, or the user just joined): everyone is
+        // already here, so just save the list without showing anything.
+        guard !savedUsers.isEmpty else { return }
+        
+        let newUsers = currentUsers.subtracting(savedUsers)
+        
+        // Residents still get their list updated (by the `defer` above), they just don't see
+        // the pop-up: only the admin can start a new division.
+        if !newUsers.isEmpty, isHouseAdmin == true {
+            showNewUserPopUp = true
+        }
     }
     
     // MARK: - Synchronous Data Helpers
@@ -1281,6 +1373,12 @@ class CarouselViewModel {
         
         guard let myUserID = myUser?.recordID else { return }
         
+        // Whoever holds this chore's coupon is spared it in this cycle.
+        if await CouponExemption.isExempt(userID: myUserID, choreID: item.chore.recordID) {
+            errorMessage = L10n.tr("Você tem o cupom dessa tarefa e não pode pegá-la neste ciclo.")
+            return
+        }
+        
         let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
         
         switch item.choreType {
@@ -1473,6 +1571,13 @@ class CarouselViewModel {
             dashboardUser = myUser
         }
         guard let myUserID = myUser?.recordID else { return false }
+        
+        // Whoever holds this chore's coupon is spared it in this cycle.
+        if await CouponExemption.isExempt(userID: myUserID, choreID: item.chore.recordID) {
+            errorMessage = L10n.tr("Você tem o cupom dessa tarefa e não pode pegá-la neste ciclo.")
+            return false
+        }
+        
         let userRef = CKRecord.Reference(recordID: myUserID, action: .none)
         let chore = item.chore
         

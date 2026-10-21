@@ -40,7 +40,7 @@ struct BadgeModel: CloudKitSyncable {
         self.image = image
         self.description = description
         self.isLocked = isLocked
-        self.tier = Tier(rawValue: tier) ?? .tier1
+        self.tier = Tier(stored: tier)
         self.quantity = quantity
         self.room = record["room"] as? CKRecord.Reference
         self.users = record["users"] as? [CKRecord.Reference]

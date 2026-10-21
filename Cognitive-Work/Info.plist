@@ -10,10 +10,49 @@
 	<array/>
 	<key>CKSharingSupported</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>nubank</string>
+		<string>nuapp</string>
+		<string>nubankapp</string>
+		<string>bancointer</string>
+		<string>interapp</string>
+		<string>itauvarejo</string>
+		<string>itau</string>
+		<string>itaupersonnalite</string>
+		<string>bradesco</string>
+		<string>bradescoapp</string>
+		<string>bbapp</string>
+		<string>bancodobrasil</string>
+		<string>santander</string>
+		<string>santanderbr</string>
+		<string>caixatem</string>
+		<string>caixaapp</string>
+		<string>c6bank</string>
+		<string>picpay</string>
+		<string>mercadopago</string>
+		<string>pagbank</string>
+		<string>pagseguro</string>
+		<string>neon</string>
+		<string>neonapp</string>
+		<string>btgpactual</string>
+		<string>btgbanking</string>
+		<string>banconext</string>
+		<string>nextapp</string>
+		<string>sicoob</string>
+		<string>sicoobapp</string>
+		<string>sicredi</string>
+		<string>sicrediapp</string>
+		<string>banrisul</string>
+		<string>willbank</string>
+		<string>bancopan</string>
+		<string>bancooriginal</string>
+		<string>xpinvestimentos</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
-		<true/>
+		<false/>
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array>

@@ -8,32 +8,46 @@
 import SwiftUI
 import CloudKit
 
-/// Shows the house's shopping list
+/// Shows the house's shopping list.
 struct ShopListView: View {
 
     @State private var viewModel: ShopListViewModel
 
     @State private var isPresentingAddItem = false
     @State private var editingItem: ShopListItem?
+    @State private var isShowingPendingPayments = false
 
-    @State private var sortOption: SortOption = .addedOrder
-    @State private var isShowingErrorAlert = false
+    /// Which card is swiped open; shared so only one can be open at a time.
+    @State private var revealedItemID: String?
 
-    init(viewModel: ShopListViewModel = ShopListViewModel()) {
-        self._viewModel = State(initialValue: viewModel)
+    /// The delete button matches the card: same height, same 22-point corners.
+    private let swipeStyle = SwipeToDeleteStyle(cornerRadius: 22, topInset: 0)
+
+    init(viewModel: ShopListViewModel? = nil) {
+        self._viewModel = State(initialValue: viewModel ?? ShopListViewModel())
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 40) {
+        NavigationStack {
+            content
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(isPresented: $isShowingPendingPayments) {
+                    PendingPaymentsView(shopList: viewModel)
+                }
+        }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 20) {
             header
 
-            if viewModel.isLoading && viewModel.list == nil {
-                Spacer()
+            if !viewModel.hasLoaded {
+                // Only on a cold start without data in memory; otherwise the cached list shows at once.
                 ProgressView()
-                    .frame(maxWidth: .infinity)
-                Spacer()
-            } else if viewModel.hasLoaded && viewModel.items.isEmpty {
-                emptyState
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.isListEmpty {
+                ShopListEmptyState()
+                    .frame(maxHeight: .infinity)
             } else {
                 itemList
             }
@@ -42,17 +56,11 @@ struct ShopListView: View {
             addButton
         }
         .background(Color(.white).ignoresSafeArea())
+        .overlay { purchasePriceOverlay }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.purchasePrompt?.id)
         .task {
             guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
-        }
-        .task {
-            // updates feel real-time regardless of push timing.
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
-                guard !Task.isCancelled else { break }
-                await viewModel.refresh()
-            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             viewModel.requestRefresh()
@@ -76,32 +84,101 @@ struct ShopListView: View {
                 viewModel: viewModel
             )
         }
+        .alert(
+            "Não foi possível concluir",
+            isPresented: Binding(
+                get: { viewModel.errorMessage != nil && !isPresentingAddItem && editingItem == nil },
+                set: { if !$0 { viewModel.clearError() } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
 
-    // MARK: - Subviews
+    // MARK: - Price pop-up
 
-    /// Page title alongside the notice and sort controls.
+    /// "How much was it?", over a dimmed backdrop, when an item without a price is checked off.
+    @ViewBuilder
+    private var purchasePriceOverlay: some View {
+        if let prompt = viewModel.purchasePrompt {
+            ZStack {
+                Color.black.opacity(0.45)
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { viewModel.dismissPurchasePrompt() }
+                    .accessibilityHidden(true)
+
+                PurchasePricePopUp(
+                    itemName: prompt.item.name,
+                    quantity: prompt.item.quantity,
+                    onConfirm: { text in
+                        Task { await viewModel.confirmPurchaseAnnouncing(of: prompt.item, valueText: text) }
+                    },
+                    onSkip: {
+                        Task { await viewModel.confirmPurchaseAnnouncing(of: prompt.item, valueText: nil) }
+                    },
+                    onCancel: { viewModel.dismissPurchasePrompt() }
+                )
+                .id(prompt.id)
+                .transition(.scale(scale: 0.92).combined(with: .opacity))
+            }
+            .transition(.opacity)
+        }
+    }
+
+    // MARK: - Header
+
+    /// Page title alongside the controls, laid out like the header of ``ChoresView``.
     private var header: some View {
         HStack {
-            Text("Compras")
-                .font(.system(size: 34))
-                .fontWeight(.bold)
-                .padding(.horizontal, 30)
-                .padding(.top, 20)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Compras")
+                    .font(.system(size: 34))
+                    .fontWeight(.bold)
+                    .accessibilityAddTraits(.isHeader)
+
+                if !viewModel.pendingItems.isEmpty {
+                    Text(viewModel.pendingSummary)
+                        .font(.system(size: 18))
+                        .foregroundStyle(.subTitleGray)
+                        .fontWeight(.semibold)
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.top, 20)
 
             Spacer()
 
-            Menu {
-                Picker("Ordenar por", selection: $sortOption) {
-                    ForEach(SortOption.allCases) { option in
-                        Text(option.label).tag(option)
-                    }
+            HStack(spacing: 4) {
+                Button {
+                    HapticsManager.selection()
+                    isShowingPendingPayments = true
+                } label: {
+                    Image(systemName: "banknote")
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(8)
                 }
-            } label: {
-                Image(systemName: "line.3.horizontal.decrease")
-                    .font(.system(size: 22))
-                    .foregroundColor(.black)
-                    .padding(8)
+                .accessibilityLabel("Pendências")
+                .voiceControlNames([L10n.tr("Pendências"), L10n.tr("Dinheiro"), L10n.tr("Pagamentos")])
+
+                Menu {
+                    Picker("Ordenar por", selection: $viewModel.sortOption) {
+                        ForEach(ShopListSortOption.allCases) { option in
+                            Label(option.label, systemImage: option.symbol).tag(option)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(12)
+                }
+                .accessibilityLabel("Ordenar por")
+                .voiceOverValue(viewModel.sortOption.label)
+                .voiceControlNames([L10n.tr("Ordenar"), L10n.tr("Filtro"), L10n.tr("Ordenar por")])
             }
             .glassEffect(
                 .regular.interactive(),
@@ -112,420 +189,196 @@ struct ShopListView: View {
         }
     }
 
-    /// Pending items, a divider, then bought items
+    // MARK: - List
+
     private var itemList: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 40) {
-                ForEach(sortedPending) { item in
-                    ShopListItemRow(
-                        item: item,
-                        relatedUsers: item.relatedUsers(in: viewModel.houseUsers),
-                        onToggle: { await viewModel.toggleBought(item) },
-                        onTap: { editingItem = item }
-                    )
+        let pendingSections = viewModel.pendingSections
+        let boughtSection = viewModel.boughtSection
+
+        return ScrollView(showsIndicators: false) {
+            LazyVStack(spacing: 0) {
+                ForEach(pendingSections) { section in
+                    sectionView(section, isFirst: section.id == pendingSections.first?.id)
                 }
 
-                if !viewModel.boughtItems.isEmpty {
-                    Divider()
-                        .padding(.horizontal, 24)
-
-                    ForEach(sortedBought) { item in
-                        ShopListItemRow(
-                            item: item,
-                            relatedUsers: item.relatedUsers(in: viewModel.houseUsers),
-                            onToggle: { await viewModel.toggleBought(item) },
-                            onTap: { editingItem = item }
-                        )
+                if let boughtSection {
+                    if !pendingSections.isEmpty {
+                        boughtDivider
+                            .padding(.top, sectionSpacing)
                     }
+
+                    sectionView(boughtSection, isFirst: true)
                 }
             }
-            .padding(.top, 12)
+            .padding(.horizontal, 20)
             .padding(.bottom, 120)
         }
+        .scrollDismissesKeyboard(.immediately)
     }
 
-    /// Shown instead of ``itemList`` once the list has loaded and has no items yet.
-    private var emptyState: some View {
-        ContentUnavailableView(
-            "Lista de compras vazia",
-            systemImage: "cart",
-            description: Text("Toque em \"+\" para adicionar o primeiro item.")
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    private let sectionSpacing: CGFloat = 40
+
+    private var boughtDivider: some View {
+        Capsule()
+            .fill(Color.black)
+            .frame(height: 1.5)
+            .frame(maxWidth: .infinity)
     }
 
-    /// Floating action button that opens the form to add a new item.
-    private var addButton: some View {
-        Button {
-            isPresentingAddItem = true
+    private var itemDivider: some View {
+        Capsule()
+            .fill(Color.gray.opacity(0.3))
+            .frame(height: 1)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 17)
+            .accessibilityHidden(true)
+    }
+
+    /// A collapsible section: the title, then its cards separated by thin lines.
+    ///
+    /// - Parameter isFirst: The first section sits right under the header
+    @ViewBuilder
+    private func sectionView(_ section: ShopListSection, isFirst: Bool) -> some View {
+        sectionTitle(section)
+            .padding(.top, isFirst ? 10 : sectionSpacing)
+            .padding(.bottom, 20)
+
+        if !viewModel.isCollapsed(section) {
+            VStack(spacing: 0) {
+                ForEach(section.items) { item in
+                    row(for: item)
+
+                    if item.id != section.items.last?.id {
+                        itemDivider
+                    }
+                }
+            }
+        }
+    }
+
+    private func sectionTitle(_ section: ShopListSection) -> some View {
+        let isCollapsed = viewModel.isCollapsed(section)
+
+        return Button {
+            withAnimation(.snappy) {
+                viewModel.toggleCollapsed(section)
+            }
         } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(width: 56, height: 56)
-                .background(Color.blue)
-                .clipShape(Circle())
-                .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
-        }
-        .disabled(viewModel.list == nil)
-        .padding(24)
-    }
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(section.title)
+                    .font(.system(size: 22, weight: .bold))
 
-    // MARK: - Sorting
+                Text("\(section.items.count)")
+                    .font(.system(size: 17))
 
-    private enum SortOption: String, CaseIterable, Identifiable {
-        case addedOrder
-        case name
-
-        var id: String { rawValue }
-
-        var label: String {
-            switch self {
-            case .addedOrder: return L10n.tr("Adicionados recentemente")
-            case .name: return L10n.tr("Nome")
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 15, weight: .semibold))
+                    .rotationEffect(.degrees(isCollapsed ? -90 : 0))
             }
+            .foregroundStyle(.black)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .voiceOverLabel(viewModel.accessibilityLabel(for: section))
+        .voiceOverValue(viewModel.accessibilityValue(for: section))
+        .voiceControlNames([section.title])
+        .accessibilityAddTraits(.isHeader)
     }
 
-    private var sortedPending: [ShopListItem] {
-        sorted(viewModel.pendingItems)
-    }
-
-    private var sortedBought: [ShopListItem] {
-        sorted(viewModel.boughtItems)
-    }
-
-    private func sorted(_ items: [ShopListItem]) -> [ShopListItem] {
-        switch sortOption {
-        case .addedOrder:
-            return items
-        case .name:
-            return items.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        }
-    }
-}
-
-// MARK: - Row
-
-/// One shopping list entry
-private struct ShopListItemRow: View {
-    var item: ShopListItem
-
-    /// Resolved by the parent from ``ShopListViewModel/houseUsers`` (see
-    /// ``ShopListItem/relatedUsers(in:)``) instead of each row firing its own CloudKit request.
-    var relatedUsers: [UserModel]
-
-    var onToggle: () async -> Void
-    var onTap: () -> Void
-    
-    /// Blocks double taps while the change is being saved.
-    @State private var isToggling = false
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Text("\(item.quantity)")
-                .font(.system(size: 32, weight: .bold))
-                .frame(minWidth: 32, alignment: .leading)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(item.name)
-                    .font(.system(size: 19))
-                    .strikethrough(item.isBought)
-                    .foregroundColor(item.isBought ? .secondary : .primary)
-
-                if !relatedUsers.isEmpty {
-                    UserProfilePictureList(users: relatedUsers, widthMultiplier: 0.07)
-                }
+    private func row(for item: ShopListItem) -> some View {
+        SwipeToDeleteRow(
+            id: item.id,
+            revealedID: $revealedItemID,
+            style: swipeStyle,
+            onDelete: {
+                Task { await viewModel.deleteItemAnnouncing(item) }
             }
-
-            Spacer()
-
-            Button {
-                HapticsManager.selection()
-                isToggling = true
-                Task {
-                    await onToggle()
-                    isToggling = false
-                }
-            } label: {
-                Circle()
-                    .strokeBorder(item.isBought ? Color.clear : Color.black, lineWidth: 1.5)
-                    .background(Circle().fill(item.isBought ? Color.black : Color.clear))
-                    .frame(width: 26, height: 26)
-                    .overlay {
-                        if isToggling {
-                            ProgressView()
-                                .controlSize(.mini)
-                                .tint(item.isBought ? .white : .black)
-                        }
-                    }
-            }
-            .buttonStyle(.plain)
-            .disabled(isToggling)
-            .padding(.top, 4)
-        }
-        .padding(.horizontal, 24)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onTap()
-        }
-    }
-}
-
-// MARK: - Create/Edit form
-
-/// Which action ``ShopListItemFormView`` performs on confirm.
-private enum ShopListItemFormMode {
-    case create
-    case edit(ShopListItem)
-}
-
-/// A form used both to add a new item and to edit an existing one
-private struct ShopListItemFormView: View {
-    var mode: ShopListItemFormMode
-    var availableUsers: [UserModel]
-    var currentUser: UserModel?
-    var viewModel: ShopListViewModel
-
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var name: String = ""
-    @State private var quantity: Int = 1
-    @State private var unitMeasurement: UnitMeasurement = .unit
-    @State private var valueText: String = ""
-    @State private var relatedUsers: [UserModel] = []
-    @State private var isSaving = false
-    @State private var saveErrorMessage: String?
-
-    private var isEditing: Bool {
-        if case .edit = mode { return true }
-        return false
-    }
-
-    var body: some View {
-        NavigationStack {
-            GeometryReader { geometry in
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 25) {
-                        VStack(spacing: 2) {
-                            TextField(
-                                "",
-                                text: $name,
-                                prompt: Text("Nome do item").foregroundStyle(.black)
-                            )
-                            .font(.system(size: 28))
-                            .bold()
-                            .characterLimit(TextLimits.shopItemName, text: $name)
-                            .submitLabel(.done)
-
-                            Capsule()
-                                .frame(height: 1.5)
-                                .foregroundStyle(.gray.opacity(0.3))
-                        }
-
-                        HStack {
-                            Text("Quantidade")
-                                .font(.system(size: 15))
-                                .fontWeight(.semibold)
-                            Spacer()
-                            Stepper(value: $quantity, in: 1...99) {
-                                Text("\(quantity)")
-                                    .fontWeight(.semibold)
-                            }
-                            .fixedSize()
-                        }
-
-                        HStack {
-                            Text("Unidade")
-                                .font(.system(size: 15))
-                                .fontWeight(.semibold)
-                            Spacer()
-                            Menu {
-                                Picker("Unidade", selection: $unitMeasurement) {
-                                    ForEach(UnitMeasurement.allCases) { unit in
-                                        Text(unit.getDisplayName(for: Double(quantity))).tag(unit)
-                                    }
-                                }
-                            } label: {
-                                HStack {
-                                    Text(unitMeasurement.getDisplayName(for: Double(quantity)))
-                                    Image(systemName: "chevron.up.chevron.down")
-                                        .imageScale(.small)
-                                }
-                                .foregroundColor(.black)
-                            }
-                        }
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Valor (opcional)")
-                                .font(.system(size: 15))
-                                .fontWeight(.semibold)
-                            TextField(pricePlaceholder, text: $valueText)
-                                .keyboardType(.decimalPad)
-                                .font(.system(size: 17))
-                                .characterLimit(TextLimits.price, text: $valueText)
-                        }
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Quem vai consumir/pagar")
-                                .font(.system(size: 15))
-                                .fontWeight(.semibold)
-                            ResponsibleUserPicker(availableUsers: availableUsers, selectedUsers: $relatedUsers)
-                        }
-
-                        Spacer()
-
-                        confirmButton(width: geometry.size.width)
-                    }
-                    .padding(.vertical)
-                    .frame(width: geometry.size.width * 0.9)
-                }
-                .frame(width: geometry.size.width)
-            }
-            .navigationTitle(isEditing ? "Editar item" : "Novo item")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancelar") { dismiss() }
-                        .disabled(isSaving)
-                }
-            }
-            .disabled(isSaving)
-        }
-        .interactiveDismissDisabled(isSaving)
-        .task {
-            populateFromMode()
-        }
-        .dismissKeyboardOnTap()
-        .alert(
-            "Não foi possível salvar",
-            isPresented: Binding(
-                get: { saveErrorMessage != nil },
-                set: { if !$0 { saveErrorMessage = nil } }
-            )
         ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(saveErrorMessage ?? "")
-        }
-    }
-
-    private func confirmButton(width: CGFloat) -> some View {
-        HStack {
-            Spacer()
-            Button {
-                Task { await save() }
-            } label: {
-                Group {
-                    if isSaving {
-                        ProgressView()
-                            .tint(.white)
+            ShopListItemCard(
+                item: item,
+                relatedUsers: viewModel.relatedUsers(for: item),
+                onToggle: { await viewModel.toggleBoughtAnnouncing(item) },
+                onTap: {
+                    if revealedItemID != nil {
+                        withAnimation(.snappy) { revealedItemID = nil }
                     } else {
-                        Text("Confirmar")
-                            .foregroundColor(.white)
-                            .fontWeight(.bold)
+                        editingItem = item
                     }
                 }
-                .frame(width: width * 0.8, height: 50)
-                .background(Color.blue)
-                .clipShape(Capsule())
-            }
-            .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
-            Spacer()
+            )
+        }
+        .accessibilityAction(named: Text(verbatim: L10n.tr("Editar"))) {
+            editingItem = item
         }
     }
 
-    /// Currency placeholder in the app's language/region format (e.g. "R$ 0,00").
-    private var pricePlaceholder: String {
-        0.0.formatted(.currency(code: "BRL").locale(L10n.locale))
-    }
-
-    /// Seeds the form's local state from the item being edited
-    private func populateFromMode() {
-        guard case .edit(let item) = mode else { return }
-        name = item.name
-        quantity = item.quantity
-        unitMeasurement = item.unitMeasurement
-        relatedUsers = item.relatedUsers(in: availableUsers)
-        if let value = item.value {
-            valueText = value.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(value)) : String(value)
+    private var addButton: some View {
+        FloatingActionButton(systemImage: "plus") {
+            HapticsManager.selection()
+            isPresentingAddItem = true
         }
-    }
-
-    private func save() async {
-        isSaving = true
-        defer { isSaving = false }
-
-        let existingItem: ShopListItem? = {
-            if case .edit(let item) = mode { return item }
-            return nil
-        }()
-
-        // The sheet used to dismiss even when CloudKit rejected the save, silently losing the
-        // item. It now stays open and explains what happened.
-        let success = await viewModel.saveItem(
-            existingItem,
-            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-            valueText: valueText,
-            quantity: quantity,
-            unitMeasurement: unitMeasurement,
-            relatedUsers: relatedUsers,
-            addedBy: currentUser
-        )
-
-        if success {
-            HapticsManager.notify(.success)
-            dismiss()
-        } else {
-            saveErrorMessage = viewModel.errorMessage ?? L10n.tr("Tente novamente.")
-        }
+        .disabled(!viewModel.canAddItems)
+        .voiceOverLabel(L10n.tr("Adicionar item"))
+        .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Adicionar item")])
+        .floatingActionPlacement()
     }
 }
 
-#Preview {
-    // MARK: - users
-    func makeUser(_ name: String) -> UserModel {
-        let user = UserModel(name: name, tier: .tier1, ownerRecordName: "preview-\(name)")
-        user.recordID = CKRecord.ID(recordName: "preview-user-\(name)")
-        return user
-    }
+// MARK: - Empty state
 
-    let jones = makeUser("Jones")
-    let isabela = makeUser("Isabela")
-    let carol = makeUser("Carol")
-    let anshu = makeUser("Anshu")
+private struct ShopListEmptyState: View {
 
-    // MARK: - items
-    func makeItem(
-        _ name: String,
-        quantity: Int,
-        unit: UnitMeasurement = .unit,
-        isBought: Bool = false,
-        users: [UserModel]
-    ) -> ShopListItem {
-        let item = ShopListItem(
-            name: name,
-            quantity: quantity,
-            unitMeasurement: unit,
-            isBought: isBought,
-            relatedUsers: users.compactMap { user in
-                user.recordID.map { CKRecord.Reference(recordID: $0, action: .none) }
+    @State private var isAnimating = false
+
+    var body: some View {
+        VStack(spacing: 28) {
+            ZStack {
+                Circle()
+                    .fill(RoomColor.yellow.lowOpacityColor.opacity(0.3))
+
+                Image("loadingIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 112)
             }
-        )
-        item.recordID = CKRecord.ID(recordName: "preview-item-\(UUID().uuidString)")
-        return item
+            .frame(width: 176, height: 176)
+            .clipShape(Circle())
+            .overlay(alignment: .topTrailing) {
+                sparkle(size: 24).offset(x: 4, y: 6)
+            }
+            .overlay(alignment: .bottomLeading) {
+                sparkle(size: 16).offset(x: 2, y: -10)
+            }
+            .accessibilityHidden(true)
+
+            VStack(spacing: 10) {
+                Text("Lista de compras vazia")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(.titleGray)
+                    .multilineTextAlignment(.center)
+
+                Text("Toque em \"+\" para adicionar o primeiro item.")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.subTitleGray)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 32)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .onAppear { isAnimating = true }
     }
 
-    let items = [
-        makeItem("Papel higiênico", quantity: 1, unit: .package, users: [jones, isabela, carol]),
-        makeItem("Detergente", quantity: 2, unit: .unit, users: [jones, isabela, carol]),
-        makeItem("Vassoura", quantity: 1, unit: .unit, users: [jones, isabela, carol]),
-        makeItem("Ovos", quantity: 6, unit: .unit, users: [jones]),
-        makeItem("Barra de chocolate", quantity: 1, unit: .unit, users: [anshu]),
-        makeItem("Veja multiuso", quantity: 1, unit: .unit, isBought: true, users: [jones, isabela, carol])
-    ]
+    private func sparkle(size: CGFloat) -> some View {
+        Image(systemName: "sparkle")
+            .font(.system(size: size, weight: .bold))
+            .foregroundStyle(.choreYellow)
+            .scaleEffect(isAnimating ? 1.15 : 0.85)
+    }
+}
 
-    let viewModel = ShopListViewModel(previewItems: items, houseUsers: [jones, isabela, carol, anshu], currentUser: jones)
-
-    return ShopListView(viewModel: viewModel)
+#Preview("Lista") {
+    ShopListView(viewModel: ShopListPreviewData.populatedViewModel)
 }

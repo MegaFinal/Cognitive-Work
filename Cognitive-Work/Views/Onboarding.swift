@@ -29,6 +29,7 @@ struct Onboarding: View {
                 if viewModel.isRestoringSession && viewModel.stateMachine.index > 0 {
                     ProgressView()
                         .controlSize(.large)
+                        .accessibilityLabel(Text(L10n.tr("Carregando")))
                 } else {
                     NavigationStack {
                         stepView(for: viewModel.stateMachine)
@@ -37,6 +38,10 @@ struct Onboarding: View {
             }
                 .onChange(of: viewModel.isOnboardingSkipped) {
                     didOnboard = true
+                }
+                // Each step replaces the whole screen: let VoiceOver start over from the top.
+                .onChange(of: viewModel.stateMachine.index) {
+                    VoiceOver.screenChanged()
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .willAcceptShare)) { _ in
                     guard viewModel.stateMachine.flow != .houseCreator else { return }
@@ -68,7 +73,7 @@ struct Onboarding: View {
                         if viewModel.currentUser != nil {
                             viewModel.stateMachine.flow = .invitedWithProfile
                             if await viewModel.joinHouse() {
-                                viewModel.advanceAfterJoiningHouse()
+                                await viewModel.advanceAfterJoiningHouse()
                             }
                         } else {
                             viewModel.stateMachine.flow = .invitedWithoutProfile

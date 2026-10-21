@@ -25,26 +25,12 @@ struct ContentView: View {
     // MARK: - Body
     
     var body: some View {
-        TabView {
-            ChoresView()
-                .tabItem {
-                    Label("Tarefas", systemImage: "checklist")
-                }
-             
-//            ShopListView()
-//                .tabItem {
-//                    Label("Compras", systemImage: "basket")
-//                }
-            
-            DashboardView()
-                .tabItem {
-                    Label("Progresso", systemImage: "figure.2")
-                }
-            
-            UserProfileView()
-                .tabItem {
-                    Label("Perfil", systemImage: "person.fill")
-                }
+        Group {
+            if viewModel.isLoading {
+                LoadingScreen()
+            } else {
+                tabs
+            }
         }
         .environment(tabBarVisibility)
         // Over the whole TabView (tab bar included) once the last division's period is over.
@@ -94,9 +80,7 @@ struct ContentView: View {
         .blockingWhileUnlinkingOrphanedHouse()
         
         .task {
-            await viewModel.leaveOrphanedHouses()
-            await viewModel.fetchHouse()
-            await viewModel.syncFreeTime()
+            await viewModel.bootstrap()
             await viewModel.checkRetro()
         }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
@@ -109,6 +93,37 @@ struct ContentView: View {
                     await viewModel.checkRetro()
                 }
             }
+        }
+    }
+    
+    // MARK: - Tabs
+    
+    private var tabs: some View {
+        TabView {
+            ChoresView()
+                .tabItem {
+                    Label("Tarefas", systemImage: "checklist")
+                }
+             
+            ShopListView()
+                .tabItem {
+                    Label("Compras", systemImage: "basket")
+                }
+            
+            DashboardView()
+                .tabItem {
+                    Label("Progresso", systemImage: "figure.2")
+                }
+            
+            GamificationView()
+                .tabItem {
+                    Label("Recompensas", systemImage: "gift")
+                }
+            
+            UserProfileView()
+                .tabItem {
+                    Label("Perfil", systemImage: "person.fill")
+                }
         }
     }
 }

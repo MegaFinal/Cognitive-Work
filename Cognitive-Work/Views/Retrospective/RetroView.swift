@@ -12,18 +12,28 @@ import SwiftUI
 struct RetroView: View {
     @State private var viewModel: RetroViewModel
     
+    /// Coins to redeem on the points page. The presenting screen may pass one it already loaded.
+    @State private var coinsViewModel: RetroCoinsViewModel
+    
     /// Presentation-only: the card expands first (with the alert still on it), then the pages fade in.
     @State private var pagesVisible = false
     
     /// Called when the flow ends (schedule confirmed, or "Dividir mais tarde").
     var onFinish: () -> Void
     
-    /// - Parameter viewModel: Inject one for previews/tests. `nil` builds the production one.
-    init(viewModel: RetroViewModel? = nil, onFinish: @escaping () -> Void = {}) {
+    /// - Parameters:
+    ///   - viewModel: Inject one for previews/tests. `nil` builds the production one.
+    ///   - coinsViewModel: Coins already loaded by the presenting screen. `nil` builds (and loads) a new one.
+    init(
+        viewModel: RetroViewModel? = nil,
+        coinsViewModel: RetroCoinsViewModel? = nil,
+        onFinish: @escaping () -> Void = {}
+    ) {
         _viewModel = State(initialValue: viewModel ?? RetroViewModel(
             repository: CloudKitRetroRepository(),
             configuration: RetroConfiguration(maxFloatingCoins: RetroCoinsScatter.maxCount)
         ))
+        _coinsViewModel = State(initialValue: coinsViewModel ?? RetroCoinsViewModel())
         self.onFinish = onFinish
     }
     
@@ -43,6 +53,7 @@ struct RetroView: View {
                             Color.black.opacity(0.45)
                                 .contentShape(Rectangle())
                                 .onTapGesture { }
+                                .accessibilityDecorative()
                             
                             RoundedRectangle(cornerRadius: 32)
                                 // Real sizes (not .infinity), so SwiftUI can interpolate the size in both directions.
@@ -63,7 +74,7 @@ struct RetroView: View {
                                         // Developed later; still bound to the same page/flow.
 //                                        RetroStreakView(page: $viewModel.pageIndex, isRetroDone: isRetroDoneBinding)
 //                                            .tag(RetroPage.streak.rawValue)
-                                        RetroPointsView(viewModel: viewModel)
+                                        RetroPointsView(viewModel: viewModel, coinsViewModel: coinsViewModel)
                                             .tag(RetroPage.points.rawValue)
                                         RetroRoomsView(viewModel: viewModel)
                                             .tag(RetroPage.rooms.rawValue)
@@ -99,7 +110,21 @@ struct RetroView: View {
                 }
             }
         }
+        // Voice Control has no escape gesture: an invisible, touch-transparent "Fechar"
+        // element in the top corner lets the user say "Toque em Fechar".
+        .overlay(alignment: .topTrailing) {
+            if viewModel.phase != .dismissed && viewModel.phase != .schedule {
+                DashboardVoiceControlButton(
+                    labels: [L10n.tr("Fechar"), L10n.tr("Sair")],
+                    action: close
+                )
+            }
+        }
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) { close() }
         .task { await viewModel.load() }
+        // Idempotent: reuses the load the presenting screen may have started.
+        .task { await coinsViewModel.load() }
         .task {
             for await event in viewModel.makeEventStream() {
                 switch event {
@@ -108,11 +133,25 @@ struct RetroView: View {
                 }
             }
         }
+        // Each step swaps the whole content: let VoiceOver re-read it from the top.
+        .onChange(of: viewModel.currentPage) { VoiceOver.screenChanged() }
         .onChange(of: viewModel.phase) { _, phase in
+            VoiceOver.screenChanged()
             guard phase == .pages, !pagesVisible else { return }
             Task {
                 try? await Task.sleep(for: .seconds(0.5))
                 withAnimation(.easeInOut(duration: 0.3)) { pagesVisible = true }
+            }
+        }
+    }
+    
+    /// Escape gesture / "Fechar": leaves the current step the same way its "later" button does.
+    private func close() {
+        withAnimation {
+            switch viewModel.phase {
+            case .alert, .pages: viewModel.skipRetrospective()
+            case .divisionPrompt: viewModel.deferDivision()
+            case .schedule, .dismissed: break
             }
         }
     }

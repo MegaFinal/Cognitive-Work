@@ -90,57 +90,78 @@ class DashboardViewModel {
     
     var isLoading: Bool = true
     
-    /// `CloudKitManager.dataRevision` the cached data was fetched at. `nil` until the first load.
-    private var loadedRevision: Int?
+    /// Changes every time the cards are rebuilt from a new snapshot. The view uses it as an
+    /// `.id(_:)` so the charts are recreated and always draw the freshly built data.
+    var contentVersion: Int = 0
+    
+    /// The ``HouseDataStore`` snapshot the cached data was built from. `nil` until the first load.
+    private var loadedSnapshotID: UUID?
     
     /// Day the cached data was built for. "Today" cards go stale at midnight
     private var loadedDay: Date?
     
-    /// Whether the cached data is out of date
-    var needsReload: Bool {
-        guard let loadedRevision, let loadedDay else { return true }
-        return loadedRevision != CloudKitManager.shared.dataRevision
+    /// Whether the cards were built from an older snapshot, or for another day.
+    private func needsRebuild(for snapshot: HouseSnapshot) -> Bool {
+        guard let loadedSnapshotID, let loadedDay else { return true }
+        return loadedSnapshotID != snapshot.id
             || !Calendar.current.isDateInToday(loadedDay)
     }
     
-    /// Loads only when ``needsReload`` says so.
+    /// Rebuilds the cards only when the house data changed or the day rolled over.
     func loadIfNeeded() async {
-        guard needsReload else { return }
         await load()
     }
     
-    func load() async {
-        let revision = CloudKitManager.shared.dataRevision
+    /// Brings the cards up to date after CloudKit reported a change (push, app back in the
+    /// foreground, pull to refresh). Always asks the store for fresh data.
+    func reloadAfterRemoteChange() async {
+        await load(afterRemoteChange: true)
+    }
+    
+    /// Builds every card from ``HouseDataStore``.=
+    @MainActor
+    func load(afterRemoteChange: Bool = false) async {
+        let store = HouseDataStore.shared
         
-        if loadedRevision == nil { isLoading = true }
+        if let cached = store.snapshot, needsRebuild(for: cached) {
+            await build(from: cached)
+            guard !Task.isCancelled else { return }
+        }
         
-        async let fetchUser = CloudKitManager.shared.fetchMyHouseUser()
-        async let fetchMembers = CloudKitManager.shared.fetchHouseUsers()
-        async let fetchChores = CloudKitManager.shared.fetchAll(ChoreModel.self)
-        async let fetchAssignments = CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
-        async let fetchRooms = CloudKitManager.shared.fetchAll(RoomModel.self)
-        
-        let newUser = await fetchUser
-        let newMembers = await fetchMembers
-        let newChores = await fetchChores
-        let newAssignments = await fetchAssignments
-        let newRooms = await fetchRooms
-        
+        let snapshot = afterRemoteChange
+            ? await store.refreshAfterRemoteChange()
+            : await store.loadLatest()
         guard !Task.isCancelled else { return }
         
-        user = newUser
-        houseMembers = newMembers
-        chores = newChores
-        assignments = newAssignments
-        rooms = newRooms
+        if needsRebuild(for: snapshot) {
+            await build(from: snapshot)
+        } else {
+            isLoading = false
+        }
+    }
+    
+    /// Rebuilds every card from `snapshot`.
+    @MainActor
+    private func build(from snapshot: HouseSnapshot) async {
+        // `snapshot.houseUser` comes from CloudKitManager's per-session cache, which is never
+        // refreshed (only its points are, from `UserScoreModel`). The same record inside
+        // `userRecords` was fetched in this very pass.
+        let freshUser = snapshot.userRecords.first { $0.recordID == snapshot.houseUser?.recordID }
+        user = freshUser ?? snapshot.houseUser
+        houseMembers = snapshot.users
+        chores = snapshot.chores
+        assignments = snapshot.assignments
+        rooms = snapshot.rooms
         
         refresh()
-        await schedule.setup(users: newMembers, chores: newChores,
-                             assignments: newAssignments, rooms: newRooms, me: newUser)
+        await schedule.setup(users: snapshot.users, chores: snapshot.chores,
+                             assignments: snapshot.assignments, rooms: snapshot.rooms,
+                             me: user)
         guard !Task.isCancelled else { return }
         
-        loadedRevision = revision
+        loadedSnapshotID = snapshot.id
         loadedDay = Calendar.current.startOfDay(for: .now)
+        contentVersion &+= 1
         isLoading = false
     }
     func refresh() {

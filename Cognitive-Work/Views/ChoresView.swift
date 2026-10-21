@@ -20,6 +20,9 @@ struct ChoresView: View {
     /// The dominant color derived from the currently focused chore's room.
     @State private var activeRoomColor: Color = .black
     
+    /// Chore opened from a notification. Shown on top of everything until dismissed.
+    @State private var choreFromNotification: ChoreOccurrence?
+    
     /// Namespace used for matched geometry effect transitions between the list and carousel layouts.
     @Namespace private var cardAnimation
     
@@ -31,7 +34,15 @@ struct ChoresView: View {
         withAnimation(Self.layoutToggleAnimation) {
             carouselVM.toggleLayout()
         }
+        VoiceOver.announce(carouselVM.layoutMode == .grid ? L10n.tr("Seu dia") : L10n.tr("Sua divisão"))
     }
+    
+    /// Whether a card or popup covers the screen, so VoiceOver must skip what's behind it.
+    private var isOverlayShown: Bool {
+        carouselVM.hasFocusedCard || choreFromNotification != nil || carouselVM.itemAwaitingDate != nil
+    }
+    
+    @State private var isResetting = false
     
     /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
     init(carouselVM: CarouselViewModel = CarouselViewModel()) {
@@ -60,12 +71,14 @@ struct ChoresView: View {
                         .zIndex(1000)
                     }
                 }
+                .accessibilityHidden(isOverlayShown || carouselVM.isShowingUnassignedList)
                 
                 VStack {
                     Spacer()
                     ChoresViewButtonsSection(carouselViewModel: carouselVM)
                 }
                 .zIndex(carouselVM.hasFocusedCard ? 0 : 3)
+                .accessibilityHidden(isOverlayShown)
                 
                 // MARK: - Darkening the view if there's a focused card
                 if carouselVM.hasFocusedCard {
@@ -76,6 +89,8 @@ struct ChoresView: View {
                         .onTapGesture {
                             dismissFocusedCard()
                         }
+                        // The card itself offers "Fechar" and the escape gesture.
+                        .accessibilityHidden(true)
                 }
                 
                 // MARK: - Chore Card layout conditionals
@@ -91,6 +106,7 @@ struct ChoresView: View {
                         Spacer()
                     }
                     .zIndex(2)
+                    .accessibilityHidden(choreFromNotification != nil || carouselVM.itemAwaitingDate != nil || carouselVM.isShowingUnassignedList)
                 } else if let occurrence = carouselVM.focusedOccurrence {
                     VStack {
                         Spacer()
@@ -103,10 +119,46 @@ struct ChoresView: View {
                             rotation: 180,
                             isShowingBack: true
                         )
+                        .accessibilityElement(children: .contain)
+                        .accessibilityAddTraits(.isModal)
+                        .accessibilityAction(.escape) {
+                            dismissFocusedCard()
+                        }
                         Spacer()
                     }
                     .zIndex(2)
                     .transition(.scale)
+                    .accessibilityHidden(choreFromNotification != nil || carouselVM.itemAwaitingDate != nil)
+                }
+                
+                // MARK: - Chore opened from a notification
+                if let occurrence = choreFromNotification {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .zIndex(4)
+                        .transition(.opacity)
+                        .onTapGesture {
+                            dismissChoreFromNotification()
+                        }
+                        .accessibilityHidden(true)
+                    
+                    CarouselCardFrame(
+                        chore: occurrence.chore,
+                        recurrentAssignment: occurrence.assignment,
+                        carouselViewModel: carouselVM,
+                        namespace: cardAnimation,
+                        isFocused: true,
+                        rotation: 180,
+                        isShowingBack: true
+                    )
+                    .zIndex(5)
+                    .transition(.scale)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityAddTraits(.isModal)
+                    .accessibilityAction(.escape) {
+                        dismissChoreFromNotification()
+                    }
+                    .accessibilityHidden(carouselVM.itemAwaitingDate != nil)
                 }
                 
                 // MARK: - Unassigned chores popup, always on top of everything else
@@ -119,6 +171,7 @@ struct ChoresView: View {
                         .onTapGesture {
                             carouselVM.dismissUnassignedList()
                         }
+                        .accessibilityHidden(true)
                     
                     UnassignmentList(
                         items: carouselVM.unassignedItems,
@@ -135,13 +188,13 @@ struct ChoresView: View {
                 
                 // MARK: - Pick Unassigned Chore Card Overlay
                 if let item = carouselVM.itemAwaitingDate {
-                    Color.clear
-                        .contentShape(Rectangle())
+                    Color.black.opacity(0.45)
                         .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture { }
                         .zIndex(2999)
-                        .onTapGesture {
-                            carouselVM.dismissPickCard()
-                        }
+                        .transition(.opacity)
+                        .accessibilityHidden(true)
                     
                     VStack {
                         Spacer()
@@ -161,11 +214,16 @@ struct ChoresView: View {
                     }
             )
             .tabBarVisibilityRoot()
+            // Must be inside the NavigationStack, otherwise SwiftUI ignores it.
+            .navigationDestination(isPresented: $isResetting) {
+                FortnightlyScheduleView(shouldGenerate: true) {
+                    isResetting = false
+                }
+            }
         }
         .task {
             await carouselVM.fetchAllData()
             updateActiveRoomColor()
-            // lógica verificação house aqui
         }
         .task(id: carouselVM.activeIndex) {
             updateActiveRoomColor()
@@ -173,9 +231,14 @@ struct ChoresView: View {
         .task(id: carouselVM.dataVersion) {
             updateActiveRoomColor()
         }
+        // VoiceOver re-reads the screen whenever a card or popup opens or closes.
+        .onChange(of: carouselVM.hasFocusedCard) { _, _ in VoiceOver.screenChanged() }
+        .onChange(of: choreFromNotification?.id) { _, _ in VoiceOver.screenChanged() }
+        .onChange(of: carouselVM.isShowingUnassignedList) { _, _ in VoiceOver.screenChanged() }
+        .onChange(of: carouselVM.itemAwaitingDate?.id) { _, _ in VoiceOver.screenChanged() }
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
-                await carouselVM.fetchAllData()
+                await carouselVM.fetchAllData(afterRemoteChange: true)
             }
         }
         .alert(
@@ -189,6 +252,7 @@ struct ChoresView: View {
         } message: {
             Text(carouselVM.errorMessage ?? "")
         }
+        .overlay { newUserPopUpOverlay }
     }
     
     // MARK: - Subviews
@@ -204,8 +268,12 @@ struct ChoresView: View {
             Text(headerTitle)
                 .font(.system(size: 34))
                 .fontWeight(.bold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .layoutPriority(1)
                 .padding(.horizontal, 30)
                 .padding(.top, 20)
+                .accessibilityAddTraits(.isHeader)
             
             Spacer()
             
@@ -218,6 +286,34 @@ struct ChoresView: View {
                         .foregroundColor(.black)
                         .padding(8)
                 }
+                .voiceOverLabel(carouselVM.layoutMode == .grid ? L10n.tr("Ver como lista") : L10n.tr("Ver como carrossel"))
+                .voiceControlNames(carouselVM.layoutMode == .grid
+                    ? [L10n.tr("Lista"), L10n.tr("Ver como lista"), L10n.tr("Layout")]
+                    : [L10n.tr("Carrossel"), L10n.tr("Ver como carrossel"), L10n.tr("Layout")])
+                
+                // Acesso às notificações desativado temporariamente
+//                NavigationLink {
+//                    NotificationsView(
+//                        onPickChores: {
+//                            withAnimation { carouselVM.isShowingUnassignedList = true }
+//                        },
+//                        onOpenChore: { chore, assignment in
+//                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+//                                choreFromNotification = ChoreOccurrence(chore: chore, assignment: assignment)
+//                            }
+//                        },
+//                        onNewMember: {
+//                            carouselVM.presentNewUserPopUp()
+//                        }
+//                    )
+//                } label: {
+//                    Image(systemName: "bell")
+//                        .font(.system(size: 22))
+//                        .foregroundColor(.black)
+//                        .padding(8)
+//                }
+//                .voiceOverLabel(L10n.tr("Notificações"))
+//                .voiceControlNames([L10n.tr("Notificações"), L10n.tr("Avisos")])
                 
                 if carouselVM.layoutMode == .list {
                     Menu {
@@ -226,10 +322,13 @@ struct ChoresView: View {
                         Image(systemName: carouselVM.isFilterOn
                               ? "line.3.horizontal.decrease.circle.fill"
                               : "line.3.horizontal.decrease")
-                            .font(.system(size: 22))
-                            .foregroundColor(.black)
-                            .padding(12)
+                        .font(.system(size: 22))
+                        .foregroundColor(.black)
+                        .padding(12)
                     }
+                    .voiceOverLabel(L10n.tr("Filtrar e ordenar"))
+                    .voiceOverValue(carouselVM.isFilterOn ? L10n.tr("Filtro ativo") : "")
+                    .voiceControlNames([L10n.tr("Filtro"), L10n.tr("Ordenar"), L10n.tr("Filtrar e ordenar")])
                 }
             }
             .glassEffect(
@@ -251,25 +350,24 @@ struct ChoresView: View {
             ProgressIndicatorCard(
                 title: "Tempo médio",
                 data: dashboard?.totalTimeFormatted ?? "0h00",
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
             ProgressIndicatorCard(
                 title: "A fazer",
                 data: L10n.tr("%lld tarefas", dashboard?.toDo ?? 0),
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
             ProgressIndicatorCard(
                 title: "Concluído",
                 data: (dashboard?.completionPercentage ?? 0)
                     .formatted(.percent.precision(.fractionLength(0)).locale(L10n.locale)),
-                color: cardColor,
-                isLoading: isLoadingDashboard
+                color: cardColor
             )
         }
         .padding(.horizontal, 30)
         .animation(.easeInOut, value: activeRoomColor)
+        .accessibilityElement(children: .contain)
+        .voiceOverLabel(L10n.tr("Progresso do dia"))
     }
     
     // MARK: - Actions
@@ -280,6 +378,13 @@ struct ChoresView: View {
             carouselVM.clearFocus()
         } else {
             carouselVM.clearFocusedDetails()
+        }
+    }
+    
+    /// Closes the chore card opened from a notification.
+    private func dismissChoreFromNotification() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            choreFromNotification = nil
         }
     }
     
@@ -305,58 +410,61 @@ struct ChoresView: View {
         carouselVM.dashboard
     }
     
-    /// The progress cards show a spinner instead of "0" while the first fetch is in flight.
-    private var isLoadingDashboard: Bool {
-        carouselVM.isLoading && dashboard == nil
+    @ViewBuilder
+    private var newUserPopUpOverlay: some View {
+        // Only the house admin gets `showNewUserPopUp == true` (see `CarouselViewModel.checkNewUser`).
+        if carouselVM.showNewUserPopUp {
+            ZStack {
+                Color.black.opacity(0.45)
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { }
+                
+                NewUserPopUp {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        carouselVM.showNewUserPopUp = false
+                        isResetting = true
+                    }
+                } onDismiss: {
+                    carouselVM.showNewUserPopUp = false
+                }
+                .transition(.scale(scale: 0.92).combined(with: .opacity))
+            }
+            .transition(.opacity)
+        }
     }
 }
+
 
 // MARK: - Private subviews
 
 /// Renders statistics paired with a title tag.
 private struct ProgressIndicatorCard: View {
-    
-    /// Short label indicating the metric meaning (a localization key).
     var title: LocalizedStringKey
-    
     /// Formatted data result (e.g., "1h 30m").
     var data: String
-    
-    /// Visual thematic backdrop color applying depth over UI layouts.
     var color: Color = .gray
     
-    /// Shows a spinner in place of ``data`` while the statistics are being fetched.
-    var isLoading: Bool = false
-    
-    
     var body: some View {
-        VStack {
+        VStack(spacing: 5) {
+            Spacer()
             Text(title)
                 .font(.system(size: 12))
                 .fontWeight(.medium)
                 .foregroundColor(.white.opacity(0.8))
-                .padding(.top, 10)
             
+            Text(data)
+                .font(.system(size: 15))
+                .fontWeight(.bold)
+                .foregroundColor(.white)
             Spacer()
-            
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .tint(.white)
-                        .controlSize(.small)
-                } else {
-                    Text(data)
-                        .font(.system(size: 15))
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                }
-            }
-            .padding(.bottom, 25)
         }
-        .frame(width: width * 0.28, height: height * 0.088)
+        .frame(maxWidth: .infinity)
+        .frame(height: height * 0.088)
         .background(color)
         .clipShape(RoundedRectangle(cornerRadius: 21))
         .shadow(color: .black.opacity(0.25), radius: 4.07717, x: 0, y: 1.23551)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -384,7 +492,7 @@ struct ChoreOccurrence: Identifiable {
     let vm: CarouselViewModel = {
         var cozinha = RoomModel(name: "Cozinha", symbol: "cooktop", color: .orange)
         cozinha.recordID = CKRecord.ID(recordName: "preview-cozinha")
-
+        
         var banheiro = RoomModel(name: "Banheiro", symbol: "toilet", color: .blue)
         banheiro.recordID = CKRecord.ID(recordName: "preview-banheiro")
         

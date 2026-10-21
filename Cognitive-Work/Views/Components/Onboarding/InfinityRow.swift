@@ -56,5 +56,7 @@ struct InfinityRow: View {
             }
             .offset(y: movesUp ? -offset : offset - CGFloat(cycleHeight))
         }
+        // Looping decoration: VoiceOver skips it (screens describe it with their own text).
+        .accessibilityDecorative()
     }
 }

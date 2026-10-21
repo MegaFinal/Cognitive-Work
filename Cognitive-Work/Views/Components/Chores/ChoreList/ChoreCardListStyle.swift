@@ -58,6 +58,30 @@ struct ChoreCardListStyle: View {
         }
     }
     
+    /// Avatars shown before the "+N" badge takes over.
+    private let maxVisibleUsers = 2
+    
+    private var visibleResponsibleUsers: [UserModel] {
+        Array(occurrenceResponsibleUsers.prefix(maxVisibleUsers))
+    }
+    
+    private var hiddenResponsibleCount: Int {
+        max(0, occurrenceResponsibleUsers.count - maxVisibleUsers)
+    }
+    
+    /// Circle with "+N", sized like an avatar.
+    private var overflowBadge: some View {
+        let side = width * 0.07
+        return Text("+\(hiddenResponsibleCount)")
+            .font(.system(size: side * 0.4, weight: .semibold))
+            .minimumScaleFactor(0.6)
+            .lineLimit(1)
+            .foregroundColor(.black)
+            .frame(width: side, height: side)
+            .background(Color(white: 0.9))
+            .clipShape(Circle())
+    }
+    
     var isOccurrenceDone: Bool {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
@@ -83,40 +107,24 @@ struct ChoreCardListStyle: View {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 10) {
                         HStack(spacing: -10) {
-                            ForEach(occurrenceResponsibleUsers, id: \.recordID) { user in
+                            ForEach(visibleResponsibleUsers, id: \.recordID) { user in
                                 UserProfilePictureTag(user: user, widthMultiplier: 0.07)
+                                    .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
+                            }
+                            
+                            // Users that don't fit are summarized as "+N".
+                            if hiddenResponsibleCount > 0 {
+                                overflowBadge
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
                         }
                         .padding(.leading, 4)
                         .padding(.bottom, 8)
                         
-                        HStack(spacing: 8) {
-                            // MARK: - Tags
-                            CapsuleTag(
-                                tagName: chore.frequency.displayName,
-                                tagColor: chore.frequency.color,
-                                textColor: chore.frequency.textColor,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                            
-                            CapsuleTag(
-                                tagName: chore.priorityTag.displayName,
-                                tagColor: chore.priorityTag.color,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                            
-                            CapsuleTag(
-                                tagName: ChoreDurationTier.from(minutes: chore.duration).displayText,
-                                tagColor: ChoreDurationTier.from(minutes: chore.duration).color,
-                                horizontalPadding: 7.0,
-                                verticalPadding: 1.0
-                            )
-                        }
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        // MARK: - Tags
+                        ChoreTagsRow(chore: chore, spacing: 8, horizontalPadding: 7.0, verticalPadding: 1.0)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                     
                     // MARK: - Room name, chore name and completion button
@@ -136,13 +144,7 @@ struct ChoreCardListStyle: View {
                             
                             // MARK: Completion button
                             Button {
-                                HapticsManager.notify(isOccurrenceDone ? .warning : .success)
-                                
-                                Task {
-                                    recurrentAssignment == nil
-                                    ? await carouselViewModel.toggle(chore: chore)
-                                    : await carouselViewModel.toggle(assignment: recurrentAssignment!)
-                                }
+                                toggleCompletion()
                             } label: {
                                 ZStack {
                                     Circle()
@@ -165,6 +167,31 @@ struct ChoreCardListStyle: View {
         .frame(minHeight: height * 0.14)
         .onTapGesture(perform: onTap)
         .transition(.identity)
+        // MARK: - VoiceOver
+        // One element; the completion button becomes a named action.
+        .accessibilityElement(children: .ignore)
+        .voiceOverLabel(carouselViewModel.accessibilitySummary(for: chore, assignment: recurrentAssignment))
+        // Voice Control: "Toque em <tarefa>"; the completion circle via "Mostrar ações para <tarefa>".
+        .voiceControlNames(carouselViewModel.voiceControlInputLabels(for: chore))
+        .voiceOverHint(L10n.tr("Toque duas vezes para ver os detalhes."))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onTap() }
+        .accessibilityAction(named: Text(isOccurrenceDone ? L10n.tr("Marcar como pendente") : L10n.tr("Marcar como concluída"))) {
+            toggleCompletion()
+        }
+    }
+    
+    /// Marks this occurrence as done (or not done again), from the circle button or VoiceOver.
+    private func toggleCompletion() {
+        let willBeDone = !isOccurrenceDone
+        HapticsManager.notify(willBeDone ? .success : .warning)
+        
+        Task {
+            recurrentAssignment == nil
+            ? await carouselViewModel.toggle(chore: chore)
+            : await carouselViewModel.toggle(assignment: recurrentAssignment!)
+            VoiceOver.announce(willBeDone ? L10n.tr("Tarefa concluída") : L10n.tr("Tarefa marcada como pendente"))
+        }
     }
 }
 

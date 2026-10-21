@@ -38,6 +38,7 @@ struct WelcomeAnimatedOnboardingView: View{
             }
             .frame(width: width, height: height, alignment: .top)
             .clipped()
+            .accessibilityDecorative()
             
             if showSheet {
                 
@@ -46,6 +47,7 @@ struct WelcomeAnimatedOnboardingView: View{
                         .bold()
                         .font(.largeTitle)
                         .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
                         .padding(.bottom, height * 0.028)
                         .padding(.top, height * 0.052)
                     Text("Cuidar da casa também é lembrar e perceber o que falta. O Pipa organiza as tarefas e reconhece o trabalho de todos.")
@@ -79,6 +81,8 @@ struct WelcomeAnimatedOnboardingView: View{
                     // Where "Continuar" leads depends on the account check that runs when this
                     // screen opens.
                     .disabled(viewModel.isCheckingAccount)
+                    // Voice Control: short names for the icon-only chevron.
+                    .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Próximo"), L10n.tr("Avançar")])
                     .bold()
                     .labelStyle(.iconOnly)
                     .buttonStyle(.glassProminent)
@@ -94,6 +98,10 @@ struct WelcomeAnimatedOnboardingView: View{
         .onAppear {
             withAnimation(.easeOut(duration: 1)) {
                 showSheet = true
+            }
+            // The panel replaces the logo screen: VoiceOver re-reads from its title.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                VoiceOver.screenChanged()
             }
         }
         .transition(.move(edge: .bottom))

@@ -24,10 +24,12 @@ class OnboardingViewModel {
     var userName: String = ""
     
     var userProfilePicture: UIImage?
+    /// Banner picked for the profile being created.
+    var userBanner: ProfileBanner = .default
     /// The name of the house being created
-    var houseName: String = "Minha Casa"
+    var houseName: String = L10n.tr("Minha Casa")
     /// A short description of the house being created
-    var houseDescription: String = "Organização Doméstica"
+    var houseDescription: String = L10n.tr("Organização Doméstica")
     
     /// Whether an asynchronous CloudKit operation is currently in progress
     var isLoading: Bool = false
@@ -127,6 +129,7 @@ class OnboardingViewModel {
            !CloudKitManager.shared.isHouseUser(existingProfile) {
             existingProfile.name = userName.isEmpty ? existingProfile.name : userName
             if let imageCKAsset { existingProfile.profilePicture = imageCKAsset }
+            existingProfile.banner = userBanner
             
             if await CloudKitManager.shared.update(existingProfile) {
                 stateMachine.user = existingProfile
@@ -138,7 +141,7 @@ class OnboardingViewModel {
         }
         
         if let ownerRecordName = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName {
-            let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, tier: .tier1, ownerRecordName: ownerRecordName)
+            let newUser = UserModel(name: userName.isEmpty ? "Novo Morador" : userName, profilePicture: imageCKAsset, banner: userBanner, tier: .tier1, ownerRecordName: ownerRecordName)
             
             if let savedUser = await CloudKitManager.shared.create(newUser) {
                 self.currentUser = savedUser
@@ -214,9 +217,10 @@ class OnboardingViewModel {
         let userCopy = UserModel(
             name: user.name,
             profilePicture: assetCopy,
-            tier: user.tier,
+            banner: user.banner,
+            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
+            tier: .bronze1,
             coins: user.coins,
-            points: user.points,
             badges: user.badgesReference,
             tasks: user.choresReference,
             // Free time is no longer copied from the private profile: those records live outside
@@ -436,6 +440,7 @@ class OnboardingViewModel {
         })
         
         var recordsToCreate: [CKRecord] = []
+        var couponRecords: [CKRecord] = []
         
         for choreDTO in selectedChores {
             // The room the chore was picked under (set on selection). Matching by name alone
@@ -477,10 +482,18 @@ class OnboardingViewModel {
             record.parent = parentReference
             
             recordsToCreate.append(record)
+            
+            // The chore's coupon, saved in the same batch. Its `task` reference deletes it
+            // together with the chore, so the rollback journal only needs the chore.
+            let coupon = CouponModel(for: choreModel, choreRecordID: record.recordID)
+            let couponRecord = CKRecord(recordType: CouponModel.recordType, zoneID: zoneID)
+            coupon.populate(record: couponRecord)
+            couponRecord.parent = CKRecord.Reference(recordID: record.recordID, action: .none)
+            couponRecords.append(couponRecord)
         }
         
         if !recordsToCreate.isEmpty {
-            let success = await CloudKitManager.shared.batchSave(records: recordsToCreate, zoneID: zoneID)
+            let success = await CloudKitManager.shared.batchSave(records: recordsToCreate + couponRecords, zoneID: zoneID)
             if success {
                 rollbackJournal.createdChores += recordsToCreate.map { OnboardingRollbackJournal.StoredRecordID($0.recordID) }
             } else {
@@ -755,7 +768,11 @@ class OnboardingViewModel {
     /// notification and ``WaitAcceptLinkOnboardingView``'s own check, and a plain
     /// ``goToNextView()`` from each would skip ``OnboardingNavigationSteps/waitAdminScheduling``.
     /// It also covers the share being accepted *before* free time was chosen.
-    func advanceAfterJoiningHouse() {
+    ///
+    /// A house that was already divided has nothing to wait for, so the guest finishes
+    /// onboarding and goes straight to the main screen instead of the waiting screen.
+    @MainActor
+    func advanceAfterJoiningHouse() async {
         let steps = stateMachine.steps
         guard let target = steps.firstIndex(of: .waitAdminScheduling) else {
             goToNextView()
@@ -769,17 +786,60 @@ class OnboardingViewModel {
             return
         }
         
-        if stateMachine.index < target {
+        guard stateMachine.index < target else { return }
+        
+        // Keeps the "entering the house" loading state on screen while this is checked.
+        isJoiningHouse = true
+        let isAlreadyDivided = await joinedHouseIsAlreadyDivided()
+        isJoiningHouse = false
+        
+        if isAlreadyDivided {
+            finishOnboarding()
+        } else if stateMachine.index < target {
             stateMachine.jumpToStep(index: target)
+        }
+    }
+    
+    /// `true` when the house already has a division and none of it belongs to this user,
+    /// which is the case for a guest who joins a house that was divided before they arrived.
+    @MainActor
+    private func joinedHouseIsAlreadyDivided() async -> Bool {
+        let assignments = await CloudKitManager.shared.fetchAll(RecurrentAssignmentModel.self)
+        guard !assignments.isEmpty else { return false }
+        let ownsUpcoming = await ownsUpcomingAssignment(in: assignments)
+        return !ownsUpcoming
+    }
+    
+    /// Whether this user has an occurrence the division screen would show (from tomorrow on,
+    /// like ``FortnightlyViewModel``).
+    ///
+    /// Past occurrences don't count: a resident who left the house and came back keeps the same
+    /// member record ID, so their old occurrences still point at them even though the screen
+    /// would only show everyone else's chores. When the member record can't be read, the user
+    /// is treated as having none, so they land on the main screen rather than on that screen.
+    @MainActor
+    private func ownsUpcomingAssignment(in assignments: [RecurrentAssignmentModel]) async -> Bool {
+        guard let myName = await CloudKitManager.shared.fetchMyHouseUser()?.recordID?.recordName
+        else { return false }
+        
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let firstShownDay = calendar.date(byAdding: .day, value: 1, to: today) else { return false }
+        
+        // Compared by record name so a different zone ID can't make the match fail.
+        return assignments.contains { assignment in
+            assignment.day >= firstShownDay
+                && (assignment.userReferences ?? []).contains { $0.recordID.recordName == myName }
         }
     }
     
     /// Leaves the free-time step. A user who already joined a house through an invite skips
     /// the create/enter/wait-link steps instead of being sent back to them.
-    func advanceAfterFreeTime() {
+    @MainActor
+    func advanceAfterFreeTime() async {
         if stateMachine.flow == .invitedWithProfile,
            let user = currentUser, CloudKitManager.shared.isHouseUser(user) {
-            advanceAfterJoiningHouse()
+            await advanceAfterJoiningHouse()
         } else {
             // A returning user who had to fill in free time on the way (none was saved) still
             // goes back to the welcome screen from "create or enter", not to this screen.
@@ -993,9 +1053,10 @@ class OnboardingViewModel {
         let sharedUser = UserModel(
             name: profile.name,
             profilePicture: assetCopy,
-            tier: profile.tier,
+            banner: profile.banner,
+            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
+            tier: .bronze1,
             coins: profile.coins,
-            points: profile.points,
             house: houseReference,
             couponLimit: profile.couponLimit,
             ownerRecordName: ownerRecordName
@@ -1108,6 +1169,10 @@ class OnboardingViewModel {
     // MARK: - Algorithm
 
     /// Advances the guest past the waiting screen once the admin's division exists.
+    ///
+    /// A guest who joins a house that was already divided has no occurrences of their own yet,
+    /// so the division screen would only show everyone else's chores. That guest finishes
+    /// onboarding and goes straight to the main screen instead.
     @MainActor
     func checkAndAdvanceIfScheduleReady() async {
         guard !isCheckingSchedule else { return }
@@ -1119,6 +1184,14 @@ class OnboardingViewModel {
         guard scheduleIsReady else { return }
 
         isScheduleReady = true
+        guard stateMachine.current == .waitAdminScheduling else { return }
+        
+        guard await ownsUpcomingAssignment(in: assignments) else {
+            finishOnboarding()
+            return
+        }
+        
+        // The state may have changed while the house user was being fetched.
         guard stateMachine.current == .waitAdminScheduling else { return }
         goToNextView()
     }
@@ -1146,7 +1219,7 @@ class OnboardingViewModel {
         // may have set (`.invitedWithoutProfile` when `currentUser` wasn't loaded yet).
         stateMachine.flow = .invitedWithProfile
         if await joinHouse() {
-            advanceAfterJoiningHouse()
+            await advanceAfterJoiningHouse()
         }
     }
     

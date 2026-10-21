@@ -25,6 +25,7 @@ final class UserProfileViewModel {
     var didSaveSuccessfully = false
     
     var editedName: String = ""
+    var editedBanner: ProfileBanner = .default
     var editedProfilePicture: Data?
     var selectedPhotoItem: PhotosPickerItem? {
         didSet { loadSelectedPhoto() }
@@ -111,9 +112,17 @@ final class UserProfileViewModel {
         return nil
     }
     
+    /// The banner to draw: the one being edited while editing, otherwise the saved one.
+    var displayedBanner: ProfileBanner {
+        if isEditing { return editedBanner }
+        return privateUser?.banner ?? user?.banner ?? .default
+    }
+    
     var hasUnsavedChanges: Bool {
         guard let privateUser else { return false }
-        return editedName != privateUser.name || editedProfilePicture != privateUser.profilePicture?.fileURL?.dataRepresentation
+        return editedName != privateUser.name
+            || editedBanner != privateUser.banner
+            || editedProfilePicture != privateUser.profilePicture?.fileURL?.dataRepresentation
     }
     
     var canSave: Bool {
@@ -135,14 +144,11 @@ final class UserProfileViewModel {
         
         isLoading = true
         defer { isLoading = false }
+
+        let snapshot = await HouseDataStore.shared.current()
         
-        async let fetchPrivate = CloudKitManager.shared.fetchMyUser()
-        async let fetchHouse = CloudKitManager.shared.fetchMyHouseUser()
-        
-        let (fetchedPrivate, fetchedHouse) = await (fetchPrivate, fetchHouse)
-        
-        privateUser = fetchedPrivate
-        user = fetchedHouse
+        privateUser = snapshot.privateUser
+        user = snapshot.houseUser
         
         if privateUser == nil {
             errorMessage = CloudKitManager.shared.errorMessage
@@ -162,6 +168,7 @@ final class UserProfileViewModel {
     
     func startEditing() {
         editedName = privateUser?.name ?? ""
+        editedBanner = privateUser?.banner ?? .default
         if let fileURL = privateUser?.profilePicture?.fileURL {
             do {
                 editedProfilePicture = try Data(contentsOf: fileURL)
@@ -198,8 +205,11 @@ final class UserProfileViewModel {
         let previousPrivatePicture = privateUser.profilePicture
         let previousHouseName = user?.name
         let previousHousePicture = user?.profilePicture
+        let previousPrivateBanner = privateUser.banner
+        let previousHouseBanner = user?.banner
         
         privateUser.name = editedName
+        privateUser.banner = editedBanner
         
         if let editedProfilePicture {
             privateUser.profilePicture = CloudKitManager.shared.createAsset(from: editedProfilePicture)
@@ -207,6 +217,7 @@ final class UserProfileViewModel {
         
         if let user {
             user.name = editedName
+            user.banner = editedBanner
             if let editedProfilePicture {
                 user.profilePicture = CloudKitManager.shared.createAsset(from: editedProfilePicture)
             }
@@ -223,10 +234,12 @@ final class UserProfileViewModel {
                 if !privateSuccess {
                     privateUser.name = previousPrivateName
                     privateUser.profilePicture = previousPrivatePicture
+                    privateUser.banner = previousPrivateBanner
                 }
                 if !houseSuccess, let previousHouseName {
                     user.name = previousHouseName
                     user.profilePicture = previousHousePicture
+                    user.banner = previousHouseBanner ?? .default
                 }
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro desconhecido.")
             }
@@ -238,11 +251,84 @@ final class UserProfileViewModel {
             } else {
                 privateUser.name = previousPrivateName
                 privateUser.profilePicture = previousPrivatePicture
+                privateUser.banner = previousPrivateBanner
                 errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro desconhecido.")
             }
         }
         
         isSaving = false
+    }
+    
+    // MARK: - Pix key
+    
+    /// The text field of the Pix key screen.
+    var editedPixKey: String = ""
+    
+    /// Why the typed key can't be saved, or `nil`.
+    var pixKeyError: String?
+    
+    /// The saved key, as housemates will use it.
+    var savedPixKey: String? {
+        privateUser?.pixKey ?? user?.pixKey
+    }
+    
+    func startEditingPixKey() {
+        editedPixKey = savedPixKey ?? ""
+        pixKeyError = nil
+    }
+    
+    var canSavePixKey: Bool {
+        guard !isSaving, privateUser != nil else { return false }
+        return editedPixKey.trimmingCharacters(in: .whitespacesAndNewlines) != (savedPixKey ?? "")
+    }
+    
+    /// Saves the typed Pix key (or removes it when the field is empty) on the private profile and,
+    /// when there is one, on the in-house copy that housemates read.
+    ///
+    /// - Returns: `true` when it was saved.
+    @discardableResult
+    func savePixKey() async -> Bool {
+        guard let privateUser else {
+            errorMessage = L10n.tr("Perfil não carregado. Tente novamente.")
+            return false
+        }
+        
+        let typed = editedPixKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let newKey: String?
+        if typed.isEmpty {
+            newKey = nil
+        } else if let normalized = PixPayload.normalizedKey(typed) {
+            newKey = normalized
+        } else {
+            pixKeyError = L10n.tr("Chave Pix inválida. Use CPF, CNPJ, e-mail, celular com +55 ou chave aleatória.")
+            return false
+        }
+        pixKeyError = nil
+        
+        isSaving = true
+        defer { isSaving = false }
+        
+        let previousPrivateKey = privateUser.pixKey
+        let previousHouseKey = user?.pixKey
+        
+        privateUser.pixKey = newKey
+        user?.pixKey = newKey
+        
+        let privateSuccess = await CloudKitManager.shared.update(privateUser)
+        var houseSuccess = true
+        if let user {
+            houseSuccess = await CloudKitManager.shared.update(user)
+        }
+        
+        guard privateSuccess && houseSuccess else {
+            privateUser.pixKey = previousPrivateKey
+            user?.pixKey = previousHouseKey
+            errorMessage = CloudKitManager.shared.errorMessage ?? L10n.tr("Erro desconhecido.")
+            return false
+        }
+        
+        editedPixKey = newKey ?? ""
+        return true
     }
     
     // MARK: - Delete Account

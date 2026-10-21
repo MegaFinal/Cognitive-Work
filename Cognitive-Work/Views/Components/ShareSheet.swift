@@ -9,10 +9,19 @@ import SwiftUI
 import UIKit
 
 struct ShareSheet: UIViewControllerRepresentable {
-    let url: URL
+    let items: [Any]
+    
+    init(url: URL) {
+        self.items = [url]
+    }
+    
+    /// Shares plain text, e.g. a Pix "copia e cola" code.
+    init(text: String) {
+        self.items = [text]
+    }
     
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
         return controller
     }
     

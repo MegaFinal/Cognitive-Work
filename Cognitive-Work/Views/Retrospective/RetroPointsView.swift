@@ -10,6 +10,8 @@ import SwiftUI
 /// Reads only `viewModel.pointsContent`. Thresholds, coin counts and messages live in the view model.
 struct RetroPointsView: View {
     let viewModel: RetroViewModel
+    /// Coins earned by rank in the cycle that ended. `nil` hides the redeem button (previews).
+    var coinsViewModel: RetroCoinsViewModel? = nil
 
     @State private var showCoinPig = false
     @State private var showFloatingCoins = false
@@ -71,6 +73,10 @@ struct RetroPointsView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, height * 0.093)
 
+            if let coinsViewModel {
+                RetroCoinsRedeemButton(viewModel: coinsViewModel)
+                    .padding(.bottom, height * 0.014)
+            }
             
             Button {
                 withAnimation {
