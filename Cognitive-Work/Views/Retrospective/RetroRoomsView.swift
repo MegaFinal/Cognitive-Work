@@ -81,10 +81,10 @@ struct RetroRoomsView: View {
 
             Button {
                 withAnimation {
-                    viewModel.finishRetrospective()
+                    viewModel.advance()
                 }
             } label: {
-                Text("Concluir")
+                Text(RetroPage.rooms.isLast ? LocalizedStringKey("Concluir") : LocalizedStringKey("Continuar"))
                     .frame(width: width * 0.69, height: height * 0.037)
                     .fontWeight(.medium)
                     .font(.system(size: 17))

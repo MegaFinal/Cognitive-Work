@@ -12,7 +12,7 @@ import SwiftUI
 struct RetroView: View {
     @State private var viewModel: RetroViewModel
     
-    /// Coins to redeem on the points page. The presenting screen may pass one it already loaded.
+    /// Rank and coins of the cycle, for the rank and coins pages. The presenting screen may pass one it already loaded.
     @State private var coinsViewModel: RetroCoinsViewModel
     
     /// Presentation-only: the card expands first (with the alert still on it), then the pages fade in.
@@ -30,8 +30,7 @@ struct RetroView: View {
         onFinish: @escaping () -> Void = {}
     ) {
         _viewModel = State(initialValue: viewModel ?? RetroViewModel(
-            repository: CloudKitRetroRepository(),
-            configuration: RetroConfiguration(maxFloatingCoins: RetroCoinsScatter.maxCount)
+            repository: CloudKitRetroRepository()
         ))
         _coinsViewModel = State(initialValue: coinsViewModel ?? RetroCoinsViewModel())
         self.onFinish = onFinish
@@ -69,24 +68,32 @@ struct RetroView: View {
                             } else if viewModel.phase == .pages {
                                 VStack(spacing: 12) {
                                     TabView(selection: $viewModel.pageIndex) {
-                                        RetroPercentageOfDoneView(viewModel: viewModel)
-                                            .tag(RetroPage.percentage.rawValue)
                                         // Developed later; still bound to the same page/flow.
 //                                        RetroStreakView(page: $viewModel.pageIndex, isRetroDone: isRetroDoneBinding)
 //                                            .tag(RetroPage.streak.rawValue)
-                                        RetroPointsView(viewModel: viewModel, coinsViewModel: coinsViewModel)
-                                            .tag(RetroPage.points.rawValue)
+                                        
+                                        // Same order as `RetroPage`.
+                                        RetroPercentageOfDoneView(viewModel: viewModel)
+                                            .tag(RetroPage.percentage.rawValue)
+                                        
                                         RetroRoomsView(viewModel: viewModel)
                                             .tag(RetroPage.rooms.rawValue)
+                                        
+                                        RetroRankView(viewModel: viewModel, coinsViewModel: coinsViewModel)
+                                            .tag(RetroPage.rank.rawValue)
+                                        
+                                        RetroCoinsView(viewModel: viewModel, coinsViewModel: coinsViewModel)
+                                            .tag(RetroPage.coins.rawValue)
                                     }
                                     .tabViewStyle(.page(indexDisplayMode: .never))
-                                    PageIndicator(count: 3, current: $viewModel.pageIndex)
+                                    PageIndicator(count: RetroPage.allCases.count, current: $viewModel.pageIndex)
                                         // Clears the home indicator, now that the card reaches the screen edge.
                                         .padding(.bottom, 16)
 
                                 }
                                 .transition(.opacity)
-                            } else if viewModel.phase == .divisionPrompt {
+                            } else if viewModel.phase == .divisionPrompt && viewModel.canStartNewDivision {
+                                // Only the admin, and only once the current division is over.
                                 RetroNewChoresDivision(
                                     onAutomaticDivision: { withAnimation { viewModel.requestAutomaticDivision() } },
                                     onLater: { withAnimation { viewModel.deferDivision() } }
@@ -98,7 +105,7 @@ struct RetroView: View {
                     }
                     .ignoresSafeArea()
                     
-                    if viewModel.phase == .schedule {
+                    if viewModel.phase == .schedule && viewModel.canStartNewDivision {
                         NavigationStack {
                             FortnightlyScheduleView(shouldGenerate: true) {
                                 viewModel.confirmSchedule()
@@ -177,7 +184,10 @@ struct RetroView: View {
 struct PreviewRetroRepository: RetroRepository {
     var completed = 3
     var total = 4
-    var points = 60
+    /// Previews show the admin's flow (with the new-division prompt) by default.
+    var isHouseAdmin = true
+    /// `false` previews an old retrospective (no new-division prompt, even for the admin).
+    var isDivisionOver = true
     
     func fetchSnapshot(for period: RetroPeriod) async throws -> RetroSnapshot {
         let day = Date().addingTimeInterval(-3600)
@@ -190,7 +200,7 @@ struct PreviewRetroRepository: RetroRepository {
             RetroWorkItem(id: "\(index)", day: day, isCompleted: index < completed,
                           roomID: rooms[index % rooms.count].id)
         }
-        return RetroSnapshot(items: items, rooms: rooms, totalPoints: points)
+        return RetroSnapshot(items: items, rooms: rooms, isHouseAdmin: isHouseAdmin, isDivisionOver: isDivisionOver)
     }
 }
 
@@ -202,15 +212,13 @@ struct RetroPreviewHost<Content: View>: View {
     private let content: (RetroViewModel) -> Content
     
     init(
-        completed: Int = 3, total: Int = 4, points: Int = 60,
+        completed: Int = 3, total: Int = 4,
         startOnPages: Bool = true,
-        page: RetroPage = .percentage,
+        page: RetroPage = .first,
         @ViewBuilder content: @escaping (RetroViewModel) -> Content
     ) {
         _viewModel = State(initialValue: RetroViewModel(
-            repository: PreviewRetroRepository(completed: completed, total: total, points: points),
-            baselineStore: PreviewBaselineStore(),
-            configuration: RetroConfiguration(maxFloatingCoins: RetroCoinsScatter.maxCount)
+            repository: PreviewRetroRepository(completed: completed, total: total)
         ))
         self.startOnPages = startOnPages
         self.page = page
@@ -229,15 +237,10 @@ struct RetroPreviewHost<Content: View>: View {
     }
 }
 
-@MainActor
-private final class PreviewBaselineStore: RetroBaselineStore {
-    var pointsAtLastRetro: Int?
-}
-
 #Preview {
-    RetroView(viewModel: RetroViewModel(
-        repository: PreviewRetroRepository(),
-        baselineStore: PreviewBaselineStore()
-    ))
+    RetroView(
+        viewModel: RetroViewModel(repository: PreviewRetroRepository()),
+        coinsViewModel: .preview(earned: Tier.gold2.cycleCoins, tier: .gold2)
+    )
 }
 #endif

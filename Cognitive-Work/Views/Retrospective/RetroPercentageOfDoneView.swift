@@ -15,6 +15,13 @@ struct RetroPercentageOfDoneView: View {
 
     private var content: RetroPercentageContent { viewModel.percentageContent }
 
+    private var isActive: Bool { viewModel.isPageActive(.percentage) }
+
+    private struct AnimationKey: Equatable {
+        let isActive: Bool
+        let target: Double
+    }
+
     var body: some View {
         ZStack {
             Color(.chorePurple)
@@ -75,7 +82,7 @@ struct RetroPercentageOfDoneView: View {
                 
                 Button {
                     withAnimation {
-                        viewModel.continueToNextPage()
+                        viewModel.advance()
                     }
                 } label: {
                     Text("Continuar")
@@ -91,9 +98,12 @@ struct RetroPercentageOfDoneView: View {
         .ignoresSafeArea()
         // Not onAppear: changing the state there can be applied before the first frame is drawn,
         // so the view would appear already filled. Drawing 0 first, then animating, always plays.
-        // Re-runs every time the page appears (task restarts) and if the data changes.
-        .task(id: content.percentage) {
+        // Keyed on the page being the visible one: the paged TabView builds this page while the
+        // previous one is still on screen, and the animation would play where nobody sees it.
+        // Re-runs every time the page becomes visible and if the data changes.
+        .task(id: AnimationKey(isActive: isActive, target: content.percentage)) {
             percentage = 0
+            guard isActive else { return }
             try? await Task.sleep(for: .seconds(0.3))
             guard !Task.isCancelled else { return }
             withAnimation(.easeInOut(duration: 2)) {
@@ -105,22 +115,22 @@ struct RetroPercentageOfDoneView: View {
 
 #if DEBUG
 #Preview("0%") {
-    RetroPreviewHost(completed: 0, total: 20) { RetroPercentageOfDoneView(viewModel: $0) }
+    RetroPreviewHost(completed: 0, total: 20, page: .percentage) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 
 #Preview("25%") {
-    RetroPreviewHost(completed: 25, total: 100) { RetroPercentageOfDoneView(viewModel: $0) }
+    RetroPreviewHost(completed: 25, total: 100, page: .percentage) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 
 #Preview("50%") {
-    RetroPreviewHost(completed: 50, total: 100) { RetroPercentageOfDoneView(viewModel: $0) }
+    RetroPreviewHost(completed: 50, total: 100, page: .percentage) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 
 #Preview("75%") {
-    RetroPreviewHost(completed: 75, total: 100) { RetroPercentageOfDoneView(viewModel: $0) }
+    RetroPreviewHost(completed: 75, total: 100, page: .percentage) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 
 #Preview("100%") {
-    RetroPreviewHost(completed: 100, total: 100) { RetroPercentageOfDoneView(viewModel: $0) }
+    RetroPreviewHost(completed: 100, total: 100, page: .percentage) { RetroPercentageOfDoneView(viewModel: $0) }
 }
 #endif

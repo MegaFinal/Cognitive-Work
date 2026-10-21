@@ -59,15 +59,22 @@ struct CloudKitRetroRepository: RetroRepository {
             room.recordID.map { RetroRoom(id: $0.recordName, name: room.name, color: room.color) }
         }
 
-        // The house lives in the owner's zone; for everybody else it is a shared zone.
+        // Same admin check as the rest of the app. If the house can't be read, the user is
+        // treated as a resident (no new-division prompt).
         let house = try? await manager.currentHouse()
-        let isHouseOwner = house?.recordID?.zoneID.ownerName == CKCurrentUserDefaultName
+        let isHouseAdmin = await house?.isAdmin() == true
+
+        // Same rule as the automatic pop-up: the last scheduled day is in the past.
+        let isDivisionOver = RetroTriggerPolicy.isDivisionOver(
+            lastScheduledDay: assignments.map(\.day).max(),
+            now: .now
+        )
 
         return RetroSnapshot(
             items: assignmentItems + oneOffItems,
             rooms: retroRooms,
-            totalPoints: user.points,
-            isHouseOwner: isHouseOwner
+            isHouseAdmin: isHouseAdmin,
+            isDivisionOver: isDivisionOver
         )
     }
 }

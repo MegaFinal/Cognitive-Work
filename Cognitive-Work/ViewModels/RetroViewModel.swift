@@ -59,10 +59,12 @@ struct RetroRoom: Equatable, Sendable, Identifiable {
 struct RetroSnapshot: Equatable, Sendable {
     var items: [RetroWorkItem]
     var rooms: [RetroRoom]
-    /// The user's lifetime points right now (`UserModel.points`).
-    var totalPoints: Int
-    /// Only the house owner may start a new division of chores.
-    var isHouseOwner = true
+    /// Only the house admin may start a new division of chores. Defaults to `false` so a
+    /// repository that can't tell never shows the new-division prompt to a resident.
+    var isHouseAdmin = false
+    /// Whether the current division's period is over (`RetroTriggerPolicy.isDivisionOver`).
+    /// `false` for an old retrospective opened while a cycle is still running, and by default.
+    var isDivisionOver = false
 }
 
 /// Closed interval of days the retrospective covers.
@@ -89,46 +91,9 @@ protocol RetroRepository {
     func fetchSnapshot(for period: RetroPeriod) async throws -> RetroSnapshot
 }
 
-/// Remembers the user's points when the last retrospective was concluded,
-/// so "points earned" only counts what happened since then.
-@MainActor
-protocol RetroBaselineStore: AnyObject {
-    var pointsAtLastRetro: Int? { get set }
-}
-
-/// Production store, backed by `UserDefaults`.
-@MainActor
-final class UserDefaultsRetroBaselineStore: RetroBaselineStore {
-    private let defaults: UserDefaults
-    private let key: String
-
-    init(defaults: UserDefaults = .standard, key: String = "retro.pointsAtLastRetro") {
-        self.defaults = defaults
-        self.key = key
-    }
-
-    var pointsAtLastRetro: Int? {
-        get { defaults.object(forKey: key) as? Int }
-        set {
-            if let newValue { defaults.set(newValue, forKey: key) }
-            else { defaults.removeObject(forKey: key) }
-        }
-    }
-}
-
-/// Tunable rules. Defaults match the current RetroPointsView.
+/// Tunable rules. The coins page has its own (`RetroCoinsContent`).
 struct RetroConfiguration: Equatable, Sendable {
     var periodDays = 15
-    /// From this many points on, the pig gets a coin.
-    var coinPigThreshold = 50
-    /// From this many points on, coins also float around the pig.
-    var floatingCoinsThreshold = 100
-    /// Floating coins shown right at the threshold.
-    var baseFloatingCoins = 2
-    /// Every extra block of points after the threshold reveals one more coin.
-    var pointsPerExtraCoin = 50
-    /// Pass `RetroCoinsScatter.maxCount` from the composition root.
-    var maxFloatingCoins = 5
 
     static let `default` = RetroConfiguration()
 }
@@ -149,13 +114,26 @@ enum RetroPhase: Equatable {
     case dismissed
 }
 
-/// Pager pages. Raw values are the TabView tags.
+/// Pager pages, in the order they are shown. Raw values are the TabView tags, so they must
+/// follow the same order as the views inside RetroView's TabView.
 enum RetroPage: Int, CaseIterable, Equatable, Sendable {
+    /// Share of the user's chores done.
     case percentage = 0
-    /// Placeholder: RetroStreakView is developed later. It only occupies its slot in the pager.
-//    case streak = 1
-    case points = 1
-    case rooms = 2
+    /// Completed chores per room.
+    case rooms = 1
+    /// Rank reached in the cycle (`RetroRankView`, fed by `RetroCoinsViewModel`).
+    case rank = 2
+    /// Coins earned in the cycle (`RetroCoinsView`, fed by `RetroCoinsViewModel`).
+    /// Last page: its button redeems the coins and then concludes the retrospective.
+    case coins = 3
+    /// Placeholder: RetroStreakView is developed later. It does not occupy a slot in the pager yet.
+//    case streak
+
+    /// The page the retrospective opens on.
+    static var first: RetroPage { allCases[0] }
+
+    /// Whether this is the last page (its button concludes instead of continuing).
+    var isLast: Bool { self == RetroPage.allCases.last }
 }
 
 enum RetroLoadState: Equatable {
@@ -194,21 +172,6 @@ struct RetroPercentageContent: Equatable {
     static let empty = RetroPercentageContent(
         completedChores: 0, totalChores: 0, percentage: 0,
         summary: "", subtitle: "", closing: ""
-    )
-}
-
-/// What `RetroPointsView` needs.
-struct RetroPointsContent: Equatable {
-    let points: Int
-    let pointsLabel: String
-    let hasCoinPig: Bool
-    let floatingCoinsCount: Int
-    let message: String
-
-    var hasFloatingCoins: Bool { floatingCoinsCount > 0 }
-
-    static let empty = RetroPointsContent(
-        points: 0, pointsLabel: "", hasCoinPig: false, floatingCoinsCount: 0, message: ""
     )
 }
 
@@ -267,37 +230,6 @@ enum RetroCalculator {
             summary: "Você realizou \(completed) de \(total) \n tarefas da sua escala",
             subtitle: subtitle,
             closing: closing
-        )
-    }
-
-    static func points(earned: Int, configuration c: RetroConfiguration) -> RetroPointsContent {
-        let points = max(earned, 0)
-        let hasCoinPig = points >= c.coinPigThreshold
-        let hasFloating = points >= c.floatingCoinsThreshold
-
-        var coins = 0
-        if hasFloating {
-            let extra = c.pointsPerExtraCoin > 0
-                ? (points - c.floatingCoinsThreshold) / c.pointsPerExtraCoin
-                : 0
-            coins = min(c.baseFloatingCoins + extra, c.maxFloatingCoins)
-        }
-
-        let message: String
-        if hasFloating {
-            message = "Boa parte do que a casa fez começou com você percebendo, parabéns!"
-        } else if hasCoinPig {
-            message = "Reparar que algo precisa ser feito também é trabalho, parabéns!"
-        } else {
-            message = "Cada coisa que você reparou conta!"
-        }
-
-        return RetroPointsContent(
-            points: points,
-            pointsLabel: "\(points) \(points == 1 ? "ponto" : "pontos")",
-            hasCoinPig: hasCoinPig,
-            floatingCoinsCount: coins,
-            message: message
         )
     }
 
@@ -374,12 +306,17 @@ final class RetroViewModel {
     /// `showPages`, `isRetroDone` and `showSchedule` flags.
     private(set) var phase: RetroPhase = .alert
 
-    /// Whether the signed-in user owns the house. Only the owner gets the new-division prompt;
-    /// everyone else goes straight from the retrospective to the end.
-    private(set) var isHouseOwner = false
+    /// Whether the signed-in user is the house admin (`HouseModel.isAdmin()`). Only the admin gets
+    /// the new-division prompt; everyone else goes straight from the retrospective to the end.
+    private(set) var isHouseAdmin = false
+
+    /// Whether this retrospective may lead to a new division: only the admin, and only once the
+    /// current division is over. An old retrospective (opened from the notifications while the
+    /// next cycle runs) just closes, so it can't replace the running division.
+    private(set) var canStartNewDivision = false
 
     /// Current page of the pager.
-    private(set) var currentPage: RetroPage = .percentage
+    private(set) var currentPage: RetroPage = .first
 
     /// Period covered (set on every load).
     private(set) var period: RetroPeriod
@@ -388,8 +325,6 @@ final class RetroViewModel {
 
     /// For `RetroPercentageOfDoneView`.
     private(set) var percentageContent: RetroPercentageContent = .empty
-    /// For `RetroPointsView`.
-    private(set) var pointsContent: RetroPointsContent = .empty
     /// For `RetroRoomsView`.
     private(set) var roomsContent: RetroRoomsContent = .empty
 
@@ -400,7 +335,11 @@ final class RetroViewModel {
 
     /// True while the rooms page is the visible one, so its bars grow each time it appears
     /// (replaces `isActive: page == 3`).
-    var isRoomsPageActive: Bool { phase == .pages && currentPage == .rooms }
+    var isRoomsPageActive: Bool { isPageActive(.rooms) }
+
+    /// Whether `page` is the one on screen. The paged TabView builds the neighbouring pages
+    /// before they are visible, so pages use this (not `onAppear`/`task`) to start their animations.
+    func isPageActive(_ page: RetroPage) -> Bool { phase == .pages && currentPage == page }
 
     var isLastPage: Bool { currentPage == RetroPage.allCases.last }
 
@@ -413,7 +352,6 @@ final class RetroViewModel {
     // MARK: Dependencies
 
     private let repository: RetroRepository
-    private let baselineStore: RetroBaselineStore
     private let configuration: RetroConfiguration
     private let clock: () -> Date
     private let calendar: Calendar
@@ -426,14 +364,12 @@ final class RetroViewModel {
 
     init(
         repository: RetroRepository,
-        baselineStore: RetroBaselineStore? = nil,
         configuration: RetroConfiguration = .default,
         calendar: Calendar = .current,
         clock: @escaping () -> Date = { Date() },
         eventBus: RetroEventBus? = nil
     ) {
         self.repository = repository
-        self.baselineStore = baselineStore ?? UserDefaultsRetroBaselineStore()
         self.configuration = configuration
         self.calendar = calendar
         self.clock = clock
@@ -467,7 +403,8 @@ final class RetroViewModel {
                 return
             }
             snapshot = result
-            isHouseOwner = result.isHouseOwner
+            isHouseAdmin = result.isHouseAdmin
+            canStartNewDivision = result.isHouseAdmin && result.isDivisionOver
             publishContent(from: result, period: requestedPeriod)
             loadState = .loaded
             eventBus.send(.loaded)
@@ -495,13 +432,7 @@ final class RetroViewModel {
 
     private func publishContent(from snapshot: RetroSnapshot, period: RetroPeriod) {
         percentageContent = RetroCalculator.percentage(items: snapshot.items, period: period)
-        pointsContent = RetroCalculator.points(earned: pointsEarned(in: snapshot), configuration: configuration)
         roomsContent = RetroCalculator.rooms(items: snapshot.items, rooms: snapshot.rooms, period: period)
-    }
-
-    private func pointsEarned(in snapshot: RetroSnapshot) -> Int {
-        guard let baseline = baselineStore.pointsAtLastRetro else { return snapshot.totalPoints }
-        return max(snapshot.totalPoints - baseline, 0)
     }
 
     // MARK: - Intents: alert → pages
@@ -509,11 +440,21 @@ final class RetroViewModel {
     /// "Ver minha retrospectiva". Only valid on the alert. The View keeps its own fade timing.
     func startRetrospective() {
         guard phase == .alert else { return }
-        currentPage = .percentage
+        currentPage = .first
         phase = .pages
     }
 
     // MARK: - Intents: pager
+
+    /// The page's main button: "Continuar" on every page, "Concluir" on the last one.
+    /// Pages call this instead of choosing, so reordering `RetroPage` needs no change in them.
+    func advance() {
+        if isLastPage {
+            finishRetrospective()
+        } else {
+            continueToNextPage()
+        }
+    }
 
     /// "Continuar". On the last page it does nothing (the last page uses `finishRetrospective()`).
     func continueToNextPage() {
@@ -539,10 +480,9 @@ final class RetroViewModel {
         leaveRetrospective()
     }
 
-    /// "Concluir" on the last page. Goes to the division prompt and starts a new points cycle.
+    /// "Concluir" on the last page. Goes to the division prompt.
     func finishRetrospective() {
         guard phase == .pages else { return }
-        if let snapshot { baselineStore.pointsAtLastRetro = snapshot.totalPoints }
         eventBus.send(.retrospectiveCompleted)
         leaveRetrospective()
     }
@@ -551,7 +491,7 @@ final class RetroViewModel {
 
     /// "Divisão automática de tarefas".
     func requestAutomaticDivision() {
-        guard phase == .divisionPrompt, isHouseOwner else { return }
+        guard phase == .divisionPrompt, canStartNewDivision else { return }
         phase = .schedule
         eventBus.send(.divisionRequested)
     }
@@ -572,9 +512,10 @@ final class RetroViewModel {
 
     // MARK: - Flow helpers
 
-    /// After the retrospective: the owner is offered the new division; everyone else is done.
+    /// After the retrospective: the admin is offered the new division if the current one is over;
+    /// otherwise (residents, or an old retrospective) it is done.
     private func leaveRetrospective() {
-        if isHouseOwner {
+        if canStartNewDivision {
             phase = .divisionPrompt
         } else {
             dismiss()

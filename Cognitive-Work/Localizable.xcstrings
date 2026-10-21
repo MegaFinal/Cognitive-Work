@@ -103,11 +103,34 @@
       }
     },
     "%@ foi onde você mais trabalhou." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ is where you worked the most."
+          }
+        }
+      }
+    },
+    "%@ no ciclo. Faltaram %lld para %@." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ this cycle. %2$lld short of %3$@."
+          }
+        }
+      }
+    },
+    "%@ no ciclo. Você chegou ao rank máximo!" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ this cycle. You reached the top rank!"
           }
         }
       }
@@ -221,9 +244,6 @@
         }
       }
     },
-    "%@%%" : {
-
-    },
     "%lld" : {
 
     },
@@ -280,6 +300,7 @@
       }
     },
     "%lld cômodos" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "variations" : {
@@ -364,6 +385,7 @@
       }
     },
     "%lld dias" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "variations" : {
@@ -650,9 +672,6 @@
         }
       }
     },
-    "%lld%%" : {
-
-    },
     "%lld tarefas a pegar hoje" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -716,6 +735,9 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "+%lld" : {
 
     },
@@ -737,7 +759,6 @@
 
     },
     "0 dias" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1981,6 +2002,17 @@
         }
       }
     },
+    "Bora subir no próximo ciclo!" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let's climb higher next cycle!"
+          }
+        }
+      }
+    },
     "Bronze" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2026,11 +2058,23 @@
       }
     },
     "Cada tarefa feita conta!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Every chore you do counts!"
+          }
+        }
+      }
+    },
+    "Cada tarefa feita te deixa mais perto do próximo rank!" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every chore you do brings you closer to the next rank!"
           }
         }
       }
@@ -2131,6 +2175,17 @@
         }
       }
     },
+    "Carregando moedas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading coins"
+          }
+        }
+      }
+    },
     "Carregando moradores" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2160,6 +2215,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading profile"
+          }
+        }
+      }
+    },
+    "Carregando rank" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading rank"
           }
         }
       }
@@ -2820,6 +2886,7 @@
       }
     },
     "continue assim!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2830,6 +2897,7 @@
       }
     },
     "Continue assim!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4909,6 +4977,7 @@
       }
     },
     "Faltou pouco para completar tudo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4994,6 +5063,17 @@
         }
       }
     },
+    "foi o rank que você alcançou neste ciclo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "was the rank you reached this cycle"
+          }
+        }
+      }
+    },
     "Foi pago" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5059,7 +5139,30 @@
         }
       }
     },
+    "ganhas neste ciclo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "earned this cycle"
+          }
+        }
+      }
+    },
+    "ganhas neste ciclo com o rank %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "earned this cycle with the %@ rank"
+          }
+        }
+      }
+    },
     "ganhos com as tarefas que você concluiu" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6095,6 +6198,17 @@
         }
       }
     },
+    "Mandou bem! Dá para subir ainda mais." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nice job! You can climb even higher."
+          }
+        }
+      }
+    },
     "Marcar %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7068,6 +7182,17 @@
         }
       }
     },
+    "Nenhuma moeda neste ciclo, bora no próximo!" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No coins this cycle, let's go for the next one!"
+          }
+        }
+      }
+    },
     "Nenhuma notificação nova" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7102,6 +7227,7 @@
       }
     },
     "Nenhuma tarefa concluída nesses 15 dias" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7159,6 +7285,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No chores for today"
+          }
+        }
+      }
+    },
+    "neste ciclo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "this cycle"
           }
         }
       }
@@ -7525,6 +7662,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "What does the home share?"
+          }
+        }
+      }
+    },
+    "O rank deste ciclo ainda não foi calculado." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This cycle's rank hasn't been calculated yet."
           }
         }
       }
@@ -8782,11 +8930,23 @@
       }
     },
     "quase lá!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "almost there!"
+          }
+        }
+      }
+    },
+    "Que ciclo! Poucos chegam tão longe." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What a cycle! Few get this far."
           }
         }
       }
@@ -9277,8 +9437,39 @@
         }
       }
     },
+    "Resgatar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redeem"
+          }
+        }
+      }
+    },
     "Resgatar %lld moedas" : {
 
+    },
+    "Resgatar e concluir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redeem and finish"
+          }
+        }
+      }
+    },
+    "Resgatar e continuar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redeem and continue"
+          }
+        }
+      }
     },
     "Responsáveis" : {
       "localizations" : {
@@ -9663,6 +9854,17 @@
         }
       }
     },
+    "Sem rank" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rank"
+          }
+        }
+      }
+    },
     "Sem responsável" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9765,6 +9967,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your day"
+          }
+        }
+      }
+    },
+    "Seu esforço virou recompensa, parabéns!" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your effort turned into a reward, congrats!"
           }
         }
       }
@@ -10525,6 +10738,17 @@
         }
       }
     },
+    "Todo começo conta, bora subir no próximo!" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every start counts, let's climb next time!"
+          }
+        }
+      }
+    },
     "Todos os bancos" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11184,6 +11408,17 @@
     "Você chegou ao rank máximo" : {
 
     },
+    "Você chegou ao topo, parabéns!" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You made it to the top, congrats!"
+          }
+        }
+      }
+    },
     "você consegue!" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11249,6 +11484,7 @@
       }
     },
     "Você mandou muito bem!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11302,6 +11538,7 @@
       }
     },
     "Você realizou %lld de %lld \n tarefas da sua escala" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

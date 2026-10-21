@@ -40,4 +40,20 @@ struct RetroTriggerPolicyTests {
         #expect(!RetroTriggerPolicy.shouldPresent(lastScheduledDay: day(-5), lastPresentedDay: now, now: now, calendar: calendar))
         #expect(RetroTriggerPolicy.shouldPresent(lastScheduledDay: day(-5), lastPresentedDay: day(-1), now: now, calendar: calendar))
     }
+
+    // MARK: - isDivisionOver (whether the retrospective may offer a new division)
+
+    @Test func divisionRunningIsNotOver() {
+        // An old retrospective opened while the next cycle runs: no new division.
+        #expect(!RetroTriggerPolicy.isDivisionOver(lastScheduledDay: day(10), now: now, calendar: calendar))
+        #expect(!RetroTriggerPolicy.isDivisionOver(lastScheduledDay: day(0), now: now, calendar: calendar))
+    }
+
+    @Test func divisionIsOverTheDayAfterItsLastDay() {
+        #expect(RetroTriggerPolicy.isDivisionOver(lastScheduledDay: day(-1), now: now, calendar: calendar))
+    }
+
+    @Test func neverDividedIsNotOver() {
+        #expect(!RetroTriggerPolicy.isDivisionOver(lastScheduledDay: nil, now: now, calendar: calendar))
+    }
 }

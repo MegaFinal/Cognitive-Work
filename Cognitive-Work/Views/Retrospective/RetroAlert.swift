@@ -45,8 +45,8 @@ struct RetroAlert: View {
                 // The pages need the loaded data.
                 .disabled(viewModel.loadState != .loaded)
 
-                // Only the house owner can start a new division.
-                if viewModel.isHouseOwner {
+                // Only the house admin, and only once the current division is over.
+                if viewModel.canStartNewDivision {
                     Button {
                         withAnimation {
                             viewModel.skipRetrospective()
