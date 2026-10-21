@@ -26,6 +26,10 @@ struct NotificationsView: View {
             VStack(alignment: .leading, spacing: 28) {
                 header
                 
+                #if DEBUG
+                simulateRetroSection
+                #endif
+                
                 if viewModel.isLoading {
                     ProgressView().frame(maxWidth: .infinity)
                         .voiceOverLabel(L10n.tr("Carregando notificações"))
@@ -52,7 +56,9 @@ struct NotificationsView: View {
             DashboardView()
         }
         .fullScreenCover(isPresented: $isShowingRetro) {
-            RetroView(coinsViewModel: retroCoinsViewModel)
+            RetroView(coinsViewModel: retroCoinsViewModel) {
+                isShowingRetro = false
+            }
                 .presentationBackground(.clear)
         }
     }
@@ -95,6 +101,32 @@ struct NotificationsView: View {
             }
         }
     }
+    
+    #if DEBUG
+    // TODO: PROVISÓRIO — remover. Abre a retrospectiva na hora, sem esperar o fim do ciclo.
+    // Mesma aparência de uma notificação; não existe em builds de Release.
+    private var simulateRetroSection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text(verbatim: "Testes")
+                .font(.system(size: 17))
+                .foregroundStyle(.subTitleGray)
+                .accessibilityAddTraits(.isHeader)
+            
+            Button {
+                isShowingRetro = true
+            } label: {
+                NotificationComponent(
+                    color: Notifications.retrospective.color,
+                    symbol: Notifications.retrospective.symbol,
+                    title: "Simular retrospectiva",
+                    subtitle: "Provisório: abre a retro agora, com os dados reais"
+                )
+            }
+            .buttonStyle(.plain) // keeps the text black
+            .voiceControlNames(["Simular retrospectiva"])
+        }
+    }
+    #endif
     
     // MARK: - Actions
     
