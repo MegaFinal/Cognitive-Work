@@ -5,13 +5,23 @@
 //  Created by Jonas Fernando Nascimento Melo on 25/08/26.
 //
 
+/// How much free time a member has on one day of the week, in fixed steps.
+///
+/// The raw value is the Portuguese label, kept stable because it is saved; show ``displayName`` instead.
 enum FreeTimeEnum: String{
+    /// No free time that day.
     case none = ""
+    /// About 30 minutes.
     case thirtyMinutes = "30 minutos"
+    /// About 1 hour.
     case oneHour = "1 hora"
+    /// About 2 hours.
     case twoHours = "2 horas"
+    /// About 3 hours.
     case threeHours = "3 horas"
+    /// About 4 hours.
     case fourHours = "4 horas"
+    /// 5 hours or more.
     case fiveHours = "5 horas ou mais"
     
     /// Label shown to the user, in the app's language. (`rawValue` is kept as the stable
@@ -20,6 +30,7 @@ enum FreeTimeEnum: String{
         rawValue.isEmpty ? "" : L10n.tr(rawValue)
     }
     
+    /// The free time in hours (for example, `0.5` for ``thirtyMinutes``).
     var timeInHours: Double {
         switch self {
         case .none:
@@ -39,6 +50,8 @@ enum FreeTimeEnum: String{
         }
     }
     
+    /// Creates the option at position `num` of the free time slider.
+    /// - Parameter num: From `0` (``none``) to `6` (``fiveHours``). Other values give ``none``.
     init(_ num: Int) {
         switch num {
         case 0 :
@@ -60,6 +73,7 @@ enum FreeTimeEnum: String{
         }
     }
     
+    /// Position of the option on the free time slider, from `0` (``none``) to `6` (``fiveHours``).
     var level: Int {
         switch self {
         case .none: return 0
@@ -72,6 +86,8 @@ enum FreeTimeEnum: String{
         }
     }
     
+    /// Creates the smallest option that covers `minutes`.
+    /// - Parameter minutes: Free time in minutes. More than 4 hours gives ``fiveHours``.
     init(minutes: Int) {
         switch minutes {
         case ..<1: self = .none

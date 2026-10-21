@@ -20,15 +20,22 @@ import CloudKit
 /// overwritten by the next purchase, never deleted.
 struct CouponHoldModel: CloudKitSyncable, Equatable {
 
+    /// The CloudKit record type.
     static var recordType: String = "CouponHoldModel"
 
+    /// The CloudKit record ID (`hold-<user>-<room>`). `nil` until the model is saved.
     var recordID: CKRecord.ID?
 
+    /// The member who bought the coupon.
     var user: CKRecord.Reference
+    /// The room of the coupon's chore.
     var room: CKRecord.Reference
+    /// The coupon that was bought.
     var coupon: CKRecord.Reference
+    /// Key of the cycle the coupon was bought in (see ``HouseCycleModel/key(for:calendar:)``).
     var cycleKey: String
 
+    /// Creates a new hold, not saved yet.
     init(user: CKRecord.Reference, room: CKRecord.Reference, coupon: CKRecord.Reference, cycleKey: String) {
         self.user = user
         self.room = room
@@ -36,6 +43,7 @@ struct CouponHoldModel: CloudKitSyncable, Equatable {
         self.cycleKey = cycleKey
     }
 
+    /// Creates the model from a CloudKit record. Returns `nil` when a field is missing.
     init?(record: CKRecord) {
         guard
             let user = record["user"] as? CKRecord.Reference,
@@ -51,6 +59,7 @@ struct CouponHoldModel: CloudKitSyncable, Equatable {
         self.cycleKey = cycleKey
     }
 
+    /// Copies the model's fields into `record`, before saving it.
     func populate(record: CKRecord) {
         record["user"] = user
         record["room"] = room
@@ -58,6 +67,7 @@ struct CouponHoldModel: CloudKitSyncable, Equatable {
         record["cycleKey"] = cycleKey
     }
 
+    /// The fixed record ID of the hold of `userID` in `roomID`. There is only one per user and room.
     static func recordID(userID: CKRecord.ID, roomID: CKRecord.ID) -> CKRecord.ID {
         CKRecord.ID(recordName: "hold-\(userID.recordName)-\(roomID.recordName)", zoneID: userID.zoneID)
     }

@@ -7,12 +7,17 @@
 
 import SwiftUI
 
+/// The retrospective's rooms page: a bar chart of how many chores the user did in each room.
+///
 /// Reads only `viewModel.roomsContent` (and `isRoomsPageActive` to replay the bar animation).
 struct RetroRoomsView: View {
+    /// The retrospective's view model (shared with the other pages).
     let viewModel: RetroViewModel
     
+    /// `false` draws the bars empty; turning it `true` makes them grow.
     @State private var isChartShown = false
     
+    /// This page's content.
     private var content: RetroRoomsContent { viewModel.roomsContent }
     
     /// Rooms with fewer chores than this get the same width as a room with this many,
@@ -28,6 +33,7 @@ struct RetroRoomsView: View {
     
     var body: some View {
         VStack {
+            // MARK: - Title ("N cômodos") and the room worked on most
             Text(content.title)
                 .bold()
                 .font(.system(size: 64))
@@ -38,6 +44,7 @@ struct RetroRoomsView: View {
                 .multilineTextAlignment(.center)
                 .padding(.bottom, height * 0.02)
             
+            // MARK: - Bar chart: one bar per room
             // Only the chart scrolls (when there are many rooms); title and button stay fixed.
             ScrollView(.vertical, showsIndicators: false) {
                 HStack {
@@ -79,6 +86,7 @@ struct RetroRoomsView: View {
             
             Spacer()
 
+            // MARK: - Continue / conclude
             Button {
                 withAnimation {
                     viewModel.advance()
@@ -92,6 +100,7 @@ struct RetroRoomsView: View {
             .buttonStyle(.glassProminent)
             .glassEffectTransition(.identity)
         }
+        // MARK: - Bar animation
         // Bars grow every time this page becomes the visible one.
         .task(id: viewModel.isRoomsPageActive) {
             if viewModel.isRoomsPageActive {

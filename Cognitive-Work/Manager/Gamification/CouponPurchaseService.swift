@@ -27,28 +27,39 @@ import CloudKit
 @MainActor
 final class CouponPurchaseService {
 
+    /// Why a purchase failed.
     enum PurchaseError: Error, Equatable {
+        /// The coupon no longer exists.
         case couponNotFound
+        /// The coupon is not for sale.
         case notOnSale
         /// Someone already holds this coupon in the current cycle.
         case alreadyTaken
         /// The buyer already bought a coupon in this room in the current cycle.
         case roomLimitReached
+        /// The buyer doesn't have enough coins. Carries their balance and the price.
         case insufficientCoins(balance: Int, price: Int)
         /// The coupon's chore, or its room, no longer exists.
         case choreNotFound
         /// The house has no cycle yet: a division must be generated first.
         case noActiveCycle
+        /// The coupon or wallet kept changing while buying, and the purchase gave up.
         case tooManyConflicts
     }
 
+    /// What a successful purchase cost.
     struct Receipt: Equatable {
+        /// Coins paid.
         let price: Int
+        /// The buyer's balance after paying.
         let newBalance: Int
     }
 
+    /// Where records are read and saved (CloudKit in the app, in memory in tests).
     private let store: AtomicRecordStore
+    /// How coupon prices are calculated.
     private let pricing: CouponPricing
+    /// How many times a purchase is retried when another device changed the records at the same time.
     private let maxAttempts: Int
 
     /// - Parameters:

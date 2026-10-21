@@ -8,22 +8,34 @@
 import SwiftUI
 import CloudKit
 
+/// The fortnight bar chart: one column per day, with one colored bar per chore.
+///
+/// Each bar's color is the member who does the chore and its height is how long the chore takes.
+/// Tapping a bar selects it so the screen can show its details.
 struct FortnightlyBarChart: View {
+    /// The house members (their order picks each bar's color).
     var users: [UserModel]
+    /// The chores to draw, one per day and member.
     var entries: [DailyUsageEntry]
+    /// The first day of the chart.
     var startDate: Date = Date()
+    /// The bar that is selected, if any.
     var selectedEntry: DailyUsageEntry?
+    /// Called when a bar is tapped.
     var onSelect: (DailyUsageEntry) -> Void
+    /// Whether the chart scrolls sideways. Turn it off to render the whole chart (e.g. to share it).
     var scrollEnabled: Bool = true
+    /// How many days (columns) to show.
     var daysToShow: Int = 14
     
-    /// Empty space around the columns
+    /// Empty space around the columns, so the selection halo isn't cut off.
     var selectionInset: CGFloat = 0
     
     var body: some View {
         let calendar = Calendar.current
         let baseStartDate = calendar.startOfDay(for: startDate)
         
+        // MARK: - One column per day
         let content = HStack(alignment: .top, spacing: 0) {
             ForEach(0..<daysToShow, id: \.self) { dayOffset in
                 if let day = calendar.date(byAdding: .day, value: dayOffset, to: baseStartDate) {
@@ -43,6 +55,7 @@ struct FortnightlyBarChart: View {
         .voiceOverLabel(L10n.tr("Gráfico da escala quinzenal, %lld tarefas em %lld dias", entries.count, daysToShow))
         .accessibilityChartDescriptor(chartDescriptor)
         
+        // MARK: - Scrolling or fixed
         let paddedContent = content.padding(selectionInset)
         
         if scrollEnabled {
@@ -72,13 +85,20 @@ struct FortnightlyBarChart: View {
     }
 }
 
+/// One day column: the weekday label on top and that day's bars stacked below.
 private struct FortnightlyDayUserBar: View {
+    /// The day of this column.
     var day: Date
+    /// That day's chores.
     var entries: [DailyUsageEntry]
+    /// The house members (used for colors and names).
     var users: [UserModel]
+    /// The bar that is selected, if any.
     var selectedEntry: DailyUsageEntry?
+    /// Called when a bar is tapped.
     var onSelect: (DailyUsageEntry) -> Void
     
+    /// Height of the tallest bar (a long chore).
     private let maxBarHeight: Double = 100
     
     /// Short weekday ("Seg" / "Mon") in the app's language.
@@ -105,6 +125,7 @@ private struct FortnightlyDayUserBar: View {
     var body: some View {
         VStack(spacing: 6) {
             Spacer(minLength: 0)
+            // MARK: - Weekday label
             Text(weekdayText(for: day))
                 .font(.system(size: 16.35))
                 .fontWeight(.medium)
@@ -115,6 +136,7 @@ private struct FortnightlyDayUserBar: View {
                         : L10n.tr("%lld tarefas", entries.count)
                 )
             
+            // MARK: - Bars (colored by member, sized by chore length)
             if !entries.isEmpty {
                 VStack(spacing: 4) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in

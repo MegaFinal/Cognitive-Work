@@ -15,20 +15,29 @@ import SwiftUI
 ///
 /// Used throughout the onboarding flow as the primary "continue" action
 struct OnboardingProgressButton: View {
+    /// The button's width; the default is 60% of the screen.
     var width: CGFloat?
+    /// The button's height; the default is 6% of the screen.
     var height: CGFloat?
 
+    /// The button's text (a localization key), or an SF Symbol name when ``isSystemImage`` is `true`.
     var text: String
+    /// Whether ``text`` is an SF Symbol name.
     var isSystemImage: Bool = false
 
+    /// Shows a spinner and disables the button while `true`.
     var isLoading: Bool = false
+    /// Grays out and disables the button while `true`.
     var isDisabled: Bool = false
+    /// Runs when tapped.
     var action: () async -> Void
 
     // `width`/`height` shadow the View extension's properties of the same
     // name, so casting to `any View` is needed to reach the extension's
     // default (screen-based) value when no override was passed in.
+    /// ``width`` or the default.
     private var resolvedWidth: CGFloat { width ?? (self as any View).width * 0.6 }
+    /// ``height`` or the default.
     private var resolvedHeight: CGFloat { height ?? (self as any View).height * 0.06 }
 
     /// What VoiceOver reads: icon-only buttons get a word for their symbol.
@@ -55,6 +64,7 @@ struct OnboardingProgressButton: View {
                 await action()
             }
         } label: {
+            // MARK: - Label: spinner, icon or text
             ZStack {
                 if isLoading {
                     ProgressView().tint(.white)
@@ -70,6 +80,7 @@ struct OnboardingProgressButton: View {
             .frame(width: resolvedWidth, height: resolvedHeight)
             .foregroundColor(.white)
             .fontWeight(.medium)
+            // MARK: - Blue (or gray) glass capsule
             .background(
                 Capsule()
                     .foregroundColor(isDisabled ? .gray : .blue)

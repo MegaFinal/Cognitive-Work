@@ -10,9 +10,12 @@ import SwiftUI
 /// Prevents the user from leaving or interacting with a screen while a destructive,
 /// non-cancellable CloudKit operation (delete or unlink) is in flight.
 struct BlockingOperationOverlay: ViewModifier {
+    /// Whether the blocking screen shows.
     @Binding var isPresented: Bool
+    /// What is happening (a localization key, e.g. "Excluindo sua casa...").
     let message: String
     
+    /// Disables the screen and covers it with the loading screen while ``isPresented`` is `true`.
     func body(content: Content) -> some View {
         content
             .disabled(isPresented)
@@ -26,10 +29,12 @@ struct BlockingOperationOverlay: ViewModifier {
 
 /// Full-screen, non-dismissable loading state shown by ``BlockingOperationOverlay``.
 private struct BlockingOperationView: View {
+    /// What is happening (a localization key).
     let message: String
     
     var body: some View {
         VStack(spacing: 20) {
+            // MARK: - Spinner and message
             ProgressView()
                 .scaleEffect(1.5)
                 .padding(.bottom, 8)

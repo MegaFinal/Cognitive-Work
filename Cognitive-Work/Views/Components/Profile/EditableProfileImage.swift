@@ -12,16 +12,21 @@ import PhotosUI
 ///
 /// In read-only mode, shows the `ProfileImage` as static content. In editing mode, wraps it in
 /// a `PhotosPicker` with a camera badge overlay so the user can select a new photo.
-
 struct EditableProfileImage: View {
+    /// The user's photo, or `nil` for the placeholder.
     let image: UIImage?
+    /// Whether the photo can be changed (wraps it in a photo picker).
     let isEditing: Bool
+    /// The photo picked in the picker.
     @Binding var selection: PhotosPickerItem?
     
+    /// Shows a spinner over the photo while `true`.
     var isLoading: Bool = false
     
+    /// The user's banner. When set, the photo is drawn inside a ring with the banner's color and texture.
     var banner: ProfileBanner? = nil
     
+    /// Runs when the pencil button on the banner is tapped. `nil` hides the button.
     var onEditBanner: (() -> Void)? = nil
     
     /// Size the empty-state circle is drawn at (from the handoff).
@@ -34,6 +39,7 @@ struct EditableProfileImage: View {
 
     var body: some View {
         Group {
+            // MARK: - Photo picker while editing, plain photo otherwise
             if isEditing {
                 PhotosPicker(selection: $selection, matching: .images) {
                     profileImage
@@ -56,6 +62,7 @@ struct EditableProfileImage: View {
             }
         }
         .frame(width: layoutSize, height: layoutSize)
+        // MARK: - Banner edit button
         .overlay {
             if banner != nil, let onEditBanner {
                 bannerEditButton(action: onEditBanner)
@@ -110,14 +117,17 @@ struct EditableProfileImage: View {
 }
 
 extension EditableProfileImage {
+    /// The dotted circle shown when there is no photo.
     fileprivate var placeholderRing: some View {
         Image("OnboardingElipse")
             .resizable()
             .frame(width: elipseSize, height: elipseSize)
     }
     
+    /// Size of the photo inside the banner ring.
     fileprivate var innerSize: CGFloat { elipseSize * 0.7 }
     
+    /// The photo inside a ring with the banner's color and texture.
     fileprivate func bannerAvatar(_ banner: ProfileBanner) -> some View {
         ZStack {
             RoomTextureBackground(color: banner.color, pattern: banner.pattern, zoom: 2)
@@ -152,6 +162,7 @@ extension EditableProfileImage {
         .shadow(radius: 5)
     }
     
+    /// The pencil button at the bottom-right of the avatar, to change the banner.
     fileprivate func bannerEditButton(action: @escaping () -> Void) -> some View {
         let offset = elipseSize / 2 * 0.7071
         return Button {

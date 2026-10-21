@@ -24,19 +24,27 @@ import SwiftUI
 /// (``GamificationView``); this view only calls ``onClose``.
 struct FocusedCouponView: View {
 
+    /// The coupon shown.
     var coupon: CouponModel
+    /// The color of the coupon's room.
     var roomColor: RoomColor
+    /// The SF Symbol of the coupon's room.
     var roomSymbol: String
+    /// Whether the user has enough coins to buy it.
     var isAffordable: Bool
+    /// Whether it can be bought, or why not.
     var state: CouponCard.PurchaseState
+    /// `true` while a purchase is being saved.
     var isBuying: Bool
 
     /// Shared with the ticket in the list, so it flies from there to the center and back.
     var namespace: Namespace.ID
+    /// The id used to match the ticket in the list.
     var matchID: String
 
     /// Buys the coupon; returns whether the purchase went through.
     var onBuy: () async -> Bool
+    /// Closes the focused coupon.
     var onClose: () -> Void
 
     /// How far down the ticket has to be pulled to tear the stub off.
@@ -66,12 +74,15 @@ struct FocusedCouponView: View {
     /// The ticket's frame on screen, where the celebration bursts from.
     @State private var ticketFrame: CGRect = .zero
 
+    /// Turns off the confetti and big movements when the user asked for less motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Whether the coupon can be torn right now.
     private var canBuy: Bool {
         state == .available && isAffordable && !isBuying
     }
 
+    /// Whether the pull is far enough to tear the stub off.
     private var isPastTearPoint: Bool {
         canBuy && pull >= Self.tearDistance
     }
@@ -88,8 +99,10 @@ struct FocusedCouponView: View {
 
     var body: some View {
         ZStack {
+            // MARK: - Ticket, hint and close button
             content
 
+            // MARK: - Celebration
             // Confetti, stars and sparkles all over the screen once it's bought.
             if isCelebrating && !reduceMotion {
                 CouponCelebration(
@@ -99,6 +112,7 @@ struct FocusedCouponView: View {
                 .ignoresSafeArea()
             }
         }
+        // MARK: - Accessibility and haptics
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) { if !isTorn { onClose() } }
         .sensoryFeedback(.impact(flexibility: .rigid, intensity: 0.8), trigger: tearStep) { old, new in new > old }
@@ -108,6 +122,7 @@ struct FocusedCouponView: View {
         .onChange(of: finishedAttempts) { resolvePurchase() }
     }
 
+    /// The ticket (with the tear gesture), the hint and the "Fechar" button.
     private var content: some View {
         VStack(spacing: 28) {
             CouponTicket(
@@ -153,17 +168,20 @@ struct FocusedCouponView: View {
 
     // MARK: - Tearing
 
+    /// Where the stub is: following the finger, or fallen off once torn.
     private var stubOffset: CGSize {
         if isTorn { return CGSize(width: 30, height: 700) }
         return CGSize(width: pull * 0.08, height: pull)
     }
 
+    /// How much the stub tilts while pulled (none with reduced motion).
     private var stubRotation: Angle {
         guard !reduceMotion else { return .zero }
         if isTorn { return .degrees(30) }
         return .degrees(min(pull / Self.tearDistance * 14, 20))
     }
 
+    /// Pulls the stub down; tears it if released past ``tearDistance``, otherwise springs back.
     private var tearGesture: some Gesture {
         DragGesture(minimumDistance: 8)
             .onChanged { value in
@@ -182,6 +200,7 @@ struct FocusedCouponView: View {
             }
     }
 
+    /// Tears the stub off, starts the celebration and buys the coupon.
     private func tear() {
         guard canBuy else { return }
         withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .easeIn(duration: 0.4)) {
@@ -218,6 +237,7 @@ struct FocusedCouponView: View {
 
     // MARK: - Hint
 
+    /// The text under the ticket: the success message, or why it can't be bought, or how to buy it.
     @ViewBuilder
     private var hint: some View {
         Group {

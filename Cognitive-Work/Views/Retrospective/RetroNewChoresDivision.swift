@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+/// The retrospective's last card for the admin: invites them to generate the new division of
+/// chores now or later.
 struct RetroNewChoresDivision: View {
     /// Called when "Divisão automática de tarefas" is tapped (`RetroViewModel.requestAutomaticDivision`).
     var onAutomaticDivision: () -> Void = {}
@@ -15,6 +17,7 @@ struct RetroNewChoresDivision: View {
     
     var body: some View {
         VStack {
+            // MARK: - Icon
             Image(systemName: "calendar.circle")
                 .resizable()
                 .frame(width: width * 0.24, height: width * 0.24)
@@ -22,6 +25,7 @@ struct RetroNewChoresDivision: View {
                 .foregroundStyle(.choreGreen)
                 .padding(.top, height * 0.088)
             
+            // MARK: - Title and explanation
             Text("Comece a nova divisão de tarefas da casa!")
                 .font(.title)
                 .bold()
@@ -34,6 +38,7 @@ struct RetroNewChoresDivision: View {
 
             Spacer()
             
+            // MARK: - Actions: divide now or later
             Button {
                 onAutomaticDivision()
             } label: {

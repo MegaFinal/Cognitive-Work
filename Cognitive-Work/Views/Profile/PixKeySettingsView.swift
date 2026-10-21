@@ -7,17 +7,24 @@ import SwiftUI
 
 /// Where the user registers the Pix key housemates pay to when settling a debt.
 struct PixKeySettingsView: View {
+    /// The profile tab's view model (holds the key being edited).
     @Bindable var viewModel: UserProfileViewModel
+    /// Closes the screen after saving.
     @Environment(\.dismiss) private var dismiss
 
+    /// Shows the "Chave Pix salva" toast.
     @State private var showSavedToast = false
+    /// Shows the "Remover chave Pix?" confirmation.
     @State private var isConfirmingRemoval = false
+    /// Whether the key field has the keyboard.
     @FocusState private var isFieldFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
+            // MARK: - Title
             titleBlock
 
+            // MARK: - Key field and caption
             VStack(alignment: .leading, spacing: 10) {
                 Text("Sua chave")
                     .font(.system(size: 15))
@@ -28,6 +35,7 @@ struct PixKeySettingsView: View {
                 caption
             }
 
+            // MARK: - Remove button (only when a key is saved)
             if viewModel.savedPixKey != nil {
                 removeButton
             }
@@ -42,6 +50,7 @@ struct PixKeySettingsView: View {
         .onAppear { viewModel.startEditingPixKey() }
         .dismissKeyboardOnTap()
         .hidesTabBar()
+        // MARK: - Save button
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
@@ -57,6 +66,7 @@ struct PixKeySettingsView: View {
                 .disabled(!viewModel.canSavePixKey)
             }
         }
+        // MARK: - Saved toast
         .overlay(alignment: .top) {
             if showSavedToast {
                 Label("Chave Pix salva", systemImage: "checkmark.circle.fill")
@@ -71,6 +81,7 @@ struct PixKeySettingsView: View {
         }
         .animation(.spring(duration: 0.35), value: showSavedToast)
         .animation(.snappy, value: viewModel.pixKeyError)
+        // MARK: - Remove confirmation
         .confirmationDialog("Remover chave Pix?", isPresented: $isConfirmingRemoval, titleVisibility: .visible) {
             Button("Remover", role: .destructive) {
                 viewModel.editedPixKey = ""
@@ -84,6 +95,7 @@ struct PixKeySettingsView: View {
 
     // MARK: - Pieces
 
+    /// "Receba pelo Pix" and what the key is for.
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Receba pelo Pix")
@@ -97,6 +109,7 @@ struct PixKeySettingsView: View {
         }
     }
 
+    /// The key field, with a clear button and a red border on error.
     private var keyField: some View {
         HStack(spacing: 10) {
             Image(systemName: "key")
@@ -141,6 +154,7 @@ struct PixKeySettingsView: View {
         .disabled(viewModel.isSaving)
     }
 
+    /// The error, or a tip about the phone format.
     @ViewBuilder
     private var caption: some View {
         if let error = viewModel.pixKeyError {
@@ -155,6 +169,7 @@ struct PixKeySettingsView: View {
         }
     }
 
+    /// "Remover chave".
     private var removeButton: some View {
         Button(role: .destructive) {
             isConfirmingRemoval = true
@@ -169,6 +184,7 @@ struct PixKeySettingsView: View {
 
     // MARK: - Actions
 
+    /// Saves the key, shows the toast and closes the screen.
     private func save() async {
         isFieldFocused = false
         guard await viewModel.savePixKey() else { return }

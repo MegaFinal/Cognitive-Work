@@ -8,8 +8,11 @@
 import SwiftUI
 import UserNotifications
 
+/// The "Configurações Gerais" screen: app language, haptics, calendar sync and deleting the profile.
 struct GeneralProfileSettingsView: View {
+    /// The user's profile: calendar sync and deleting the account.
     @Bindable var viewModel: UserProfileViewModel
+    /// The house: checks if the user is admin and deletes or leaves the house with the profile.
     @Bindable var houseViewModel: HouseEditViewModel
         
     /// Persisted and read by ``HapticsManager`` on every vibration, so the switch applies in
@@ -18,17 +21,25 @@ struct GeneralProfileSettingsView: View {
     
     /// User's in-app choice. Only effective while the system permission is also granted.
     @AppStorage("notificationsEnabled") private var areNotificationsEnabled = false
+    /// Shows the "notifications are off, open Settings" alert.
     @State private var showNotificationsDeniedAlert = false
+    /// Used to re-check the notification permission when the app comes back.
     @Environment(\.scenePhase) private var scenePhase
     
+    /// Shows the "delete profile?" alert for a regular member.
     @State private var showDeleteConfirmation = false
+    /// Shows the "delete profile?" alert for the admin (the house is deleted too).
     @State private var showAdminDeleteConfirmation = false
 
+    /// Shows the blocking overlay while the profile is being deleted.
     @State private var isDeletingAccount = false
+    /// Set to `false` after deleting, which sends the user back to onboarding.
     @AppStorage("didOnboard") private var didOnboard: Bool = true
     
+    /// Reads and changes the app's language.
     private let languageManager = LanguageManager.shared
     
+    /// Connects the language picker to ``LanguageManager``.
     private var languageSelection: Binding<AppLanguage> {
         Binding(
             get: { languageManager.current },
@@ -36,6 +47,7 @@ struct GeneralProfileSettingsView: View {
         )
     }
     
+    /// The notifications switch: turning it on asks for permission first.
     private var notificationsBinding: Binding<Bool> {
         Binding(
             get: { areNotificationsEnabled },
@@ -75,6 +87,7 @@ struct GeneralProfileSettingsView: View {
     
     var body: some View {
         VStack(spacing: 30) {
+            // MARK: - Language picker
             HStack {
                 Text("Idioma")
                     .accessibilityHidden(true) // carried by the menu's label
@@ -103,6 +116,7 @@ struct GeneralProfileSettingsView: View {
                 .voiceControlNames([languageManager.current.nativeName, L10n.tr("Idioma"), L10n.tr("Língua")])
             }
             
+            // MARK: - Haptics switch
             VStack(alignment: .leading) {
                 HStack {
                     Text("Haptics")
@@ -127,7 +141,7 @@ struct GeneralProfileSettingsView: View {
                     .foregroundColor(.secondary)
             }
             
-            // Notifications Toggle
+            // MARK: - Notifications switch (hidden for now)
 //            VStack(alignment: .leading) {
 //                HStack {
 //                    Text("Notificações")
@@ -145,7 +159,7 @@ struct GeneralProfileSettingsView: View {
 //                    .foregroundColor(.secondary)
 //            }
             
-            // Calendar Toggle
+            // MARK: - Calendar sync switch
             VStack(alignment: .leading) {
                 HStack {
                     Text("Sincronizar com Calendário")
@@ -199,6 +213,7 @@ struct GeneralProfileSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .hidesTabBar()
         
+        // MARK: - Keeps the notifications switch in sync with iOS Settings
         .task { await syncNotificationsWithSystem() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await syncNotificationsWithSystem() } }

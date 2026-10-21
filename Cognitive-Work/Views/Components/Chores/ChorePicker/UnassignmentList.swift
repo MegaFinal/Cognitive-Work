@@ -7,14 +7,20 @@
 
 import SwiftUI
 
+/// The pop-up list of chores nobody is responsible for, opened by the "hand" button on the chores
+/// screen. Tapping a row picks the chore.
 struct UnassignmentList: View {
+    /// The chores (or occurrences) without anyone responsible.
     let items: [CarouselViewModel.UnassignedItem]
+    /// Runs when the user picks a chore.
     let onPick: (CarouselViewModel.UnassignedItem) -> Void
     
+    /// The chores screen's view model.
     @Bindable var carouselViewModel: CarouselViewModel
     
     var body: some View {
         VStack(alignment: .leading) {
+            // MARK: - Header: title and close hint
             HStack {
                 Text("Tarefas para pegar")
                     .font(.system(size: 22))
@@ -34,6 +40,7 @@ struct UnassignmentList: View {
                     }
             }
             
+            // MARK: - Empty message or the scrolling list of chores
             if items.isEmpty {
                 Text("Nenhuma tarefa disponível no momento.")
                     .font(.system(size: 14))
@@ -62,6 +69,7 @@ struct UnassignmentList: View {
         }
     }
     
+    /// One chore row: name, frequency and priority tags, and a "hand" icon, tinted with the room's color.
     private func choreRow(for item: CarouselViewModel.UnassignedItem) -> some View {
         
         let roomColor = carouselViewModel.getRoom(for: item.chore)?.color.uiColor ?? .gray
@@ -134,6 +142,7 @@ struct UnassignmentList: View {
         return parts.joined(separator: ", ")
     }
     
+    /// Shrinks the row while it is pressed.
     private struct ScaleButtonStyle: ButtonStyle {
         func makeBody(configuration: Configuration) -> some View {
             configuration.label

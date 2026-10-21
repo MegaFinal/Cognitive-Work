@@ -63,12 +63,14 @@ struct FreeTimeSlider: View {
         CGFloat(maxRating) * squareSize + spacing * CGFloat(maxRating - 1)
     }
     
+    /// Blocks changes while `true` (e.g. while saving).
     @Binding var isLoading: Bool
 
     // MARK: - Body
 
     var body: some View {
         GeometryReader { geometry in
+            // MARK: Gray squares, with the selected ones painted over them
             ZStack(alignment: .leading) {
                 buildSquaresRow(color: inactiveColor)
 

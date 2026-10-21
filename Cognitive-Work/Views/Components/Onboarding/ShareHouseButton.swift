@@ -8,26 +8,37 @@
 import SwiftUI
 import CloudKit
 
+/// The "Compartilhar Convite" button: creates the house's invite link and opens the share sheet.
 struct ShareHouseButton: View {
+    /// The onboarding's view model.
     let viewModel: OnboardingViewModel
 
+    /// The button's width; the default is half the screen.
     var width: CGFloat?
+    /// The button's height; the default is 6% of the screen.
     var height: CGFloat?
 
+    /// The house's share. The button stays gray until it exists.
     @Binding var share: CKShare?
+    /// The invite link, set when it is created.
     @Binding var shareURL: URL?
+    /// Opens the share sheet once the link is ready.
     @Binding var showSheet: Bool
 
+    /// `true` while the link is being created.
     @State private var isLoading = false
 
     // `width`/`height` shadow the View extension's properties of the same
     // name, so casting to `any View` is needed to reach the extension's
     // default (screen-based) value when no override was passed in.
+    /// ``width`` or the default.
     private var resolvedWidth: CGFloat { width ?? (self as any View).width * 0.5 }
+    /// ``height`` or the default.
     private var resolvedHeight: CGFloat { height ?? (self as any View).height * 0.06 }
 
     var body: some View {
         
+        // MARK: - Creates the link, then opens the share sheet
         Button {
             Task {
                 guard let share = share else { return }
@@ -45,6 +56,7 @@ struct ShareHouseButton: View {
                 isLoading = false
             }
         } label: {
+            // MARK: - Label: spinner or text, in a blue (or gray) capsule
             ZStack {
                 if isLoading {
                     ProgressView().tint(.white)

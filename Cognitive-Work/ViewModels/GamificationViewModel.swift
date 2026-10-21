@@ -37,6 +37,7 @@ final class GamificationViewModel {
     /// Message of the last failed purchase, shown in an alert.
     var alertMessage: String?
 
+    /// The house's rooms, as tabs of the coupon list.
     private(set) var rooms: [RoomModel] = []
 
     /// Whether the first load finished, so the screen can tell "loading" from "empty".
@@ -52,12 +53,15 @@ final class GamificationViewModel {
     @ObservationIgnored
     private var roomKeyByCoupon: [String: String] = [:]
 
+    /// The house data this screen last showed, so it isn't rebuilt when nothing changed.
     @ObservationIgnored
     private var appliedSnapshotID: UUID?
 
+    /// The signed-in member's record inside the house.
     @ObservationIgnored
     private var houseUser: UserModel?
 
+    /// The house's record ID.
     @ObservationIgnored
     private var houseID: CKRecord.ID?
 
@@ -65,6 +69,7 @@ final class GamificationViewModel {
     @ObservationIgnored
     private var latestCycleKey: String?
 
+    /// The reload scheduled after a purchase (see ``catchUpDelay``).
     @ObservationIgnored
     private var refreshTask: Task<Void, Never>?
 
@@ -77,6 +82,7 @@ final class GamificationViewModel {
     @ObservationIgnored
     private var recentPurchases: [String: (coupon: CouponModel, boughtAt: Date)] = [:]
 
+    /// How long a purchase made here overrides what CloudKit returns.
     private static let recentPurchaseWindow: TimeInterval = 120
 
     /// `true` inside Xcode previews, where CloudKit can't run.
@@ -85,8 +91,10 @@ final class GamificationViewModel {
 
     // MARK: - Init
 
+    /// Creates an empty view model; data comes from ``HouseDataStore``.
     init() {}
 
+    /// Creates a view model with fixed data, for previews.
     init(
         previewCoins: Int,
         previewPoints: Int = 0,
@@ -107,6 +115,7 @@ final class GamificationViewModel {
 
     // MARK: - Derived
 
+    /// The room whose coupons are shown.
     var selectedRoom: RoomModel? {
         rooms.first { Self.key(for: $0) == selectedRoomKey }
     }
@@ -117,14 +126,17 @@ final class GamificationViewModel {
         return (couponsByRoom[selectedRoomKey] ?? []).sorted { $0.price < $1.price }
     }
 
+    /// How many coupons `room` has.
     func couponCount(in room: RoomModel) -> Int {
         couponsByRoom[Self.key(for: room)]?.count ?? 0
     }
 
+    /// Whether the member has enough coins for `coupon`.
     func canAfford(_ coupon: CouponModel) -> Bool {
         coins >= coupon.price
     }
 
+    /// How `coupon`'s card looks: available, bought by the member, taken by someone else, and so on.
     func state(of coupon: CouponModel) -> CouponCard.PurchaseState {
         guard let latestCycleKey else { return .available }
         let myID = houseUser?.recordID
@@ -156,11 +168,13 @@ final class GamificationViewModel {
 
     // MARK: - Loading
 
+    /// Loads the screen the first time.
     func setup() async {
         guard !isPreview else { hasLoaded = true; return }
         await load()
     }
 
+    /// Reloads the screen (pull to refresh).
     func refresh() async {
         guard !isPreview else { return }
         await load()
@@ -190,6 +204,7 @@ final class GamificationViewModel {
     /// Wait before the second reload of ``requestRefresh(debounce:catchUp:)``.
     static let catchUpDelay: Duration = .seconds(3)
 
+    /// Reads the house data and settles closed cycles, then fills the screen.
     private func load() async {
         var snapshot = await HouseDataStore.shared.load()
         // Nothing could be loaded yet (not an empty house): keep the screen as is until the next try.
@@ -221,6 +236,7 @@ final class GamificationViewModel {
         if settled > 0 { apply(snapshot) }
     }
 
+    /// Fills the screen from `snapshot`.
     private func apply(_ snapshot: HouseSnapshot) {
         defer { hasLoaded = true }
 

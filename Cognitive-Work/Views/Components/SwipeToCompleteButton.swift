@@ -7,27 +7,34 @@
 
 import SwiftUI
 
-/// A custom interaction component requiring a continuous horizontal drag gesture to trigger.
+/// The "Deslize para concluir" slider: the user drags the round button to the right to complete
+/// a chore. Small vibrations follow the drag and a stronger one confirms it.
 ///
-/// Integrates progressive visual state changes alongside multiple tier haptic feedbacks verifying the intent.
+/// VoiceOver and Voice Control users complete it with a tap instead.
 struct SwipeToCompleteButton: View {
     
+    /// Whether the chore is already done (the button stays at the end).
     var isDone: Bool
     
-    /// Task-enacting closure triggered upon a successful gesture validation.
+    /// Runs when the user completes the swipe.
     var action: () -> Void
+    /// The button's color.
     var color: Color = .black
     
+    /// How far the round button was dragged, in points.
     @State private var dragOffset: CGFloat = 0
     
     /// Tracks which progress "steps" have already fired a haptic during this drag, so each one only fires once per gesture instead of repeatedly.
     @State private var reachedSteps: Set<Int> = []
     
+    /// The control's height.
     private let height: CGFloat = 54
+    /// Space between the round button and the capsule's edge.
     private let circlePadding: CGFloat = 5
     
     /// Progress fractions at which a light "tick" haptic fires during the drag.
     private let progressSteps: [CGFloat] = [0.15, 0.3, 0.45, 0.5, 0.75]
+    /// Fraction of the way the user must drag to complete.
     private let completionThreshold: CGFloat = 0.70
     
     var body: some View {
@@ -38,15 +45,18 @@ struct SwipeToCompleteButton: View {
             let circleOffset = isDone ? maxDrag : dragOffset
             
             ZStack(alignment: .leading) {
+                // MARK: - Track
                 Capsule()
                     .foregroundColor(isDone ? .gray.opacity(0.2) : color.opacity(0.2))
                 
+                // MARK: - Text (fades as the button moves)
                 Text(isDone ? "Tarefa concluida!" : "Deslize para concluir")
                     .foregroundColor(.black)
                     .font(.system(size: 15))
                     .frame(maxWidth: .infinity)
                     .opacity(isDone ? 1.0 : Double(1.0 - (dragOffset / (maxDrag * 0.8))))
                 
+                // MARK: - Round button with the checkmark
                 Circle()
                     .fill(isDone ? .titleGray : color)
                     .frame(width: circleWidth, height: circleWidth)
@@ -59,7 +69,7 @@ struct SwipeToCompleteButton: View {
                     .offset(x: circleOffset)
                     .padding(circlePadding)
                 
-                // MARK: - Gesture
+                // MARK: - Drag gesture
                     .gesture(
                         DragGesture()
                             .onChanged { value in
@@ -72,7 +82,7 @@ struct SwipeToCompleteButton: View {
                                 guard maxDrag > 0 else { return }
                                 let progress = dragOffset / maxDrag
                                 
-                                // MARK: - Hpatics
+                                // MARK: - Haptics along the way
                                 for (index, step) in progressSteps.enumerated() {
                                     if progress >= step && !reachedSteps.contains(index) {
                                         reachedSteps.insert(index)

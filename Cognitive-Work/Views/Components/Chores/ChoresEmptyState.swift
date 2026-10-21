@@ -15,6 +15,7 @@ import SwiftUI
 /// onboarding learns what to do next.
 struct ChoresEmptyState: View {
     
+    /// The empty situations the chores screen can be in.
     enum Kind {
         /// The carousel ("Seu dia"): nothing is scheduled for today.
         case today
@@ -24,8 +25,10 @@ struct ChoresEmptyState: View {
         case filtered
     }
     
+    /// Which empty case is shown.
     let kind: Kind
     
+    /// When on, the mascot and sparkles don't move.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     /// Drives the mascot's gentle float and the sparkles' pulse.
@@ -33,6 +36,7 @@ struct ChoresEmptyState: View {
     
     // MARK: - Copy
     
+    /// The headline of each case.
     private var title: LocalizedStringKey {
         switch kind {
         case .today: "Dia livre por aqui!"
@@ -41,6 +45,7 @@ struct ChoresEmptyState: View {
         }
     }
     
+    /// The explanation of each case.
     private var message: LocalizedStringKey {
         switch kind {
         case .today: "Você não tem tarefas para hoje. Aproveite o descanso ou adicione algo à sua rotina."
@@ -53,8 +58,10 @@ struct ChoresEmptyState: View {
     
     var body: some View {
         VStack(spacing: 28) {
+            // MARK: - Mascot
             mascot
             
+            // MARK: - Title and message
             VStack(spacing: 10) {
                 Text(title)
                     .font(.system(size: 26, weight: .bold))
@@ -76,6 +83,7 @@ struct ChoresEmptyState: View {
     
     // MARK: - Mascot
     
+    /// The piglet over a soft yellow disc, with two sparkles.
     private var mascot: some View {
         ZStack {
             Circle()
@@ -100,6 +108,7 @@ struct ChoresEmptyState: View {
         .padding(.top, 30)
     }
     
+    /// A sparkle that pulses gently.
     private func sparkle(size: CGFloat) -> some View {
         Image(systemName: "sparkle")
             .font(.system(size: size, weight: .bold))
@@ -116,7 +125,9 @@ struct ChoresEmptyState: View {
 
 /// One line pointing at a floating button, drawn like that button.
 private struct ActionHint: View {
+    /// SF Symbol of the button the hint points at.
     let systemImage: String
+    /// The hint's text.
     let text: LocalizedStringKey
     
     /// `true` for the black "+" style, `false` for the light "hand" style.
@@ -124,6 +135,7 @@ private struct ActionHint: View {
     
     var body: some View {
         HStack(spacing: 14) {
+            // MARK: Button-like icon
             ZStack {
                 Circle()
                     .fill(isProminent ? Color.black : Color.white)
@@ -135,6 +147,7 @@ private struct ActionHint: View {
                     .foregroundStyle(isProminent ? Color.white : Color.black)
             }
             
+            // MARK: Hint text
             Text(text)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.titleGray)

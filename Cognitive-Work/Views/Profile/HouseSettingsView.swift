@@ -7,20 +7,33 @@
 
 import SwiftUI
 
+/// The "Ajustes da Casa" screen: invite members, manage rooms, reset the chore division (admin)
+/// and delete the house (admin) or leave it (other members).
 struct HouseSettingsView: View {
+    /// Loads the house and the admin status and runs delete/leave.
     @Bindable var viewModel: HouseEditViewModel
+    /// Shows the "reset the division?" alert.
     @State var showChoreResetConfirmation = false
+    /// Opens the screen that creates a new division (after confirming the reset).
     @State private var isResetting = false
+    /// Shows the "delete the house?" alert.
     @State private var showDeleteConfirmation = false
     
+    /// Shows the blocking overlay while the house is being deleted.
     @State private var isDeletingHouse = false
+    /// Shows the "leave the house?" alert.
     @State private var showLeaveConfirmation = false
+    /// Shows the blocking overlay while leaving the house.
     @State private var isLeavingHouse = false
+    /// Error shown when leaving fails.
     @State private var leaveErrorMessage: String?
+    /// Error shown when deleting fails.
     @State private var deleteErrorMessage: String?
     
+    /// `true` while we still don't know if the user is the admin.
     private var isCheckingAdmin: Bool { !viewModel.isAdminResolved }
     
+    /// Set to `false` after deleting or leaving, which sends the user back to onboarding.
     @AppStorage("didOnboard") private var didOnboard: Bool = true
     
     /// Kept in `@State` so the invite screen keeps one instance (and its polling/share state)
@@ -29,7 +42,7 @@ struct HouseSettingsView: View {
     
     var body: some View {
         VStack(spacing: 30) {
-            // MARK: - Add roomates button
+            // MARK: - Add roommates button
             NavigationLink {
                 InviteAndWaitUsersFreeTimeOnboardingView(viewModel: $inviteViewModel, isFromSettings: true)
                     .padding(.bottom, 30)
@@ -63,6 +76,7 @@ struct HouseSettingsView: View {
             .buttonStyle(.plain)
             .padding(.horizontal)
             
+            // MARK: - Spinner while checking admin status
             if isCheckingAdmin {
                 ProgressView()
                     .frame(maxWidth: .infinity)
@@ -117,6 +131,7 @@ struct HouseSettingsView: View {
         .navigationTitle("Ajustes da Casa")
         .navigationBarTitleDisplayMode(.inline)
         .hidesTabBar()
+        // MARK: - Delete and leave alerts
         .alert("Excluir Casa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {
@@ -162,6 +177,7 @@ struct HouseSettingsView: View {
         } message: {
             Text(leaveErrorMessage ?? "")
         }
+        // MARK: - Blocking overlays and admin check
         .blockingOperation(isPresented: $isLeavingHouse, message: "Saindo da casa...")
         .blockingOperation(isPresented: $isDeletingHouse, message: "Excluindo sua casa...")
         .task {
@@ -179,6 +195,7 @@ struct HouseSettingsView: View {
         } message: {
             Text(deleteErrorMessage ?? "")
         }
+        // MARK: - Reset division alert and new division screen
         .alert("Deseja reiniciar a divisão de tarefas?", isPresented: $showChoreResetConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Reiniciar", role: .destructive) {
@@ -194,7 +211,6 @@ struct HouseSettingsView: View {
         }
     }
     
-    // MARK: - Helpers
 }
 
 #Preview {

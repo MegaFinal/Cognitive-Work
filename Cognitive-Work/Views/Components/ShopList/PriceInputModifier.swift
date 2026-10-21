@@ -16,10 +16,13 @@ extension View {
     }
 }
 
+/// Keeps a text field's text formatted as a price while the user types. See ``SwiftUI/View/priceInput(text:)``.
 private struct PriceInputModifier: ViewModifier {
 
+    /// The field's text.
     @Binding var text: String
 
+    /// Number pad, and reformats the text on every change.
     func body(content: Content) -> some View {
         content
             .keyboardType(.numberPad)

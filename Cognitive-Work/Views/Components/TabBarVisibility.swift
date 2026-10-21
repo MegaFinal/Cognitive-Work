@@ -25,15 +25,19 @@ final class TabBarVisibilityController {
     /// Used both when the bar comes back and on the tab root, so the two never disagree.
     static let animation: Animation = .easeOut(duration: 0.15)
     
+    /// Whether the tab bar shows right now.
     private(set) var visibility: Visibility = .visible
     
+    /// How many pushed screens that hide the bar are on screen.
     private var hidingScreens = 0
     
+    /// Call when a screen that hides the bar appears.
     func hidingScreenDidAppear() {
         hidingScreens += 1
         visibility = .hidden
     }
     
+    /// Call when a screen that hides the bar disappears; the bar comes back after the last one.
     func hidingScreenDidDisappear() {
         hidingScreens = max(hidingScreens - 1, 0)
         guard hidingScreens == 0 else { return }
@@ -47,8 +51,10 @@ final class TabBarVisibilityController {
 /// Applies the controller's visibility to the tab bar. Goes on the root view of each tab's
 /// `NavigationStack`.
 private struct TabBarVisibilityRoot: ViewModifier {
+    /// The shared controller, if the app provides one.
     @Environment(TabBarVisibilityController.self) private var controller: TabBarVisibilityController?
     
+    /// Applies the controller's visibility, animated.
     func body(content: Content) -> some View {
         let visibility = controller?.visibility ?? .automatic
         
@@ -65,8 +71,10 @@ private struct TabBarVisibilityRoot: ViewModifier {
 /// Only the tab root decides the visibility. Without a ``TabBarVisibilityController`` in the
 /// environment (onboarding, previews) it falls back to plainly hiding the bar.
 private struct HidesTabBar: ViewModifier {
+    /// The shared controller, if the app provides one.
     @Environment(TabBarVisibilityController.self) private var controller: TabBarVisibilityController?
     
+    /// Reports appearing and disappearing to the controller (or simply hides the bar without one).
     @ViewBuilder
     func body(content: Content) -> some View {
         if let controller {

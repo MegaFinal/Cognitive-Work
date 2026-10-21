@@ -7,13 +7,18 @@
 
 import SwiftUI
 
+/// The pop-up shown to the admin when a new member joins the house, offering to divide the
+/// chores again now or later.
 struct NewUserPopUp: View {
+    /// Runs on "Divisão automática de tarefas".
     var onPress: () -> Void
+    /// Runs on "Dividir mais tarde".
     var onDismiss: () -> Void
     
     var body: some View {
         VStack (alignment: .leading) {
             
+            // MARK: - Icon
             HStack {
                 Spacer()
                 Image(systemName: "person.circle")
@@ -25,6 +30,7 @@ struct NewUserPopUp: View {
                 Spacer()
             }
         
+                // MARK: - Title and explanation
                 Text("Um novo morador entrou na casa!")
                     .font(.title)
                     .bold()
@@ -37,6 +43,7 @@ struct NewUserPopUp: View {
                     .multilineTextAlignment(.leading)
                     .padding(.bottom, 32)
             
+            // MARK: - Actions: divide now or later
             Button {
                 onPress()
             } label: {

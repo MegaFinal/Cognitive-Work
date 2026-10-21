@@ -10,36 +10,56 @@ import CloudKit
 
 /// Which action ``ShopListItemFormView`` performs on confirm.
 enum ShopListItemFormMode {
+    /// Adds a new item.
     case create
+    /// Edits (or deletes) this item.
     case edit(ShopListItem)
 }
 
-/// The sheet used to add a shopping item or edit an existing one.
+/// The sheet used to add a shopping item or edit an existing one: name, category, quantity and
+/// unit, an optional price and who it's for. When editing it can also delete the item.
 struct ShopListItemFormView: View {
 
+    /// Whether it creates a new item or edits one.
     var mode: ShopListItemFormMode
+    /// The members that can be picked as who the item is for.
     var availableUsers: [UserModel]
+    /// The signed-in member, saved as who added the item.
     var currentUser: UserModel?
+    /// Saves and deletes the item.
     var viewModel: ShopListViewModel
 
+    /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The item's name being typed.
     @State private var name: String = ""
+    /// The chosen category.
     @State private var category: ShopItemCategory = .default
+    /// How many.
     @State private var quantity: Int = 1
+    /// The unit (unit, kg, liter, ...).
     @State private var unitMeasurement: UnitMeasurement = .unit
+    /// The price per unit as typed (optional).
     @State private var valueText: String = ""
+    /// Who the item is for (they split the cost).
     @State private var relatedUsers: [UserModel] = []
+    /// `true` while saving or deleting (locks the form).
     @State private var isSaving = false
+    /// Error shown when saving or deleting fails.
     @State private var saveErrorMessage: String?
+    /// Shows the "delete item?" dialog.
     @State private var isConfirmingDelete = false
+    /// Focuses the name field when adding a new item.
     @FocusState private var isNameFocused: Bool
 
+    /// Whether the sheet edits an existing item.
     private var isEditing: Bool {
         if case .edit = mode { return true }
         return false
     }
 
+    /// The name without spaces at the ends.
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -55,6 +75,7 @@ struct ShopListItemFormView: View {
         )
     }
 
+    /// Whether a price above zero was typed.
     private var hasPrice: Bool {
         (Double(valueText.replacingOccurrences(of: ",", with: ".")) ?? 0) > 0
     }
@@ -71,6 +92,7 @@ struct ShopListItemFormView: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 26) {
+                    // MARK: - Form sections
                     header
 
                     validationWarning
@@ -101,6 +123,7 @@ struct ShopListItemFormView: View {
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(isEditing ? "Editar item" : "Novo item")
             .navigationBarTitleDisplayMode(.inline)
+            // MARK: - Toolbar: close and confirm
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -140,6 +163,7 @@ struct ShopListItemFormView: View {
         }
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(isSaving)
+        // MARK: - Loading, VoiceOver warnings, delete dialog and error alert
         .task {
             populateFromMode()
             if !isEditing { isNameFocused = true }
@@ -294,6 +318,7 @@ struct ShopListItemFormView: View {
         )
     }
 
+    /// The price field.
     private var priceField: some View {
         HStack(spacing: 10) {
             Image(systemName: "tag")
@@ -316,6 +341,7 @@ struct ShopListItemFormView: View {
         )
     }
 
+    /// The "Excluir item" button (edit mode only).
     private var deleteButton: some View {
         Button(role: .destructive) {
             isConfirmingDelete = true
@@ -349,6 +375,7 @@ struct ShopListItemFormView: View {
         }
     }
 
+    /// Saves the item; closes the sheet on success or shows the error.
     private func save() async {
         isSaving = true
         defer { isSaving = false }
@@ -377,6 +404,7 @@ struct ShopListItemFormView: View {
         }
     }
 
+    /// Deletes the item; closes the sheet on success or shows the error.
     private func deleteItem() async {
         guard case .edit(let item) = mode else { return }
         isSaving = true

@@ -5,13 +5,20 @@
 //  Created by Isabela Hissa Pinto on 25/08/26.
 //
 
+/// Errors that can happen while the app talks to the external device (the ESP32 "Harvii") over the local network.
 enum APIErrors: String, Error {
+    /// The data to send could not be turned into JSON.
     case unableToEncode
+    /// The device address (IP) could not be turned into a valid URL.
     case invalidURL
+    /// The device answered, but not with a successful HTTP response.
     case invalidResponse
+    /// The device answered with data in an unexpected format.
     case invalidData
+    /// Something failed and the cause is not known.
     case unknownError
     
+    /// A short, user-facing message for the error, already translated.
     var errorDescription: String? {
         switch self {
         case .invalidURL:      return L10n.tr("Não foi possível encontrar o dispositivo externo. Confira o IP.")

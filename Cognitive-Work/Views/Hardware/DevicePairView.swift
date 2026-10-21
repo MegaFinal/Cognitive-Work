@@ -9,7 +9,9 @@ import SwiftUI
 
 /// Pairs the phone with the device using the IP shown on its screen.
 struct DevicePairView: View {
+    /// The device connection's view model.
     @Bindable var hardwareViewModel: HardwareViewModel
+    /// Shows the "Celular desconectado" alert.
     @State private var disconectThisPhone = false
     
     /// Closes the whole sheet, not just this step.
@@ -18,6 +20,7 @@ struct DevicePairView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .center, spacing: 32) {
+                // MARK: - Title and instructions
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Parear dispositivo")
                         .font(.largeTitle)
@@ -31,6 +34,7 @@ struct DevicePairView: View {
                 
                 Spacer()
                 
+                // MARK: - "Parear" button
                 OnboardingProgressButton(
                     text: "Parear",
                     isLoading: hardwareViewModel.isPairing,
@@ -39,6 +43,7 @@ struct DevicePairView: View {
                     await hardwareViewModel.pair()
                 }
                 
+                // MARK: - "Desconectar este celular"
                 Button("Desconectar este celular") {
                     hardwareViewModel.disconnectThisPhone()
                     disconectThisPhone = true
@@ -58,6 +63,7 @@ struct DevicePairView: View {
         .onChange(of: hardwareViewModel.isPairing) { _, isPairing in
             if isPairing { VoiceOver.announce(L10n.tr("Pareando com o Harvii…")) }
         }
+        // MARK: - Pairing result alert
         .alert(
             hardwareViewModel.conectionResult?.title ?? "",
             isPresented: Binding(
@@ -74,6 +80,7 @@ struct DevicePairView: View {
         }
         .dismissKeyboardOnTap()
         
+        // MARK: - Disconnected alert
         .alert("Celular desconectado.", isPresented: $disconectThisPhone) {
             Button("OK") { onClose() }
         } message: {

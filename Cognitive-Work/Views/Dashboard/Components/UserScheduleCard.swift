@@ -102,6 +102,7 @@ struct UserScheduleCard: View {
         // Figma (iPhone 16): card 361 × 476, padding 16 top/bottom and 8 on the sides,
         // 12 between title, chart and legend.
         VStack(alignment: .leading, spacing: designHeight(12)) {
+            // MARK: - Title, chart and room legend
             header
             
             chart
@@ -121,6 +122,7 @@ struct UserScheduleCard: View {
     
     // MARK: Subviews
     
+    /// The card's title.
     private var header: some View {
         HStack(alignment: .top) {
             Text("Sua divisão atual")
@@ -132,6 +134,7 @@ struct UserScheduleCard: View {
         }
     }
     
+    /// The scrollable chart: one column per day, sized to fill the space left in the card.
     private var chart: some View {
         let calendar = Calendar.current
         let firstDay = calendar.startOfDay(for: startDate)
@@ -203,12 +206,16 @@ private struct ScheduleDayColumn: View {
     /// Width of the column; the bar uses most of it.
     let columnWidth: CGFloat
     
+    /// The resident shown in the popover.
     let user: UserModel?
+    /// Finds the chore of an entry.
     let chore: (DailyUsageEntry) -> ChoreModel?
+    /// Finds the room of a chore.
     let room: (ChoreModel) -> RoomModel?
     
     var body: some View {
         VStack(spacing: UserScheduleCard.labelToBarsSpacing) {
+            // MARK: - Weekday label
             Text(weekdayText)
                 .font(.system(size: 16.35, weight: .medium))
                 .frame(height: UserScheduleCard.weekdayLabelHeight)
@@ -219,6 +226,7 @@ private struct ScheduleDayColumn: View {
                         : L10n.tr("%lld tarefas", entries.count)
                 )
             
+            // MARK: - The day's bars
             VStack(spacing: UserScheduleCard.barSpacing) {
                 ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
                     bar(for: entry)
@@ -373,6 +381,7 @@ private struct RoomScheduleCaption: View {
     /// Rooms to list.
     let rooms: [RoomModel]
     
+    // MARK: - Room dots and names
     var body: some View {
         LazyVGrid(
             columns: [GridItem(.adaptive(minimum: 90), alignment: .leading)],

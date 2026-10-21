@@ -10,13 +10,16 @@ import SwiftUI
 /// A filled circle that is "eaten" clockwise from the top, like a pie chart.
 /// `progress` is the fraction already removed (0 = full circle, 1 = nothing left).
 struct PieSlice: Shape {
+    /// Fraction of the circle already removed, from `0` to `1`.
     var progress: Double
 
+    /// Lets SwiftUI animate ``progress``.
     var animatableData: Double {
         get { progress }
         set { progress = newValue }
     }
 
+    /// What's left of the circle, as a pie slice.
     func path(in rect: CGRect) -> Path {
         let removed = min(max(progress, 0), 1)
         guard removed < 1 else { return Path() }

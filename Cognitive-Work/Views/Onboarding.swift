@@ -26,6 +26,7 @@ struct Onboarding: View {
     var body: some View {
         ZStack {
             Group {
+                // MARK: - Spinner while restoring, otherwise the current step
                 if viewModel.isRestoringSession && viewModel.stateMachine.index > 0 {
                     ProgressView()
                         .controlSize(.large)
@@ -36,6 +37,7 @@ struct Onboarding: View {
                     }
                 }
             }
+                // MARK: - End of onboarding and VoiceOver
                 .onChange(of: viewModel.isOnboardingSkipped) {
                     didOnboard = true
                 }
@@ -43,6 +45,7 @@ struct Onboarding: View {
                 .onChange(of: viewModel.stateMachine.index) {
                     VoiceOver.screenChanged()
                 }
+                // MARK: - Invite acceptance (moves an invited user into their flow)
                 .onReceive(NotificationCenter.default.publisher(for: .willAcceptShare)) { _ in
                     guard viewModel.stateMachine.flow != .houseCreator else { return }
                     viewModel.isAcceptingInvite = true
@@ -82,6 +85,7 @@ struct Onboarding: View {
                 }
         }
         .blockingWhileUnlinkingOrphanedHouse()
+        // MARK: - Account check and restoring the saved step
         .task {
             await viewModel.checkExistingAccount()
 

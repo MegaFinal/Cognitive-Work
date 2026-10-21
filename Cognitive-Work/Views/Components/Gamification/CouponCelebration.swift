@@ -26,9 +26,11 @@ struct CouponCelebration: View {
     /// Seconds from the start to the last piece fading out.
     static let duration: Double = 3
 
+    /// The shape of a piece.
     private enum Kind {
         case strip, dot, star, symbolStar, sparkle, heart
 
+        /// The SF Symbol for symbol pieces, or `nil` for pieces drawn by hand.
         var symbolName: String? {
             switch self {
             case .symbolStar: return "star.fill"
@@ -39,15 +41,20 @@ struct CouponCelebration: View {
         }
     }
 
+    /// Where a piece is thrown from.
     private enum Start {
         case burst, bottomLeading, bottomTrailing
         /// Above the top edge, at this fraction of the width.
         case top(Double)
     }
 
+    /// One piece of confetti and how it moves.
     private struct Piece {
+        /// Its shape.
         let kind: Kind
+        /// Index into ``colors``.
         let color: Int
+        /// Where it starts.
         let start: Start
         /// Initial velocity, points per second.
         let velocity: CGVector
@@ -55,22 +62,31 @@ struct CouponCelebration: View {
         let gravity: Double
         /// Side-to-side drift while falling: amplitude (points) and frequency (radians per second).
         let sway: Double
+        /// How fast it drifts side to side.
         let swayRate: Double
         /// Radians per second.
         let spin: Double
         /// How fast it flips around its vertical axis.
         let flutter: Double
+        /// Its size, in points.
         let size: Double
+        /// Seconds before it appears.
         let delay: Double
+        /// Seconds it stays on screen after appearing.
         let lifetime: Double
     }
 
+    /// Every piece of the celebration, made once in ``launch()``.
     @State private var pieces: [Piece] = []
+    /// When the celebration started.
     @State private var start = Date.now
+    /// Stops the timeline once the celebration is over.
     @State private var isRunning = true
+    /// This view's frame on screen, to turn ``burstCenter`` into local points.
     @State private var globalFrame: CGRect = .zero
 
     var body: some View {
+        // MARK: - Draws every piece on each frame
         TimelineView(.animation(minimumInterval: nil, paused: !isRunning)) { timeline in
             let elapsed = timeline.date.timeIntervalSince(start)
             Canvas { context, size in
@@ -82,6 +98,7 @@ struct CouponCelebration: View {
                 }
             }
         }
+        // MARK: - Full screen, no touches, no VoiceOver
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { globalFrame = $0 }
         .allowsHitTesting(false)
@@ -91,6 +108,7 @@ struct CouponCelebration: View {
 
     // MARK: - Drawing
 
+    /// The point a piece is thrown from.
     private func position(of start: Start, burst: CGPoint, size: CGSize) -> CGPoint {
         switch start {
         case .burst: return burst
@@ -100,6 +118,7 @@ struct CouponCelebration: View {
         }
     }
 
+    /// Draws one piece at `time` seconds after it appeared (moves, spins, flutters and fades it).
     private func draw(_ piece: Piece, at time: Double, burst: CGPoint, size: CGSize, in context: GraphicsContext) {
         guard time > 0, time < piece.lifetime, !colors.isEmpty else { return }
 
@@ -135,6 +154,7 @@ struct CouponCelebration: View {
 
     // MARK: - Launching
 
+    /// Creates all the pieces and starts the animation; stops it after ``duration``.
     private func launch() {
         var all: [Piece] = []
 
@@ -184,6 +204,7 @@ struct CouponCelebration: View {
         }
     }
 
+    /// Creates one piece with a random shape, color, spin and size.
     private func piece(
         start: Start,
         velocity: CGVector,

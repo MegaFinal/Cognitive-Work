@@ -7,16 +7,24 @@
 
 import SwiftUI
 
-/// Defines chronological pattern constraints assigned to repeatable chore data points.
+/// How often a chore repeats.
+///
+/// The raw value is the Portuguese name, kept stable because it is saved; show ``displayName`` instead.
 enum Recurrence: String, CaseIterable, Hashable {
+    /// No frequency was chosen.
     case undefined = "indefinida"
+    /// Happens only once.
     case none = "sem recorrencia"
+    /// Every day.
     case daily = "diaria"
+    /// Once a week.
     case weekly = "semanal"
+    /// Once every two weeks (once per cycle).
     case fortnightly = "quinzenal"
+    /// Once a month (every other cycle).
     case monthly = "mensal"
     
-    /// Layout schema applying unique visual signatures per recurring timeframe constraint.
+    /// The background color of the frequency tag.
     var color: Color {
         switch self {
         case .undefined: return .gray
@@ -28,6 +36,7 @@ enum Recurrence: String, CaseIterable, Hashable {
         }
     }
     
+    /// The text color of the frequency tag.
     var textColor: Color {
         switch self {
         case .undefined: return .gray
@@ -39,6 +48,7 @@ enum Recurrence: String, CaseIterable, Hashable {
         }
     }
     
+    /// Points a chore of this frequency adds to its score (rarer chores give more points).
     var scoreValue: Int {
         switch self {
         case .undefined:
@@ -56,6 +66,7 @@ enum Recurrence: String, CaseIterable, Hashable {
         }
     }
     
+    /// The frequency's name shown to the user, translated.
     var displayName: String {
         switch self {
         case .none: return L10n.tr("única")

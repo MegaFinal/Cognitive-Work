@@ -11,16 +11,21 @@ import CloudKit
 /// A named shopping list belonging to a house, holding a collection of ``ShopListItem`` entries.
 @Observable
 class ShopListModel: CloudKitSyncable, Identifiable {
+    /// Identifier used before the list is saved (when it has no `recordID`).
     private let localID = UUID().uuidString
 
+    /// Identifier for SwiftUI lists: the record name once saved, a local ID before that.
     var id: String {
         recordID?.recordName ?? localID
     }
 
+    /// The CloudKit record type.
     static var recordType: String = "ShopListModel"
 
+    /// The CloudKit record ID. `nil` until the model is saved.
     var recordID: CKRecord.ID?
 
+    /// The list's name.
     var name: String
 
     /// Legacy: the list used to keep an array of references to its items.
@@ -46,6 +51,7 @@ class ShopListModel: CloudKitSyncable, Identifiable {
             .sorted { $0.createdAt < $1.createdAt }
     }
 
+    /// The house this list belongs to, fetched from CloudKit. `nil` if not set or not found.
     var house: HouseModel? {
         get async {
             if let houseReference {
@@ -74,7 +80,9 @@ class ShopListModel: CloudKitSyncable, Identifiable {
     ///
     /// - Parameters:
     ///   - name: Name shown to the user.
-    ///   - items: Items already known to belong to this list.
+    ///   - items: Legacy references to the list's items (new items are linked by parent instead).
+    ///   - house: The owning house.
+    ///   - recordID: The record ID to use, when it is already known.
     ///   - house: The owning house.
     init(
         name: String,

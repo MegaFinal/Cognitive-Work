@@ -11,17 +11,22 @@ import SwiftUI
 /// every past cycle (``RankHistoryModel``), most recent first.
 struct RankHistoryView: View {
 
+    /// The user's points in the current cycle, or `nil` before loading.
     @State private var points: Int?
+    /// Past cycles, most recent first.
     @State private var entries: [RankHistoryModel] = []
+    /// Whether the first load finished.
     @State private var hasLoaded = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
+                // MARK: - Current rank card
                 if let points {
                     currentRankCard(points: points)
                 }
 
+                // MARK: - Past cycles
                 Text("Ciclos anteriores")
                     .font(.system(size: 20))
                     .fontWeight(.bold)
@@ -51,6 +56,7 @@ struct RankHistoryView: View {
         .task(id: CloudKitManager.shared.dataRevision) { await load() }
     }
 
+    /// Loads the current points (from the server) and the history.
     private func load() async {
         defer { hasLoaded = true }
         guard let user = await CloudKitManager.shared.currentHouseUser(),
@@ -63,6 +69,7 @@ struct RankHistoryView: View {
 
     // MARK: - Current rank
 
+    /// The current rank: its icon and name, and the progress to the next one.
     private func currentRankCard(points: Int) -> some View {
         let progress = Tier.progress(forPoints: points)
         return HStack(spacing: 16) {
@@ -107,6 +114,7 @@ struct RankHistoryView: View {
 
     // MARK: - History row
 
+    /// One past cycle: rank icon and name, the cycle's dates, and its points.
     private func row(_ entry: RankHistoryModel) -> some View {
         HStack(spacing: 12) {
             Image(entry.tier.imageName)
@@ -141,6 +149,7 @@ struct RankHistoryView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The cycle's dates, e.g. "28 de set. – 11 de out.".
     private func cycleText(_ entry: RankHistoryModel) -> String {
         let style = Date.FormatStyle(date: .abbreviated, time: .omitted).locale(L10n.locale)
         return "\(entry.cycleStart.formatted(style)) – \(entry.cycleEnd.formatted(style))"

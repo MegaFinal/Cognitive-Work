@@ -22,6 +22,7 @@ import Foundation
 /// let invalid = unit.convert(2, to: .liter)                // nil
 /// ```
 enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
+    /// No unit was chosen.
     case undefined
     
     /// Grams, used for small amounts of powder or solid products.
@@ -56,6 +57,7 @@ enum UnitMeasurement: String, CaseIterable, Identifiable, Codable {
     ///
     /// Conversions are only defined between units of the same dimension.
     enum Dimension: String, CaseIterable, Codable {
+        /// No unit was chosen, so nothing can be converted.
         case undefined
         
         /// Units measuring weight, such as grams and kilograms.

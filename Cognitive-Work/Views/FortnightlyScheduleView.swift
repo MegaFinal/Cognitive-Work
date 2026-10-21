@@ -8,18 +8,26 @@
 import SwiftUI
 import CloudKit
 
-// Main schedule view: display `WaitingAlgorithmView` while loading, and `FortnightlyView` when running.
+/// The division screen: shows ``WaitingAlgorithmView`` while the chores are being divided,
+/// then the result in ``FortnightlyView`` with an info pop-up and a confirm button.
 struct FortnightlyScheduleView: View {
+    /// Loads (or creates) the division.
     @State private var scheduleViewModel: ScheduleViewModel
+    /// Shows the pop-up that explains the division.
     @State private var showInfoPopUp = false
     
+    /// `true` creates a new division; `false` only shows the current one.
     let shouldGenerate: Bool
+    /// Called when the user confirms the division.
     let action: () -> Void
     
+    /// Creates the screen.
     /// - Parameters:
+    ///   - shouldGenerate: `true` creates a new division; `false` only shows the current one.
     ///   - scheduleViewModel: Pre-filled data (e.g. for previews). `nil` loads from CloudKit.
     ///   - knownChoreIDs: Chores saved just before this screen (onboarding) that a CloudKit
     ///     query may not return yet; they're read by ID so the division includes them.
+    ///   - action: Called when the user confirms the division.
     init(
         shouldGenerate: Bool,
         scheduleViewModel: ScheduleViewModel? = nil,
@@ -41,6 +49,7 @@ struct FortnightlyScheduleView: View {
     
     var body: some View {
         Group {
+            // MARK: - Waiting screen, then the division
             if scheduleViewModel.isLoading {
                 WaitingAlgorithmView()
             } else {
@@ -56,6 +65,7 @@ struct FortnightlyScheduleView: View {
                 }
             }
         }
+        // MARK: - Confirm button (hidden while loading or with the pop-up open)
         .toolbar {
             // Not just disabled: while the division is generated or the info pop-up is up,
             // the bar must stay empty.
@@ -76,6 +86,7 @@ struct FortnightlyScheduleView: View {
                 }
             }
         }
+        // MARK: - Layout, info pop-up and loading
         .navigationBarBackButtonHidden(hidesNavigationBarItems)
         .hidesTabBar()
         .padding(.top, 40)
@@ -86,7 +97,7 @@ struct FortnightlyScheduleView: View {
         .task {
             await scheduleViewModel.loadSchedule(shouldGenerate: shouldGenerate)
         }
-        // Says how the division ended once the waiting screen goes away.
+        // MARK: - VoiceOver: says how the division ended once the waiting screen goes away
         .onChange(of: scheduleViewModel.isLoading) { _, isLoading in
             guard !isLoading else { return }
             if let error = scheduleViewModel.errorMessage {
@@ -98,6 +109,7 @@ struct FortnightlyScheduleView: View {
         .onChange(of: showInfoPopUp) { VoiceOver.screenChanged() }
     }
     
+    /// The info pop-up over a dark background.
     @ViewBuilder
     private var infoPopUpOverlay: some View {
         if showInfoPopUp {

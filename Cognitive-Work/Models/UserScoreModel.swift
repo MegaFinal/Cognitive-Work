@@ -25,18 +25,24 @@ import CloudKit
 /// records on every load.
 struct UserScoreModel: CloudKitSyncable, Equatable {
 
+    /// The CloudKit record type.
     static var recordType: String = "UserScoreModel"
 
+    /// The CloudKit record ID (`score-<owner>`). `nil` until the model is saved.
     var recordID: CKRecord.ID?
 
+    /// The iCloud identity of the person (``UserModel/ownerRecordName``) this score belongs to.
     var ownerRecordName: String
+    /// The person's points in the current cycle.
     var points: Int
 
+    /// Creates a new score, not saved yet.
     init(ownerRecordName: String, points: Int) {
         self.ownerRecordName = ownerRecordName
         self.points = points
     }
 
+    /// Creates the model from a CloudKit record. Returns `nil` when a field is missing.
     init?(record: CKRecord) {
         guard
             let ownerRecordName = record["ownerRecordName"] as? String,
@@ -48,6 +54,7 @@ struct UserScoreModel: CloudKitSyncable, Equatable {
         self.points = points
     }
 
+    /// Copies the model's fields into `record`, before saving it.
     func populate(record: CKRecord) {
         record["ownerRecordName"] = ownerRecordName
         record["points"] = points
@@ -55,6 +62,7 @@ struct UserScoreModel: CloudKitSyncable, Equatable {
 
     // MARK: - Identity
 
+    /// The fixed record ID of the score of `ownerRecordName` in the house zone `zoneID`.
     static func recordID(ownerRecordName: String, zoneID: CKRecordZone.ID) -> CKRecord.ID {
         CKRecord.ID(recordName: "score-\(ownerRecordName)", zoneID: zoneID)
     }

@@ -12,18 +12,25 @@ import SwiftUI
 /// The slots are ordered: the first ones are the most prominent, so more points just reveal more slots.
 /// Use it as an `.overlay` of the pig image so the slots are relative to the pig's center.
 struct RetroCoinsScatter: View {
+    /// How many coins to show (at most ``maxCount``).
     let count: Int
 
+    /// Starts `false` and turns `true` on appear, so each coin pops in.
     @State private var isShown = false
 
     /// Offsets and sizes are fractions of the screen width, relative to the pig's center.
     private struct Slot {
+        /// Horizontal offset.
         let x: CGFloat
+        /// Vertical offset.
         let y: CGFloat
+        /// The coin's width.
         let size: CGFloat
+        /// The coin's tilt, in degrees.
         let rotation: Double
     }
 
+    /// Every coin position, most prominent first.
     private static let slots: [Slot] = [
         Slot(x: 0.24, y: -0.34, size: 0.26, rotation: 10),   // big, top right
         Slot(x: -0.26, y: -0.20, size: 0.16, rotation: -12), // small, left
@@ -32,10 +39,12 @@ struct RetroCoinsScatter: View {
         Slot(x: -0.38, y: -0.02, size: 0.08, rotation: 15)
     ]
 
+    /// The most coins that can be shown.
     static var maxCount: Int { slots.count }
 
     var body: some View {
         ZStack {
+            // MARK: - Coins, each in its slot, popping in one after another
             ForEach(Array(Self.slots.prefix(count).enumerated()), id: \.offset) { index, slot in
                 Image("RetroCoin")
                     .resizable()

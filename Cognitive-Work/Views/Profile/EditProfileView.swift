@@ -8,8 +8,11 @@
 import SwiftUI
 import PhotosUI
 
+/// The "Editar Perfil" screen: change the photo, banner and name, then save with ✓.
 struct EditProfileView: View {
+    /// The profile tab's view model (holds the edits).
     @Bindable var viewModel: UserProfileViewModel
+    /// Closes the screen after saving.
     @Environment(\.dismiss) private var dismiss
     
     /// Whether the banner picker sheet is open.
@@ -17,7 +20,7 @@ struct EditProfileView: View {
     
     var body: some View {
         VStack(spacing: 40) {
-            // MARK: - Photo + banner
+            // MARK: - Photo and banner
             EditableProfileImage(
                 image: viewModel.displayedImageData.flatMap(UIImage.init(data:)),
                 isEditing: true,
@@ -27,7 +30,7 @@ struct EditProfileView: View {
             )
             .disabled(viewModel.isSaving)
             
-            // MARK: - Name Textfield
+            // MARK: - Name field
             HStack {
                 Spacer()
                 TextField(
@@ -56,6 +59,7 @@ struct EditProfileView: View {
         .onChange(of: viewModel.isSaving) { _, isSaving in
             if isSaving { VoiceOver.announce(L10n.tr("Salvando")) }
         }
+        // MARK: - Banner picker
         .sheet(isPresented: $isPickingBanner) {
             ProfileBannerSheet(
                 banner: viewModel.editedBanner,
@@ -71,7 +75,7 @@ struct EditProfileView: View {
             viewModel.startEditing()
         }
         .dismissKeyboardOnTap()
-        // MARK: - Success Feedback
+        // MARK: - Success toast
         .overlay(alignment: .top) {
             if viewModel.didSaveSuccessfully {
                 SuccessToast(text: "Perfil atualizado")
@@ -91,7 +95,7 @@ struct EditProfileView: View {
             }
         }
         .toolbar {
-            // MARK: - Save Button
+            // MARK: - Save button
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     Task {
@@ -111,7 +115,7 @@ struct EditProfileView: View {
             }
         }
         .hidesTabBar()
-        // MARK: - Error Alert
+        // MARK: - Error alert
         .alert(
             "Erro ao salvar",
             isPresented: Binding(
@@ -130,6 +134,7 @@ struct EditProfileView: View {
 
 /// A small confirmation pill shown briefly over ``EditProfileView`` after a successful save.
 private struct SuccessToast: View {
+    /// The toast's text.
     let text: LocalizedStringKey
 
     var body: some View {

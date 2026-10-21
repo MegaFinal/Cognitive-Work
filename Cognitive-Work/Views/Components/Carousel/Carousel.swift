@@ -7,16 +7,23 @@
 
 import SwiftUI
 
-/// Carousel Component with custom swipe, focus and flip gestures and animations
-/// `Apply this component on a ZStack bellow the rest of the view's content`
+/// The chores carousel: cards on a circle that the user swipes, taps to open and flips to see
+/// the details. Shows the empty state when there is nothing for today.
+///
+/// Put it in a `ZStack`, below the rest of the screen's content.
 struct Carousel: View {
+    /// The chores screen's view model (cards, focus, drag and geometry).
     @Bindable var viewModel: CarouselViewModel
+    /// When `true`, no white layer is drawn behind the cards (so tapping the background doesn't close a card).
     var isBackgroundClear: Bool
+    /// Runs on a pull-down (switches to the list).
     let onSwipeDown: () -> Void
+    /// Shared namespace for the cards' matched-geometry animations.
     let namespace: Namespace.ID
     
     var body: some View {
         ZStack {
+            // MARK: - Background that closes the open card when tapped
             // Clearing the focus state by tapping the empty space
             if !isBackgroundClear {
                 Color.white
@@ -25,12 +32,14 @@ struct Carousel: View {
                     }
             }
             
+            // MARK: - Empty state
             if viewModel.visibleChores.isEmpty {
                 ChoresEmptyState(kind: .today)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .contentShape(Rectangle())
             }
             else {
+                // MARK: - Cards near the center, placed on the circle
                 ForEach(Array(viewModel.visibleChores.enumerated())
                     .filter { abs(viewModel.distance($0.offset)) < 2.5 }, id: \.element.id) { index, chore in
                     CarouselCardFrame(
@@ -61,6 +70,7 @@ struct Carousel: View {
                     // only the opened card's details are exposed as separate elements.
                     .accessibilityHidden(!viewModel.isFocused(index))
                 }
+                // MARK: - Swipe to rotate the carousel
                 .gesture(
                     DragGesture()
                         .onChanged { value in
@@ -73,6 +83,7 @@ struct Carousel: View {
             }
         }
         .frame(maxWidth: .infinity)
+        // MARK: - Pull down to switch to the list
         .onPullDownAtTop(action: onSwipeDown)
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
         // MARK: - VoiceOver

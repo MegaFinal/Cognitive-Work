@@ -15,16 +15,18 @@ struct UserProfilePictureTag: View {
     let user: UserModel?
 
     
-    /// Scaling parameter controlling absolute size derivations.
+    /// The avatar's size, as a fraction of the screen width.
     var widthMultiplier: Double
 
     /// The decoded avatar, populated asynchronously by ``UserProfileCache``.
     @State private var image: UIImage?
 
+    /// The avatar's size in points.
     private var side: CGFloat { width * widthMultiplier }
 
     var body: some View {
         Group {
+            // MARK: - Photo, or placeholder while loading / without a photo
             if let image {
                 Image(uiImage: image)
                     .resizable()
@@ -41,6 +43,7 @@ struct UserProfilePictureTag: View {
                     .clipShape(Circle())
             }
         }
+        // MARK: - Accessibility and loading the photo
         // Read as the member's name, not as "image" or the placeholder symbol.
         .accessibilityElement(children: .ignore)
         .voiceOverLabel(user?.name ?? L10n.tr("Morador"))

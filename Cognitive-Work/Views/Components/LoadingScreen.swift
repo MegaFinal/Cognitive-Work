@@ -7,14 +7,17 @@
 
 import SwiftUI
 
-/// Full-screen loading state
+/// Full-screen loading state: a spinning icon and a message over a soft texture.
 struct LoadingScreen: View {
+    /// The message under the icon.
     var title: LocalizedStringKey = "Carregando sua casa..."
     
+    /// The icon's angle; animated forever while on screen.
     @State private var rotation = 0.0
     
     var body: some View {
         VStack(spacing: 24) {
+            // MARK: - Spinning icon
             Image("loadingIcon")
                 .rotationEffect(.degrees(rotation))
                 .accessibilityDecorative()
@@ -24,6 +27,7 @@ struct LoadingScreen: View {
                     }
                 }
             
+            // MARK: - Message
             Text(title)
                 .font(.system(size: 28))
                 .bold()
@@ -31,6 +35,7 @@ struct LoadingScreen: View {
         }
         .padding(.horizontal, 32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // MARK: - Background texture
         .background(
             Image("yellow.sparkles")
                 .resizable()

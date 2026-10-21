@@ -20,24 +20,36 @@ import CloudKit
 /// and a confirmed payout is never credited again.
 struct CoinPayoutModel: CloudKitSyncable, Equatable {
 
+    /// The CloudKit record type.
     static var recordType: String = "CoinPayoutModel"
 
+    /// Whether the payout's coins are already in the wallet.
     enum Status: String {
+        /// Created, waiting for the member to redeem it.
         case pending
+        /// Redeemed: the coins were added to the member's wallet.
         case confirmed
     }
 
+    /// The CloudKit record ID (`payout-<cycle key>-<user>`). `nil` until the model is saved.
     var recordID: CKRecord.ID?
 
+    /// The member who earns the coins.
     var user: CKRecord.Reference
+    /// Key of the cycle being paid (see ``HouseCycleModel/key(for:calendar:)``).
     var cycleKey: String
     /// Rank the amount was computed from.
     var tier: Tier
+    /// The member's points when the cycle was closed.
     var points: Int
+    /// How many coins the member earns (``Tier/cycleCoins`` of ``tier``).
     var amount: Int
+    /// Whether the coins were already redeemed.
     var status: Status
+    /// When the member redeemed the coins. `nil` while ``status`` is ``Status/pending``.
     var confirmedAt: Date?
 
+    /// Creates a new payout, pending by default and not saved yet.
     init(user: CKRecord.Reference, cycleKey: String, tier: Tier, points: Int, amount: Int,
          status: Status = .pending, confirmedAt: Date? = nil) {
         self.user = user
@@ -49,6 +61,7 @@ struct CoinPayoutModel: CloudKitSyncable, Equatable {
         self.confirmedAt = confirmedAt
     }
 
+    /// Creates the model from a CloudKit record. Returns `nil` when a required field is missing.
     init?(record: CKRecord) {
         guard
             let user = record["user"] as? CKRecord.Reference,
@@ -70,6 +83,7 @@ struct CoinPayoutModel: CloudKitSyncable, Equatable {
         self.confirmedAt = record["confirmedAt"] as? Date
     }
 
+    /// Copies the model's fields into `record`, before saving it.
     func populate(record: CKRecord) {
         record["user"] = user
         record["cycleKey"] = cycleKey
@@ -80,6 +94,7 @@ struct CoinPayoutModel: CloudKitSyncable, Equatable {
         record["confirmedAt"] = confirmedAt
     }
 
+    /// The fixed record ID of `userID`'s payout for the cycle `cycleKey`.
     static func recordID(cycleKey: String, userID: CKRecord.ID) -> CKRecord.ID {
         CKRecord.ID(recordName: "payout-\(cycleKey)-\(userID.recordName)", zoneID: userID.zoneID)
     }

@@ -16,18 +16,24 @@ final class HouseEditViewModel {
     /// The house currently loaded for display/editing.
     private(set) var house: HouseModel?
 
+    /// `true` while the house is loading.
     private(set) var isLoading = false
 
+    /// `true` while the house is being deleted.
     private(set) var isDeleting = false
 
     /// True while the member is leaving the house.
     private(set) var isLeaving = false
 
+    /// An error to show, or `nil`.
     private(set) var errorMessage: String?
+    /// Whether the signed-in user is the house admin. Only valid once ``isAdminResolved`` is `true`.
     var isUserAdmin: Bool = false
 
+    /// `true` once ``isUserAdmin`` was checked for the loaded house.
     private(set) var isAdminResolved = false
 
+    /// Creates the view model, optionally with a house already loaded.
     init(house: HouseModel? = nil) {
         self.house = house
     }
@@ -160,12 +166,14 @@ final class HouseEditViewModel {
         return true
     }
     
+    /// Forgets the admin check (when the house changes).
     private func resetAdminState() {
         isUserAdmin = false
         isAdminResolved = false
     }
     
 
+    /// Deletes the loaded house record. Sets ``errorMessage`` on failure.
     func getOutOfTheHouse() async {
         guard let house else {
             errorMessage = "Failed to retrieve house"
