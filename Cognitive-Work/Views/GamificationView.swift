@@ -8,9 +8,11 @@
 import SwiftUI
 import CloudKit
 
-/// The rewards tab: the user's coins and the coupons each room offers.
+/// The rewards tab: the user's rank per cycle, their coins and the coupons each room offers.
+/// Tapping a coupon brings it to the center of the screen, where it can be bought.
 struct GamificationView: View {
 
+    /// Loads the coins, rank, rooms and coupons and buys coupons.
     @State private var viewModel: GamificationViewModel
 
     /// Key (``couponKey(_:)``) of the coupon brought to the center of the screen, if any.
@@ -19,12 +21,14 @@ struct GamificationView: View {
     /// Lets a ticket fly from the list to the center and back.
     @Namespace private var ticketNamespace
 
+    /// Creates the screen. Pass a ready view model for previews.
     init(viewModel: GamificationViewModel? = nil) {
         self._viewModel = State(initialValue: viewModel ?? GamificationViewModel())
     }
 
     var body: some View {
         NavigationStack {
+            // MARK: - Content, with the focused coupon on top
             content
                 .toolbar(.hidden, for: .navigationBar)
                 // The focused coupon takes the whole screen.
@@ -33,17 +37,21 @@ struct GamificationView: View {
         }
     }
 
+    /// The scrolling page: title, rank, coins, room picker and the room's coupons.
     private var content: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
+                // MARK: - Title
                 header
                 
+                // MARK: - Rank and coins
                 // Current rank last; swipe right for the past cycles.
                 RankCarousel(points: viewModel.points, history: viewModel.rankHistory)
                 
                 CoinsBalanceCard(coins: viewModel.coins)
                     .padding(.horizontal, 30)
                 
+                // MARK: - Room picker and coupons (or empty state)
                 if viewModel.rooms.isEmpty {
                     if viewModel.hasLoaded {
                         emptyState(
@@ -61,6 +69,7 @@ struct GamificationView: View {
                 }
             }
             .background(Color(.white).ignoresSafeArea())
+            // MARK: - Loading and refreshing
             .task {
                 guard !viewModel.hasLoaded else { return }
                 await viewModel.setup()
@@ -71,6 +80,7 @@ struct GamificationView: View {
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                 viewModel.requestRefresh()
             }
+            // MARK: - Purchase error alert
             .alert(
                 "Não foi possível comprar",
                 isPresented: Binding(
@@ -149,12 +159,14 @@ struct GamificationView: View {
         }
     }
 
+    /// The room's name, capitalized, in the app's language.
     private func roomName(_ room: RoomModel) -> String {
         room.name.localizedDefault.capitalized(with: L10n.locale)
     }
 
     // MARK: - Coupons
 
+    /// The selected room's coupons, or an empty state.
     @ViewBuilder
     private var couponList: some View {
         let coupons = viewModel.selectedCoupons
@@ -203,12 +215,14 @@ struct GamificationView: View {
         coupon.recordID?.recordName ?? coupon.name
     }
 
+    /// Brings a coupon to the center of the screen.
     private func focusCoupon(_ key: String) {
         withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
             focusedCouponKey = key
         }
     }
 
+    /// Sends the focused coupon back to the list.
     private func closeFocusedCoupon() {
         withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
             focusedCouponKey = nil

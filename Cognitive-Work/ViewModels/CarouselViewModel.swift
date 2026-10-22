@@ -8,11 +8,17 @@
 import SwiftUI
 import CloudKit
 
+/// The filters the user picked in the chores list. Empty arrays mean "no filter".
 struct ChoreFilters {
+    /// Show only chores of these members.
     var users: [UserModel] = []
+    /// Show only chores with these priorities.
     var tags: [PriorityTag] = []
+    /// Show only chores with these frequencies.
     var frequencies: [Recurrence] = []
+    /// Show only chores of these rooms.
     var rooms: [RoomModel] = []
+    /// Show only done (`true`) or pending (`false`) chores; `nil` shows both.
     var state: Bool? = nil
 }
 
@@ -22,9 +28,13 @@ class CarouselViewModel {
     
     // MARK: - Core Data Models
     
+    /// Every chore of the house.
     var cardModels: [ChoreModel] = []
+    /// Every room of the house.
     var roomModels: [RoomModel] = []
+    /// The house members.
     var userModels: [UserModel] = []
+    /// Every chore occurrence of the house.
     var dailyAssignments: [RecurrentAssignmentModel] = []
     
     // MARK: - Derived State
@@ -63,8 +73,11 @@ class CarouselViewModel {
     
     // MARK: - UI & Layout State
     
+    /// Whether the chores show as a carousel or a list.
     var layoutMode: CardLayoutMode = .grid
+    /// `true` while loading the data.
     var isLoading: Bool = false
+    /// Whether the first load already happened.
     private var hasFetchedInitially = false
     
     /// The snapshot of ``HouseDataStore`` this view model last showed, so reopening the tab
@@ -93,6 +106,7 @@ class CarouselViewModel {
     
     // MARK: - Focus & Flip State
     
+    /// Position of the card opened in the middle of the screen, or `nil` when none is.
     private var focusedIndex: Int? = nil
     /// Stores the recordID of the focused card, to keep it visible regardless of filters
     private var focusedChoreRecordID: CKRecord.ID? = nil
@@ -104,6 +118,7 @@ class CarouselViewModel {
     /// even if it no longer matches the active user filter.
     private var focusedAssignmentRecordID: CKRecord.ID? = nil
 
+    /// A copy of the focused occurrence, kept visible even if it no longer matches the filters.
     private var focusedAssignmentModel: RecurrentAssignmentModel? = nil
     
     /// Tracks which cards are currently in the flipped state (180 degrees).
@@ -117,8 +132,11 @@ class CarouselViewModel {
     }
     
     // Constants for animation tuning
+    /// How long a card takes to flip, in seconds.
     private let flipDuration: Double = 0.6
+    /// Spring response of the focus animation.
     private let focusSpringResponse: Double = 0.4
+    /// Spring damping of the focus animation.
     private let focusSpringDamping: Double = 0.75
     
     // MARK: - Checking for New Users
@@ -139,7 +157,9 @@ class CarouselViewModel {
     
     // MARK: - Filtering State
     
+    /// Whether any filter is active.
     var isFilterOn: Bool = false
+    /// The filters the user picked.
     var filterChoices = ChoreFilters()
     
     /// When `true`, occurrences on the same day are ordered most urgent first.
@@ -533,10 +553,12 @@ class CarouselViewModel {
         backVisibleIndices = wasShowingBack ? [focusedIndex] : []
     }
     
+    /// Whether a card is open in the middle of the screen.
     var hasFocusedCard: Bool {
         focusedIndex != nil
     }
     
+    /// The chore of the open card, or `nil` when no card is open.
     var focusedChoreForDetails: ChoreModel? {
         guard let focusedIndex, visibleChores.indices.contains(focusedIndex) else { return nil }
         return visibleChores[focusedIndex]
@@ -662,6 +684,7 @@ class CarouselViewModel {
         UserDefaults.standard.array(forKey: Self.allUsersKey(houseID: houseID)) as? [String] ?? []
     }
 
+    /// Saves the list of members this device already knows for `houseID` (see ``allUsersKey(houseID:)``).
     func updateAllUsers(users: [String], houseID: String) {
         UserDefaults.standard.set(users, forKey: Self.allUsersKey(houseID: houseID))
     }
@@ -719,11 +742,13 @@ class CarouselViewModel {
     
     // MARK: - Synchronous Data Helpers
     
+    /// The room of `chore`, from the rooms already in memory.
     func getRoom(for chore: ChoreModel) -> RoomModel? {
         guard let refID = chore.roomReference?.recordID else { return nil }
         return roomModels.first { $0.recordID == refID }
     }
     
+    /// The members responsible for `chore` (from its occurrences, for a recurring chore).
     func getUsers(for chore: ChoreModel) -> [UserModel] {
         // Recurring: users come from the daily assignments
         if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
@@ -744,6 +769,7 @@ class CarouselViewModel {
     
     // MARK: - Layout Control
     
+    /// Switches between the carousel and the list.
     func toggleLayout() {
         layoutMode = layoutMode == .grid ? .list : .grid
         rebuildDerivedState()
@@ -751,6 +777,7 @@ class CarouselViewModel {
     
     // MARK: - isDone Chore Logic
     
+    /// Whether `chore` is done: the occurrence's flag when there is one, otherwise the chore's.
     func isDone(for chore: ChoreModel, assignment: RecurrentAssignmentModel?) -> Bool {
         assignment?.isCompleted ?? chore.isDone
     }
@@ -778,6 +805,8 @@ class CarouselViewModel {
         return await ScoreManager.shared.removeScoreForMyUser(chore: chore)
     }
 
+    /// Checks or unchecks one occurrence and gives or takes back the points.
+    /// - Returns: `false` when the change couldn't be saved.
     @MainActor
     @discardableResult
     func toggle(assignment: RecurrentAssignmentModel) async -> Bool {
@@ -1005,6 +1034,7 @@ class CarouselViewModel {
         rebuildDerivedState()
     }
     
+    /// Clears every filter.
     func resetFilter() {
         isFilterOn = false
         filterChoices = ChoreFilters()
@@ -1029,10 +1059,12 @@ class CarouselViewModel {
     
     // MARK: - Focus & Flip Interactions
     
+    /// Whether the card at `index` is the open one.
     func isFocused(_ index: Int) -> Bool {
         focusedIndex == index
     }
     
+    /// Opens the card at `index` right away (no closing animation for the previous one).
     func focusImmediately(_ index: Int) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
             focusedIndex = index
@@ -1048,6 +1080,7 @@ class CarouselViewModel {
         }
     }
     
+    /// Opens the card at `index`, closing the open one first.
     func focus(_ index: Int) {
         guard focusedIndex != index else { return }
         
@@ -1081,6 +1114,7 @@ class CarouselViewModel {
         }
     }
     
+    /// Opens the card at `index` and flips it to show its details.
     func focusAndFlip(_ index: Int) {
         if let old = focusedIndex, old != index {
             if flippedIndices.contains(old) {
@@ -1107,6 +1141,7 @@ class CarouselViewModel {
         flip(index)
     }
     
+    /// Closes the open card, flipping it back if needed.
     func clearFocus() {
         if let old = focusedIndex {
             if flippedIndices.contains(old) {
@@ -1122,6 +1157,7 @@ class CarouselViewModel {
         }
     }
     
+    /// Opens the card at `index` already showing its details (back face).
     func focusDetailsImmediately(_ index: Int) {
         flippedIndices.insert(index)
         backVisibleIndices.insert(index)
@@ -1147,6 +1183,7 @@ class CarouselViewModel {
         }
     }
     
+    /// Closes the card opened by ``focusDetailsImmediately(_:)``.
     func clearFocusedDetails() {
         if let index = focusedIndex {
             flippedIndices.remove(index)
@@ -1162,14 +1199,17 @@ class CarouselViewModel {
         }
     }
     
+    /// The card's flip angle: `180` when flipped, `0` otherwise.
     func flipRotation(_ index: Int) -> Double {
         flippedIndices.contains(index) ? 180 : 0
     }
     
+    /// Whether the card at `index` shows its back face.
     func isShowingBack(_ index: Int) -> Bool {
         backVisibleIndices.contains(index)
     }
     
+    /// Flips the card at `index`, switching faces halfway through the animation.
     func flip(_ index: Int) {
         let isFlipping = !flippedIndices.contains(index)
         
@@ -1196,15 +1236,18 @@ class CarouselViewModel {
     
     // MARK: - Carousel Geometry Math
     
+    /// Whether the card at `index` is the one in the middle of the carousel.
     func isCentered(_ index: Int) -> Bool {
         abs(distance(index)) < 0.5
     }
     
+    /// How far the card at `index` is from the middle, in cards (negative to the left).
     func distance(_ index: Int) -> Double {
         guard !visibleChores.isEmpty else { return 0 }
         return (draggingItem - Double(index)).remainder(dividingBy: Double(visibleChores.count))
     }
     
+    /// Horizontal offset of the card at `index` on the carousel's circle.
     func xOffset(_ index: Int) -> Double {
         let fixedVisualCount: Double = 5.0
         let angle = (Double.pi * 2 / fixedVisualCount) * distance(index)
@@ -1212,6 +1255,7 @@ class CarouselViewModel {
         return sin(angle) * fixedRadius
     }
     
+    /// Vertical offset of the card at `index`: cards far from the middle go lower (or off screen).
     func yOffset(_ index: Int) -> Double {
         let dist = abs(distance(index))
         let hideThreshold = hideThreshold()
@@ -1219,38 +1263,46 @@ class CarouselViewModel {
         return pow(dist * 17, 2) / 10
     }
     
+    /// Size of the card at `index`: smaller the farther it is from the middle.
     func scaleEffect(_ index: Int) -> Double {
         let dist = abs(distance(index))
         return max(1 - dist * 0.18, 0.7)
     }
     
+    /// Tilt of the card at `index`, in degrees.
     func rotationEffect(_ index: Int) -> Double {
         let dist = distance(index)
         return dist * 22
     }
     
+    /// Drawing order of the card at `index`: the middle card is on top.
     func zIndex(_ index: Int) -> Double {
         1.0 - abs(distance(index)) * 0.1
     }
     
+    /// Opacity of the card at `index`: cards too far from the middle are hidden.
     func opacity(_ index: Int) -> Double {
         let dist = abs(distance(index))
         return dist > hideThreshold() ? 0.0 : 1.0
     }
     
+    /// How far from the middle (in cards) a card can be before it is hidden.
     private func hideThreshold() -> Double {
         return 1.5
     }
     
     // MARK: - Gesture Handling
     
+    /// How many points of drag move the carousel by one card.
     private static var dragPointsPerGroup: Double { UIScreen.main.bounds.width * 0.5 }
     
+    /// Moves the carousel while the user drags.
     func onDragChanged(value: DragGesture.Value) {
         clearFocus()
         draggingItem = snappedItem + value.translation.width / Self.dragPointsPerGroup
     }
     
+    /// Snaps the carousel to the nearest card when the drag ends, using the drag's speed.
     func onDragEnded(value: DragGesture.Value) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
             guard !visibleChores.isEmpty else { return }
@@ -1274,6 +1326,7 @@ class CarouselViewModel {
     
     /// A chore (or a single occurrence of a recurring chore) that currently has nobody responsible for it.
     struct UnassignedItem: Identifiable {
+        /// Whether the unassigned item is a one-off chore or one day of a recurring chore.
         enum ChoreType {
             /// A one-off chore with no responsible users at all.
             case oneOff
@@ -1452,6 +1505,7 @@ class CarouselViewModel {
     
     // MARK: - Picking an unassigned chore that has no date
     
+    /// The unassigned chore the user is picking a date for, or `nil`.
     var itemAwaitingDate: UnassignedItem?
     
     /// A single slot in the confirmation page: may correspond to an existing assignment or a brand new one to be created.
@@ -1533,6 +1587,7 @@ class CarouselViewModel {
         }
     }
 
+    /// Closes the date picker card for an unassigned chore.
     @MainActor
     func dismissPickCard() {
         withAnimation(.easeOut(duration: 0.2)) {
@@ -1545,6 +1600,7 @@ class CarouselViewModel {
     /// Whether the "unassigned chores" popup is currently visible.
     var isShowingUnassignedList: Bool = false
     
+    /// Shows or hides the list of unassigned chores.
     @MainActor
     func toggleUnassignedList() {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
@@ -1552,6 +1608,7 @@ class CarouselViewModel {
         }
     }
     
+    /// Hides the list of unassigned chores.
     @MainActor
     func dismissUnassignedList() {
         withAnimation(.easeOut(duration: 0.2)) {
@@ -1699,6 +1756,7 @@ class CarouselViewModel {
         return start..<end
     }
     
+    /// Counts the pending occurrences of each day (see ``loadByDay``).
     private func rebuildLoadByDay() {
         let calendar = Calendar.current
         var result: [Date: Int] = [:]

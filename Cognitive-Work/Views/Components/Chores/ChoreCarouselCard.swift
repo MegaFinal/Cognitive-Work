@@ -8,19 +8,23 @@
 import SwiftUI
 import CloudKit
 
-/// The distinct front-face representation of a chore inside the carousel layout.
-///
-/// Focuses strictly on prominent typography and large-scale iconography over the respective room color.
+/// The front face of a chore's card in the carousel: the chore's name and its room's big icon,
+/// over the room's color and texture.
 struct ChoreCarouselCard: View {
+    /// The chore on the card.
     let chore: ChoreModel
+    /// Shared namespace for the card's matched-geometry animations.
     let namespace: Namespace.ID
     
+    /// The chores screen's view model.
     var carouselViewModel: CarouselViewModel
     
+    /// The chore's room, from the rooms already in memory.
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     
     var body: some View {
         ZStack {
+            // MARK: - Chore name (top)
             VStack {
                 Text(chore.localizedName)
                     .font(.custom("Alan Sans", size: 35))
@@ -31,6 +35,7 @@ struct ChoreCarouselCard: View {
             }
             .padding(.top, 30)
             
+            // MARK: - Room icon (center)
             Image(systemName: room?.symbol ?? chore.symbolName)
                 .resizable()
                 .scaledToFill()
@@ -38,6 +43,7 @@ struct ChoreCarouselCard: View {
                 .fontWeight(.ultraLight)
                 .padding(.top, height * 0.05)
         }
+        // MARK: - Card style and accessibility
         .foregroundColor(.white)
         .frame(width: width * 0.7, height: height * 0.43)
         .background { cardBackground }

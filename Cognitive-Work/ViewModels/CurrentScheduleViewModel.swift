@@ -11,10 +11,9 @@ import CloudKit
 
 /// A view model that exposes only the current user's share of the house schedule.
 ///
-/// `MyScheduleViewModel` composes a ``FortnightlyViewModel`` instead of duplicating its
-/// logic: the house view model builds every ``DailyUsageEntry``, and this type narrows
-/// them down to the ones that belong to ``currentUser``.
-
+/// It composes a ``FortnightlyViewModel`` instead of duplicating its logic: the house view
+/// model builds every ``DailyUsageEntry``, and this type narrows them down to the ones that
+/// belong to ``currentUser``.
 @Observable
 final class CurrentScheduleViewModel {
     

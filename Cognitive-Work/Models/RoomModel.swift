@@ -10,6 +10,7 @@ import CloudKit
 
 /// A room inside a house, grouping the chores that happen there.
 struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
+    /// Local identifier for SwiftUI lists.
     var id = UUID()
     
     /// CloudKit record type backing this model.
@@ -24,7 +25,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// Name shown to the user.
     var name: String
     
-    /// icon shown to the user
+    /// SF Symbol name of the room's icon.
     var symbol: String
     
     /// References to the ``ChoreModel`` records that belong to this room.
@@ -33,7 +34,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// The house this room belongs to.
     var houseReference: CKRecord.Reference?
     
-    /// The room type this room was created from during onboarding (e.g. `"Quarto"`)
+    /// The room type this room was created from during onboarding (e.g. `"Quarto"`).
     var kind: String?
     
     /// Texture picked for a custom room. Default room types ignore it and use their own
@@ -45,6 +46,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     /// record should be re-saved. See ``migrateStoredColorsIfNeeded(_:)``.
     private(set) var needsColorMigration = false
     
+    /// The room's chores, fetched from CloudKit.
     var relatedChores: [ChoreModel] {
         get async {
             guard let relatedChoresReference, !relatedChoresReference.isEmpty else {
@@ -54,6 +56,7 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         }
     }
     
+    /// The house this room belongs to, fetched from CloudKit. `nil` if not set or not found.
     var house: HouseModel? {
         get async {
             if let houseReference {
@@ -95,11 +98,13 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
     
     /// Creates a new, unsaved room.
     ///
-    /// - Parameters:
     ///   - name: Name shown to the user.
+    ///   - symbol: SF Symbol name of the room's icon.
     ///   - relatedChores: Chores already known to belong to this room.
     ///   - house: The owning house.
     ///   - color: Color used to identify the room.
+    ///   - kind: The default room type it was created from, if any.
+    ///   - pattern: Texture for a custom room.
     init(
         name: String,
         symbol: String,
@@ -143,13 +148,15 @@ struct RoomModel: CloudKitSyncable, Identifiable, Hashable {
         }
     }
     
-    /// Writes the palette color back to CloudKit for every room whose stored color is outdated
+    /// Saves the current palette color again for every room whose saved color or symbol is
+    /// outdated (see ``needsColorMigration``).
     static func migrateStoredColorsIfNeeded(_ rooms: [RoomModel]) async {
         let outdated = rooms.filter { $0.needsColorMigration && $0.recordID != nil }
         guard !outdated.isEmpty else { return }
         await CloudKitManager.shared.batchUpdate(outdated)
     }
     
+    /// The room's chores, fetched from CloudKit. Same as ``relatedChores``.
     func fetchRelatedChores() async -> [ChoreModel] {
         guard let relatedChoresReference, !relatedChoresReference.isEmpty else {
             return []

@@ -38,6 +38,7 @@ class HouseModel: CloudKitSyncable {
     /// References to the ``RoomModel`` records belonging to this house.
     private var roomsReference: [CKRecord.Reference]?
     
+    /// The house's chores, fetched from CloudKit.
     var chores: [ChoreModel] {
         get async {
             if let choresReference {
@@ -47,6 +48,7 @@ class HouseModel: CloudKitSyncable {
         }
     }
     
+    /// The house's members, fetched from CloudKit.
     var users: [UserModel] {
         get async {
             if let usersReference {
@@ -79,6 +81,7 @@ class HouseModel: CloudKitSyncable {
         }
     }
     
+    /// The house's rooms, fetched from CloudKit.
     var room: [RoomModel] {
         get async {
             if let roomsReference {
@@ -153,6 +156,8 @@ class HouseModel: CloudKitSyncable {
         record["rooms"] = roomsReference
     }
     
+    /// Adds `rooms` to the house's room list and saves the house.
+    /// - Returns: `false` if CloudKit rejects the save. Rooms not saved yet (no `recordID`) are skipped.
     @discardableResult
     func appendRoom(rooms: [RoomModel]) async -> Bool {
         let newReferences = rooms.compactMap { room -> CKRecord.Reference? in
@@ -193,7 +198,7 @@ class HouseModel: CloudKitSyncable {
     /// Removes the given user's record reference from this house's `users` list and saves it.
     ///
     /// Used when a member deletes their own profile
-    ///
+    /// Used when a member deletes their own profile.
     /// - Returns: `true` when the reference was removed (or was already absent), `false` if
     ///   CloudKit rejects the update (see ``CloudKitManager/errorMessage``).
     @discardableResult
@@ -235,6 +240,9 @@ class HouseModel: CloudKitSyncable {
         return await CloudKitManager.shared.update(self)
     }
     
+    /// A reference to this house, to store in other records.
+    /// - Parameter action: What CloudKit does to the referencing record when the house is deleted.
+    /// - Returns: `nil` when the house is not saved yet.
     func reference(action: CKRecord.ReferenceAction) -> CKRecord.Reference? {
         if let recordID {
             return CKRecord.Reference(recordID: recordID, action: action)
@@ -255,13 +263,14 @@ class HouseModel: CloudKitSyncable {
     //
     /// Renames the house and/or updates its description, persisting the change to CloudKit.
     ///
-    /// Only the user referenced by ``adminReference`` may succeed here
+    /// Only the house admin (see ``isAdmin()``) may do it.
     ///
     /// - Parameters:
     ///   - name: New name for the house.
     ///   - description: New description for the house.
-    ///   - requesterID: `recordID` of the ``UserModel`` attempting the change.
-    /// - Throws: ``CloudKitErrors/notAuthorized`` if `requesterID` isn't the admin.
+    ///   - requesterID: `recordID` of the ``UserModel`` asking for the change. Not checked: the
+    ///     admin check uses the signed-in iCloud account.
+    /// - Returns: `false` when the user is not the admin or CloudKit rejects the save.
     @discardableResult
     func update(name: String, description: String, requesterID: CKRecord.ID) async -> Bool {
         guard await isAdmin() == true else { return false }
@@ -271,6 +280,7 @@ class HouseModel: CloudKitSyncable {
         return await CloudKitManager.shared.update(self)
     }
     
+    /// The house's raw CloudKit record, fetched again from the server. `nil` before it is saved.
     func fetchSelfRecord() async -> CKRecord? {
         if let recordID {
             return await CloudKitManager.shared.fetchRecord(for: self)

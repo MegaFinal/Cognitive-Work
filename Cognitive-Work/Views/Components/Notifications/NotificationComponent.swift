@@ -7,14 +7,20 @@
 
 import SwiftUI
 
+/// One row of the notifications screen: a colored icon and two lines of text.
 struct NotificationComponent: View {
+    /// The icon's background color.
     let color: Color
+    /// SF Symbol of the icon.
     let symbol: String
+    /// The first line.
     let title: String
+    /// The second line.
     let subtitle: String
     
     var body: some View {
         HStack {
+            // MARK: - Icon
             ZStack {
                 Capsule()
                     .foregroundStyle(color)
@@ -25,6 +31,7 @@ struct NotificationComponent: View {
             // The icon only repeats the notification's kind, which the title already says.
             .accessibilityDecorative()
             
+            // MARK: - Title and subtitle
             VStack(alignment: .leading, spacing: 8){
                 Text(title)
                     .font(.system(size: 20))

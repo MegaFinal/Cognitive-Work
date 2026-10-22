@@ -7,9 +7,13 @@
 
 import SwiftUI
 
-/// Container of the retrospective. It owns no flow state: `RetroViewModel.phase` and `pageIndex`
-/// decide what shows, and every page reads only its own content from the same view model.
+/// The retrospective, shown over the whole app: the alert card, the pages, the new-division
+/// prompt and the generated schedule, one after the other.
+///
+/// It owns no flow state: `RetroViewModel.phase` and `pageIndex` decide what shows, and every
+/// page reads only its own content from the same view model.
 struct RetroView: View {
+    /// Drives the whole retrospective.
     @State private var viewModel: RetroViewModel
     
     /// Rank and coins of the cycle, for the rank and coins pages. The presenting screen may pass one it already loaded.
@@ -95,6 +99,7 @@ struct RetroView: View {
                     .ignoresSafeArea()
                     .frame(width: width, height: height)
                     
+                    // MARK: - Generated schedule (admin only)
                     if viewModel.phase == .schedule && viewModel.canStartNewDivision {
                         NavigationStack {
                             FortnightlyScheduleView(shouldGenerate: true) {
@@ -107,6 +112,7 @@ struct RetroView: View {
                 }
             }
         }
+        // MARK: - Accessibility: close by voice or escape gesture
         // Voice Control has no escape gesture: an invisible, touch-transparent "Fechar"
         // element in the top corner lets the user say "Toque em Fechar".
         .overlay(alignment: .topTrailing) {
@@ -119,6 +125,7 @@ struct RetroView: View {
         }
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) { close() }
+        // MARK: - Loading and events
         .task { await viewModel.load() }
         // Idempotent: reuses the load the presenting screen may have started.
         .task { await coinsViewModel.load() }
@@ -130,6 +137,7 @@ struct RetroView: View {
                 }
             }
         }
+        // MARK: - VoiceOver and the delayed fade-in of the pages
         // Each step swaps the whole content: let VoiceOver re-read it from the top.
         .onChange(of: viewModel.currentPage) { VoiceOver.screenChanged() }
         .onChange(of: viewModel.phase) { _, phase in
@@ -153,6 +161,7 @@ struct RetroView: View {
         }
     }
     
+    /// Whether the alert card shows: in the alert phase, and while the card expands before the pages fade in.
     private var showsAlert: Bool {
         viewModel.phase == .alert || (viewModel.phase == .pages && !pagesVisible)
     }
@@ -172,13 +181,16 @@ struct RetroView: View {
 
 /// Repository that returns fixed data, for previews.
 struct PreviewRetroRepository: RetroRepository {
+    /// How many chores are done in the sample.
     var completed = 3
+    /// How many chores the sample has.
     var total = 4
     /// Previews show the admin's flow (with the new-division prompt) by default.
     var isHouseAdmin = true
     /// `false` previews an old retrospective (no new-division prompt, even for the admin).
     var isDivisionOver = true
     
+    /// Builds a sample snapshot with `total` chores, `completed` of them done.
     func fetchSnapshot(for period: RetroPeriod) async throws -> RetroSnapshot {
         let day = Date().addingTimeInterval(-3600)
         let rooms = [
@@ -196,9 +208,13 @@ struct PreviewRetroRepository: RetroRepository {
 
 /// Loads a preview view model, optionally jumps to the pages, then shows `content`.
 struct RetroPreviewHost<Content: View>: View {
+    /// The view model, filled with the sample data.
     @State private var viewModel: RetroViewModel
+    /// Whether to skip the intro and open the pages.
     private let startOnPages: Bool
+    /// The page to open.
     private let page: RetroPage
+    /// The view shown once loaded.
     private let content: (RetroViewModel) -> Content
     
     init(

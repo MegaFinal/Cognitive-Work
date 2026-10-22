@@ -14,12 +14,14 @@ import CloudKit
 /// This view is revealed when the user flips or taps a card, providing full details, checklist progress,
 /// postponement actions, and a completion swipe toggle.
 struct ChoreDetailsCard: View {
+    /// The chore shown.
     @Bindable var chore: ChoreModel
     
     /// The specific occurrence this card represents, when opened from the list
     /// layout. `nil` in the grid, where the card stands for the chore as a whole.
     var recurrentAssignment: RecurrentAssignmentModel?
     
+    /// Gives the room, members, dates and assignments, and saves completion and postponing.
     @Bindable var carouselViewModel: CarouselViewModel
     
     /// The day being shown: this occurrence's own day, or the chore's next date.
@@ -27,10 +29,13 @@ struct ChoreDetailsCard: View {
         recurrentAssignment?.day ?? nextDate
     }
     
+    /// The next day the chore is due.
     var nextDate: Date? { carouselViewModel.nextDate(for: chore) }
     
+    /// Whether the card is flipped to this side (the checklist loads only then).
     var isShowingBack: Bool
     
+    /// The chore's checklist items.
     @State private var checkList: [CheckItemModel] = []
     
     /// `true` while the checklist items are fetched the first time the card is flipped.
@@ -42,9 +47,12 @@ struct ChoreDetailsCard: View {
     /// Shown when the new date couldn't be saved.
     @State private var didFailToPostpone = false
     
+    /// The chore's room (icon, color and name).
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
+    /// Every member responsible for the chore.
     var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
+    /// The occurrence(s) this card is about.
     var targetAssignments: [RecurrentAssignmentModel] {
         // A card opened from a specific occurrence shows only that one
         if let recurrentAssignment { return [recurrentAssignment] }
@@ -83,6 +91,7 @@ struct ChoreDetailsCard: View {
         }
     }
     
+    /// Whether this occurrence is already done.
     var isOccurrenceDone: Bool {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
@@ -90,10 +99,13 @@ struct ChoreDetailsCard: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                // MARK: - Icon, name and tags
                 header
                 
+                // MARK: - Description, room and checklist
                 info
                 
+                // MARK: - Postpone buttons and swipe to complete
                 VStack {
                     // Daily chores can't be postponed: tomorrow already has its own occurrence.
                     if chore.frequency != .daily {
@@ -122,10 +134,12 @@ struct ChoreDetailsCard: View {
             }
             .padding(.top, 8)
             
+            // MARK: - Close, avatars and edit (top bar)
             actionBar
                 // Drawn on top but read first: close, people, edit.
                 .accessibilitySortPriority(1)
         }
+        // MARK: - Loads the checklist and shows the postpone error
         .task(id: isShowingBack) {
             if isShowingBack && checkList.isEmpty && !(chore.checkListReference ?? []).isEmpty {
                 isLoadingChecklist = true

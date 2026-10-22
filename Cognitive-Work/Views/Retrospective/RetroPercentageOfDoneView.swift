@@ -7,16 +7,23 @@
 
 import SwiftUI
 
+/// The retrospective's percentage page: how much of the user's schedule they did, drawn as a
+/// purple pie that empties while the number counts up.
+///
 /// Reads only `viewModel.percentageContent`; all numbers and messages come from the view model.
 struct RetroPercentageOfDoneView: View {
+    /// The retrospective's view model (shared with the other pages).
     let viewModel: RetroViewModel
     /// Animated value (0...100) that drives the pie and the counter.
     @State private var percentage: Double = 0.0
 
+    /// This page's content.
     private var content: RetroPercentageContent { viewModel.percentageContent }
 
+    /// Whether this page is the one on screen.
     private var isActive: Bool { viewModel.isPageActive(.percentage) }
 
+    /// What restarts the animation: the page becoming visible or the percentage changing.
     private struct AnimationKey: Equatable {
         let isActive: Bool
         let target: Double
@@ -24,6 +31,7 @@ struct RetroPercentageOfDoneView: View {
 
     var body: some View {
         ZStack {
+            // MARK: - Background: purple with the white pie
             Color(.chorePurple)
                 .overlay{
                     PieSlice(progress: percentage / 100)
@@ -34,6 +42,7 @@ struct RetroPercentageOfDoneView: View {
                 }
                 .ignoresSafeArea()
 
+            // MARK: - Keyhole shape over the pie
             VStack{
                 Keyhole()
                     .aspectRatio(width * 0.8 / height * 1.5, contentMode: .fit)
@@ -43,9 +52,11 @@ struct RetroPercentageOfDoneView: View {
             }
                 
 
+            // MARK: - Texts and buttons
             VStack {
                 Spacer ()
                 
+                // MARK: Percentage and summary
                 AnimatedPercentageText(value: percentage)
                     .bold()
                     .font(.system(size: 64))
@@ -63,11 +74,13 @@ struct RetroPercentageOfDoneView: View {
                 
                 Spacer()
                 
+                // MARK: Cheering word
                 Text(content.closing)
                     .bold()
                     .font(.custom("Alan Sans", size: 40))
                     .padding(.bottom, height * 0.018)
                 
+                // MARK: Actions: see later or continue
                 Button {
                     withAnimation {
                         viewModel.skipRetrospective()
@@ -86,7 +99,8 @@ struct RetroPercentageOfDoneView: View {
                     }
                 } label: {
                     Text("Continuar")
-                        .frame(width: width * 0.69, height: height * 0.037)
+                        .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                        .multilineTextAlignment(.center)
                         .fontWeight(.medium)
                         .font(.system(size: 17))
                 }
@@ -96,6 +110,7 @@ struct RetroPercentageOfDoneView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
+        // MARK: - Pie and counter animation
         // Not onAppear: changing the state there can be applied before the first frame is drawn,
         // so the view would appear already filled. Drawing 0 first, then animating, always plays.
         // Keyed on the page being the visible one: the paged TabView builds this page while the

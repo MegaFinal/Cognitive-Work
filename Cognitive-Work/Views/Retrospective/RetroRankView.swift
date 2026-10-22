@@ -13,12 +13,17 @@ import SwiftUI
 /// ``RetroCoinsViewModel`` (the cycle's payout); texts live in ``RetroRankContent``.
 /// Navigation goes through `viewModel`.
 struct RetroRankView: View {
+    /// The retrospective's view model, for navigation.
     let viewModel: RetroViewModel
+    /// The cycle's rank and points.
     let coinsViewModel: RetroCoinsViewModel
 
+    /// `true` once the rank icon popped in.
     @State private var showIcon = false
+    /// When on, the icon appears without the pop animation.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// This page's content, built from the cycle's rank and points.
     private var content: RetroRankContent {
         RetroRankContent.make(tier: coinsViewModel.cycleTier, points: coinsViewModel.cyclePoints)
     }
@@ -28,6 +33,7 @@ struct RetroRankView: View {
             
             Spacer()
             
+            // MARK: - Rank arc with the rank icon, and the rank's name (spinner while loading)
             if coinsViewModel.isLoaded {
                 ZStack(alignment: .bottom) {
                     RankArc(progress: content.arcFraction, tint: content.tint, lineWidth: 20)
@@ -57,6 +63,9 @@ struct RetroRankView: View {
                 Text(content.tierName)
                     .bold()
                     .font(.system(size: 56))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 24)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, height * 0.014)
                     .accessibilityAddTraits(.isHeader)
@@ -70,6 +79,7 @@ struct RetroRankView: View {
                     .voiceOverLabel(L10n.tr("Carregando rank"))
             }
             
+            // MARK: - Subtitle and points detail
             Text(content.subtitle)
                 .fontWeight(.regular)
                 .font(.title)
@@ -85,6 +95,7 @@ struct RetroRankView: View {
             
             Spacer()
             
+            // MARK: - Message
             Text(content.message)
                 .bold()
                 .font(.title2)
@@ -92,6 +103,7 @@ struct RetroRankView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, height * 0.03)
             
+            // MARK: - Actions: see later or continue
             Button {
                 withAnimation {
                     viewModel.skipRetrospective()
@@ -110,7 +122,8 @@ struct RetroRankView: View {
                 }
             } label: {
                 Text("Continuar")
-                    .frame(width: width * 0.69, height: height * 0.037)
+                    .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                    .multilineTextAlignment(.center)
                     .fontWeight(.medium)
                     .font(.system(size: 17))
             }
@@ -127,15 +140,23 @@ struct RetroRankView: View {
 struct RetroRankContent: Equatable {
     /// `nil` when the cycle has no payout yet (nothing was settled).
     let tier: Tier?
+    /// The rank's name, or "Sem rank".
     let tierName: String
+    /// The line under the name.
     let subtitle: String
     /// Points of the cycle and how far they were from the next step.
     let detail: String
+    /// A message that depends on the rank group.
     let message: String
     /// How full the arc is: the share of the division done, or full at Mestre (as in the rewards tab).
     let arcFraction: Double
+    /// The arc's color: red to green by progress, pink at Mestre.
     let tint: Color
 
+    /// The content for `tier` and `points`.
+    /// - Parameters:
+    ///   - tier: The rank of the cycle, or `nil` when it wasn't calculated.
+    ///   - points: The points made in the cycle.
     static func make(tier: Tier?, points: Int) -> RetroRankContent {
         guard let tier else {
             return RetroRankContent(

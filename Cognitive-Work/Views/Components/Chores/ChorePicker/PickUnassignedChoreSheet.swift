@@ -7,34 +7,50 @@
 
 import SwiftUI
 
-/// A card overlay for confirming/selecting dates when claiming an unassigned chore.
+/// A popup card to take a chore that has no owner: the user picks the day(s) they will do it
+/// on a calendar and confirms. Daily chores pick several days; others pick one.
 struct PickUnassignedChoreCard: View {
+    /// The chore without owner being taken.
     let item: CarouselViewModel.UnassignedItem
+    /// Gives the dates, the busy-day shading and saves the pick.
     @Bindable var carouselViewModel: CarouselViewModel
     
+    /// The occurrences to take, each with its day and whether it's included.
     @State private var slots: [CarouselViewModel.WeeklyPickSlot] = []
+    /// The slot whose day the calendar edits (non-daily chores).
     @State private var activeSlot = 0
+    /// `true` while saving (spinner on the confirm button).
     @State private var isSaving = false
+    /// Shows the "couldn't save" message.
     @State private var didFail = false
     
+    /// The chore being taken.
     private var chore: ChoreModel { item.chore }
+    /// The range of days the picker allows.
     private var window: Range<Date> { carouselViewModel.pickerWindow }
+    /// Whether it's a daily chore (several days can be picked).
     private var isDaily: Bool { chore.frequency == .daily }
+    /// Whether it's a weekly chore (only days of its week can be picked).
     private var isWeekly: Bool { chore.frequency == .weekly }
     
+    /// The room's name, or "Sem cômodo".
     private var roomName: String {
         carouselViewModel.getRoom(for: chore)?.name.localizedDefault ?? L10n.tr("Sem cômodo")
     }
     
+    /// The room's color, or gray.
     private var roomColor: Color {
         carouselViewModel.getRoom(for: chore)?.color.uiColor ?? .gray
     }
     
+    /// The day the occurrence was planned for, for recurring chores.
     private var originalDay: Date? {
         if case .recurring(let assignment) = item.choreType { return assignment.day }
         return nil
     }
     
+    /// The days the calendar lets the user pick: the chore's week for weekly chores, the picker
+    /// range for daily chores, and the whole cycle otherwise.
     private var effectiveWindow: Range<Date> {
         let calendar = Calendar.current
         let cycle = carouselViewModel.cycleWindow ?? window
@@ -62,19 +78,23 @@ struct PickUnassignedChoreCard: View {
         return cycle
     }
     
+    /// The days picked so far.
     private var includedDates: [Date] {
         slots.compactMap { $0.included ? $0.date : nil }
     }
     
+    /// Whether at least one day is picked.
     private var canConfirm: Bool { !includedDates.isEmpty }
     
     var body: some View {
         VStack(spacing: 8) {
+            // MARK: - Close, title and confirm
             header
                 .padding(.bottom)
             
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 8) {
+                    // MARK: - Chore, question, "take all" switch and calendar
                     choreDetail
                     
                     calendarText
@@ -100,6 +120,7 @@ struct PickUnassignedChoreCard: View {
                         onTapDay: isDaily ? { day in toggleDailySlot(day) } : nil
                     )
                     
+                    // MARK: - Error message
                     if didFail {
                         Text("Não foi possível salvar. Tente novamente.")
                             .font(.system(size: 13))
@@ -119,7 +140,7 @@ struct PickUnassignedChoreCard: View {
             slots = carouselViewModel.initialPickSlots(for: item)
             activeSlot = slots.firstIndex { $0.isDateEditable } ?? 0
         }
-        // Popup: keeps VoiceOver inside it; the escape gesture closes it.
+        // MARK: - Popup accessibility: keeps VoiceOver inside it; the escape gesture closes it.
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) {
@@ -132,6 +153,7 @@ struct PickUnassignedChoreCard: View {
     
     // MARK: - Calendar binding
     
+    /// Connects the calendar to the active slot's day.
     private var activeDateBinding: Binding<Date?> {
         Binding(
             get: { slots.indices.contains(activeSlot) ? slots[activeSlot].date : nil },
@@ -153,6 +175,7 @@ struct PickUnassignedChoreCard: View {
         )
     }
     
+    /// Picks or unpicks a daily slot when its day is tapped.
     private func toggleDailySlot(_ day: Date) {
         let calendar = Calendar.current
         guard let index = slots.firstIndex(where: {
@@ -163,6 +186,7 @@ struct PickUnassignedChoreCard: View {
     
     // MARK: - Subviews
     
+    /// The close button, the title and the confirm button.
     private var header: some View {
         HStack {
             closeButton
@@ -180,6 +204,7 @@ struct PickUnassignedChoreCard: View {
         }
     }
     
+    /// The room, the chore's name and its tags.
     private var choreDetail: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(roomName)
@@ -203,6 +228,7 @@ struct PickUnassignedChoreCard: View {
         .accessibilityLabel(Text(verbatim: "\(chore.localizedName), \(roomName), \(carouselViewModel.accessibilityTagsText(for: chore))"))
     }
     
+    /// "Quando você deseja realizar esta tarefa?" and its note.
     private var calendarText: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Quando você deseja realizar esta tarefa?")
@@ -218,6 +244,7 @@ struct PickUnassignedChoreCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
+    /// Closes the card without saving.
     private var closeButton: some View {
         Button {
             carouselViewModel.dismissPickCard()
@@ -233,6 +260,7 @@ struct PickUnassignedChoreCard: View {
         .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
     }
     
+    /// Saves the pick, gives the points and closes the card (or shows the error).
     private var confirmButton: some View {
         Button {
             Task {

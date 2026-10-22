@@ -12,6 +12,7 @@ import SwiftUI
 /// spinner; if it fails, an alert explains why and the user stays where they are.
 private struct OnboardingBackButtonModifier: ViewModifier {
     
+    /// The onboarding state shared by every step.
     let viewModel: OnboardingViewModel
     
     /// Extra condition from the screen (e.g. an invite being accepted) that blocks going back.
@@ -23,8 +24,10 @@ private struct OnboardingBackButtonModifier: ViewModifier {
     /// `true` outside onboarding (screens reused by settings keep the system back button).
     let isHidden: Bool
     
+    /// `true` while the "go back?" confirmation is open.
     @State private var isConfirming = false
     
+    /// Adds the back button, unless ``isHidden`` is `true`.
     @ViewBuilder
     func body(content: Content) -> some View {
         if isHidden {
@@ -34,6 +37,7 @@ private struct OnboardingBackButtonModifier: ViewModifier {
         }
     }
     
+    /// Hides the system back button and adds the onboarding's own, with its confirmation and error alert.
     private func backButton(on content: Content) -> some View {
         content
             .navigationBarBackButtonHidden()
@@ -81,6 +85,7 @@ private struct OnboardingBackButtonModifier: ViewModifier {
             }
     }
     
+    /// Undoes the previous step and goes back to it.
     private func goBack() {
         HapticsManager.impact(.light)
         Task { await viewModel.goBack() }

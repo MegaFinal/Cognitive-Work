@@ -24,7 +24,9 @@ class HardwareNetworkManager {
     /// (usually 192.168.4.1), then replaced by the address it gets on the home network.
     var host: String = ""
     
+    /// Sends the HTTP requests to the device.
     private var session = URLSession.shared
+    /// Reads the device's JSON answers.
     private var decoder = JSONDecoder()
     
     /// Scheme prefix. Plain HTTP because the ESP32 has no certificate.
@@ -34,17 +36,21 @@ class HardwareNetworkManager {
     /// come from this app and not from another machine on the same network.
     private var hash: String = ""
     
+    /// Whether the phone is paired with the device (it has a pairing code).
     private(set) var isConnected: Bool = false
     
     // MARK: - Hash Persistence
     
+    /// Where the device's address and pairing code are saved on the phone.
     private var localPersistence = UserDefaults.standard
     
+    /// Keys used in ``localPersistence``.
     private enum StorageKey {
         static let hash = "hardware.hash"
         static let host = "hardware.host"
     }
     
+    /// Restores the saved device address and pairing code, if any.
     init() {
         // The host is saved right after provisioning, even before pairing succeeds
         if let savedHost = localPersistence.string(forKey: StorageKey.host) {

@@ -8,23 +8,24 @@
 import SwiftUI
 import CloudKit
 
-/// A menu-based picker configured to select core attributes associated with a chore.
+/// A tag that opens a menu to change one of the chore's attributes (priority, frequency or duration).
 struct ChoreTagPicker: View {
     
-    /// The mutable configuration state governing the selected options.
+    /// The chore being edited.
     @Binding var chore: ChoreDTO
     
-    /// Defines the attribute mode this picker will govern.
+    /// Which attribute this picker changes.
     var type: TagPickerType
     
-    /// Internal collection utilized exclusively when the type maps to `.room`.
+    /// The house's rooms. Not used by the current tag types.
     var availableRooms: [RoomModel] = []
     
-    /// Selected contextual room model derived from the `chore.roomReference`.
+    /// The chore's room. Not used by the current tag types.
     @State private var currentRoom: RoomModel? = nil
     
     var body: some View {
         Menu {
+            // MARK: - Menu options for the chosen attribute
             switch type {
             case .priority:
                 Picker("Prioridade", selection: $chore.priorityTag) {
@@ -51,6 +52,7 @@ struct ChoreTagPicker: View {
                 }
             }
         } label: {
+            // MARK: - Label: the current value as a tag, with a chevron
             HStack {
                 CapsuleTag(
                     tagName: type.labelName(for: chore, currentRoom: currentRoom),
@@ -66,6 +68,7 @@ struct ChoreTagPicker: View {
             }
             .fixedSize()
         }
+        // MARK: - Accessibility and room sync
         // "Prioridade, média, pop-up button"
         .voiceOverLabel(accessibilityTitle)
         .voiceOverValue(type.labelName(for: chore, currentRoom: currentRoom))
@@ -90,7 +93,7 @@ struct ChoreTagPicker: View {
         }
     }
     
-    /// Maps raw numerical duration intervals into standard UX tiers for editing purposes.
+    /// Reads and writes the chore's duration as a duration group (the menu offers groups, not minutes).
     private var durationTierBinding: Binding<ChoreDurationTier> {
         Binding(
             get: { ChoreDurationTier.from(minutes: chore.duration) },

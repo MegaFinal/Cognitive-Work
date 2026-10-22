@@ -32,6 +32,7 @@ struct RankCarousel: View {
     /// Side the new content comes in from, so it follows the drag.
     @State private var incomingEdge: Edge = .trailing
 
+    /// Swaps the slide animations for fades when the user asked for less motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Past cycles, then the current one.
@@ -40,17 +41,21 @@ struct RankCarousel: View {
             + [RankItem(progress: Tier.progress(forPoints: points), kind: .current)]
     }
 
+    /// The cycle shown right now.
     private var index: Int {
         min(chosenIndex ?? items.count - 1, items.count - 1)
     }
 
+    /// Whether there is an older cycle to go back to.
     private var canGoBack: Bool { index > 0 }
+    /// Whether there is a newer cycle to go to.
     private var canGoForward: Bool { index < items.count - 1 }
 
     var body: some View {
         let item = items[index]
 
         VStack(spacing: 8) {
+            // MARK: - Cycle title
             // Each changing part sits in a ZStack, so the outgoing and incoming versions overlap
             // during the animation instead of stacking up.
             ZStack {
@@ -61,6 +66,7 @@ struct RankCarousel: View {
                     .transition(textTransition)
             }
 
+            // MARK: - Chevrons, arc and rank icon
             HStack(spacing: 0) {
                 chevron("chevron.left", enabled: canGoBack) { go(by: -1) }
 
@@ -81,6 +87,7 @@ struct RankCarousel: View {
                 chevron("chevron.right", enabled: canGoForward) { go(by: 1) }
             }
 
+            // MARK: - Rank name and detail
             ZStack {
                 VStack(spacing: 4) {
                     Text(item.progress.tier.displayName)
@@ -101,6 +108,7 @@ struct RankCarousel: View {
         .frame(height: Self.cardHeight)
         // Keeps the sliding texts inside the card.
         .clipped()
+        // MARK: - Card background and swipe to change cycle
         .background(
             Color(.systemGray6).opacity(0.5),
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -116,6 +124,7 @@ struct RankCarousel: View {
                 }
         )
         .padding(.horizontal, 30)
+        // MARK: - VoiceOver
         // One element: "Ciclo atual, Prata 1" + "Faltam 15 pontos para Prata 2"; swipe up/down
         // with VoiceOver to change the cycle.
         .accessibilityElement(children: .ignore)
@@ -132,6 +141,7 @@ struct RankCarousel: View {
 
     // MARK: - Navigation
 
+    /// Moves `step` cycles (−1 older, +1 newer), with an animation.
     private func go(by step: Int) {
         let target = index + step
         guard items.indices.contains(target) else { return }
@@ -147,10 +157,12 @@ struct RankCarousel: View {
         }
     }
 
+    /// How the texts change: sliding in from the drag's side, or fading with reduced motion.
     private var textTransition: AnyTransition {
         reduceMotion ? .opacity : .push(from: incomingEdge)
     }
 
+    /// A chevron button; hidden when there's nowhere to go.
     private func chevron(_ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
@@ -170,14 +182,20 @@ struct RankCarousel: View {
 /// What the card shows for one cycle.
 private struct RankItem {
 
+    /// Whether the item is the current cycle or a past one.
     enum Kind {
+        /// The cycle running now.
         case current
+        /// A finished cycle, from the rank history.
         case past(RankHistoryModel)
     }
 
+    /// The rank and how far into it the cycle got.
     let progress: Tier.Progress
+    /// Current or past.
     let kind: Kind
 
+    /// Whether this is the current cycle.
     var isCurrent: Bool {
         if case .current = kind { return true }
         return false
@@ -202,6 +220,7 @@ private struct RankItem {
         }
     }
 
+    /// "Ciclo atual", or the past cycle's dates.
     var title: String {
         switch kind {
         case .current:
@@ -212,6 +231,7 @@ private struct RankItem {
         }
     }
 
+    /// For the current cycle, the points missing for the next rank; for a past one, its points.
     var detail: String {
         switch kind {
         case .current:
@@ -232,16 +252,22 @@ struct RankArc: View {
 
     /// From 0 (empty) to 1 (full).
     let progress: Double
+    /// The color of the filled part.
     var tint: Color = .choreYellow
+    /// The arc's thickness.
     var lineWidth: CGFloat = 14
 
+    /// Fills at once when the user asked for less motion.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// How much is drawn right now (animates toward ``progress``).
     @State private var shown: Double = 0
 
+    /// ``progress`` kept between 0 and 1.
     private var clamped: Double { min(max(progress, 0), 1) }
 
     var body: some View {
         ZStack {
+            // MARK: - Gray track and filled part
             HalfCircle()
                 .stroke(Color(.systemGray5), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
 

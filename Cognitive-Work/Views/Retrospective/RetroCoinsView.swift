@@ -12,12 +12,17 @@ import SwiftUI
 /// The amount comes from ``RetroCoinsViewModel`` (the cycle's payout, decided by the user's rank);
 /// thresholds and messages live in ``RetroCoinsContent``. Navigation goes through `viewModel`.
 struct RetroCoinsView: View {
+    /// The retrospective's view model, for navigation.
     let viewModel: RetroViewModel
+    /// The cycle's coins and the redeem action.
     let coinsViewModel: RetroCoinsViewModel
 
+    /// `true` once the pig shows its coin.
     @State private var showCoinPig = false
+    /// `true` once the coins float around the pig.
     @State private var showFloatingCoins = false
 
+    /// This page's content, built from the cycle's coins.
     private var content: RetroCoinsContent {
         RetroCoinsContent.make(
             earned: coinsViewModel.cycleEarned,
@@ -26,8 +31,10 @@ struct RetroCoinsView: View {
         )
     }
 
+    /// Whether this page is the one on screen.
     private var isActive: Bool { viewModel.isPageActive(.coins) }
 
+    /// What restarts the pig animation: the page becoming visible or the content changing.
     private struct AnimationKey: Equatable {
         let isActive: Bool
         let content: RetroCoinsContent?
@@ -38,6 +45,7 @@ struct RetroCoinsView: View {
             
             Spacer()
             
+            // MARK: - Piggy bank (gets a coin, then coins float around it)
             ZStack {
                 Image("RetroPig")
                     .resizable()
@@ -72,10 +80,14 @@ struct RetroCoinsView: View {
                 showFloatingCoins = true
             }
             
+            // MARK: - Coins earned (spinner while loading)
             if coinsViewModel.isLoaded {
                 Text(content.coinsLabel)
                     .bold()
                     .font(.system(size: 64))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 24)
                     .padding(.bottom, height * 0.014)
                     .accessibilityAddTraits(.isHeader)
             } else {
@@ -85,6 +97,7 @@ struct RetroCoinsView: View {
                     .voiceOverLabel(L10n.tr("Carregando moedas"))
             }
             
+            // MARK: - Subtitle and message
             Text(subtitle)
                 .fontWeight(.regular)
                 .font(.title)
@@ -99,6 +112,7 @@ struct RetroCoinsView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, height * 0.05)
 
+            // MARK: - Redeem error
             if let errorText = coinsViewModel.errorText {
                 Text(errorText)
                     .font(.footnote)
@@ -108,6 +122,7 @@ struct RetroCoinsView: View {
                     .padding(.bottom, height * 0.014)
             }
             
+            // MARK: - Actions: see later / redeem and conclude
             Button {
                 withAnimation {
                     viewModel.skipRetrospective()
@@ -130,7 +145,8 @@ struct RetroCoinsView: View {
                         Text(buttonTitle)
                     }
                 }
-                .frame(width: width * 0.69, height: height * 0.037)
+                .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                .multilineTextAlignment(.center)
                 .fontWeight(.medium)
                 .font(.system(size: 17))
             }
@@ -152,6 +168,7 @@ struct RetroCoinsView: View {
         }
     }
 
+    /// Whether there are coins to redeem that weren't redeemed yet.
     private var hasCoinsToRedeem: Bool {
         coinsViewModel.pendingAmount > 0 && !coinsViewModel.didRedeem
     }
@@ -170,6 +187,7 @@ struct RetroCoinsView: View {
         }
     }
 
+    /// "ganhas neste ciclo com o rank X", or without the rank when it is unknown.
     private var subtitle: String {
         if let tierName = content.tierName {
             return L10n.tr("ganhas neste ciclo com o rank %@", tierName)

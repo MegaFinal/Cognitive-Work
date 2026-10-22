@@ -33,6 +33,11 @@ struct CouponPricing: Equatable {
     /// The pricing the app uses.
     static let current = CouponPricing()
 
+    /// The price of a coupon for a chore with this frequency and duration (see the formula above).
+    /// - Parameters:
+    ///   - frequency: How often the chore repeats.
+    ///   - durationMinutes: How long the chore takes, in minutes.
+    /// - Returns: The price in coins, never below ``minimumPrice``.
     func price(frequency: Recurrence, durationMinutes: Double) -> Int {
         let minutes = max(durationMinutes, 0)
         let raw = basePrice + coinsPerMinute * minutes * frequency.occurrencesPerCycle
@@ -42,6 +47,7 @@ struct CouponPricing: Equatable {
         return max(minimumPrice, rounded)
     }
 
+    /// The price of `chore`'s coupon.
     func price(for chore: ChoreModel) -> Int {
         price(frequency: chore.frequency, durationMinutes: chore.duration)
     }

@@ -7,22 +7,20 @@
 
 import SwiftUI
 
-/// The step where the user selects which rooms exist in their house
+/// The step where the user picks which rooms their house has.
 ///
-/// `FourthOnboardingView` renders the list of available rooms (from
-/// ``OnboardingViewModel/availableRooms``) as a two-column grid of
-/// ``OnboardingRoomCard`` items
+/// The rooms (``OnboardingViewModel/availableRooms``) are shown as a two-column grid of
+/// ``OnboardingRoomCard`` items:
+/// - Tapping a card selects or unselects it.
+/// - A long press opens ``RoomQuantityEditor`` to set how many rooms of that type exist and their names.
+/// - The "add" card opens ``NewRoomSheet`` to create a custom room.
 ///
-/// Tapping a card toggles its selection state, tapping the dedicated "add" card
-/// presents ``NewRoomSheet`` so the user can define a custom room
-///
-///  Confirming the selection persists the chosen rooms via
-/// ``OnboardingViewModel/saveSelectedRooms()``.
+/// "Continuar" saves the chosen rooms with ``OnboardingViewModel/saveSelectedRooms()``.
 struct SelectRoomsOnboardingView: View {
 
     // MARK: - Properties
 
-    /// The shared onboarding view model, read from the environment
+    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
     
     /// Whether the sheet for creating a custom room is currently presented
@@ -47,11 +45,13 @@ struct SelectRoomsOnboardingView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
+                // MARK: - Title and description
                 OnboardingHeader(
                     title: "Defina os cômodos",
                     description: "Escolha os ambientes presentes na sua residência, aperte e segure para editar seus nomes e quantidades."
                 )
                 
+                // MARK: - Room cards
                 LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(viewModel.availableRooms) { roomDraft in
                         OnboardingRoomCard(
@@ -62,6 +62,7 @@ struct SelectRoomsOnboardingView: View {
                             isSelected: roomDraft.isSelected,
                             quantity: roomDraft.quantity
                         )
+                        // MARK: Tap to select
                         .onTapGesture {
                             if !viewModel.isLoading {
                                 if roomDraft.isAddButton {
@@ -73,6 +74,7 @@ struct SelectRoomsOnboardingView: View {
                                 }
                             }
                         }
+                        // MARK: Long press to edit
                         // Long press opens the quantity/name editor for this room type. The card
                         // sinks while the finger is down, so the user sees something is happening.
                         .onLongPressGesture(minimumDuration: 0.25) {
@@ -84,6 +86,7 @@ struct SelectRoomsOnboardingView: View {
                                 pressingRoomID = isPressing ? roomDraft.id : nil
                             }
                         }
+                        // MARK: Accessibility
                         // VoiceOver: one button per card; the long press becomes a named action.
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(Text(roomAccessibilityLabel(roomDraft)))
@@ -109,6 +112,7 @@ struct SelectRoomsOnboardingView: View {
                                 }
                             }
                         }
+                        // MARK: Pressed and editing looks, and the card's bounds for the editor
                         .scaleEffect(pressingRoomID == roomDraft.id ? 0.9 : 1)
                         .opacity(editingRoomID != nil && editingRoomID != roomDraft.id ? 0.55 : 1)
                         .anchorPreference(key: RoomCardBoundsKey.self, value: .bounds) {
@@ -118,6 +122,7 @@ struct SelectRoomsOnboardingView: View {
                 }
                 .padding(.horizontal)
                 
+                // MARK: - "Continuar" button
                 OnboardingProgressButton(text: "Continuar", isLoading: viewModel.isLoading, isDisabled: !viewModel.hasSelectedRooms) {
                     Task {
                         await viewModel.saveSelectedRooms()
@@ -130,6 +135,7 @@ struct SelectRoomsOnboardingView: View {
             }
             Spacer()
         }
+        // MARK: - Quantity editor popup over a dimmed background
         .overlayPreferenceValue(RoomCardBoundsKey.self) { cardBounds in
             if let editingRoomID,
                let index = viewModel.availableRooms.firstIndex(where: { $0.id == editingRoomID }) {
@@ -190,6 +196,7 @@ struct SelectRoomsOnboardingView: View {
                 .transition(.opacity)
             }
         }
+        // MARK: - New room sheet, back button and error alert
         .sheet(isPresented: $isShowingCustomRoomSheet) {
             NewRoomSheet()
                 .environment(viewModel)
@@ -237,6 +244,7 @@ struct SelectRoomsOnboardingView: View {
         return [name]
     }
     
+    /// Where the editor goes: under the card (or above it when it doesn't fit), on the card's side.
     private func editorPlacement(cardFrame: CGRect?, in size: CGSize) -> EditorPlacement {
         let margin: CGFloat = 16
         let gap: CGFloat = 8
@@ -278,6 +286,7 @@ struct SelectRoomsOnboardingView: View {
         return EditorPlacement(origin: CGPoint(x: x, y: y), width: width, anchor: anchor)
     }
     
+    /// Closes the editor (and the keyboard).
     private func stopEditing() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         
@@ -292,7 +301,9 @@ struct SelectRoomsOnboardingView: View {
 
 /// Where ``RoomQuantityEditor`` is drawn, relative to the screen's top-leading corner.
 private struct EditorPlacement {
+    /// The editor's top-leading corner.
     var origin: CGPoint
+    /// The editor's width.
     var width: CGFloat
     /// The corner it scales in from.
     var anchor: UnitPoint
@@ -301,8 +312,10 @@ private struct EditorPlacement {
 /// Each room card's bounds, keyed by ``RoomDTO/id``, so the editor can open right under the
 /// card being edited.
 private struct RoomCardBoundsKey: PreferenceKey {
+    /// No bounds yet.
     static let defaultValue: [UUID: Anchor<CGRect>] = [:]
     
+    /// Merges the bounds of every card.
     static func reduce(value: inout [UUID: Anchor<CGRect>], nextValue: () -> [UUID: Anchor<CGRect>]) {
         value.merge(nextValue()) { _, latest in latest }
     }
@@ -310,19 +323,23 @@ private struct RoomCardBoundsKey: PreferenceKey {
 
 // MARK: - Private subviews
 
-/// A selectable card representing a single room.
+/// A selectable card for one room type: its icon and name.
 ///
-/// The card displays an SF Symbol icon and a label. Its appearance flips between
-/// an unselected (white background, black content) and selected (blue
-/// background, white content) state depending on ``isSelected``.
+/// Unselected it is white with black content; selected it takes the room's color and texture
+/// with white content. When the house has more than one room of the type, a "×N" badge shows.
 ///
-/// Selection handling is applied by the parent view via a tap gesture.
+/// Selection is handled by the parent view.
 private struct OnboardingRoomCard: View {
     
+    /// The room's name.
     var text: String
+    /// The room's SF Symbol.
     var symbol: String
+    /// The room's color (when selected).
     var color: RoomColor
+    /// The room's texture (when selected).
     var pattern: RoomTexturePattern
+    /// Whether the room is selected.
     var isSelected: Bool = false
     
     /// How many rooms of this type were set with a long press; shown as a badge above one.
@@ -330,6 +347,7 @@ private struct OnboardingRoomCard: View {
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
+            // MARK: - Card and "×N" badge
             content
             
             if quantity > 1 {
@@ -347,6 +365,7 @@ private struct OnboardingRoomCard: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.65), value: quantity)
     }
     
+    /// The icon and name over the card's background.
     private var content: some View {
         ZStack {
             Image(systemName: symbol)
@@ -381,15 +400,20 @@ private struct OnboardingRoomCard: View {
 /// has, and each one's name.
 private struct RoomQuantityEditor: View {
     
+    /// The room type being edited.
     @Binding var room: RoomDTO
     
+    /// The name field being edited.
     @FocusState private var focusedInstance: UUID?
     
+    /// The most rooms of one type.
     private let maxQuantity = 10
+    /// The longest room name.
     private let maxNameLength = TextLimits.roomName
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+            // MARK: - "Quantidade" and the stepper
             HStack {
                 Text("Quantidade")
                     .font(.system(size: 22, weight: .bold))
@@ -400,6 +424,7 @@ private struct RoomQuantityEditor: View {
                 quantityStepper
             }
             
+            // MARK: - One name field per room
             VStack(alignment: .leading, spacing: 14) {
                 ForEach(Array(room.instances.enumerated()), id: \.element.id) { index, instance in
                     nameRow(index: index, instance: instance)
@@ -421,6 +446,7 @@ private struct RoomQuantityEditor: View {
     
     // MARK: - Subviews
     
+    /// The − / + buttons and the count.
     private var quantityStepper: some View {
         HStack(spacing: 0) {
             Button {
@@ -480,6 +506,7 @@ private struct RoomQuantityEditor: View {
         }
     }
     
+    /// One room's name field with its pencil button.
     private func nameRow(index: Int, instance: RoomInstanceDTO) -> some View {
         let name = nameBinding(at: index)
         

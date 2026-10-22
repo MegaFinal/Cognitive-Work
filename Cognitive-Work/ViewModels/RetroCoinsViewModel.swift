@@ -32,17 +32,23 @@ final class RetroCoinsViewModel {
     private(set) var cyclePoints = 0
     /// `true` once the first load finished, even if it found nothing.
     private(set) var isLoaded = false
+    /// `true` once the user redeemed the pending coins in this session.
     private(set) var didRedeem = false
+    /// `true` while redeeming.
     private(set) var isWorking = false
+    /// A user-facing error from the last redeem, or `nil`.
     private(set) var errorText: String?
 
+    /// What ``redeem()`` needs, kept from the last load.
     private struct Context {
         let houseID: CKRecord.ID
         let user: UserModel
         let cycles: [HouseCycleModel]
     }
 
+    /// The house, member and cycles of the last load. `nil` before loading or when it failed.
     @ObservationIgnored private var context: Context?
+    /// The load running or done, so ``load()`` runs only once.
     @ObservationIgnored private var loadTask: Task<Void, Never>?
     /// Previews only: ``redeem()`` simulates the redeem instead of touching CloudKit.
     @ObservationIgnored private var isPreview = false
@@ -67,6 +73,7 @@ final class RetroCoinsViewModel {
         await load()
     }
 
+    /// Settles the closed cycles and reads the member's payouts (see ``load()``).
     private func performLoad() async {
         defer { isLoaded = true }
         guard let houseID = try? await CloudKitManager.shared.currentHouse()?.recordID,
@@ -130,19 +137,31 @@ final class RetroCoinsViewModel {
 
 /// What `RetroCoinsView` shows. Pure, so the thresholds are easy to tune and test.
 struct RetroCoinsContent: Equatable {
+    /// Coins earned in the cycle (never negative).
     let coins: Int
+    /// ``coins`` as text ("1 moeda", "30 moedas"), translated.
     let coinsLabel: String
+    /// The rank that paid the coins, or `nil` when unknown.
     let tierName: String?
+    /// Whether the pig gets a coin (the member earned anything).
     let hasCoinPig: Bool
+    /// How many coins float around the pig.
     let floatingCoinsCount: Int
+    /// The encouraging message under the number.
     let message: String
 
+    /// Whether any coin floats around the pig.
     var hasFloatingCoins: Bool { floatingCoinsCount > 0 }
 
     /// Every this many coins reveals one more coin around the pig
     /// (Bronze: none, Prata: 1, Ouro: 2, Platina: 3, Diamante: 4, Mestre: max).
     static let coinsPerFloatingCoin = 15
 
+    /// The content for `earned` coins.
+    /// - Parameters:
+    ///   - earned: Coins earned in the cycle.
+    ///   - tier: The rank that paid them.
+    ///   - maxFloatingCoins: The most coins the pig animation can show (``RetroCoinsScatter/maxCount``).
     static func make(earned: Int, tier: Tier?, maxFloatingCoins: Int) -> RetroCoinsContent {
         let coins = max(earned, 0)
         let floating = min(coins / coinsPerFloatingCoin, maxFloatingCoins)

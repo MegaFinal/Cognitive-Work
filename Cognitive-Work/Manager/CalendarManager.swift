@@ -9,6 +9,9 @@ import Foundation
 import EventKit
 import CloudKit
 
+/// Keeps the user's chores in sync with a "Pipa" calendar in the Apple Calendar app.
+///
+/// Only chores the signed-in member is responsible for and hasn't done yet become events.
 @Observable
 class CalendarManager {
     /// Global shared singleton instance
@@ -19,6 +22,7 @@ class CalendarManager {
     /// Dedicated calendar name used by the application
     private let calendarTitle = "Pipa"
     
+    /// Use ``shared``.
     private init() {}
     
     /// Requests full access to the user's event calendar.
@@ -125,6 +129,11 @@ class CalendarManager {
       
     // MARK: - Event Construction & Staging (For Batch Sync)
      
+    /// Creates or updates the calendar event of a one-off chore, without committing it yet.
+    ///
+    /// Nothing happens unless the chore is one-off, has a due date, isn't done and belongs to
+    /// `currentUserID`. Call the store's commit after staging every event (batch sync).
+    /// - Returns: `true` when the chore got a new event ID (so it must be saved).
     @discardableResult
     func upsertOneOffEventWithoutPersisting(for chore: ChoreModel, currentUserID: CKRecord.ID) throws -> Bool {
         // Check conditions: one-off chore, current user is responsible, has due date, and not completed
@@ -165,6 +174,11 @@ class CalendarManager {
         return false
     }
       
+    /// Creates, updates or removes the calendar event of one occurrence of a recurring chore,
+    /// without committing it yet.
+    ///
+    /// The event is removed when the occurrence is done or belongs to someone else.
+    /// - Returns: `true` when the occurrence's event ID changed (so it must be saved).
     @discardableResult
     func upsertRecurrentEventWithoutPersisting(for assignment: RecurrentAssignmentModel, chore: ChoreModel, currentUserID: CKRecord.ID) throws -> Bool {
         let isAssignedToMe = (assignment.userReferences ?? []).contains { $0.recordID == currentUserID }

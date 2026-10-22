@@ -349,7 +349,6 @@ func scheduleNewRecurringChore(
 ///   - remainingCapacity: Mutable slot capacity dictionary.
 ///   - userAssignedMinutes: Mutable user assigned minutes dictionary.
 /// - Returns: An array of ``ScheduleResult``.
-
 func scheduleAssignedChores(
     _ assignedChores: [ChoreModel],
     context: ScheduleContext,

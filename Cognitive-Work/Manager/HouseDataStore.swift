@@ -10,19 +10,26 @@ import CloudKit
 
 /// Everything the main tabs show, read from CloudKit in a single pass.
 struct HouseSnapshot {
+    /// Identifies this snapshot, so views can tell when the data was reloaded.
     let id = UUID()
 
+    /// Every chore of the house.
     let chores: [ChoreModel]
+    /// The house members, one per person.
     let users: [UserModel]
 
     /// Every user record of the house, including the extra records of the same person that
     /// ``users`` merges. Used to resolve who a reference points at.
     let userRecords: [UserModel]
+    /// Every room of the house.
     let rooms: [RoomModel]
+    /// Every chore occurrence of the house.
     let assignments: [RecurrentAssignmentModel]
 
+    /// The signed-in member's record inside the house.
     let houseUser: UserModel?
 
+    /// The signed-in user's private profile (outside the house).
     let privateUser: UserModel?
 
     /// The house's shopping list, or `nil` if it has none.
@@ -72,6 +79,7 @@ struct HouseSnapshot {
 @Observable
 final class HouseDataStore {
 
+    /// The single instance shared by every tab.
     static let shared = HouseDataStore()
 
     // MARK: - State
@@ -96,6 +104,7 @@ final class HouseDataStore {
     @ObservationIgnored
     private var latestFetchID: UUID?
 
+    /// Creates an empty store. The app uses ``shared``; tests can create their own.
     init() {}
 
     // MARK: - Reading
@@ -157,6 +166,10 @@ final class HouseDataStore {
 
     // MARK: - Fetching
 
+    /// Downloads everything once and keeps it as ``snapshot``.
+    ///
+    /// When a newer fetch started meanwhile, its result wins. When the download fails, the previous
+    /// snapshot is kept and marked stale, so the next load tries again.
     private func fetch() async -> HouseSnapshot {
         let fetchID = UUID()
         latestFetchID = fetchID
@@ -234,11 +247,13 @@ final class HouseDataStore {
         )
     }
 
+    /// Every cycle of the house in `zoneID`, or none when there is no house.
     private nonisolated static func fetchCycles(inHouseZone zoneID: CKRecordZone.ID?) async -> [HouseCycleModel] {
         guard let zoneID else { return [] }
         return await HouseCycleModel.fetchAll(inHouseZone: zoneID)
     }
 
+    /// The house's shopping list, or `nil` when there is no house or list.
     private nonisolated static func fetchShopList() async -> ShopListModel? {
         guard let house = try? await CloudKitManager.shared.currentHouse() else { return nil }
         return await house.shopList

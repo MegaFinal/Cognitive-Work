@@ -7,7 +7,10 @@
 
 import SwiftUI
 
+/// The keyhole shape drawn on the percentage page of the retrospective: a circle on top of a
+/// trapezoid that widens towards the bottom.
 struct Keyhole: Shape {
+    /// The keyhole's outline, scaled to fill `rect`.
     func path(in rect: CGRect) -> Path {
         let w = rect.width
         let h = rect.height
@@ -16,10 +19,10 @@ struct Keyhole: Shape {
         let radius = w * 0.4734
 
         var path = Path()
-        path.move(to: CGPoint(x: rect.minX + w * 0.2944, y: rect.minY + h * 0.4876)) // junção esquerda
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))                        // base esquerda
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))                        // base direita
-        path.addLine(to: CGPoint(x: rect.minX + w * 0.7132, y: rect.minY + h * 0.4876)) // junção direita
+        path.move(to: CGPoint(x: rect.minX + w * 0.2944, y: rect.minY + h * 0.4876))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX + w * 0.7132, y: rect.minY + h * 0.4876))
         path.addArc(center: center,
                     radius: radius,
                     startAngle: .degrees(63.6),

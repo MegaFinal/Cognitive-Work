@@ -7,11 +7,15 @@
 
 import SwiftUI
 
+/// The retrospective's first card: "Sua retrospectiva chegou!", with the buttons to open it or,
+/// for the admin at the end of a cycle, to skip straight to the new division.
 struct RetroAlert: View {
+    /// The retrospective's view model (shared with the other pages).
     let viewModel: RetroViewModel
     
     var body: some View {
         VStack {
+            // MARK: - Icon
             Image(systemName: "chart.bar.xaxis")
                 .resizable()
                 .font(.system(size: 64))
@@ -19,6 +23,7 @@ struct RetroAlert: View {
                 .foregroundStyle(.choreYellow)
                 .padding(.top, height * 0.085)
             
+            // MARK: - Title and subtitle
             Text("Sua retrospectiva chegou!")
                 .font(.custom("Alan Sans", size: 34))
                 .bold()
@@ -32,38 +37,40 @@ struct RetroAlert: View {
                 .fontWeight(.regular)
                 .padding(.top, height * 0.0187)
             
-            Spacer()
-            
-            Button {
-                withAnimation {
-                    viewModel.startRetrospective()
-                }
-            } label: {
-                Text("Ver minha retrospectiva")
-                    .frame(width: width * 0.69, height: height * 0.037)
-                    .fontWeight(.medium)
-                    .font(.system(size: 17))
-            }
-            .buttonStyle(.glassProminent)
-            .glassEffectTransition(.identity)
-            // The pages need the loaded data.
-            .disabled(viewModel.loadState != .loaded)
-            
-            // Only the house admin, and only once the current division is over.
-            if viewModel.canStartNewDivision {
+                // MARK: - Actions: open the retrospective / skip to the new division
                 Button {
                     withAnimation {
                         viewModel.skipRetrospective()
                     }
                 } label: {
-                    Text("Pular para a nova divisão")
-                        .frame(width: width * 0.69, height: height * 0.037)
+                    Text("Ver minha retrospectiva")
+                        .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                        .multilineTextAlignment(.center)
                         .fontWeight(.medium)
                         .font(.system(size: 17))
                 }
-                .buttonStyle(.glass)
-            }
+                .buttonStyle(.glassProminent)
+                .glassEffectTransition(.identity)
+                // The pages need the loaded data.
+                .disabled(viewModel.loadState != .loaded)
+
+                // Only the house admin, and only once the current division is over.
+                if viewModel.canStartNewDivision {
+                    Button {
+                        withAnimation {
+                            viewModel.skipRetrospective()
+                        }
+                    } label: {
+                        Text("Pular para a nova divisão")
+                            .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                            .multilineTextAlignment(.center)
+                            .fontWeight(.medium)
+                            .font(.system(size: 17))
+                    }
+                    .buttonStyle(.glass)
+                }
             
+            // MARK: - Loading or error status
             loadStatus
         }
         .padding(.horizontal)

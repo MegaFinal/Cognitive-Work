@@ -20,18 +20,24 @@ import CloudKit
 /// created the first time it is needed, seeded with the legacy ``UserModel/coins``.
 struct CoinWalletModel: CloudKitSyncable, Equatable {
 
+    /// The CloudKit record type.
     static var recordType: String = "CoinWalletModel"
 
+    /// The CloudKit record ID (`wallet-<user>`). `nil` until the model is saved.
     var recordID: CKRecord.ID?
 
+    /// The member who owns the wallet.
     var user: CKRecord.Reference
+    /// How many coins the member has. Never negative.
     var balance: Int
 
+    /// Creates a new wallet, not saved yet.
     init(user: CKRecord.Reference, balance: Int) {
         self.user = user
         self.balance = balance
     }
 
+    /// Creates the model from a CloudKit record. Returns `nil` when a field is missing.
     init?(record: CKRecord) {
         guard
             let user = record["user"] as? CKRecord.Reference,
@@ -43,17 +49,24 @@ struct CoinWalletModel: CloudKitSyncable, Equatable {
         self.balance = balance
     }
 
+    /// Copies the model's fields into `record`, before saving it.
     func populate(record: CKRecord) {
         record["user"] = user
         record["balance"] = balance
     }
 
+    /// The fixed record ID of `userID`'s wallet.
     static func recordID(for userID: CKRecord.ID) -> CKRecord.ID {
         CKRecord.ID(recordName: "wallet-\(userID.recordName)", zoneID: userID.zoneID)
     }
 
     /// The fetched wallet record of `userID`, or a new one seeded with `legacyCoins`.
     ///
+    /// - Parameters:
+    ///   - userID: The member the wallet belongs to.
+    ///   - fetched: Records already fetched from the server (the wallet may be among them).
+    ///   - houseID: The house, set as the parent of a new wallet so it is shared with the house.
+    ///   - legacyCoins: The coins kept in the old ``UserModel/coins`` field, used to start a new wallet.
     /// - Returns: The record to save and its current balance.
     static func record(
         for userID: CKRecord.ID,

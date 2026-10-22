@@ -26,7 +26,7 @@ struct UserScheduleCard: View {
     /// The user's entries; entries from other residents should be filtered out beforehand.
     let entries: [DailyUsageEntry]
     
-    /// First day shown in the chart.
+    /// Fallback first day, used only when there are no entries (the chart starts on the first day with chores).
     let startDate: Date
     
     /// Rooms listed in the legend.
@@ -102,6 +102,7 @@ struct UserScheduleCard: View {
         // Figma (iPhone 16): card 361 × 476, padding 16 top/bottom and 8 on the sides,
         // 12 between title, chart and legend.
         VStack(alignment: .leading, spacing: designHeight(12)) {
+            // MARK: - Title, chart and room legend
             header
             
             chart
@@ -121,6 +122,7 @@ struct UserScheduleCard: View {
     
     // MARK: Subviews
     
+    /// The card's title.
     private var header: some View {
         HStack(alignment: .top) {
             Text("Sua divisão atual")
@@ -132,9 +134,12 @@ struct UserScheduleCard: View {
         }
     }
     
+    /// The scrollable chart: one column per day, sized to fill the space left in the card.
     private var chart: some View {
         let calendar = Calendar.current
-        let firstDay = calendar.startOfDay(for: startDate)
+        // The chart starts on the first day that has chores (or on the period start if none).
+        let firstDay = entries.map { calendar.startOfDay(for: $0.day) }.min()
+            ?? calendar.startOfDay(for: startDate)
         
         // GeometryReader is greedy: it takes all the space the card has left after the
         // title and the legend, and tells us how much that is.
@@ -203,14 +208,20 @@ private struct ScheduleDayColumn: View {
     /// Width of the column; the bar uses most of it.
     let columnWidth: CGFloat
     
+    /// The resident shown in the popover.
     let user: UserModel?
+    /// Finds the chore of an entry.
     let chore: (DailyUsageEntry) -> ChoreModel?
+    /// Finds the room of a chore.
     let room: (ChoreModel) -> RoomModel?
     
     var body: some View {
         VStack(spacing: UserScheduleCard.labelToBarsSpacing) {
+            // MARK: - Weekday label
             Text(weekdayText)
                 .font(.system(size: 16.35, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .frame(height: UserScheduleCard.weekdayLabelHeight)
                 .voiceOverLabel(ChartA11y.weekdayDayMonth(day))
                 .accessibilityValue(
@@ -219,6 +230,7 @@ private struct ScheduleDayColumn: View {
                         : L10n.tr("%lld tarefas", entries.count)
                 )
             
+            // MARK: - The day's bars
             VStack(spacing: UserScheduleCard.barSpacing) {
                 ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
                     bar(for: entry)
@@ -287,8 +299,7 @@ private struct ScheduleDayColumn: View {
         RoomTexturedShape(
             shape: RoundedRectangle(cornerRadius: 15),
             room: resolvedRoom,
-            zoom: 1.5,
-            fixedSize: maxBarHeight
+            zoom: 1.5
         )
         // 45 of 50 in the original layout: the bar keeps that share of the column.
         .frame(width: columnWidth * 0.9, height: maxBarHeight * CGFloat(entry.tier.heightRatio) * barScale)
@@ -373,6 +384,7 @@ private struct RoomScheduleCaption: View {
     /// Rooms to list.
     let rooms: [RoomModel]
     
+    // MARK: - Room dots and names
     var body: some View {
         LazyVGrid(
             columns: [GridItem(.adaptive(minimum: 90), alignment: .leading)],

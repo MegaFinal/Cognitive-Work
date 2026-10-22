@@ -8,16 +8,27 @@
 import SwiftUI
 
 /// The aisle a shopping list item belongs to.
+///
+/// The raw value is saved in CloudKit, so cases must not be renamed.
 enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
+    /// Packaged food (rice, pasta, snacks...).
     case food
+    /// Fruits and vegetables.
     case produce
+    /// Drinks.
     case drinks
+    /// Cleaning products.
     case cleaning
+    /// Personal hygiene products.
     case hygiene
+    /// Things for the house (bulbs, batteries...).
     case home
+    /// Pet food and supplies.
     case pets
+    /// Anything else.
     case other
 
+    /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
 
     /// Preselected when adding an item: the first one in the picker.
@@ -77,6 +88,8 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// The category's main color (from ``roomColor``).
     var color: Color { roomColor.uiColor }
+    /// The soft version of ``color``, for backgrounds.
     var softColor: Color { roomColor.lowOpacityColor }
 }

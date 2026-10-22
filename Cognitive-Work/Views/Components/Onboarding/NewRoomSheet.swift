@@ -15,9 +15,11 @@ import SwiftUI
 /// is added, already selected, to ``OnboardingViewModel/availableRooms`` and persisted with
 /// the others when the step is confirmed.
 struct NewRoomSheet: View {
+    /// The onboarding's view model, which keeps the selected rooms.
     @Environment(OnboardingViewModel.self) var viewModel
     
     var body: some View {
+        // MARK: - Room form (adds the room to the onboarding's list)
         RoomFormSheet(room: nil) { name, color, symbol, pattern in
             viewModel.addCustomRoom(name: name, color: color, symbol: symbol, pattern: pattern)
             return true

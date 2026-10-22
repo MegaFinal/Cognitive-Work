@@ -7,11 +7,15 @@
 
 import SwiftUI
 
+/// The pop-up shown over the first generated schedule, explaining how the division works:
+/// it lasts 15 days, leftover chores can be picked up, and a retrospective comes at the end.
 struct ScheduleInfoPopUp: View {
+    /// Runs when the pop-up is closed.
     var onDismiss: () -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
+            // MARK: - Header: "EXPLICAÇÃO" and close button
             HStack {
                 Text("EXPLICAÇÃO")
                     .font(.system(size: 13))
@@ -38,6 +42,7 @@ struct ScheduleInfoPopUp: View {
             }
             .padding(.top, 5)
             
+            // MARK: - Title and intro
             Text("Sua escala está \npronta!")
                 .font(.custom("Alan Sans", size: 32, relativeTo: .title))
                 .bold()
@@ -49,6 +54,7 @@ struct ScheduleInfoPopUp: View {
                 .foregroundColor(.black.opacity(0.55))
             
             
+            // MARK: - Three explanations: 15 days, chores to pick, retrospective
             VStack(alignment: .leading, spacing: 25) {
                 HStack(spacing: 18) {
                     Image(systemName: "15.calendar")
@@ -111,6 +117,7 @@ struct ScheduleInfoPopUp: View {
             }
             .padding(.top, 15)
             
+            // MARK: - "Ver minha escala" button
             Button {
                 onDismiss()
             } label: {

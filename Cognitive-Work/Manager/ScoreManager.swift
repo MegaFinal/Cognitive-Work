@@ -20,11 +20,15 @@ import CloudKit
 @Observable
 class ScoreManager {
     
+    /// The single instance used by the app.
     static let shared = ScoreManager()
 
+    /// Where scores are read and saved (CloudKit in the app, in memory in tests).
     @ObservationIgnored private let store: AtomicRecordStore
+    /// How many times a save is retried when another device changed the score at the same time.
     @ObservationIgnored private let maxAttempts = 5
 
+    /// Creates the shared instance, backed by CloudKit.
     private convenience init() {
         self.init(store: CloudKitAtomicRecordStore())
     }
@@ -36,6 +40,17 @@ class ScoreManager {
     
     //MARK: private funcs
     //MARK: Score Calculate
+    /// Points a member earns for completing `chore` on `date`.
+    ///
+    /// A chore without a due date is worth its full ``ChoreModel/score``. A chore done before its
+    /// due date is worth half for each day early (done on the day or late: full points), so doing
+    /// chores long before they are due doesn't pay off.
+    ///
+    /// - Parameters:
+    ///   - chore: The completed chore.
+    ///   - date: When it was completed.
+    ///   - calendar: The calendar used to count days.
+    /// - Returns: The points to add.
     private func choreScore(
         for chore: ChoreModel,
         completedAt date: Date = .now,
@@ -98,11 +113,15 @@ class ScoreManager {
 
     //MARK: Assign Score to any User
     
+    /// Adds `score` points to `user`.
+    /// - Returns: `false` when the points couldn't be saved.
     @discardableResult
     func assignScore(score: Int, for user: UserModel) async -> Bool {
         await applyPoints(score, to: user)
     }
 
+    /// Adds the points of completing `chore` to `user` (see ``choreScore(for:completedAt:calendar:)``).
+    /// - Returns: `false` when the points couldn't be saved.
     @discardableResult
     func assignScore(chore: ChoreModel, for user: UserModel) async -> Bool {
         let earned = choreScore(for: chore)
@@ -111,6 +130,8 @@ class ScoreManager {
         return await applyPoints(earned, to: user)
     }
     
+    /// Adds the points of completing one occurrence of a chore to `user`.
+    /// - Returns: `false` when the chore couldn't be found or the points couldn't be saved.
     @discardableResult
     func assignScore(recurrentAssignmentModel: RecurrentAssignmentModel, for user: UserModel) async -> Bool {
         guard let chore = await recurrentAssignmentModel.chore
@@ -124,6 +145,8 @@ class ScoreManager {
         
     //MARK: Assign Score to My User
     
+    /// Adds the points of completing `chore` to the signed-in member.
+    /// - Returns: `false` when the member couldn't be found or the points couldn't be saved.
     @discardableResult
     func assignScoreForMyUser(chore: ChoreModel) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
@@ -135,6 +158,8 @@ class ScoreManager {
         return false
     }
     
+    /// Adds `score` points to the signed-in member.
+    /// - Returns: `false` when the member couldn't be found or the points couldn't be saved.
     @discardableResult
     func assignScoreForMyUser(score: Int) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
@@ -143,6 +168,8 @@ class ScoreManager {
         return false
     }
     
+    /// Adds the points of completing one occurrence of a chore to the signed-in member.
+    /// - Returns: `false` when the member or the chore couldn't be found, or the points couldn't be saved.
     @discardableResult
     func assignScoreForMyUser(assignment: RecurrentAssignmentModel) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
@@ -159,11 +186,15 @@ class ScoreManager {
     
     //MARK: Remove Score Funcions
     
+    /// Removes `score` points from `user` (never below zero).
+    /// - Returns: `false` when the change couldn't be saved.
     @discardableResult
     func removeScore(score: Int, for user: UserModel) async -> Bool {
         await applyPoints(-score, to: user)
     }
     
+    /// Removes `score` points from the signed-in member (never below zero).
+    /// - Returns: `false` when the member couldn't be found or the change couldn't be saved.
     @discardableResult
     func removeScoreForMyUser(score: Int) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
@@ -174,11 +205,15 @@ class ScoreManager {
     
     //MARK: from Chore
     
+    /// Takes back the points of `chore` from `user` (when the chore is unchecked).
+    /// - Returns: `false` when the change couldn't be saved.
     @discardableResult
     func removeScore(chore: ChoreModel, for user: UserModel) async -> Bool {
         await applyPoints(-choreScore(for: chore), to: user)
     }
     
+    /// Takes back the points of `chore` from the signed-in member (when the chore is unchecked).
+    /// - Returns: `false` when the member couldn't be found or the change couldn't be saved.
     @discardableResult
     func removeScoreForMyUser(chore: ChoreModel) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {
@@ -189,6 +224,8 @@ class ScoreManager {
     
     //MARK: from Assignment
     
+    /// Takes back the points of one occurrence from `user` (when it is unchecked).
+    /// - Returns: `false` when the chore couldn't be found or the change couldn't be saved.
     @discardableResult
     func removeScore(assignment: RecurrentAssignmentModel, for user: UserModel) async -> Bool {
         guard let chore = await assignment.chore
@@ -197,6 +234,8 @@ class ScoreManager {
         return await applyPoints(-choreScore(for: chore), to: user)
     }
     
+    /// Takes back the points of one occurrence from the signed-in member (when it is unchecked).
+    /// - Returns: `false` when the member or the chore couldn't be found, or the change couldn't be saved.
     @discardableResult
     func removeScoreForMyUser(assignment: RecurrentAssignmentModel) async -> Bool {
         if let myUser = await CloudKitManager.shared.fetchMyHouseUser() {

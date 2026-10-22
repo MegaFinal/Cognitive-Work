@@ -57,6 +57,7 @@ final class RoomsManagementViewModel {
             .filter { seen.insert($0).inserted }
     }()
     
+    /// Creates the view model for `house`'s rooms.
     init(house: HouseModel? = nil) {
         self.house = house
     }
@@ -75,6 +76,7 @@ final class RoomsManagementViewModel {
             .caseInsensitiveCompare(houseWideRoomName) == .orderedSame
     }
     
+    /// How many chores `room` has.
     func choreCount(for room: RoomModel) -> Int {
         guard let recordID = room.recordID else { return 0 }
         return choreCountByRoom[recordID] ?? 0
@@ -256,10 +258,12 @@ final class RoomsManagementViewModel {
     
     // MARK: - Private
     
+    /// Whether `room` is the "Casa" room that holds chores of the whole house.
     private static func isHouseWideRoom(_ room: RoomModel) -> Bool {
         room.kind == nil && room.name == houseWideRoomName
     }
     
+    /// `rooms` in alphabetical order.
     private func sorted(_ rooms: [RoomModel]) -> [RoomModel] {
         rooms.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }

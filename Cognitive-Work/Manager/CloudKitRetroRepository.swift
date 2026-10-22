@@ -9,9 +9,13 @@
 import Foundation
 import CloudKit
 
+/// Reads the retrospective's data from CloudKit (see the file header).
 @MainActor
 struct CloudKitRetroRepository: RetroRepository {
 
+    /// The signed-in member's work in `period`, the house's rooms and whether they can start a
+    /// new division.
+    /// - Throws: ``RetroError/userNotFound`` when the member's profile in the house can't be found.
     func fetchSnapshot(for period: RetroPeriod) async throws -> RetroSnapshot {
         let manager = CloudKitManager.shared
 

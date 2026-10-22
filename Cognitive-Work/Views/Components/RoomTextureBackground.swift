@@ -9,7 +9,9 @@ import SwiftUI
 
 /// A room card's background: the room's palette color with its texture on top.
 struct RoomTextureBackground: View {
+    /// The background color.
     let color: RoomColor
+    /// The texture drawn over the color.
     let pattern: RoomTexturePattern
     
     /// Enlargement of this texture; each card picks the one that fits its size.
@@ -25,6 +27,7 @@ struct RoomTextureBackground: View {
     /// Higher means bigger, fewer shapes.
     static let textureZoom: CGFloat = 2.5
     
+    /// Creates the background from a color and a texture.
     init(color: RoomColor, pattern: RoomTexturePattern,
          zoom: CGFloat = textureZoom, fixedSize: CGFloat? = nil) {
         self.color = color
@@ -33,6 +36,7 @@ struct RoomTextureBackground: View {
         self.fixedSize = fixedSize
     }
     
+    /// Creates the background of `room` (its color and texture), optionally at a fixed size.
     init(room: RoomModel, zoom: CGFloat = textureZoom, fixedSize: CGFloat? = nil) {
         self.init(
             color: room.color,
@@ -42,11 +46,13 @@ struct RoomTextureBackground: View {
         )
     }
     
+    /// Creates the background of `room` (its color and texture).
     init(room: RoomModel, zoom: CGFloat = textureZoom) {
         self.init(color: room.color, pattern: room.texturePattern, zoom: zoom)
     }
     
     var body: some View {
+        // MARK: - Room color with the texture on top
         color.uiColor
             .overlay { texture }
             .clipped()

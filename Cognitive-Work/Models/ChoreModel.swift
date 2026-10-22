@@ -12,6 +12,7 @@ import CloudKit
 /// A household task assigned to one or more users and belonging to a room.
 @Observable
 class ChoreModel: CloudKitSyncable, Identifiable {
+    /// Local identifier for SwiftUI lists.
     var id: UUID = UUID()
     
     /// CloudKit record type backing this model.
@@ -34,6 +35,8 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// Free-form details about how the chore should be done.
     var description: String
     
+    /// Whether the chore is done. For recurring chores, each day's occurrence also has its own
+    /// done flag (``RecurrentAssignmentModel/isCompleted``).
     var isDone: Bool
     
     /// When the chore is next due, or `nil` when it has no deadline.
@@ -57,12 +60,14 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// Priority level shown in the UI.
     var priorityTag: PriorityTag
     
-    /// Flag for including monthly chores
+    /// For monthly chores: whether the chore goes into the next division. It flips at every
+    /// division, so a monthly chore appears every other cycle.
     var shouldBeIncluded: Bool?
     
     /// Optional illustrative image.
     var image: Data?
     
+    /// SF Symbol name of the chore's icon.
     var symbolName: String = "toilet"
     
     /// References to the chore's ``CheckItemModel`` entries.
@@ -77,12 +82,13 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     /// The room this chore belongs to.
     var roomReference: CKRecord.Reference?
     
+    /// References to the chore's occurrences (one per day it happens in the current division).
     var dailyAssignmentsReference: [CKRecord.Reference]?
     
-    /// The user that have mark done in the intance of chore
+    /// The member who checked the chore off. `nil` while not done.
     var userThatHaveDoneReference: CKRecord.Reference?
     
-    /// EventKit calendar item persistent identifier
+    /// ID of the matching event in the user's Apple Calendar, when calendar sync is on.
     var calendarEventIdentifier: String?
     
     /// Blocks a second toggle while the first one is still being saved.
@@ -94,6 +100,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
     @ObservationIgnored
     private(set) var needsDurationMigration = false
     
+    /// The chore's checklist items, fetched from CloudKit.
     var checkList: [CheckItemModel] {
         get async {
             if let checkListReference {
@@ -103,6 +110,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    /// The member currently responsible for the chore, fetched from CloudKit.
     var currentResponsible: UserModel? {
         get async {
             if let currentResponsibleReference {
@@ -112,6 +120,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    /// Every member in the chore's rotation, fetched from CloudKit.
     var allResponsibleUsers: [UserModel] {
         get async {
             if let allResponsibleUsersReference {
@@ -121,6 +130,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    /// The chore's room, fetched from CloudKit.
     var room: RoomModel? {
         get async {
             if let roomReference {
@@ -130,6 +140,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    /// The chore's occurrences, fetched from CloudKit.
     var dailyAssignments: [RecurrentAssignmentModel] {
         get async {
             if let dailyAssignmentsReference {
@@ -139,6 +150,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    /// The member who checked the chore off, fetched from CloudKit.
     var userThatHaveDone: UserModel? {
         get async {
             if let userThatHaveDoneReference {
@@ -148,6 +160,9 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         }
     }
     
+    /// How hard the chore is: priority + frequency + duration points.
+    ///
+    /// Used to price and rank its coupon (see ``CouponModel/tier(forScore:)``).
     var score: Int {
         return priorityTag.scoreValue + frequency.scoreValue + TimeScore.getPoints(time: duration)
     }
@@ -247,6 +262,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         self.calendarEventIdentifier = calendarEventIdentifier
     }
     
+    /// Saves a change to one of the chore's checklist items.
     func updateCheckItem(_ item: CheckItemModel) async {
         await CloudKitManager.shared.update(item)
     }
@@ -517,6 +533,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
         let dueDate: Date?
         let checkListReference: [CKRecord.Reference]?
         
+        /// Copies the editable fields of `chore`.
         init(of chore: ChoreModel) {
             name = chore.name
             description = chore.description
@@ -532,6 +549,7 @@ class ChoreModel: CloudKitSyncable, Identifiable {
             checkListReference = chore.checkListReference
         }
         
+        /// Puts the copied fields back on `chore` (used when saving fails).
         func restore(on chore: ChoreModel) {
             chore.name = name
             chore.description = description
@@ -635,12 +653,18 @@ class ChoreModel: CloudKitSyncable, Identifiable {
 
 /// Why ``ChoreModel/save(from:pickedDate:targetAssignments:)`` did not save the chore.
 enum ChoreSaveError: LocalizedError {
+    /// The chore has no room.
     case missingRoom
+    /// A one-off chore needs a date and none was picked.
     case missingDate
+    /// The house of the chore's room could not be found.
     case missingHouse
+    /// The signed-in member's profile could not be found (needed for a private chore).
     case missingCurrentUser
+    /// CloudKit rejected the save. Carries CloudKit's message, if any.
     case cloudKit(String?)
     
+    /// A short, user-facing message for the error, already translated.
     var errorDescription: String? {
         switch self {
         case .missingRoom:
