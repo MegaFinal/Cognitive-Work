@@ -158,7 +158,7 @@ struct ChoreDetailsCard: View {
                 .accessibilityDecorative()
             
             Text(chore.localizedName)
-                .font(.system(size: 25))
+                .font(.custom("Alan Sans", size: 28))
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
                 .frame(width: width * 0.7)

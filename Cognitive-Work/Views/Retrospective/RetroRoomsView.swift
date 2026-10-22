@@ -30,12 +30,13 @@ struct RetroRoomsView: View {
         VStack {
             Text(content.title)
                 .bold()
-                .font(.system(size: 64))
+                .font(.custom("Alan Sans", size: 64))
                 .padding(.top, height * 0.071)
             
             Text(content.subtitle)
                 .font(.title)
                 .multilineTextAlignment(.center)
+                .frame(maxWidth: width * 0.877)
                 .padding(.bottom, height * 0.02)
             
             // Only the chart scrolls (when there are many rooms); title and button stay fixed.

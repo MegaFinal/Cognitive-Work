@@ -23,10 +23,10 @@ struct ChoreCarouselCard: View {
         ZStack {
             VStack {
                 Text(chore.localizedName)
-                    .font(.system(size: 26))
-                    .fontWeight(.bold)
+                    .font(.custom("Alan Sans", size: 35))
+                    .fontWeight(.semibold)
                     .multilineTextAlignment(.center)
-                    .frame(width: width * 0.6)
+                    .frame(width: width * 0.66)
                 Spacer()
             }
             .padding(.top, 30)
@@ -36,6 +36,7 @@ struct ChoreCarouselCard: View {
                 .scaledToFill()
                 .frame(width: width * 0.17, height: height * 0.17)
                 .fontWeight(.ultraLight)
+                .padding(.top, height * 0.05)
         }
         .foregroundColor(.white)
         .frame(width: width * 0.7, height: height * 0.43)

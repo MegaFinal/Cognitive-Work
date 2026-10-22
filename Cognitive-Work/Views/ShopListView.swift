@@ -135,7 +135,7 @@ struct ShopListView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Compras")
-                    .font(.system(size: 34))
+                    .font(.custom("Alan Sans", size: 34))
                     .fontWeight(.bold)
                     .accessibilityAddTraits(.isHeader)
 

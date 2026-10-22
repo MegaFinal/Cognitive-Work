@@ -64,7 +64,10 @@ struct SelectChoresOnboardingView: View {
             let horizontalMargin = width * 0.06
             
             VStack(alignment: .leading, spacing: 20) {
-                header
+                OnboardingHeader(
+                    title: "O que a casa divide?",
+                    description: "Marque **apenas** as tarefas que vão para a escala de todos."
+                )
                 
                 VStack {
                     if isLoadingRooms {
@@ -135,14 +138,6 @@ struct SelectChoresOnboardingView: View {
     }
     
     // MARK: - Subviews
-    
-    private var header: some View {
-        OnboardingHeader(
-            title: "O que a casa divide?",
-            description: "Marque **apenas** as tarefas que vão para a escala de todos."
-        )
-    }
-    
     /// Horizontal row of room capsules.
     private func roomSelector(horizontalMargin: CGFloat) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {

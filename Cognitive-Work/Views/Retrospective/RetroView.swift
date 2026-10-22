@@ -44,66 +44,56 @@ struct RetroView: View {
         Group {
             if viewModel.phase != .dismissed {
                 ZStack {
-                    // The card is sized from the real container (not the global `width`/`height`,
-                    // which come from the screen and can differ from the container, e.g. in previews),
-                    // so its bottom edge, and the page indicator, never fall off the screen.
-                    GeometryReader { proxy in
-                        ZStack {
-                            Color.black.opacity(0.45)
-                                .contentShape(Rectangle())
-                                .onTapGesture { }
-                                .accessibilityDecorative()
-                            
-                            RoundedRectangle(cornerRadius: 32)
-                                // Real sizes (not .infinity), so SwiftUI can interpolate the size in both directions.
-                                .frame(width: viewModel.isCardExpanded ? proxy.size.width : proxy.size.width * 0.87,
-                                       height: viewModel.isCardExpanded ? proxy.size.height : proxy.size.height * 0.59)
-                                .foregroundStyle(.white)
-                                .overlay {
-                            // Same branch for "alert" and "pages not visible yet": the alert must keep its
-                            // identity while the card expands, otherwise it is recreated and the animation is lost.
-                            if showsAlert {
-                                RetroAlert(viewModel: viewModel)
-                                    .transition(.opacity)
-                            } else if viewModel.phase == .pages {
-                                VStack(spacing: 12) {
-                                    TabView(selection: $viewModel.pageIndex) {
-                                        // Developed later; still bound to the same page/flow.
-//                                        RetroStreakView(page: $viewModel.pageIndex, isRetroDone: isRetroDoneBinding)
-//                                            .tag(RetroPage.streak.rawValue)
-                                        
-                                        // Same order as `RetroPage`.
-                                        RetroPercentageOfDoneView(viewModel: viewModel)
-                                            .tag(RetroPage.percentage.rawValue)
-                                        
-                                        RetroRoomsView(viewModel: viewModel)
-                                            .tag(RetroPage.rooms.rawValue)
-                                        
-                                        RetroRankView(viewModel: viewModel, coinsViewModel: coinsViewModel)
-                                            .tag(RetroPage.rank.rawValue)
-                                        
-                                        RetroCoinsView(viewModel: viewModel, coinsViewModel: coinsViewModel)
-                                            .tag(RetroPage.coins.rawValue)
-                                    }
-                                    .tabViewStyle(.page(indexDisplayMode: .never))
-                                    PageIndicator(count: RetroPage.allCases.count, current: $viewModel.pageIndex)
+                    ZStack {
+                        Color.black.opacity(0.45)
+                            .contentShape(Rectangle())
+                            .onTapGesture { }
+                            .accessibilityDecorative()
+                        
+                        RoundedRectangle(cornerRadius: 32)
+                        // Real sizes (not .infinity), so SwiftUI can interpolate the size in both directions.
+                            .frame(width: viewModel.isCardExpanded ? width : width * 0.877,
+                                   height: viewModel.isCardExpanded ? height : height * 0.596)
+                            .foregroundStyle(.white)
+                            .overlay {
+                                // Same branch for "alert" and "pages not visible yet": the alert must keep its
+                                // identity while the card expands, otherwise it is recreated and the animation is lost.
+                                if showsAlert {
+                                    RetroAlert(viewModel: viewModel)
+                                        .transition(.opacity)
+                                } else if viewModel.phase == .pages {
+                                    VStack(spacing: 12) {
+                                        TabView(selection: $viewModel.pageIndex) {
+                                            RetroPercentageOfDoneView(viewModel: viewModel)
+                                                .tag(RetroPage.percentage.rawValue)
+                                            
+                                            RetroRoomsView(viewModel: viewModel)
+                                                .tag(RetroPage.rooms.rawValue)
+                                            
+                                            RetroRankView(viewModel: viewModel, coinsViewModel: coinsViewModel)
+                                                .tag(RetroPage.rank.rawValue)
+                                            
+                                            RetroCoinsView(viewModel: viewModel, coinsViewModel: coinsViewModel)
+                                                .tag(RetroPage.coins.rawValue)
+                                        }
+                                        .tabViewStyle(.page(indexDisplayMode: .never))
+                                        PageIndicator(count: RetroPage.allCases.count, current: $viewModel.pageIndex)
                                         // Clears the home indicator, now that the card reaches the screen edge.
-                                        .padding(.bottom, 16)
-
+                                            .padding(.bottom, 16)
+                                        
+                                    }
+                                    .transition(.opacity)
+                                } else if viewModel.phase == .divisionPrompt && viewModel.canStartNewDivision {
+                                    // Only the admin, and only once the current division is over.
+                                    RetroNewChoresDivision(
+                                        onAutomaticDivision: { withAnimation { viewModel.requestAutomaticDivision() } },
+                                        onLater: { withAnimation { viewModel.deferDivision() } }
+                                    )
                                 }
-                                .transition(.opacity)
-                            } else if viewModel.phase == .divisionPrompt && viewModel.canStartNewDivision {
-                                // Only the admin, and only once the current division is over.
-                                RetroNewChoresDivision(
-                                    onAutomaticDivision: { withAnimation { viewModel.requestAutomaticDivision() } },
-                                    onLater: { withAnimation { viewModel.deferDivision() } }
-                                )
                             }
-                        }
-                        }
-                        .frame(width: proxy.size.width, height: proxy.size.height)
                     }
                     .ignoresSafeArea()
+                    .frame(width: width, height: height)
                     
                     if viewModel.phase == .schedule && viewModel.canStartNewDivision {
                         NavigationStack {

@@ -23,6 +23,7 @@ struct DashboardView: View {
                         
                         HStack(spacing: 16) {
                             DoughnutChart(viewModel: $viewModel)
+                            
                             PointsComponent(
                                 points: viewModel.myCognitiveLoad
                             )
@@ -84,7 +85,7 @@ struct DashboardView: View {
     private var header: some View {
         VStack(alignment: .leading) {
             Text("Seu progresso")
-                .font(.system(size: 34))
+                .font(.custom("Alan Sans", size: 34))
                 .fontWeight(.bold)
                 .padding(.top, 20)
                 .accessibilityAddTraits(.isHeader)

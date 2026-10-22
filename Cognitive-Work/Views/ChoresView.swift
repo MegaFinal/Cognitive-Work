@@ -266,14 +266,13 @@ struct ChoresView: View {
     private var header: some View {
         HStack {
             Text(headerTitle)
-                .font(.system(size: 34))
-                .fontWeight(.bold)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .font(.custom("Alan Sans", size: 34))
+                .bold()
                 .layoutPriority(1)
-                .padding(.horizontal, 30)
+                .padding(.leading, width * 0.04)
                 .padding(.top, 20)
                 .accessibilityAddTraits(.isHeader)
+//                .frame(width: width * 0.6)
             
             Spacer()
             
@@ -449,12 +448,12 @@ private struct ProgressIndicatorCard: View {
             Spacer()
             Text(title)
                 .font(.system(size: 12))
-                .fontWeight(.medium)
+                .fontWeight(.semibold)
                 .foregroundColor(.white.opacity(0.8))
             
             Text(data)
-                .font(.system(size: 15))
-                .fontWeight(.bold)
+                .font(.custom("Alan Sans", size: 15))
+                .fontWeight(.semibold)
                 .foregroundColor(.white)
             Spacer()
         }

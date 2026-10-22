@@ -227,7 +227,7 @@ enum RetroCalculator {
             completedChores: completed,
             totalChores: total,
             percentage: percentage,
-            summary: "Você realizou \(completed) de \(total) \n tarefas da sua escala",
+            summary: "Você realizou **\(completed) de \(total)** \n tarefas da sua escala",
             subtitle: subtitle,
             closing: closing
         )

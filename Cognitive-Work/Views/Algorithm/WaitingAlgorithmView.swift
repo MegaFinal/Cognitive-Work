@@ -42,8 +42,9 @@ struct WaitingAlgorithmView: View {
                     }
                 
                 Text("Levantando escalas")
-                    .font(.system(size: 32))
+                    .font(.custom("Alan Sans", size: 32, relativeTo: .largeTitle))
                     .bold()
+                    .foregroundStyle(.titleGray)
                 
                 VStack(spacing: 15) {
                     Text("Estamos ponderando, sorteando e dividindo as tarefas entre os moradores")

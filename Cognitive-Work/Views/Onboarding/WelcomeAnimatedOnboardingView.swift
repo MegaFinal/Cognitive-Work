@@ -44,6 +44,7 @@ struct WelcomeAnimatedOnboardingView: View{
                 
                 VStack(alignment: .leading){
                     Text("Dividir a casa vai além da faxina")
+                        .font(.custom("Alan Sans", size: 32, relativeTo: .largeTitle))
                         .bold()
                         .font(.largeTitle)
                         .fixedSize(horizontal: false, vertical: true)

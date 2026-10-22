@@ -28,7 +28,7 @@ struct OnboardingHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text(title)
-                .font(.system(size: 30))
+                .font(.custom("Alan Sans", size: 32, relativeTo: .largeTitle))
                 .bold()
                 .foregroundStyle(.titleGray)
                 .fixedSize(horizontal: false, vertical: true)
