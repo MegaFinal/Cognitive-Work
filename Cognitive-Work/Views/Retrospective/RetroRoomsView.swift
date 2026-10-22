@@ -36,15 +36,15 @@ struct RetroRoomsView: View {
             // MARK: - Title ("N cômodos") and the room worked on most
             Text(content.title)
                 .bold()
-                .font(.system(size: 64))
+                .font(.custom("Alan Sans", size: 64))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .padding(.horizontal, 24)
                 .padding(.top, height * 0.071)
             
             Text(content.subtitle)
                 .font(.title)
                 .multilineTextAlignment(.center)
+                .frame(maxWidth: width * 0.877)
                 .padding(.bottom, height * 0.02)
             
             // MARK: - Bar chart: one bar per room

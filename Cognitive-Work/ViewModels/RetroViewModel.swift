@@ -260,7 +260,7 @@ enum RetroCalculator {
             completedChores: completed,
             totalChores: total,
             percentage: percentage,
-            summary: L10n.tr("Você realizou %lld de %lld \n tarefas da sua escala", completed, total),
+            summary: L10n.tr("Você realizou **%lld de %lld** \n tarefas da sua escala", completed, total),
             subtitle: subtitle,
             closing: closing
         )
