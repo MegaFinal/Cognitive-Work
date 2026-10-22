@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Shows the house's rooms as textured cards (same look as the onboarding room selection) and
+/// Shows the house's rooms as textured cards and
 /// lets the user create, edit and delete them.
 ///
 /// - Tapping a card opens ``RoomFormSheet``, zooming out of the card.
@@ -15,26 +15,18 @@ import SwiftUI
 /// - "Editar" in the toolbar makes the cards wiggle and shows a delete badge on each one;
 ///   a long press offers the same actions in a context menu.
 struct RoomsManagementView: View {
-    /// Loads the rooms and creates, edits and deletes them.
     @State private var viewModel: RoomsManagementViewModel
     
-    /// Room being edited, or `nil` when the edit sheet is closed.
     @State private var roomBeingEdited: RoomModel?
-    /// Shows the "new room" sheet.
     @State private var isCreatingRoom = false
-    /// The room waiting for the user to confirm its deletion.
     @State private var roomPendingDeletion: RoomModel?
     
-    /// Delete mode: cards wiggle and show a delete badge.
     @State private var isEditing = false
     
-    /// Drives the staggered entrance of the cards after the first load.
     @State private var hasAppeared = false
     
-    /// The two-column grid.
     private let columns = [GridItem(spacing: 16), GridItem(spacing: 16)]
     
-    /// Creates the screen for a house's rooms.
     init(house: HouseModel?) {
         _viewModel = State(initialValue: RoomsManagementViewModel(house: house))
     }
@@ -69,7 +61,6 @@ struct RoomsManagementView: View {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             isEditing.toggle()
                         }
-                        // The header instruction changes with the mode; read the new one.
                         VoiceOver.announce(isEditing
                             ? L10n.tr("Toque no ícone vermelho para excluir um cômodo.")
                             : L10n.tr("Toque em um cômodo para editá-lo ou no + para criar um novo."))
@@ -663,7 +654,7 @@ struct RoomFormSheet: View {
             
             HStack(spacing: 0) {
                 ForEach(RoomColor.allCases) { color in
-                    ColorSwatch(color: color, pattern: pattern, isSelected: selectedColor == color) {
+                    ColorSwatch(color: color, isSelected: selectedColor == color) {
                         HapticsManager.selection()
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
                             selectedColor = color
@@ -834,37 +825,30 @@ extension RoomTextureBackground {
 
 /// A color option shown as a small textured circle of that color.
 struct ColorSwatch: View {
-    /// The color shown.
     let color: RoomColor
-    /// The texture shown on it.
-    let pattern: RoomTexturePattern
-    /// Whether this color is picked.
     let isSelected: Bool
-    /// Picks this color.
     let action: () -> Void
     
     var body: some View {
-        RoomTextureBackground(color: color, pattern: pattern, zoom: 1.5)
-            .withTextureOpacity(0.35)
+            Circle()
+            .foregroundColor(color.uiColor)
             .frame(width: 40, height: 40)
-            .clipShape(Circle())
             .overlay {
                 Circle()
                     .stroke(color.uiColor, lineWidth: 3)
-                    .padding(-5)
+                    .padding(-4)
                     .opacity(isSelected ? 1 : 0)
                     .scaleEffect(isSelected ? 1 : 0.7)
             }
             .overlay {
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 20, weight: .medium))
                         .foregroundStyle(.white)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
             .scaleEffect(isSelected ? 1.1 : 1)
-            .shadow(color: .black.opacity(isSelected ? 0.2 : 0.08), radius: 4, y: 2)
             .contentShape(Circle())
             .onTapGesture(perform: action)
             .accessibilityElement(children: .ignore)
@@ -890,15 +874,16 @@ struct PatternSwatch: View {
     let action: () -> Void
     
     var body: some View {
-        VStack(spacing: 6) {
-            RoomTextureBackground(color: color, pattern: pattern, zoom: 1.2)
+        VStack {
+            RoomTextureBackground(color: color, pattern: pattern, zoom: 3.5)
                 .withTextureOpacity(0.45)
-                .aspectRatio(1, contentMode: .fit)
+//                .aspectRatio(1, contentMode: .fit)
+                
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 16)
                         .stroke(color.uiColor, lineWidth: 3)
-                        .padding(-4)
+                        .padding(-4.5)
                         .opacity(isSelected ? 1 : 0)
                 }
                 .overlay {
@@ -910,12 +895,7 @@ struct PatternSwatch: View {
                     }
                 }
                 .scaleEffect(isSelected ? 1.06 : 1)
-            
-            Text(pattern.displayName)
-                .font(.caption)
-                .foregroundStyle(isSelected ? Color.primary : Color.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .frame(width: 50, height: 50)
         }
         .opacity(isAvailable ? 1 : 0.3)
         .contentShape(Rectangle())

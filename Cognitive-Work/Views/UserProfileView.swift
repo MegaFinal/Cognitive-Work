@@ -10,12 +10,6 @@ import PhotosUI
 import CloudKit
 
 /// The profile tab: the user's banner, photo and name, and links to the settings screens.
-///
-/// It loads the user through ``UserProfileViewModel`` and offers:
-/// - The pencil button, which opens ``EditProfileView`` (name, photo and banner).
-/// - "Configurações Gerais" (language, haptics, calendar, delete profile).
-/// - "Ajustes da Casa" (members, rooms, reset division, delete or leave the house).
-/// - "Chave Pix" and "Alterar Tempo Livre".
 struct UserProfileView: View {
     /// The signed-in user's profile.
     @State private var viewModelUser: UserProfileViewModel
@@ -25,8 +19,9 @@ struct UserProfileView: View {
     @State private var viewModelHardware = HardwareViewModel()
     /// Used by the "Alterar Tempo Livre" screen.
     @State private var viewModelOnboarding = OnboardingViewModel()
+    /// Whether the edit profile sheet is open.
+    @State private var isEditingProfile = false
     
-    /// Creates the screen. Pass a ready view model for previews.
     init(viewModelUser: UserProfileViewModel = UserProfileViewModel()) {
         self._viewModelUser = State(initialValue: viewModelUser)
     }
@@ -50,8 +45,9 @@ struct UserProfileView: View {
             // MARK: - Edit profile button
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    NavigationLink {
-                        EditProfileView(viewModel: viewModelUser)
+                    Button {
+                        viewModelUser.startEditing()
+                        isEditingProfile = true
                     } label: {
                         Image(systemName: "pencil")
                             .foregroundColor(.black)
@@ -62,6 +58,18 @@ struct UserProfileView: View {
                 }
             }
             .tabBarVisibilityRoot()
+        }
+        // MARK: - Edit profile sheet
+        .sheet(isPresented: $isEditingProfile, onDismiss: discardUnsavedEdits) {
+            ProfileBannerSheet(
+                banner: viewModelUser.editedBanner,
+                image: viewModelUser.displayedImageData.flatMap(UIImage.init(data:)),
+                photoSelection: $viewModelUser.selectedPhotoItem,
+                photoPickerStyle: .pencilButton
+            ) { banner in
+                viewModelUser.editedBanner = banner
+                Task { await viewModelUser.saveChanges() }
+            }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -94,38 +102,23 @@ struct UserProfileView: View {
         }
     }
     
-    /// The banner with the photo (or a placeholder) and the name on top.
+    private func discardUnsavedEdits() {
+        guard viewModelUser.isEditing, !viewModelUser.isSaving else { return }
+        viewModelUser.cancelEditing()
+    }
+    
+    /// The banner with the photo in its curve, and the name below.
     private var userInfo: some View {
-        ZStack(alignment: .top) {
-            RoomTextureBackground(color: viewModelUser.displayedBanner.color,
-                                  pattern: viewModelUser.displayedBanner.pattern)
-                .frame(height: height * 0.26)
-                .shadow(color: .black.opacity(0.14), radius: 16.46937, x: 0, y: 4.68879)
+        VStack(spacing: 12) {
+            ProfileHero(
+                banner: viewModelUser.displayedBanner,
+                image: viewModelUser.displayedImageData.flatMap(UIImage.init(data:))
+            )
             
-            VStack(alignment: .center, spacing: 10) {
-                if let data = viewModelUser.displayedImageData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: width * 0.5, height: width * 0.5)
-                        .clipShape(Circle())
-                } else {
-                    Image(systemName: "person.crop.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .foregroundStyle(.gray)
-                        .frame(width: width * 0.5, height: width * 0.5)
-                        .background(.white)
-                        .clipShape(Circle())
-                }
-                
-                Text(viewModelUser.user?.name ?? "")
-                    .font(.system(size: 22))
-                    .bold()
-            }
-            .padding(.top, (height * 0.25) - (width * 0.25))
+            Text(viewModelUser.user?.name ?? "")
+                .font(.system(size: 22))
+                .bold()
         }
-        // Read the header as one sentence: name, level, points and coins.
         .accessibilityElement(children: .ignore)
         .voiceOverLabel(viewModelUser.accessibilityProfileSummary)
         .voiceControlNames(viewModelUser.accessibilityProfileInputLabels)

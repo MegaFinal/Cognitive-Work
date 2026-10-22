@@ -9,27 +9,17 @@ import SwiftUI
 import PhotosUI
 
 /// Onboarding step where the user picks a profile picture and a display name.
-///
-/// Saves the profile to CloudKit on "Continuar" and only advances once the
-/// record actually comes back.
 struct CreateProfileOnboardingView: View {
     
     // MARK: - Properties
     
-    /// State shared by every step of the flow.
     @Binding var viewModel: OnboardingViewModel
-    
-    /// Not used: the name is typed into ``OnboardingViewModel/userName``.
     @State private var usernameText: String = ""
+    @State private var isLoadingImage = false
+    @State private var isPickingBanner = false
     
     /// Image chosen through the system photo picker, before it is converted.
     @State private var selectedItem: PhotosPickerItem? = nil
-    
-    /// `true` while the picked photo is being loaded and converted.
-    @State private var isLoadingImage = false
-    
-    /// Whether the banner picker sheet is open.
-    @State private var isPickingBanner = false
     
     // MARK: - Body
     
@@ -47,7 +37,7 @@ struct CreateProfileOnboardingView: View {
             // MARK: - Photo with banner
             EditableProfileImage(
                 image: viewModel.userProfilePicture,
-                isEditing: true,
+                isEditing: false,
                 selection: $selectedItem,
                 isLoading: isLoadingImage,
                 banner: viewModel.userBanner,
@@ -121,14 +111,18 @@ struct CreateProfileOnboardingView: View {
         }
         // MARK: - Banner picker
         .sheet(isPresented: $isPickingBanner) {
-            ProfileBannerSheet(banner: viewModel.userBanner, image: viewModel.userProfilePicture) { banner in
+            ProfileBannerSheet(
+                banner: viewModel.userBanner,
+                image: viewModel.userProfilePicture,
+                photoSelection: $selectedItem,
+                photoPickerStyle: .avatar
+            ) { banner in
                 viewModel.userBanner = banner
             }
         }
         .dismissKeyboardOnTap()
         .onboardingBackButton(viewModel: viewModel)
         .onAppear {
-            // Coming back to this step with a profile kept from an earlier run: show its name.
             if viewModel.userName.isEmpty, let user = viewModel.currentUser {
                 viewModel.userName = user.name
                 viewModel.userBanner = user.banner

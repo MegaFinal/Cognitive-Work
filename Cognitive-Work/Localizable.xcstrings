@@ -1939,6 +1939,7 @@
       }
     },
     "Banner do perfil" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4145,6 +4146,7 @@
       }
     },
     "Erro ao salvar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4679,6 +4681,9 @@
           }
         }
       }
+    },
+    "Estampas" : {
+
     },
     "Este cômodo ainda não tem tarefas. Crie as que fazem sentido para ele." : {
       "localizations" : {
@@ -8494,6 +8499,7 @@
       }
     },
     "Perfil atualizado" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10008,6 +10014,7 @@
       }
     },
     "Seu Nome" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
