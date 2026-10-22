@@ -12687,13 +12687,13 @@
         }
       }
     },
-    "Você realizou %lld de %lld \n tarefas da sua escala" : {
+    "Você realizou **%lld de %lld** \n tarefas da sua escala" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You did %lld of %lld \n chores in your schedule"
+            "value" : "You did **%lld of %lld** \n chores in your schedule"
           }
         }
       }

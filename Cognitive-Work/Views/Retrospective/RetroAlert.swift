@@ -18,22 +18,23 @@ struct RetroAlert: View {
             // MARK: - Icon
             Image(systemName: "chart.bar.xaxis")
                 .resizable()
-                .frame(width: width * 0.27, height: height * 0.089)
+                .font(.system(size: 64))
+                .frame(width: width * 0.279, height: height * 0.089)
                 .foregroundStyle(.choreYellow)
-                .padding(.bottom, height * 0.05)
+                .padding(.top, height * 0.085)
             
             // MARK: - Title and subtitle
             Text("Sua retrospectiva chegou!")
+                .font(.custom("Alan Sans", size: 34))
                 .bold()
-                .font(.largeTitle)
                 .multilineTextAlignment(.center)
-                .padding(.bottom, height * 0.018)
+                .padding(.top, height * 0.052)
             
             Text("Veja como você se saiu durante os últimos 15 dias")
                 .font(.title2)
                 .multilineTextAlignment(.center)
                 .fontWeight(.regular)
-                .padding(.bottom, height * 0.037)
+                .padding(.top, height * 0.0187)
             
                 // MARK: - Actions: open the retrospective / skip to the new division
                 Button {
@@ -71,8 +72,10 @@ struct RetroAlert: View {
             // MARK: - Loading or error status
             loadStatus
         }
+        .padding(.horizontal)
+        .padding(.bottom, height * 0.018)
     }
-
+    
     /// Spinner while loading; message and retry if loading failed.
     @ViewBuilder
     private var loadStatus: some View {

@@ -198,7 +198,7 @@ struct ShopListView: View {
             VStack(alignment: .leading, spacing: 2) {
                 // MARK: Title and pending summary
                 Text("Compras")
-                    .font(.system(size: 34))
+                    .font(.custom("Alan Sans", size: 34))
                     .fontWeight(.bold)
                     .accessibilityAddTraits(.isHeader)
 
