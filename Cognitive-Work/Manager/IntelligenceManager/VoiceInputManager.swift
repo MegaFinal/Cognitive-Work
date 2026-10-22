@@ -9,21 +9,6 @@ import Foundation
 import Speech
 import AVFoundation
 
-/// Turns what the person says into text for the AI prompts.
-///
-/// Uses the iOS 26 Speech framework (`SpeechAnalyzer`), always on device, in the language the
-/// person picked for speaking (``preferredLanguage``), which may differ from the app's language:
-/// 1. `SpeechTranscriber`, the newest speech model, on devices that support it.
-/// 2. `DictationTranscriber` otherwise (the system dictation model, for older devices).
-/// 3. `SFSpeechRecognizer` (iOS 10 API) if neither can start, for example when the language model
-///    can't be downloaded right now.
-///
-/// The text appears live in ``transcript`` and is only shown to the person to confirm; nothing
-/// is sent to the on-device language model until they tap the confirm button.
-///
-/// The audio tap and the legacy recognizer's handler run off the main thread, so their closures
-/// are built in `nonisolated` static functions: the project defaults to MainActor isolation and a
-/// MainActor closure called from the audio thread would crash.
 @Observable
 final class VoiceInputManager {
 
@@ -58,33 +43,16 @@ final class VoiceInputManager {
     @ObservationIgnored private var legacyRequest: SFSpeechAudioBufferRecognitionRequest?
     @ObservationIgnored private var legacyTask: SFSpeechRecognitionTask?
 
-    // MARK: - Speaking language
-
-    private static let preferredLanguageKey = "voiceInputLanguage"
-
-    /// The language the person speaks in. Recognizers need it up front (they don't detect it), and
-    /// it can differ from the app's language: someone may use the app in English but speak
-    /// Portuguese. Defaults to the app's language and is remembered on this device only.
-    static var preferredLanguage: AppLanguage {
-        get {
-            UserDefaults.standard.string(forKey: preferredLanguageKey)
-                .flatMap(AppLanguage.init(rawValue:))
-                ?? LanguageManager.shared.current
-        }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: preferredLanguageKey)
-        }
-    }
-
     // MARK: - Recording
 
     /// Asks for permission if needed, then starts recording and recognizing.
     ///
-    /// - Parameters:
-    ///   - language: The language the person will speak.
-    ///   - contextualStrings: Words likely to be said that the recognizer may not know, such as
-    ///     the housemates' names ("Anshu"), so they're recognized correctly.
-    func start(language: AppLanguage, contextualStrings: [String]) async {
+    /// Listens in the app's language (``LanguageManager/current``): recognizers need the language
+    /// up front, and the person is expected to speak the language they chose for the app.
+    ///
+    /// - Parameter contextualStrings: Words likely to be said that the recognizer may not know,
+    ///   such as the housemates' names ("Anshu"), so they're recognized correctly.
+    func start(contextualStrings: [String]) async {
         guard !isBusy else { return }
         errorMessage = nil
         transcript = ""
@@ -102,13 +70,11 @@ final class VoiceInputManager {
             return
         }
 
-        let locale = language.locale
+        let locale = LanguageManager.shared.current.locale
         do {
             try await startAnalyzer(locale: locale, contextualStrings: contextualStrings)
         } catch {
-            #if DEBUG
-            print("[Voice] SpeechAnalyzer couldn't start, using SFSpeechRecognizer: \(error)")
-            #endif
+            // SpeechAnalyzer can't run here (device or language): use the older recognizer.
             tearDownAnalyzer()
             await startLegacy(locale: locale, contextualStrings: contextualStrings)
         }
@@ -158,9 +124,6 @@ final class VoiceInputManager {
             // Newest model; progressive = text appears while the person is still speaking.
             let transcriber = SpeechTranscriber(locale: supported, preset: .progressiveTranscription)
             module = transcriber
-            #if DEBUG
-            print("[Voice] Using SpeechTranscriber (\(supported.identifier))")
-            #endif
             resultsTask = Task { [weak self] in
                 do {
                     for try await result in transcriber.results {
@@ -175,9 +138,6 @@ final class VoiceInputManager {
             // Short, live dictation: about a minute of audio, text while speaking, punctuation.
             let transcriber = DictationTranscriber(locale: supported, preset: .progressiveShortDictation)
             module = transcriber
-            #if DEBUG
-            print("[Voice] Using DictationTranscriber (\(supported.identifier))")
-            #endif
             resultsTask = Task { [weak self] in
                 do {
                     for try await result in transcriber.results {
@@ -299,9 +259,6 @@ final class VoiceInputManager {
                 request.requiresOnDeviceRecognition = true
             }
             legacyRequest = request
-            #if DEBUG
-            print("[Voice] Using SFSpeechRecognizer (\(locale.identifier)), on device: \(recognizer.supportsOnDeviceRecognition)")
-            #endif
 
             let inputNode = audioEngine.inputNode
             inputNode.removeTap(onBus: 0)

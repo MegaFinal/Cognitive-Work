@@ -35,6 +35,9 @@ struct ShopListItemFormView: View {
     @State private var isSaving = false
     @State private var saveErrorMessage: String?
     @State private var isConfirmingDelete = false
+    /// A pending item that looks like the same product as the new one; asks whether to add to
+    /// its quantity instead of creating a second card.
+    @State private var duplicate: ShopListItem?
     @FocusState private var isNameFocused: Bool
 
     // MARK: Apple Intelligence state
@@ -204,6 +207,28 @@ struct ShopListItemFormView: View {
         .dismissKeyboardOnTap()
         .onChange(of: visibleWarning) { _, warning in
             if let warning { VoiceOver.announce(warning) }
+        }
+        // Same product already on the list: add to its quantity, or add a separate item anyway.
+        .confirmationDialog(
+            duplicateTitle,
+            isPresented: Binding(
+                get: { duplicate != nil },
+                set: { if !$0 { duplicate = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: duplicate
+        ) { existing in
+            if existing.unitMeasurement == unitMeasurement {
+                Button(L10n.tr("Somar à quantidade (%lld → %lld)", existing.quantity, existing.quantity + quantity)) {
+                    Task { await addToExisting(existing) }
+                }
+            }
+            Button(L10n.tr("Adicionar mesmo assim")) {
+                Task { await save(checkingDuplicates: false) }
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: { existing in
+            Text(duplicateMessage(for: existing))
         }
         .confirmationDialog("Excluir item?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Excluir item", role: .destructive) {
@@ -550,7 +575,12 @@ struct ShopListItemFormView: View {
         }
     }
 
-    private func save() async {
+    /// Saves the form.
+    ///
+    /// - Parameter checkingDuplicates: When creating, first look for the same product already on
+    ///   the list (``ShopListViewModel/duplicateItem(named:)``). `false` after the person chose
+    ///   "add anyway".
+    private func save(checkingDuplicates: Bool = true) async {
         // A draft goes back to the AI review with the edited values; nothing reaches CloudKit yet.
         if case .draft(let original, let onConfirm) = mode {
             let price = ShopListViewModel.parsePrice(valueText) ?? 0
@@ -570,6 +600,13 @@ struct ShopListItemFormView: View {
 
         isSaving = true
         defer { isSaving = false }
+
+        // New item: check first whether the same product is already waiting to be bought.
+        if checkingDuplicates, case .create = mode,
+           let existing = await viewModel.duplicateItem(named: trimmedName) {
+            duplicate = existing
+            return
+        }
 
         let existingItem: ShopListItem? = {
             if case .edit(let item) = mode { return item }
@@ -593,6 +630,41 @@ struct ShopListItemFormView: View {
         } else {
             saveErrorMessage = viewModel.errorMessage ?? L10n.tr("Tente novamente.")
         }
+    }
+
+    /// Adds this form's quantity to the item already on the list instead of creating a new one.
+    private func addToExisting(_ existing: ShopListItem) async {
+        isSaving = true
+        defer { isSaving = false }
+
+        // The people chosen here join the existing item's split if they aren't in it yet.
+        if await viewModel.merge(into: existing, adding: quantity, consumers: relatedUsers) {
+            HapticsManager.notify(.success)
+            VoiceOver.announce(L10n.tr("Quantidade atualizada"))
+            dismiss()
+        } else {
+            saveErrorMessage = viewModel.errorMessage ?? L10n.tr("Tente novamente.")
+        }
+    }
+
+    /// Explains the choice, and who will join the split when quantities are added.
+    private func duplicateMessage(for existing: ShopListItem) -> String {
+        guard existing.unitMeasurement == unitMeasurement else {
+            return L10n.tr("O item que já está na lista usa outra unidade.")
+        }
+        let joining = viewModel.newConsumers(relatedUsers, for: existing)
+        guard !joining.isEmpty else {
+            return L10n.tr("Você pode somar a quantidade ao item que já está na lista.")
+        }
+        return L10n.tr("Você pode somar a quantidade ao item que já está na lista.")
+            + "\n"
+            + L10n.tr("Também entram na divisão: %@", joining.map(\.name).joined(separator: ", "))
+    }
+
+    /// "“leite” is already on the list".
+    private var duplicateTitle: String {
+        guard let duplicate else { return "" }
+        return L10n.tr("Já tem “%@” na lista", duplicate.name)
     }
 
     private func deleteItem() async {

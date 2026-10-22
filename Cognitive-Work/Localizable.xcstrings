@@ -7,6 +7,17 @@
     "%@" : {
 
     },
+    "%@ adicionado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ added"
+          }
+        }
+      }
+    },
     "%@ ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -530,6 +541,17 @@
     "×%lld" : {
 
     },
+    "~%lld d" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%lld d"
+          }
+        }
+      }
+    },
     "0" : {
 
     },
@@ -943,6 +965,17 @@
         }
       }
     },
+    "Adicionar %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %@"
+          }
+        }
+      }
+    },
     "Adicionar automaticamente as suas tarefas ao calendário da Apple (Pipa)." : {
       "localizations" : {
         "en" : {
@@ -959,6 +992,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add with AI"
+          }
+        }
+      }
+    },
+    "Adicionar como novo item" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add as a new item"
           }
         }
       }
@@ -1002,6 +1046,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add items (%lld)"
+          }
+        }
+      }
+    },
+    "Adicionar mesmo assim" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add anyway"
           }
         }
       }
@@ -2136,6 +2191,17 @@
         }
       }
     },
+    "Combina com o que está na lista." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goes with what's on the list."
+          }
+        }
+      }
+    },
     "Começar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2664,6 +2730,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mow the lawn"
+          }
+        }
+      }
+    },
+    "Costuma entrar na lista a cada %lld dias." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usually added to the list every %lld days."
           }
         }
       }
@@ -5034,17 +5111,6 @@
         }
       }
     },
-    "Idioma da fala" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Speech language"
-          }
-        }
-      }
-    },
     "Imagem enviada para o Harvi" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5265,12 +5331,56 @@
         }
       }
     },
+    "Item repetido" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeated item"
+          }
+        }
+      }
+    },
     "Já enviei o WiFi, ir para o pareamento" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "I already sent the Wi-Fi, go to pairing"
+          }
+        }
+      }
+    },
+    "Já está na lista, em outra unidade: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already on the list, in another unit: %@"
+          }
+        }
+      }
+    },
+    "Já está na lista: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already on the list: %@"
+          }
+        }
+      }
+    },
+    "Já tem “%@” na lista" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” is already on the list"
           }
         }
       }
@@ -6671,6 +6781,17 @@
         }
       }
     },
+    "Não sugerir agora" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't suggest now"
+          }
+        }
+      }
+    },
     "Nenhum" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7097,6 +7218,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Harvi will forget the Wi-Fi and every phone in the home will need to set it up and pair again."
+          }
+        }
+      }
+    },
+    "O item que já está na lista usa outra unidade." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The item already on the list uses a different unit."
           }
         }
       }
@@ -8129,6 +8261,16 @@
         }
       }
     },
+    "Pode estar faltando" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Might be missing"
+          }
+        }
+      }
+    },
     "Poucas tarefas" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8253,6 +8395,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Priority %@"
+          }
+        }
+      }
+    },
+    "Procurando itens repetidos…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for repeated items…"
           }
         }
       }
@@ -8400,6 +8552,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quantity"
+          }
+        }
+      }
+    },
+    "Quantidade atualizada" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quantity updated"
           }
         }
       }
@@ -9538,6 +9701,28 @@
         }
       }
     },
+    "Somar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add up"
+          }
+        }
+      }
+    },
+    "Somar à quantidade (%lld → %lld)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to quantity (%lld → %lld)"
+          }
+        }
+      }
+    },
     "Status" : {
       "localizations" : {
         "en" : {
@@ -9659,6 +9844,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suggested automatically"
+          }
+        }
+      }
+    },
+    "Também entram na divisão: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also joining the split: %@"
           }
         }
       }
@@ -10894,6 +11090,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can join an existing home with an invite, or create a new one."
+          }
+        }
+      }
+    },
+    "Você pode somar a quantidade ao item que já está na lista." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can add the quantity to the item already on the list."
           }
         }
       }

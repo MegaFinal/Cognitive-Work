@@ -51,8 +51,8 @@ struct ItemIntelligentSheet: View {
                     )
                     .voiceOverLabel(L10n.tr("Descreva o item, a quantidade, o preço e para quem é."))
 
-                // Language, mic and errors; shared with the list page's AI sheet.
-                VoiceInputControls(
+                // Mic and errors (listens in the app's language); shared with the list page's AI sheet.
+                VoiceControlButton(
                     text: $text,
                     voice: voice,
                     contextualStrings: contextualStrings,

@@ -35,6 +35,15 @@ struct AddMoreItensInteligence: View {
     /// The suggestion being edited in ``ShopListItemFormView`` (its position in ``suggestions``).
     @State private var editing: EditingDraft?
 
+    // Repeated items: suggestions that are the same product as one already on the list.
+    /// The item already on the list, by position in ``suggestions``.
+    @State private var duplicates: [Int: ShopListItem] = [:]
+    /// Positions whose quantity is added to that existing item instead of creating a new card.
+    @State private var merging: Set<Int> = []
+    /// Whether the check is still running; adding waits for it, so nothing slips through.
+    @State private var isCheckingDuplicates = false
+    @State private var duplicateCheck: Task<Void, Never>?
+
     /// Identifies the suggestion opened for editing, for `.sheet(item:)`.
     private struct EditingDraft: Identifiable {
         let id: Int
@@ -78,6 +87,8 @@ struct AddMoreItensInteligence: View {
                     mode: .draft(suggestions[draft.id], onConfirm: { edited in
                         self.suggestions?[draft.id] = edited
                         included.insert(draft.id)
+                        // The name may have changed: look for a repeated item again.
+                        recheckDuplicate(at: draft.id, for: edited)
                     }),
                     availableUsers: viewModel.houseUsers,
                     currentUser: viewModel.currentUser,
@@ -127,7 +138,7 @@ struct AddMoreItensInteligence: View {
 
             // Say the items instead of typing; each recording becomes a new line, and the text
             // can still be fixed before generating the cards.
-            VoiceInputControls(
+            VoiceControlButton(
                 text: $text,
                 voice: voice,
                 contextualStrings: viewModel.houseUsers.map(\.name),
@@ -163,6 +174,12 @@ struct AddMoreItensInteligence: View {
                     ForEach(Array(suggestions.enumerated()), id: \.offset) { index, suggestion in
                         reviewRow(
                             suggestion,
+                            duplicate: duplicates[index],
+                            isMerging: merging.contains(index),
+                            setMerging: { shouldMerge in
+                                HapticsManager.selection()
+                                if shouldMerge { merging.insert(index) } else { merging.remove(index) }
+                            },
                             isIncluded: included.contains(index),
                             toggle: {
                                 HapticsManager.selection()
@@ -189,10 +206,19 @@ struct AddMoreItensInteligence: View {
                         .foregroundColor(.red)
                 }
 
+                if isCheckingDuplicates {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Procurando itens repetidos…")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.subTitleGray)
+                    }
+                }
+
                 primaryButton(
                     title: L10n.tr("Adicionar itens (%lld)", included.count),
                     isLoading: isSaving,
-                    isEnabled: !included.isEmpty
+                    isEnabled: !included.isEmpty && !isCheckingDuplicates
                 ) {
                     Task { await save(suggestions) }
                 }
@@ -200,6 +226,7 @@ struct AddMoreItensInteligence: View {
                 // Back to the text, kept as typed, to fix it and try again.
                 Button("Editar texto") {
                     errorText = nil
+                    resetDuplicates()
                     withAnimation(.snappy) { self.suggestions = nil }
                 }
                 .font(.system(size: 15, weight: .semibold))
@@ -216,6 +243,9 @@ struct AddMoreItensInteligence: View {
     /// with the arrow at the end, opens it in the item form to fix anything before adding.
     private func reviewRow(
         _ suggestion: ShopItemSuggestion,
+        duplicate: ShopListItem?,
+        isMerging: Bool,
+        setMerging: @escaping (Bool) -> Void,
         isIncluded: Bool,
         toggle: @escaping () -> Void,
         edit: @escaping () -> Void
@@ -224,75 +254,83 @@ struct AddMoreItensInteligence: View {
         let consumers = suggestion.consumers ?? viewModel.houseUsers
         let category = suggestion.category
 
-        return HStack(spacing: 12) {
-            Button(action: toggle) {
-                Image(systemName: isIncluded ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 24))
-                    .foregroundStyle(isIncluded ? category.color : Color.gray.opacity(0.5))
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .voiceOverLabel(L10n.tr("Incluir %@", suggestion.name))
-            .voiceOverTraits(.isSelected, when: isIncluded)
-            .voiceControlNames([L10n.tr("Incluir %@", suggestion.name)])
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                Button(action: toggle) {
+                    Image(systemName: isIncluded ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 24))
+                        .foregroundStyle(isIncluded ? category.color : Color.gray.opacity(0.5))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .voiceOverLabel(L10n.tr("Incluir %@", suggestion.name))
+                .voiceOverTraits(.isSelected, when: isIncluded)
+                .voiceControlNames([L10n.tr("Incluir %@", suggestion.name)])
 
-            Button(action: edit) {
-                HStack(spacing: 12) {
-                    Image(systemName: category.symbol)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(category.color)
-                        .frame(width: 40, height: 40)
-                        .background(
-                            category.softColor.opacity(0.45),
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        )
-                        .accessibilityHidden(true)
+                Button(action: edit) {
+                    HStack(spacing: 12) {
+                        Image(systemName: category.symbol)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(category.color)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                category.softColor.opacity(0.45),
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            )
+                            .accessibilityHidden(true)
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(suggestion.name)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.titleGray)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(suggestion.name)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.titleGray)
 
-                        Text(detailText(for: suggestion))
-                            .font(.system(size: 13))
-                            .foregroundStyle(.subTitleGray)
-
-                        // Say when the house is only the default, so a misread "para mim" is easy
-                        // to spot before saving.
-                        if suggestion.consumers == nil {
-                            Text("Para: todos (não informado)")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.orange)
-                        } else if !consumers.isEmpty {
-                            Text(L10n.tr("Para: %@", consumers.map(\.name).joined(separator: ", ")))
+                            Text(detailText(for: suggestion))
                                 .font(.system(size: 13))
                                 .foregroundStyle(.subTitleGray)
-                        }
 
-                        if let share = ShopListViewModel.shareText(
-                            unitPrice: suggestion.unitPrice,
-                            quantity: suggestion.quantity,
-                            consumerCount: consumers.count
-                        ) {
-                            Text(share)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.titleGray)
+                            // Say when the house is only the default, so a misread "para mim" is easy
+                            // to spot before saving.
+                            if suggestion.consumers == nil {
+                                Text("Para: todos (não informado)")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.orange)
+                            } else if !consumers.isEmpty {
+                                Text(L10n.tr("Para: %@", consumers.map(\.name).joined(separator: ", ")))
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.subTitleGray)
+                            }
+
+                            if let share = ShopListViewModel.shareText(
+                                unitPrice: suggestion.unitPrice,
+                                quantity: suggestion.quantity,
+                                consumerCount: consumers.count
+                            ) {
+                                Text(share)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.titleGray)
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.subTitleGray)
+                            .accessibilityHidden(true)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.subTitleGray)
-                        .accessibilityHidden(true)
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .voiceOverHint(L10n.tr("Toque duas vezes para editar."))
+                .voiceControlNames([L10n.tr("Editar %@", suggestion.name)])
             }
-            .buttonStyle(.plain)
-            .accessibilityElement(children: .combine)
-            .voiceOverHint(L10n.tr("Toque duas vezes para editar."))
-            .voiceControlNames([L10n.tr("Editar %@", suggestion.name)])
+
+            // Kept outside the edit button so its menu can be tapped on its own.
+            if let duplicate {
+                duplicateBar(for: suggestion, existing: duplicate, isMerging: isMerging, setMerging: setMerging)
+                    .padding(.leading, 56)
+            }
         }
         .padding(.vertical, 12)
         .padding(.leading, 6)
@@ -302,6 +340,58 @@ struct AddMoreItensInteligence: View {
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
         .opacity(isIncluded ? 1 : 0.5)
+    }
+
+    /// Says the product is already on the list and lets the person add to that item's quantity
+    /// or keep a separate card. Adding quantities only works in the same unit.
+    private func duplicateBar(
+        for suggestion: ShopItemSuggestion,
+        existing: ShopListItem,
+        isMerging: Bool,
+        setMerging: @escaping (Bool) -> Void
+    ) -> some View {
+        let sameUnit = existing.unitMeasurement == suggestion.unit
+        let existingText = "\(existing.name) · \(existing.quantity) \(existing.unitMeasurement.getDisplayName(for: Double(existing.quantity)))"
+
+        return HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+
+            Text(sameUnit
+                 ? L10n.tr("Já está na lista: %@", existingText)
+                 : L10n.tr("Já está na lista, em outra unidade: %@", existingText))
+                .font(.system(size: 13))
+                .foregroundStyle(.orange)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if sameUnit {
+                Menu {
+                    Button {
+                        setMerging(true)
+                    } label: {
+                        Label(L10n.tr("Somar à quantidade (%lld → %lld)", existing.quantity, existing.quantity + suggestion.quantity),
+                              systemImage: isMerging ? "checkmark" : "plus")
+                    }
+                    Button {
+                        setMerging(false)
+                    } label: {
+                        Label(L10n.tr("Adicionar como novo item"), systemImage: isMerging ? "plus.square" : "checkmark")
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Text(isMerging ? L10n.tr("Somar") : L10n.tr("Novo item"))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .imageScale(.small)
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.titleGray)
+                }
+                .voiceOverLabel(L10n.tr("Item repetido"))
+                .voiceOverValue(isMerging ? L10n.tr("Somar") : L10n.tr("Novo item"))
+            }
+        }
     }
 
     /// "2 quilogramas · Alimentos · R$ 25,00".
@@ -364,36 +454,102 @@ struct AddMoreItensInteligence: View {
             suggestions = result
         }
         HapticsManager.notify(.success)
+        checkDuplicates(in: result)
     }
 
-    /// Saves the ticked items. If one fails, the ones already saved leave the list, so trying
-    /// again never adds them twice.
+    /// Looks for each suggestion among the items still to buy (``ShopListViewModel/duplicateItem(named:)``).
+    /// Cards are shown right away and marked as the answers come in. When the units match, the
+    /// default is to add to the existing quantity, so the list doesn't end up with two cards.
+    private func checkDuplicates(in list: [ShopItemSuggestion]) {
+        resetDuplicates()
+        isCheckingDuplicates = true
+        duplicateCheck = Task {
+            defer { isCheckingDuplicates = false }
+            for index in list.indices {
+                let existing = await viewModel.duplicateItem(named: list[index].name)
+                guard !Task.isCancelled else { return }
+                setDuplicate(existing, at: index, for: list[index])
+            }
+        }
+    }
+
+    /// Checks one suggestion again after it was edited.
+    private func recheckDuplicate(at index: Int, for suggestion: ShopItemSuggestion) {
+        Task {
+            let existing = await viewModel.duplicateItem(named: suggestion.name)
+            guard suggestions?.indices.contains(index) == true else { return }
+            setDuplicate(existing, at: index, for: suggestion)
+        }
+    }
+
+    private func setDuplicate(_ existing: ShopListItem?, at index: Int, for suggestion: ShopItemSuggestion) {
+        withAnimation(.snappy) {
+            duplicates[index] = existing
+            if let existing, existing.unitMeasurement == suggestion.unit {
+                merging.insert(index)
+            } else {
+                merging.remove(index)
+            }
+        }
+    }
+
+    private func resetDuplicates() {
+        duplicateCheck?.cancel()
+        duplicateCheck = nil
+        isCheckingDuplicates = false
+        duplicates = [:]
+        merging = []
+    }
+
+    /// Saves the ticked items: repeated ones set to "add up" go into the existing item, the rest
+    /// become new items. Stops at the first failure; the ones already saved leave the list, so
+    /// trying again never adds them twice.
     private func save(_ all: [ShopItemSuggestion]) async {
         isSaving = true
         errorText = nil
         defer { isSaving = false }
 
         let chosenIndices = all.indices.filter { included.contains($0) }
-        let chosen = chosenIndices.map { all[$0] }
-        let savedCount = await viewModel.addSuggestedItems(chosen)
+        var savedIndices = Set<Int>()
+        for index in chosenIndices {
+            let suggestion = all[index]
+            let success: Bool
+            if merging.contains(index), let existing = duplicates[index] {
+                // People named for this entry join the existing item's split; "not said" adds no one.
+                success = await viewModel.merge(
+                    into: existing,
+                    adding: suggestion.quantity,
+                    consumers: suggestion.consumers ?? []
+                )
+            } else {
+                success = await viewModel.addSuggestedItems([suggestion]) == 1
+            }
+            guard success else { break }
+            savedIndices.insert(index)
+        }
 
-        if savedCount == chosen.count {
+        if savedIndices.count == chosenIndices.count {
             HapticsManager.notify(.success)
             dismiss()
             return
         }
 
-        // Keep only what wasn't saved: the unticked items and the chosen ones from the failure on.
-        let savedIndices = Set(chosenIndices.prefix(savedCount))
+        // Keep only what wasn't saved, moving each card's state to its new position.
         let remaining = all.indices.filter { !savedIndices.contains($0) }
-        let stillIncluded = Set(remaining.enumerated().compactMap { newIndex, oldIndex in
-            included.contains(oldIndex) ? newIndex : nil
-        })
+        var newIncluded = Set<Int>()
+        var newDuplicates: [Int: ShopListItem] = [:]
+        var newMerging = Set<Int>()
+        for (newIndex, oldIndex) in remaining.enumerated() {
+            if included.contains(oldIndex) { newIncluded.insert(newIndex) }
+            if let existing = duplicates[oldIndex] { newDuplicates[newIndex] = existing }
+            if merging.contains(oldIndex) { newMerging.insert(newIndex) }
+        }
         suggestions = remaining.map { all[$0] }
-        included = stillIncluded
+        included = newIncluded
+        duplicates = newDuplicates
+        merging = newMerging
         errorText = viewModel.errorMessage ?? L10n.tr("Tente novamente.")
         viewModel.clearError()
         HapticsManager.notify(.error)
     }
 }
-

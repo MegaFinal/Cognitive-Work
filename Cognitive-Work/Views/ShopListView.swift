@@ -22,6 +22,9 @@ struct ShopListView: View {
     /// Whether the AI button shows: the on-device model can run on this device and language.
     @State private var canUseAI = false
 
+    /// "Pode estar faltando": usual items and products that go with the list.
+    @State private var suggestionsModel: ShopListSuggestionViewModel
+
     /// Which card is swiped open; shared so only one can be open at a time.
     @State private var revealedItemID: String?
 
@@ -29,7 +32,9 @@ struct ShopListView: View {
     private let swipeStyle = SwipeToDeleteStyle(cornerRadius: 22, topInset: 0)
 
     init(viewModel: ShopListViewModel? = nil) {
-        self._viewModel = State(initialValue: viewModel ?? ShopListViewModel())
+        let shopList = viewModel ?? ShopListViewModel()
+        self._viewModel = State(initialValue: shopList)
+        self._suggestionsModel = State(initialValue: ShopListSuggestionViewModel(shopList: shopList))
     }
 
     var body: some View {
@@ -45,6 +50,10 @@ struct ShopListView: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: 20) {
             header
+
+            // One-tap chips for what might be missing; hidden when there's nothing to suggest.
+            ShopSuggestionsRow(model: suggestionsModel)
+                .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
 
             if viewModel.hasLoaded && viewModel.items.isEmpty {
                 ShopListEmptyState()
@@ -70,6 +79,21 @@ struct ShopListView: View {
             guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
         }
+        // Suggestions follow the list: an item added, bought or removed changes them.
+        .onChange(of: suggestionsKey, initial: true) { _, _ in
+            suggestionsModel.refresh()
+        }
+        #if DEBUG
+        // DEBUG test mode: a "day" is a minute, so time alone can make an item due; check again
+        // every 30 seconds instead of waiting for the list to change.
+        .task {
+            guard ShopListSuggestionViewModel.usesMinutesAsDays else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                suggestionsModel.refresh()
+            }
+        }
+        #endif
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             viewModel.requestRefresh()
         }
@@ -108,6 +132,13 @@ struct ShopListView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+    }
+
+    /// Changes whenever an item is added, removed, bought or renamed.
+    private var suggestionsKey: String {
+        viewModel.items
+            .map { "\($0.id)\($0.isBought)\($0.name)" }
+            .joined(separator: "|")
     }
 
     // MARK: - Price pop-up

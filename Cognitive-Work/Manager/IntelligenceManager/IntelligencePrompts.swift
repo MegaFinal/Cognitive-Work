@@ -12,11 +12,6 @@ import Foundation
 /// Prompts are written in English: the model accepts prompts, instructions and output in
 /// different languages, and ``IntelligenceManager/instructions(task:output:)`` sets the output
 /// language from the app's current language.
-///
-/// Versioning: the on-device model changes with OS updates, so each prompt has an id such as
-/// `shop-item-parse-v1`. When a new OS needs a different prompt, add a `v2` next to `v1` and
-/// choose between them with `#available`, keeping `v1` for older systems. Re-run the prompt
-/// tests after every OS update.
 enum IntelligencePrompts {
 
     /// Turns one shopping-list entry ("2kg de arroz, R$ 25, eu e Ana") into name, quantity, unit,
@@ -86,7 +81,6 @@ enum IntelligencePrompts {
     }
 
     /// Turns a text with several products, one per line, into a list of items. Used by the AI
-    /// button on the shopping list page.
     enum ShopListParse {
 
         static let id = "shop-list-parse-v1"
@@ -122,5 +116,51 @@ enum IntelligencePrompts {
             return lines.joined(separator: "\n")
         }
     }
-}
 
+    /// Decides whether a new shopping-list entry is the same product as one already on the list.
+    enum SameProduct {
+
+        static let id = "same-product-v1"
+
+        static let task = """
+        You compare two entries of a household shopping list and decide if buying them means buying the same product.
+        same: the same product, even with a different type, brand, size or plural ("leite" and "leite integral", "banana" and "bananas", "sabão em pó" and "sabão em pó Omo").
+        different: different products, even if they share a word ("leite" and "leite condensado", "papel higiênico" and "papel toalha", "molho de tomate" and "tomate").
+        Examples:
+        "leite integral" / "leite" -> same
+        "leite condensado" / "leite" -> different
+        "arroz integral" / "arroz" -> same
+        "papel toalha" / "papel higiênico" -> different
+        "detergente Ypê" / "detergente" -> same
+        """
+
+        /// Both names are the person's own text, so they go in the prompt, never the instructions.
+        static func prompt(newName: String, existingName: String) -> String {
+            "New entry: \(newName)\nAlready on the list: \(existingName)"
+        }
+    }
+
+    /// Suggests products usually bought together with the ones on the list.
+    enum ShopComplements {
+
+        static let id = "shop-complements-v1"
+
+        static let task = """
+        You look at a household shopping list and suggest at most 3 products that people almost always buy together with something on it, and that are missing from the list.
+        Only suggest clear, common pairings. If nothing clearly fits, return an empty list.
+        Never suggest a product that is already on the list, or a variant of one (another brand or type).
+        name: a short, common product name.
+        category is the supermarket section: food, produce, drinks, cleaning, hygiene, home, pets or other.
+        Examples:
+        "macarrão, carne moída" -> "molho de tomate" (food)
+        "café" -> "filtro de café" (home)
+        "pão, presunto" -> "queijo" (food)
+        "detergente, esponja" -> nothing
+        """
+
+        /// The list's names are the person's own text, so they go in the prompt.
+        static func prompt(for names: [String]) -> String {
+            "Shopping list: \(names.joined(separator: ", "))"
+        }
+    }
+}

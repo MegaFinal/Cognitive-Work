@@ -515,6 +515,7 @@ final class ShopListViewModel {
         if isPreview {
             if let price { item.value = price }
             item.isBought.toggle()
+            item.boughtAt = item.isBought ? Date() : nil // Keep the purchase date in step.
             return
         }
 
@@ -601,6 +602,52 @@ final class ShopListViewModel {
             housemates: housemates,
             currentUser: currentUser,
             selectedConsumers: selectedConsumers
+        )
+    }
+
+    /// A pending item that is the same product as `name`, if any, so the form can offer to add
+    /// to its quantity instead of creating a second card. Candidates come from comparing names;
+    /// the on-device model then confirms the ones that only share a word. Without Apple
+    /// Intelligence, only an identical name counts.
+    func duplicateItem(named name: String) async -> ShopListItem? {
+        let candidates = ShopItemDuplicateFinder.candidates(for: name, in: pendingItems)
+        for candidate in candidates {
+            if ShopItemDuplicateFinder.isExactMatch(name, candidate.name) {
+                return candidate
+            }
+            if await IntelligenceManager.shared.isSameProduct(name, as: candidate.name) == true {
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    /// The people in `consumers` who aren't sharing `item` yet.
+    func newConsumers(_ consumers: [UserModel], for item: ShopListItem) -> [UserModel] {
+        let current = Set(item.relatedUsers(in: houseUsers).map(\.id))
+        var seen = Set<String>()
+        return consumers.filter { !current.contains($0.id) && seen.insert($0.id).inserted }
+    }
+
+    /// Merges a new entry into an item already on the list: adds `amount` to its quantity and
+    /// adds `consumers` who aren't sharing it yet (for example, the person adding it now when a
+    /// housemate created the item). Name, price, unit and category stay as they are.
+    ///
+    /// Goes through ``saveItem(_:name:valueText:quantity:unitMeasurement:category:relatedUsers:addedBy:)``
+    /// so the points for added beneficiaries work exactly as when editing by hand.
+    @discardableResult
+    func merge(into item: ShopListItem, adding amount: Int, consumers: [UserModel]) async -> Bool {
+        let range = QuantityStepper.allowedRange
+        let people = item.relatedUsers(in: houseUsers) + newConsumers(consumers, for: item)
+        return await saveItem(
+            item,
+            name: item.name,
+            valueText: item.value.map(Self.priceInputText(for:)) ?? "",
+            quantity: min(item.quantity + amount, range.upperBound),
+            unitMeasurement: item.unitMeasurement,
+            category: item.category,
+            relatedUsers: people,
+            addedBy: currentUser
         )
     }
 

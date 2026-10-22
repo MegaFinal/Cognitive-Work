@@ -17,7 +17,6 @@ import FoundationModels
 // `nonisolated`: the project defaults to MainActor isolation, but the framework generates these
 // values off the main actor.
 
-/// Mirror of ``ShopItemCategory``.
 @Generable
 nonisolated enum GeneratedShopCategory: String {
     case food, produce, drinks, cleaning, hygiene, home, pets, other

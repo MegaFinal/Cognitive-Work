@@ -7,8 +7,9 @@
 
 import SwiftUI
 
-/// The voice part of the AI prompts: which language to listen for, the mic button and any error.
-/// Shared by ``AudioIntelligentSheet`` (one item) and ``AddMoreItensInteligence`` (several), so
+/// The voice part of the AI prompts: the mic button and any error. It listens in the app's
+/// language (see ``VoiceInputManager/start(contextualStrings:)``).
+/// Shared by ``ItemIntelligentSheet`` (one item) and ``AddMoreItensInteligence`` (several), so
 /// both work the same way. The spoken text goes into `text` live; the person still checks it and
 /// confirms with the sheet's own button.
 struct VoiceControlButton: View {
@@ -29,16 +30,11 @@ struct VoiceControlButton: View {
     /// Called right before recording starts (for example, to close the keyboard).
     var onStart: () -> Void = {}
 
-    /// The language the person speaks in; starts as the last one used on this device.
-    @State private var speakingLanguage = VoiceInputManager.preferredLanguage
-
     /// The text before this recording, kept when ``appendsToText`` is on.
     @State private var textBeforeRecording = ""
 
     var body: some View {
         VStack(spacing: 14) {
-            languagePicker
-
             micButton
 
             if let error = voice.errorMessage {
@@ -66,23 +62,6 @@ struct VoiceControlButton: View {
         }
     }
 
-    /// Which language to listen for. The recognizer can't tell on its own, and the person may
-    /// speak a language other than the app's (app in English, speaking Portuguese).
-    private var languagePicker: some View {
-        Picker(L10n.tr("Idioma da fala"), selection: $speakingLanguage) {
-            ForEach(AppLanguage.allCases) { language in
-                Text(language.nativeName).tag(language)
-            }
-        }
-        .pickerStyle(.segmented)
-        .frame(maxWidth: 260)
-        .disabled(voice.isBusy)
-        .onChange(of: speakingLanguage) { _, language in
-            VoiceInputManager.preferredLanguage = language
-        }
-        .voiceOverLabel(L10n.tr("Idioma da fala"))
-    }
-
     /// What the mic button is doing right now.
     private var micCaption: String {
         if voice.isPreparing { return L10n.tr("Baixando o modelo de voz…") }
@@ -100,7 +79,7 @@ struct VoiceControlButton: View {
             } else if !voice.isBusy {
                 onStart()
                 textBeforeRecording = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                Task { await voice.start(language: speakingLanguage, contextualStrings: contextualStrings) }
+                Task { await voice.start(contextualStrings: contextualStrings) }
             }
         } label: {
             VStack(spacing: 8) {
