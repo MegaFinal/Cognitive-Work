@@ -173,8 +173,8 @@ struct CouponTicket: View {
             Spacer(minLength: 6)
 
             HStack(alignment: .bottom, spacing: 8) {
-                Image(systemName: roomSymbol)
-                    .font(.system(size: 38, weight: .regular))
+                SymbolImage(name: roomSymbol)
+                    .frame(width: 54, height: 54)
                     .accessibilityHidden(true)
 
                 Spacer(minLength: 0)

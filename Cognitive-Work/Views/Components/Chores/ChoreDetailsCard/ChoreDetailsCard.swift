@@ -164,12 +164,9 @@ struct ChoreDetailsCard: View {
     /// The upper header section: the chore's primary icon, name, and status tags.
     private var header: some View {
         VStack(spacing: 10) {
-            Image(systemName: room?.symbol ?? chore.symbolName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: width * 0.19, height: height * 0.09)
-                .fontWeight(.thin)
-                .accessibilityDecorative()
+            SymbolImage(name: room?.symbol ?? chore.symbolName)
+                .frame(width: width * 0.25, height: height * 0.106)
+                .accessibilityHidden(true)
             
             Text(chore.localizedName)
                 .font(.system(size: 25))
@@ -420,7 +417,7 @@ private struct ChecklistItemButton: View {
     @Previewable @State var isShowingBack = true
     
     let room: RoomModel = {
-        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "bed.stripes", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()

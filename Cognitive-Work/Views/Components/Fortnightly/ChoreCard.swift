@@ -26,10 +26,8 @@ struct ChoreCard: View {
             
             // MARK: - Room icon, responsible member and tags
             HStack {
-                Image(systemName: room?.symbol ?? chore.symbolName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: width * 0.2)
+                SymbolImage(name: room?.symbol ?? chore.symbolName)
+                    .frame(width: width * 0.3)
                     .padding(.horizontal)
                 
                 ChorePriority(chore: chore, user: user)

@@ -41,8 +41,8 @@ struct ShopCategoryPicker: View {
             withAnimation(.snappy) { selection = category }
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: category.symbol)
-                    .font(.system(size: 14, weight: .semibold))
+                SymbolImage(name: category.symbol)
+                    .frame(width: 24, height: 24)
 
                 Text(category.displayName)
                     .font(.system(size: 15, weight: .semibold))

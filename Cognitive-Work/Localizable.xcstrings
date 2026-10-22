@@ -2047,6 +2047,17 @@
         }
       }
     },
+    "Bicicleta" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bicycle"
+          }
+        }
+      }
+    },
     "Blocos selecionados: %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2157,6 +2168,17 @@
         }
       }
     },
+    "Cadeira de varanda" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balcony chair"
+          }
+        }
+      }
+    },
     "Caixa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2175,6 +2197,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Calendar"
+          }
+        }
+      }
+    },
+    "Cama de solteiro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twin bed"
           }
         }
       }
@@ -2428,6 +2461,17 @@
         }
       }
     },
+    "Cesto de roupa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laundry basket"
+          }
+        }
+      }
+    },
     "Chave Pix" : {
       "localizations" : {
         "en" : {
@@ -2502,6 +2546,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tarefas"
+          }
+        }
+      }
+    },
+    "Chuveiro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shower"
           }
         }
       }
@@ -6499,6 +6554,17 @@
         }
       }
     },
+    "Máquina de lavar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Washing machine"
+          }
+        }
+      }
+    },
     "Marcar %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7816,6 +7882,17 @@
         }
       }
     },
+    "Notebook" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laptop"
+          }
+        }
+      }
+    },
     "Notificações" : {
       "localizations" : {
         "en" : {
@@ -8477,6 +8554,17 @@
         }
       }
     },
+    "Panelas no fogão" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pots on the stove"
+          }
+        }
+      }
+    },
     "para %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8946,6 +9034,17 @@
         }
       }
     },
+    "Pipa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kite"
+          }
+        }
+      }
+    },
     "Pipa. Para aqueles que notam." : {
       "localizations" : {
         "en" : {
@@ -8977,6 +9076,17 @@
         }
       }
     },
+    "Planta" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plant"
+          }
+        }
+      }
+    },
     "Platina" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8995,6 +9105,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prune plants"
+          }
+        }
+      }
+    },
+    "Poltrona" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Armchair"
           }
         }
       }
@@ -11669,6 +11790,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Let's try again next time"
+          }
+        }
+      }
+    },
+    "Varal" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clothes line"
           }
         }
       }
