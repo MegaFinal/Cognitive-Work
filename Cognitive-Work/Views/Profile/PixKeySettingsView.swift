@@ -5,13 +5,10 @@
 
 import SwiftUI
 
-/// Where the user registers the Pix key housemates pay to when settling a debt.
+/// Sheet where the user registers the Pix key housemates pay to when settling a debt.
 struct PixKeySettingsView: View {
-    /// The profile tab's view model (holds the key being edited).
-    @Bindable var viewModel: UserProfileViewModel
-    /// Closes the screen after saving.
     @Environment(\.dismiss) private var dismiss
-
+    @Bindable var viewModel: UserProfileViewModel
     /// Shows the "Chave Pix salva" toast.
     @State private var showSavedToast = false
     /// Shows the "Remover chave Pix?" confirmation.
@@ -20,6 +17,11 @@ struct PixKeySettingsView: View {
     @FocusState private var isFieldFocused: Bool
 
     var body: some View {
+        NavigationStack { content }
+            .interactiveDismissDisabled(viewModel.isSaving)
+    }
+    
+    private var content: some View {
         VStack(alignment: .leading, spacing: 26) {
             // MARK: - Title
             titleBlock
@@ -46,23 +48,18 @@ struct PixKeySettingsView: View {
         .padding(.top, 30)
         .navigationTitle("Chave Pix")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(viewModel.isSaving)
         .onAppear { viewModel.startEditingPixKey() }
         .dismissKeyboardOnTap()
-        .hidesTabBar()
+        .background(Color.groupedBackground.ignoresSafeArea())
         // MARK: - Save button
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(role: .cancel) { dismiss() }
+            }
             ToolbarItem(placement: .confirmationAction) {
-                Button {
+                Button(role: .confirm) {
                     Task { await save() }
-                } label: {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12))
-                        .bold()
-                        .foregroundColor(.white)
                 }
-                .tint(Color.blue)
-                .buttonStyle(.glassProminent)
                 .disabled(!viewModel.canSavePixKey)
             }
         }
@@ -111,10 +108,7 @@ struct PixKeySettingsView: View {
 
     /// The key field, with a clear button and a red border on error.
     private var keyField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "key")
-                .foregroundStyle(viewModel.pixKeyError == nil ? Color.subTitleGray : Color.red)
-
+        Group {
             TextField(
                 "",
                 text: $viewModel.editedPixKey,
@@ -141,8 +135,8 @@ struct PixKeySettingsView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(
-            Color(.systemGray6).opacity(0.5),
+        .background (
+            .white,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
         .overlay {
@@ -198,7 +192,5 @@ struct PixKeySettingsView: View {
 
 #Preview {
     let user = UserModel(name: "Preview User", tier: .tier1, ownerRecordName: "preview-owner")
-    NavigationStack {
-        PixKeySettingsView(viewModel: UserProfileViewModel(user: user))
-    }
+    PixKeySettingsView(viewModel: UserProfileViewModel(user: user))
 }
