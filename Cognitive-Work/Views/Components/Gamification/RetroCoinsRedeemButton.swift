@@ -39,7 +39,8 @@ struct RetroCoinsRedeemButton: View {
                             Text("Resgatar \(viewModel.pendingAmount) moedas")
                         }
                     }
-                    .frame(width: width * 0.69, height: height * 0.037)
+                    .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                    .multilineTextAlignment(.center)
                     .fontWeight(.medium)
                     .font(.system(size: 17))
                 }

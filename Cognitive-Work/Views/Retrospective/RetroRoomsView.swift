@@ -37,6 +37,9 @@ struct RetroRoomsView: View {
             Text(content.title)
                 .bold()
                 .font(.system(size: 64))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(.horizontal, 24)
                 .padding(.top, height * 0.071)
             
             Text(content.subtitle)
@@ -93,7 +96,8 @@ struct RetroRoomsView: View {
                 }
             } label: {
                 Text(RetroPage.rooms.isLast ? LocalizedStringKey("Concluir") : LocalizedStringKey("Continuar"))
-                    .frame(width: width * 0.69, height: height * 0.037)
+                    .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                    .multilineTextAlignment(.center)
                     .fontWeight(.medium)
                     .font(.system(size: 17))
             }

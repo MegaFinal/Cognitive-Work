@@ -254,6 +254,8 @@ private struct OnboardingCustomSliderComponent: View {
             Text(LocalizedStringKey(dayOfWeek.nameAbbreviation))
                 .font(.system(size: Layout.abbreviationFontSize))
                 .fontWeight(.medium)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .frame(width: abbreviationWidth, alignment: .leading)
                 .padding(.bottom)
             

@@ -23,9 +23,9 @@ enum RetroError: Error, Equatable, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .userNotFound:
-            return "Não foi possível encontrar o seu perfil na casa."
+            return L10n.tr("Não foi possível encontrar o seu perfil na casa.")
         case .networkUnavailable:
-            return "Sem conexão com a internet."
+            return L10n.tr("Sem conexão com a internet.")
         case .underlying(let message):
             return message
         }
@@ -243,24 +243,24 @@ enum RetroCalculator {
         let closing: String
         switch percentage {
         case _ where total == 0:
-            subtitle = "Você não teve tarefas na escala nesse período"
-            closing = "bora na próxima!"
+            subtitle = L10n.tr("Você não teve tarefas na escala nesse período")
+            closing = L10n.tr("bora na próxima!")
         case 100:
-            subtitle = "Você fez tudo o que era seu"
-            closing = "parabéns!"
+            subtitle = L10n.tr("Você fez tudo o que era seu")
+            closing = L10n.tr("parabéns!")
         case 50...:
-            subtitle = "Foi por pouco, na próxima você chega lá"
-            closing = "quase lá!"
+            subtitle = L10n.tr("Foi por pouco, na próxima você chega lá")
+            closing = L10n.tr("quase lá!")
         default:
-            subtitle = "Vamos tentar de novo na próxima"
-            closing = "você consegue!"
+            subtitle = L10n.tr("Vamos tentar de novo na próxima")
+            closing = L10n.tr("você consegue!")
         }
 
         return RetroPercentageContent(
             completedChores: completed,
             totalChores: total,
             percentage: percentage,
-            summary: "Você realizou \(completed) de \(total) \n tarefas da sua escala",
+            summary: L10n.tr("Você realizou %lld de %lld \n tarefas da sua escala", completed, total),
             subtitle: subtitle,
             closing: closing
         )
@@ -281,11 +281,15 @@ enum RetroCalculator {
             .sorted { $0.choreCount != $1.choreCount ? $0.choreCount > $1.choreCount : $0.roomName < $1.roomName }
 
         guard let top = bars.first else {
-            return RetroRoomsContent(title: "0 cômodos", subtitle: "Nenhuma tarefa concluída nesse período.", bars: [])
+            return RetroRoomsContent(
+                title: L10n.tr("%lld cômodos", 0),
+                subtitle: L10n.tr("Nenhuma tarefa concluída nesse período."),
+                bars: []
+            )
         }
         return RetroRoomsContent(
-            title: "\(bars.count) \(bars.count == 1 ? "cômodo" : "cômodos")",
-            subtitle: "Seu cômodo mais trabalhado: \(top.roomName).",
+            title: L10n.tr("%lld cômodos", bars.count),
+            subtitle: L10n.tr("Seu cômodo mais trabalhado: %@.", top.roomName),
             bars: bars
         )
     }

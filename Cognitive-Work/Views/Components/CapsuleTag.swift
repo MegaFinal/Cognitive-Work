@@ -29,6 +29,8 @@ struct CapsuleTag: View {
         // MARK: - Text inside a colored capsule
         Text(tagName)
             .font(.system(size: 13))
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
             .foregroundColor(textColor)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)

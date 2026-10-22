@@ -48,7 +48,8 @@ struct NewUserPopUp: View {
                 onPress()
             } label: {
                 Text("Divisão automática de tarefas")
-                    .frame(width: width * 0.69, height: height * 0.037)
+                    .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                    .multilineTextAlignment(.center)
                     .fontWeight(.medium)
                     .font(.system(size: 18))
             }
@@ -64,7 +65,7 @@ struct NewUserPopUp: View {
                     Text("Dividir mais tarde")
                         .fontWeight(.semibold)
                         .font(.subheadline)
-                        .foregroundStyle(.gray) //arrumar o cinza depois
+                        .foregroundStyle(.gray) 
                 }
                 Spacer()
             }

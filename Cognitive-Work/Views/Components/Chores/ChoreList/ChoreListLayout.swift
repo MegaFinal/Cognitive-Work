@@ -79,6 +79,7 @@ struct ChoreListLayout: View {
             .padding(.bottom, 120)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .scrollClipDisabled()
         // MARK: - Pull down past the top to go back to the carousel
         .onScrollGeometryChange(for: Bool.self) { geometry in
             -(geometry.contentOffset.y + geometry.contentInsets.top) > pullDownThreshold

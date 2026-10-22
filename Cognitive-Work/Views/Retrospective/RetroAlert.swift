@@ -42,7 +42,8 @@ struct RetroAlert: View {
                     }
                 } label: {
                     Text("Ver minha retrospectiva")
-                        .frame(width: width * 0.69, height: height * 0.037)
+                        .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                        .multilineTextAlignment(.center)
                         .fontWeight(.medium)
                         .font(.system(size: 17))
                 }
@@ -59,7 +60,8 @@ struct RetroAlert: View {
                         }
                     } label: {
                         Text("Pular para a nova divisão")
-                            .frame(width: width * 0.69, height: height * 0.037)
+                            .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                            .multilineTextAlignment(.center)
                             .fontWeight(.medium)
                             .font(.system(size: 17))
                     }

@@ -85,6 +85,9 @@ struct RetroCoinsView: View {
                 Text(content.coinsLabel)
                     .bold()
                     .font(.system(size: 64))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 24)
                     .padding(.bottom, height * 0.014)
                     .accessibilityAddTraits(.isHeader)
             } else {
@@ -142,7 +145,8 @@ struct RetroCoinsView: View {
                         Text(buttonTitle)
                     }
                 }
-                .frame(width: width * 0.69, height: height * 0.037)
+                .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                .multilineTextAlignment(.center)
                 .fontWeight(.medium)
                 .font(.system(size: 17))
             }

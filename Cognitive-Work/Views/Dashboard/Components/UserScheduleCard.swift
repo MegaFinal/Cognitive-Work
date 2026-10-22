@@ -26,7 +26,7 @@ struct UserScheduleCard: View {
     /// The user's entries; entries from other residents should be filtered out beforehand.
     let entries: [DailyUsageEntry]
     
-    /// First day shown in the chart.
+    /// Fallback first day, used only when there are no entries (the chart starts on the first day with chores).
     let startDate: Date
     
     /// Rooms listed in the legend.
@@ -137,7 +137,9 @@ struct UserScheduleCard: View {
     /// The scrollable chart: one column per day, sized to fill the space left in the card.
     private var chart: some View {
         let calendar = Calendar.current
-        let firstDay = calendar.startOfDay(for: startDate)
+        // The chart starts on the first day that has chores (or on the period start if none).
+        let firstDay = entries.map { calendar.startOfDay(for: $0.day) }.min()
+            ?? calendar.startOfDay(for: startDate)
         
         // GeometryReader is greedy: it takes all the space the card has left after the
         // title and the legend, and tells us how much that is.
@@ -218,6 +220,8 @@ private struct ScheduleDayColumn: View {
             // MARK: - Weekday label
             Text(weekdayText)
                 .font(.system(size: 16.35, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .frame(height: UserScheduleCard.weekdayLabelHeight)
                 .voiceOverLabel(ChartA11y.weekdayDayMonth(day))
                 .accessibilityValue(
@@ -295,8 +299,7 @@ private struct ScheduleDayColumn: View {
         RoomTexturedShape(
             shape: RoundedRectangle(cornerRadius: 15),
             room: resolvedRoom,
-            zoom: 1.5,
-            fixedSize: maxBarHeight
+            zoom: 1.5
         )
         // 45 of 50 in the original layout: the bar keeps that share of the column.
         .frame(width: columnWidth * 0.9, height: maxBarHeight * CGFloat(entry.tier.heightRatio) * barScale)
