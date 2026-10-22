@@ -49,7 +49,7 @@ struct ProfileBannerSheet: View {
             }
             .ignoresSafeArea(edges: .top)
             .scrollBounceBehavior(.basedOnSize)
-            .background(Self.sheetBackground.ignoresSafeArea())
+            .background(Color.groupedBackground.ignoresSafeArea())
             .navigationTitle("Editar Perfil")
             .navigationBarTitleDisplayMode(.inline)
             // MARK: - Toolbar: cancel / confirm
@@ -80,8 +80,6 @@ struct ProfileBannerSheet: View {
     }
     
     // MARK: - Banner
-    
-    private static let sheetBackground = Color(hex: 0xF2F2F7)
     
     private var hero: some View {
         ProfileHero(
