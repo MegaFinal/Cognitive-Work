@@ -22,6 +22,14 @@ struct ShopListView: View {
     /// Opens the "Pendências" screen.
     @State private var isShowingPendingPayments = false
 
+    /// Whether the "add several items with AI" sheet is open.
+    @State private var isPresentingAIBatch = false
+    /// Whether the AI button shows: the on-device model can run on this device and language.
+    @State private var canUseAI = false
+
+    /// "Pode estar faltando": usual items and products that go with the list.
+    @State private var suggestionsModel: ShopListSuggestionViewModel
+
     /// Which card is swiped open; shared so only one can be open at a time.
     @State private var revealedItemID: String?
 
@@ -30,7 +38,9 @@ struct ShopListView: View {
 
     /// Creates the screen. Pass a ready view model for previews.
     init(viewModel: ShopListViewModel? = nil) {
-        self._viewModel = State(initialValue: viewModel ?? ShopListViewModel())
+        let shopList = viewModel ?? ShopListViewModel()
+        self._viewModel = State(initialValue: shopList)
+        self._suggestionsModel = State(initialValue: ShopListSuggestionViewModel(shopList: shopList))
     }
 
     var body: some View {
@@ -50,6 +60,10 @@ struct ShopListView: View {
             // MARK: - Title and buttons
             header
 
+            // One-tap chips for what might be missing; hidden when there's nothing to suggest.
+            ShopSuggestionsRow(model: suggestionsModel)
+                .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
+
             // MARK: - Spinner, empty state or list
             if !viewModel.hasLoaded {
                 // Only on a cold start without data in memory; otherwise the cached list shows at once.
@@ -64,16 +78,38 @@ struct ShopListView: View {
         }
         // MARK: - Add button and price pop-up
         .overlay(alignment: .bottomTrailing) {
-            addButton
+            // The AI button sits right above "+", centred on it.
+            VStack(spacing: 12) {
+                if canUseAI {
+                    aiBatchButton
+                }
+                addButton
+            }
         }
         .background(Color(.white).ignoresSafeArea())
         .overlay { purchasePriceOverlay }
         .animation(.easeInOut(duration: 0.25), value: viewModel.purchasePrompt?.id)
         // MARK: - Loading and refreshing
         .task {
+            canUseAI = viewModel.canSuggestItemDetails
             guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
         }
+        // Suggestions follow the list: an item added, bought or removed changes them.
+        .onChange(of: suggestionsKey, initial: true) { _, _ in
+            suggestionsModel.refresh()
+        }
+        #if DEBUG
+        // DEBUG test mode: a "day" is a minute, so time alone can make an item due; check again
+        // every 30 seconds instead of waiting for the list to change.
+        .task {
+            guard ShopListSuggestionViewModel.usesMinutesAsDays else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                suggestionsModel.refresh()
+            }
+        }
+        #endif
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             viewModel.requestRefresh()
         }
@@ -89,6 +125,10 @@ struct ShopListView: View {
                 viewModel: viewModel
             )
         }
+        // Several items at once with the on-device model, reviewed before saving.
+        .sheet(isPresented: $isPresentingAIBatch) {
+            AddMoreItensInteligence(viewModel: viewModel)
+        }
         .sheet(item: $editingItem) { item in
             ShopListItemFormView(
                 mode: .edit(item),
@@ -101,7 +141,8 @@ struct ShopListView: View {
         .alert(
             "Não foi possível concluir",
             isPresented: Binding(
-                get: { viewModel.errorMessage != nil && !isPresentingAddItem && editingItem == nil },
+                // The AI sheet shows its own errors.
+                get: { viewModel.errorMessage != nil && !isPresentingAddItem && editingItem == nil && !isPresentingAIBatch },
                 set: { if !$0 { viewModel.clearError() } }
             )
         ) {
@@ -109,6 +150,13 @@ struct ShopListView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+    }
+
+    /// Changes whenever an item is added, removed, bought or renamed.
+    private var suggestionsKey: String {
+        viewModel.items
+            .map { "\($0.id)\($0.isBought)\($0.name)" }
+            .joined(separator: "|")
     }
 
     // MARK: - Price pop-up
@@ -335,6 +383,26 @@ struct ShopListView: View {
         .accessibilityAction(named: Text(verbatim: L10n.tr("Editar"))) {
             editingItem = item
         }
+    }
+
+    /// Opens ``AddMoreItensInteligence`` to add several items from one text.
+    private var aiBatchButton: some View {
+        Button {
+            HapticsManager.selection()
+            isPresentingAIBatch = true
+        } label: {
+            Image(systemName: "sparkles")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.black)
+                .padding(14)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .disabled(!viewModel.canAddItems)
+        .voiceOverLabel(L10n.tr("Adicionar com IA"))
+        .voiceControlNames([L10n.tr("Adicionar com IA"), L10n.tr("IA")])
+        .transition(.scale.combined(with: .opacity))
     }
 
     /// The floating "+" button that opens the new item sheet.

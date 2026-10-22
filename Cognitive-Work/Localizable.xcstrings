@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "pt-BR",
   "strings" : {
+    "%@ adicionado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ added"
+          }
+        }
+      }
+    },
     "" : {
 
     },
@@ -87,6 +98,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ joined the home"
+          }
+        }
+      }
+    },
+    "%@ por pessoa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ per person"
           }
         }
       }
@@ -766,6 +788,17 @@
     "×%lld" : {
 
     },
+    "~%lld d" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%lld d"
+          }
+        }
+      }
+    },
     "0" : {
 
     },
@@ -1248,6 +1281,17 @@
         }
       }
     },
+    "Adicionar %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %@"
+          }
+        }
+      }
+    },
     "Adicionar automaticamente as suas tarefas ao Apple Calendar (Pipa)." : {
       "localizations" : {
         "en" : {
@@ -1265,6 +1309,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Automatically add your chores to Apple Calendar (Pipa)."
+          }
+        }
+      }
+    },
+    "Adicionar com IA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add with AI"
+          }
+        }
+      }
+    },
+    "Adicionar como novo item" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add as a new item"
           }
         }
       }
@@ -1297,6 +1362,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add item"
+          }
+        }
+      }
+    },
+    "Adicionar itens (%lld)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add items (%lld)"
+          }
+        }
+      }
+    },
+    "Adicionar mesmo assim" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add anyway"
           }
         }
       }
@@ -1949,6 +2036,17 @@
         }
       }
     },
+    "Baixando o modelo de voz…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading the voice model…"
+          }
+        }
+      }
+    },
     "Banheira" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2568,6 +2666,17 @@
         }
       }
     },
+    "Combina com o que está na lista." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goes with what's on the list."
+          }
+        }
+      }
+    },
     "Começar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3143,6 +3252,17 @@
         }
       }
     },
+    "Costuma entrar na lista a cada %lld dias." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usually added to the list every %lld days."
+          }
+        }
+      }
+    },
     "Cozinha" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3404,6 +3524,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disconnect this phone"
+          }
+        }
+      }
+    },
+    "Descreva o item, a quantidade, o preço e para quem é." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe the item, the quantity, the price and who it's for."
           }
         }
       }
@@ -3966,6 +4096,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Chore"
+          }
+        }
+      }
+    },
+    "Editar texto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit text"
           }
         }
       }
@@ -4625,6 +4765,16 @@
         }
       }
     },
+    "Escreva um item por linha, com quantidade, preço e para quem é." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write one item per line, with quantity, price and who it's for."
+          }
+        }
+      }
+    },
     "Escritório" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4928,6 +5078,26 @@
         }
       }
     },
+    "Ex.:\n2kg de arroz, R$ 25, eu e Ana\ndetergente para todos\n1 L de leite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g.:\n2 kg of rice, R$ 25, me and Ana\ndish soap for everyone\n1 L of milk"
+          }
+        }
+      }
+    },
+    "Ex.: 2kg de arroz, R$ 25, eu e Ana" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g.: 2 kg of rice, R$ 25, me and Ana"
+          }
+        }
+      }
+    },
     "Excluindo cômodo..." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5145,6 +5315,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "very long"
+          }
+        }
+      }
+    },
+    "Falar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speak"
           }
         }
       }
@@ -5422,6 +5603,17 @@
         }
       }
     },
+    "Gerar itens" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create items"
+          }
+        }
+      }
+    },
     "Gere a divisão de tarefas para começar um ciclo antes de comprar cupons." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5637,6 +5829,17 @@
         }
       }
     },
+    "IA" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI"
+          }
+        }
+      }
+    },
     "Ícone" : {
       "localizations" : {
         "en" : {
@@ -5696,6 +5899,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "important"
+          }
+        }
+      }
+    },
+    "Incluir %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Include %@"
           }
         }
       }
@@ -5876,6 +6090,17 @@
         }
       }
     },
+    "Item repetido" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeated item"
+          }
+        }
+      }
+    },
     "Já comprado" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5893,6 +6118,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "I already sent the Wi-Fi, go to pairing"
+          }
+        }
+      }
+    },
+    "Já está na lista, em outra unidade: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already on the list, in another unit: %@"
+          }
+        }
+      }
+    },
+    "Já está na lista: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already on the list: %@"
+          }
+        }
+      }
+    },
+    "Já tem “%@” na lista" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” is already on the list"
           }
         }
       }
@@ -6641,6 +6899,17 @@
         }
       }
     },
+    "Microfone" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone"
+          }
+        }
+      }
+    },
     "Mestre" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7025,6 +7294,17 @@
         }
       }
     },
+    "Não entendi. Tente de novo." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I didn't catch that. Try again."
+          }
+        }
+      }
+    },
     "Não foi possível acessar sua conta do iCloud. Verifique se você está conectado e tente novamente." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7318,6 +7598,16 @@
         }
       }
     },
+    "Não foi possível preencher. Preencha manualmente." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't fill it in. Please fill it in manually."
+          }
+        }
+      }
+    },
     "Não foi possível preparar o convite" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7445,6 +7735,28 @@
         }
       }
     },
+    "Não foi possível usar o microfone." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't use the microphone."
+          }
+        }
+      }
+    },
+    "Não sugerir agora" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't suggest now"
+          }
+        }
+      }
+    },
     "Nenhum" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7472,6 +7784,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No default room was selected for the home."
+          }
+        }
+      }
+    },
+    "Nenhum item encontrado. Tente escrever de outro jeito." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No items found. Try writing it differently."
           }
         }
       }
@@ -7941,6 +8264,17 @@
         }
       }
     },
+    "O item que já está na lista usa outra unidade." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The item already on the list uses a different unit."
+          }
+        }
+      }
+    },
     "O Harvii vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo." : {
       "localizations" : {
         "en" : {
@@ -8367,6 +8701,28 @@
         }
       }
     },
+    "Ouvindo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening"
+          }
+        }
+      }
+    },
+    "Ouvindo… toque para parar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening… tap to stop"
+          }
+        }
+      }
+    },
     "pacote" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8579,6 +8935,49 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "To use %@ you need to accept the Terms of Use. If you change your mind, just review them again: the home will be waiting for you."
+          }
+        }
+      }
+    },
+    "Para: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For: %@"
+          }
+        }
+      }
+    },
+    "Para: todos (não informado)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For: everyone (not specified)"
+          }
+        }
+      }
+    },
+    "Parar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
+          }
+        }
+      }
+    },
+    "Parar de ouvir" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop listening"
           }
         }
       }
@@ -8904,6 +9303,17 @@
         }
       }
     },
+    "Permita o microfone e o reconhecimento de fala nos Ajustes." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow the microphone and speech recognition in Settings."
+          }
+        }
+      }
+    },
     "Permitir notificações" : {
       "localizations" : {
         "en" : {
@@ -8999,6 +9409,16 @@
         }
       }
     },
+    "Pode estar faltando" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Might be missing"
+          }
+        }
+      }
+    },
     "Poucas tarefas" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9076,6 +9496,26 @@
         }
       }
     },
+    "Preencher" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fill in"
+          }
+        }
+      }
+    },
+    "Preencher com IA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fill in with AI"
+          }
+        }
+      }
+    },
     "Prender os cabos soltos e conferir as tomadas e o filtro de linha." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9114,6 +9554,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Priority %@"
+          }
+        }
+      }
+    },
+    "Procurando itens repetidos…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for repeated items…"
           }
         }
       }
@@ -9282,6 +9732,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quantity"
+          }
+        }
+      }
+    },
+    "Quantidade atualizada" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quantity updated"
           }
         }
       }
@@ -9584,6 +10045,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "collapsed"
+          }
+        }
+      }
+    },
+    "Reconhecimento de fala indisponível agora." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speech recognition isn't available right now."
           }
         }
       }
@@ -9998,6 +10470,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Review terms"
+          }
+        }
+      }
+    },
+    "Revise os itens antes de adicionar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Review the items before adding them."
           }
         }
       }
@@ -10602,6 +11084,28 @@
         }
       }
     },
+    "Somar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add up"
+          }
+        }
+      }
+    },
+    "Somar à quantidade (%lld → %lld)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to quantity (%lld → %lld)"
+          }
+        }
+      }
+    },
     "Sobre nós" : {
       "localizations" : {
         "en" : {
@@ -10722,6 +11226,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your chores for the next 15 days are on the schedule"
+          }
+        }
+      }
+    },
+    "Sugerido automaticamente" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggested automatically"
+          }
+        }
+      }
+    },
+    "Também entram na divisão: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also joining the split: %@"
           }
         }
       }
@@ -11289,6 +11815,17 @@
         }
       }
     },
+    "Toque duas vezes para editar." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-tap to edit."
+          }
+        }
+      }
+    },
     "Toque duas vezes para expandir." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11396,12 +11933,34 @@
         }
       }
     },
+    "Toque para falar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to speak"
+          }
+        }
+      }
+    },
     "Total" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Total"
+          }
+        }
+      }
+    },
+    "Transcrevendo…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcribing…"
           }
         }
       }
@@ -12113,6 +12672,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can join an existing home with an invite, or create a new one."
+          }
+        }
+      }
+    },
+    "Você pode somar a quantidade ao item que já está na lista." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can add the quantity to the item already on the list."
           }
         }
       }
