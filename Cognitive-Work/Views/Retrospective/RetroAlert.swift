@@ -27,7 +27,6 @@ struct RetroAlert: View {
             Text("Sua retrospectiva chegou!")
                 .font(.custom("Alan Sans", size: 34))
                 .bold()
-                .font(.largeTitle)
                 .multilineTextAlignment(.center)
                 .padding(.top, height * 0.052)
             
@@ -40,7 +39,7 @@ struct RetroAlert: View {
                 // MARK: - Actions: open the retrospective / skip to the new division
                 Button {
                     withAnimation {
-                        viewModel.skipRetrospective()
+                        viewModel.startRetrospective()
                     }
                 } label: {
                     Text("Ver minha retrospectiva")

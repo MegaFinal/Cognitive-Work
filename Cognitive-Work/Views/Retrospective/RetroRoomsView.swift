@@ -37,6 +37,8 @@ struct RetroRoomsView: View {
             Text(content.title)
                 .bold()
                 .font(.custom("Alan Sans", size: 64))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .padding(.top, height * 0.071)
             
             Text(content.subtitle)

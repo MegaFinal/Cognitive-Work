@@ -78,6 +78,8 @@ struct RetroPercentageOfDoneView: View {
                 Text(content.closing)
                     .bold()
                     .font(.custom("Alan Sans", size: 40))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .padding(.bottom, height * 0.018)
                 
                 // MARK: Actions: see later or continue
