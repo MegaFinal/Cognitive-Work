@@ -27,10 +27,10 @@ struct ChoreCarouselCard: View {
             // MARK: - Chore name (top)
             VStack {
                 Text(chore.localizedName)
-                    .font(.system(size: 26))
-                    .fontWeight(.bold)
+                    .font(.custom("Alan Sans", size: 35))
+                    .fontWeight(.semibold)
                     .multilineTextAlignment(.center)
-                    .frame(width: width * 0.6)
+                    .frame(width: width * 0.66)
                 Spacer()
             }
             .padding(.top, 30)

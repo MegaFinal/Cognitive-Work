@@ -37,7 +37,7 @@ struct FortnightlyView: View {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Escala quinzenal")
                     .bold()
-                    .font(.system(size: 30))
+                    .font(.custom("Alan Sans", size: 32, relativeTo: .largeTitle))
                     .foregroundStyle(.titleGray)
                     .accessibilityAddTraits(.isHeader)
                 

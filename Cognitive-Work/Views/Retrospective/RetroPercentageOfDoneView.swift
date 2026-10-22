@@ -61,26 +61,25 @@ struct RetroPercentageOfDoneView: View {
                     .bold()
                     .font(.system(size: 64))
                     .padding(.bottom, height * 0.03)
-                
-                Text(content.summary)
+//                Text(content.summary)
+                Text(try! AttributedString(markdown: content.summary))
                     .font(.title)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, height * 0.008)
-                
+                    .frame(width: width * 0.796)
                 Text(content.subtitle)
                     .font(.callout)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.subTitleGray) //Arrumar depois a cor
+                    .foregroundStyle(.subTitleGray)
                 
                 Spacer()
                 
                 // MARK: Cheering word
                 Text(content.closing)
                     .bold()
-                    .font(.system(size: 40))
+                    .font(.custom("Alan Sans", size: 40))
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
-                    .padding(.horizontal, 24)
                     .padding(.bottom, height * 0.018)
                 
                 // MARK: Actions: see later or continue
@@ -92,7 +91,7 @@ struct RetroPercentageOfDoneView: View {
                     Text("ver depois")
                         .fontWeight(.semibold)
                         .font(.subheadline)
-                        .foregroundStyle(.subTitleGray) //Arrumar depois a cor
+                        .foregroundStyle(.subTitleGray)
                 }
                 .padding(.bottom, height * 0.014)
                 

@@ -559,6 +559,7 @@ final class ShopListViewModel {
         if isPreview {
             if let price { item.value = price }
             item.isBought.toggle()
+            item.boughtAt = item.isBought ? Date() : nil // Keep the purchase date in step.
             return
         }
 
@@ -613,6 +614,133 @@ final class ShopListViewModel {
             await ScoreManager.shared.removeScoreForMyUser(score: ScoreValues.shoppingItemAdded.points)
         }
         return true
+    }
+
+    // MARK: - Apple Intelligence
+
+    /// Whether the add-item form should offer AI suggestions on this device and language.
+    var canSuggestItemDetails: Bool {
+        IntelligenceManager.shared.isAvailable
+    }
+
+    /// Suggests name, quantity, unit, category, price and who splits the item from a description.
+    ///
+    /// - Parameters:
+    ///   - text: What the person typed in the AI prompt.
+    ///   - housemates: Everyone who can share the item (the form's `availableUsers`).
+    ///   - currentUser: The person typing.
+    ///   - selectedConsumers: Who the form already has selected (for a per-person price with no
+    ///     names).
+    /// - Returns: `nil` when AI is unavailable, the text is too short, or the request fails.
+    func suggestItemDetails(
+        for text: String,
+        housemates: [UserModel],
+        currentUser: UserModel?,
+        selectedConsumers: [UserModel]
+    ) async -> ShopItemSuggestion? {
+        let entry = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Too short to mean anything.
+        guard entry.count >= 3 else { return nil }
+        return await IntelligenceManager.shared.suggestShopItem(
+            for: entry,
+            housemates: housemates,
+            currentUser: currentUser,
+            selectedConsumers: selectedConsumers
+        )
+    }
+
+    /// A pending item that is the same product as `name`, if any, so the form can offer to add
+    /// to its quantity instead of creating a second card. Candidates come from comparing names;
+    /// the on-device model then confirms the ones that only share a word. Without Apple
+    /// Intelligence, only an identical name counts.
+    func duplicateItem(named name: String) async -> ShopListItem? {
+        let candidates = ShopItemDuplicateFinder.candidates(for: name, in: pendingItems)
+        for candidate in candidates {
+            if ShopItemDuplicateFinder.isExactMatch(name, candidate.name) {
+                return candidate
+            }
+            if await IntelligenceManager.shared.isSameProduct(name, as: candidate.name) == true {
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    /// The people in `consumers` who aren't sharing `item` yet.
+    func newConsumers(_ consumers: [UserModel], for item: ShopListItem) -> [UserModel] {
+        let current = Set(item.relatedUsers(in: houseUsers).map(\.id))
+        var seen = Set<String>()
+        return consumers.filter { !current.contains($0.id) && seen.insert($0.id).inserted }
+    }
+
+    /// Merges a new entry into an item already on the list: adds `amount` to its quantity and
+    /// adds `consumers` who aren't sharing it yet (for example, the person adding it now when a
+    /// housemate created the item). Name, price, unit and category stay as they are.
+    ///
+    /// Goes through ``saveItem(_:name:valueText:quantity:unitMeasurement:category:relatedUsers:addedBy:)``
+    /// so the points for added beneficiaries work exactly as when editing by hand.
+    @discardableResult
+    func merge(into item: ShopListItem, adding amount: Int, consumers: [UserModel]) async -> Bool {
+        let range = QuantityStepper.allowedRange
+        let people = item.relatedUsers(in: houseUsers) + newConsumers(consumers, for: item)
+        return await saveItem(
+            item,
+            name: item.name,
+            valueText: item.value.map(Self.priceInputText(for:)) ?? "",
+            quantity: min(item.quantity + amount, range.upperBound),
+            unitMeasurement: item.unitMeasurement,
+            category: item.category,
+            relatedUsers: people,
+            addedBy: currentUser
+        )
+    }
+
+    /// Reads several items from one text for the list page's AI button.
+    ///
+    /// - Returns: `nil` when AI is unavailable, the text is too short, or the request fails.
+    func suggestItems(from text: String) async -> [ShopItemSuggestion]? {
+        let entry = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard entry.count >= 3 else { return nil }
+        return await IntelligenceManager.shared.suggestShopItems(
+            from: entry,
+            housemates: houseUsers,
+            currentUser: currentUser
+        )
+    }
+
+    /// Saves reviewed suggestions one by one through ``saveItem(_:name:valueText:quantity:unitMeasurement:category:relatedUsers:addedBy:)``,
+    /// so validation and points work exactly as when adding by hand. An item whose people
+    /// weren't mentioned is for the whole house. Stops at the first failure, leaving
+    /// ``errorMessage`` set.
+    ///
+    /// - Returns: How many were saved, counted from the start of `suggestions`.
+    func addSuggestedItems(_ suggestions: [ShopItemSuggestion]) async -> Int {
+        var saved = 0
+        for suggestion in suggestions {
+            let success = await saveItem(
+                nil,
+                name: suggestion.name,
+                valueText: suggestion.unitPrice.map(Self.priceInputText(for:)) ?? "",
+                quantity: suggestion.quantity,
+                unitMeasurement: suggestion.unit,
+                category: suggestion.category,
+                relatedUsers: suggestion.consumers ?? houseUsers,
+                addedBy: currentUser
+            )
+            guard success else { break }
+            saved += 1
+        }
+        return saved
+    }
+
+    /// "R$ 12,50 por pessoa": an item's total split equally between `consumerCount` people,
+    /// rounded to cents like ``DebtCalculator``. `nil` without a price or without anyone.
+    static func shareText(unitPrice: Double?, quantity: Int, consumerCount: Int) -> String? {
+        guard let unitPrice, unitPrice > 0, consumerCount > 0 else { return nil }
+        let total = unitPrice * Double(quantity)
+        let share = (total / Double(consumerCount) * 100).rounded() / 100
+        let format = FloatingPointFormatStyle<Double>.Currency(code: "BRL").locale(L10n.locale)
+        return L10n.tr("%@ por pessoa", share.formatted(format))
     }
 
     // MARK: - Previews
