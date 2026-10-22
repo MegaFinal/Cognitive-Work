@@ -29,7 +29,7 @@ struct OnboardingHeader: View {
     private var sideMargin: CGFloat { width * 0.08 }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: height * 0.014) {
             // MARK: - Title
             Text(title)
                 .font(.custom("Alan Sans", size: 32, relativeTo: .largeTitle))
@@ -37,6 +37,7 @@ struct OnboardingHeader: View {
                 .foregroundStyle(.titleGray)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
+                .frame(width: width * 0.8778, alignment: .leading)
             
             // MARK: - Description and optional detail
             VStack(alignment: .leading, spacing: 10) {

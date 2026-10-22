@@ -36,38 +36,40 @@ struct RetroAlert: View {
                 .fontWeight(.regular)
                 .padding(.top, height * 0.0187)
             
-                // MARK: - Actions: open the retrospective / skip to the new division
+            Spacer()
+            
+            // MARK: - Actions: open the retrospective / skip to the new division
+            Button {
+                withAnimation {
+                    viewModel.startRetrospective()
+                }
+            } label: {
+                Text("Ver minha retrospectiva")
+                    .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                    .multilineTextAlignment(.center)
+                    .fontWeight(.medium)
+                    .font(.system(size: 17))
+            }
+            .buttonStyle(.glassProminent)
+            .glassEffectTransition(.identity)
+            // The pages need the loaded data.
+            .disabled(viewModel.loadState != .loaded)
+
+            // Only the house admin, and only once the current division is over.
+            if viewModel.canStartNewDivision {
                 Button {
                     withAnimation {
-                        viewModel.startRetrospective()
+                        viewModel.skipRetrospective()
                     }
                 } label: {
-                    Text("Ver minha retrospectiva")
+                    Text("Pular para a nova divisão")
                         .frame(minWidth: width * 0.69, minHeight: height * 0.037)
                         .multilineTextAlignment(.center)
                         .fontWeight(.medium)
                         .font(.system(size: 17))
                 }
-                .buttonStyle(.glassProminent)
-                .glassEffectTransition(.identity)
-                // The pages need the loaded data.
-                .disabled(viewModel.loadState != .loaded)
-
-                // Only the house admin, and only once the current division is over.
-                if viewModel.canStartNewDivision {
-                    Button {
-                        withAnimation {
-                            viewModel.skipRetrospective()
-                        }
-                    } label: {
-                        Text("Pular para a nova divisão")
-                            .frame(minWidth: width * 0.69, minHeight: height * 0.037)
-                            .multilineTextAlignment(.center)
-                            .fontWeight(.medium)
-                            .font(.system(size: 17))
-                    }
-                    .buttonStyle(.glass)
-                }
+                .buttonStyle(.glass)
+            }
             
             // MARK: - Loading or error status
             loadStatus
