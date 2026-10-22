@@ -1,17 +1,6 @@
 {
   "sourceLanguage" : "pt-BR",
   "strings" : {
-    "%@ adicionado" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ added"
-          }
-        }
-      }
-    },
     "" : {
 
     },
@@ -32,6 +21,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ adicionado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ added"
           }
         }
       }
@@ -102,17 +102,6 @@
         }
       }
     },
-    "%@ por pessoa" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ per person"
-          }
-        }
-      }
-    },
     "%@ está atrasado" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -153,6 +142,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ this cycle. You reached the top rank!"
+          }
+        }
+      }
+    },
+    "%@ por pessoa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ per person"
           }
         }
       }
@@ -7060,17 +7060,6 @@
         }
       }
     },
-    "Microfone" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Microphone"
-          }
-        }
-      }
-    },
     "Mestre" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7078,6 +7067,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Master"
+          }
+        }
+      }
+    },
+    "Microfone" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone"
           }
         }
       }
@@ -8448,6 +8448,16 @@
         }
       }
     },
+    "O Harvii vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii will forget the Wi-Fi and every phone in the home will need to set it up and pair again."
+          }
+        }
+      }
+    },
     "O item que já está na lista usa outra unidade." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8455,16 +8465,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The item already on the list uses a different unit."
-          }
-        }
-      }
-    },
-    "O Harvii vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Harvii will forget the Wi-Fi and every phone in the home will need to set it up and pair again."
           }
         }
       }
@@ -9155,6 +9155,17 @@
         }
       }
     },
+    "parabéns!" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "well done!"
+          }
+        }
+      }
+    },
     "Parar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9173,17 +9184,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop listening"
-          }
-        }
-      }
-    },
-    "parabéns!" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "well done!"
           }
         }
       }
@@ -9625,6 +9625,9 @@
           }
         }
       }
+    },
+    "Pode estar faltando" : {
+
     },
     "Poltrona" : {
       "extractionState" : "stale",
@@ -10267,6 +10270,16 @@
         }
       }
     },
+    "Recompensas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rewards"
+          }
+        }
+      }
+    },
     "Reconhecimento de fala indisponível agora." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10274,16 +10287,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Speech recognition isn't available right now."
-          }
-        }
-      }
-    },
-    "Recompensas" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rewards"
           }
         }
       }
@@ -11302,6 +11305,16 @@
         }
       }
     },
+    "Sobre nós" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About us"
+          }
+        }
+      }
+    },
     "Somar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11320,16 +11333,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add to quantity (%lld → %lld)"
-          }
-        }
-      }
-    },
-    "Sobre nós" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About us"
           }
         }
       }
