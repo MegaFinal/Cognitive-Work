@@ -11,11 +11,17 @@ import CloudKit
 /// A data model representing a single daily usage or chore entry for a user,
 /// typically utilized for charting and e-paper display formatting.
 struct DailyUsageEntry: Equatable {
+    /// The day of the chore.
     let day: Date
+    /// The member who does it.
     let userID: CKRecord.ID
+    /// The chore.
     let choreID: CKRecord.ID
+    /// How long it takes, in minutes.
     let minutes: Double
+    /// The chore's name.
     let choreName: String
+    /// The duration group of ``minutes``.
     var tier: ChoreDurationTier { ChoreDurationTier.from(minutes: minutes) }
 }
 
@@ -191,6 +197,7 @@ class FortnightlyViewModel {
     }
     
     // MARK: - Synchronous RAM lookups (consumed by "dumb" views)
+    /// The room of `chore`, from the rooms already in memory (no CloudKit request).
     func getRoom(for chore: ChoreModel) -> RoomModel? {
         guard let refID = chore.roomReference?.recordID else { return nil }
         return roomModels.first { $0.recordID == refID }

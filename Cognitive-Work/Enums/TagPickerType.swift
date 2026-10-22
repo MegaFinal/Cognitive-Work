@@ -8,13 +8,21 @@
 import SwiftUI
 import CloudKit
 
-/// Denotes logical behavior variations internally differentiating dynamic forms instances constraints.
+/// The three tags a chore can have (priority, frequency and duration).
+///
+/// Tag views use it to know which text and colors to show for a chore.
 enum TagPickerType {
+    /// How urgent the chore is (``PriorityTag``).
     case priority
+    /// How often the chore repeats (``Recurrence``).
     case frequency
+    /// How long the chore takes (``ChoreDurationTier``).
     case duration
         
-    /// Decodes a relevant identifier label given an overarching DTO reference constraints object point.
+    /// The text of this tag for `chore`.
+    /// - Parameters:
+    ///   - chore: The chore being shown or edited.
+    ///   - currentRoom: The chore's room. Not used by the current tags.
     func labelName(for chore: ChoreDTO, currentRoom: RoomModel?) -> String {
         switch self {
         case .priority:
@@ -36,7 +44,10 @@ enum TagPickerType {
         }
     }
     
-    /// Identifies specific coloring schema contextualizing active selection behaviors.
+    /// The background color of this tag for `chore`.
+    /// - Parameters:
+    ///   - chore: The chore being shown or edited.
+    ///   - currentRoom: The chore's room. Not used by the current tags.
     func labelColor(for chore: ChoreDTO, currentRoom: RoomModel?) -> Color {
         switch self {
         case .priority:

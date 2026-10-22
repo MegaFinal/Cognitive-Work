@@ -14,13 +14,19 @@ enum ShopListPreviewData {
 
     // MARK: - Users
 
+    /// Sample housemate (the signed-in user in the previews).
     static let jones = makeUser("Jones")
+    /// Sample housemate.
     static let isabela = makeUser("Isabela")
+    /// Sample housemate.
     static let carol = makeUser("Carol")
+    /// Sample housemate.
     static let anshu = makeUser("Anshu")
 
+    /// Every sample housemate.
     static let users: [UserModel] = [jones, isabela, carol, anshu]
 
+    /// A sample user with a fixed record ID.
     private static func makeUser(_ name: String) -> UserModel {
         let user = UserModel(name: name, tier: .tier1, ownerRecordName: "preview-\(name)")
         user.recordID = CKRecord.ID(recordName: "preview-user-\(name)")
@@ -29,6 +35,7 @@ enum ShopListPreviewData {
 
     // MARK: - Items
 
+    /// A sample item with a fixed record ID. The parameters match ``ShopListItem``'s.
     static func makeItem(
         _ name: String,
         quantity: Int,

@@ -8,24 +8,33 @@
 import Foundation
 import CloudKit
 
-/// A single entry belonging to a ``ShopListModel``
+/// One item of the house's shopping list (a ``ShopListModel``).
+///
+/// Besides what to buy, it keeps who bought it, who it was for and who already paid their share,
+/// so the app can split the cost between housemates (see ``DebtCalculator``).
 @Observable
 class ShopListItem: CloudKitSyncable, Identifiable {
+    /// Identifier used before the item is saved (when it has no `recordID`).
     private let localID = UUID().uuidString
 
+    /// Identifier for SwiftUI lists: the record name once saved, a local ID before that.
     var id: String {
         recordID?.recordName ?? localID
     }
 
+    /// The CloudKit record type.
     static var recordType: String = "ShopListItem"
 
+    /// The CloudKit record ID. `nil` until the model is saved.
     var recordID: CKRecord.ID?
 
+    /// The item's name.
     var name: String
 
     /// Price of ONE unit (see ``totalValue``).
     var value: Double?
 
+    /// How much to buy, in ``unitMeasurement``.
     var quantity: Int
 
     /// The unit ``quantity`` is expressed in (grams, liters, individual pieces, …).
@@ -46,15 +55,16 @@ class ShopListItem: CloudKitSyncable, Identifiable {
     /// The list this item belongs to (the record's `parent`).
     var listRecordID: CKRecord.ID?
 
-    /// The user who actually bought the item
+    /// The user who actually bought the item.
     private var buyerUserReference: CKRecord.Reference?
 
     /// Other users who will use/share this item, e.g. to split its cost.
     var relatedUsersReference: [CKRecord.Reference]?
 
-    /// The user who added this item to the list
+    /// The user who added this item to the list.
     private var addedByUserReference: CKRecord.Reference?
 
+    /// Tags attached to the item (not used by the app yet).
     private var tagsReference: [CKRecord.Reference]?
 
     /// Housemates who already paid the buyer their share of this item (see ``DebtCalculator``).
@@ -86,6 +96,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
     /// Who added the item, as a record id.
     var addedByRecordID: CKRecord.ID? { addedByUserReference?.recordID }
 
+    /// The member who bought the item, fetched from CloudKit.
     var buyerUser: UserModel? {
         get async {
             if let buyerUserReference {
@@ -95,7 +106,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         }
     }
 
-    /// Users who will use/share this item
+    /// The members the item is for, fetched from CloudKit.
     var relatedUsers: [UserModel] {
         get async {
             if let relatedUsersReference {
@@ -129,6 +140,7 @@ class ShopListItem: CloudKitSyncable, Identifiable {
         }
     }
 
+    /// The item's tags, fetched from CloudKit.
     var tags: [TagModel] {
         get async {
             if let tagsReference {
@@ -179,8 +191,11 @@ class ShopListItem: CloudKitSyncable, Identifiable {
     ///   - quantity: How many units to buy.
     ///   - unitMeasurement: The unit `quantity` is expressed in.
     ///   - isBought: Whether the item starts already purchased. Defaults to `false`.
+    ///   - category: The aisle the item belongs to.
     ///   - relatedUsers: Other users who will use/share this item.
     ///   - addedByUser: The user adding this item, for gamification credit.
+    ///   - buyerUser: The user who bought it, when it is created already bought.
+    ///   - recordID: The record ID to use, when it is already known.
     init(
         name: String,
         value: Double? = nil,
@@ -305,10 +320,22 @@ class ShopListItem: CloudKitSyncable, Identifiable {
 
         settleLocally(for: debtorID)
 
-        guard await CloudKitManager.shared.update(self) else {
+        guard let record = await CloudKitManager.shared.fetchRecord(for: self) else {
             settledUsersReference = previous
             return false
         }
+
+        var merged = record["settledUsers"] as? [CKRecord.Reference] ?? []
+        if !merged.contains(where: { $0.recordID == debtorID }) {
+            merged.append(CKRecord.Reference(recordID: debtorID, action: .none))
+        }
+        record["settledUsers"] = merged
+
+        guard await CloudKitManager.shared.update(record: record) else {
+            settledUsersReference = previous
+            return false
+        }
+        settledUsersReference = merged
         return true
     }
 

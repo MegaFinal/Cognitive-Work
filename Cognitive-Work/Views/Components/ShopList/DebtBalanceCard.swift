@@ -12,15 +12,20 @@ import SwiftUI
 /// It only renders what it's given.
 struct DebtBalanceCard: View {
 
+    /// "Saldo".
     let title: String
+    /// What the balance means ("A casa te deve"…).
     let caption: String
+    /// The amount, formatted as money.
     let amountText: String
+    /// The amount's color (green, orange or yellow).
     let color: RoomColor
     /// The amount as VoiceOver should read it ("55 reais"); `amountText` when `nil`.
     var accessibilityAmount: String? = nil
 
     var body: some View {
         HStack(alignment: .center) {
+            // MARK: - Title and caption
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 24, weight: .bold))
@@ -33,6 +38,7 @@ struct DebtBalanceCard: View {
 
             Spacer(minLength: 12)
 
+            // MARK: - Amount
             Text(amountText)
                 .font(.system(size: 38, weight: .bold))
                 .foregroundStyle(color.uiColor)

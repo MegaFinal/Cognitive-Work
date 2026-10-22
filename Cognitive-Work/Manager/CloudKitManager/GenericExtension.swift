@@ -286,15 +286,8 @@ extension CloudKitManager {
         predicate: NSPredicate,
         desiredKeys: DesiredKeys = .list
     ) async -> [T] {
-        let query = CKQuery(recordType: T.recordType, predicate: predicate)
-        
         do {
-            return try await allRecords(
-                matching: query,
-                in: privateDB,
-                zoneID: houseZoneID,
-                desiredKeys: desiredKeys.resolve(for: T.self)
-            ).compactMap(T.init(record:))
+            return try await fetchPrivateOrThrow(type, predicate: predicate, desiredKeys: desiredKeys)
         } catch {
             errorMessage = UserFacingError.message(for: error, doing: .load)
             return []
@@ -307,33 +300,78 @@ extension CloudKitManager {
         predicate: NSPredicate,
         desiredKeys: DesiredKeys = .list
     ) async -> [T] {
-        let zones = await sharedZones()
-        guard !zones.isEmpty else { return [] }
-        
         do {
-            return try await withThrowingTaskGroup(of: [T].self) { group in
-                for zone in zones {
-                    group.addTask {
-                        let query = CKQuery(recordType: T.recordType, predicate: predicate)
-                        return try await self.allRecords(
-                            matching: query,
-                            in: self.sharedDB,
-                            zoneID: zone.zoneID,
-                            desiredKeys: desiredKeys.resolve(for: T.self)
-                        ).compactMap(T.init(record:))
-                    }
-                }
-                var all: [T] = []
-                for try await items in group { all.append(contentsOf: items) }
-                return all
-            }
+            return try await fetchSharedOrThrow(type, predicate: predicate, desiredKeys: desiredKeys)
         } catch {
             errorMessage = UserFacingError.message(for: error, doing: .share)
             return []
         }
     }
     
-    /// Runs `query` in one zone and follows the cursor until every page has been read.
+    // MARK: - Strict fetches
+    
+    /// Like ``fetchAll(_:predicate:)``, but throws when CloudKit fails.
+    func fetchAllOrThrow<T: CloudKitSyncable>(
+        _ type: T.Type,
+        predicate: NSPredicate = NSPredicate(value: true)
+    ) async throws -> [T] {
+        async let owned = fetchPrivateOrThrow(type, predicate: predicate, desiredKeys: .list)
+        async let shared = fetchSharedOrThrow(type, predicate: predicate, desiredKeys: .list)
+        return try await owned + shared
+    }
+    
+    /// Like ``fetchHouseUserRecords()``, but throws when CloudKit fails.
+    func fetchHouseUserRecordsOrThrow() async throws -> [UserModel] {
+        guard let houseID = try await currentHouse()?.recordID else { return [] }
+        
+        let reference = CKRecord.Reference(recordID: houseID, action: .none)
+        let predicate = NSPredicate(format: "house == %@", reference)
+        return try await fetchAllOrThrow(UserModel.self, predicate: predicate)
+    }
+    
+    /// Every `T` in the private database that matches `predicate`. Throws on failure.
+    private func fetchPrivateOrThrow<T: CloudKitSyncable>(
+        _ type: T.Type,
+        predicate: NSPredicate,
+        desiredKeys: DesiredKeys
+    ) async throws -> [T] {
+        let query = CKQuery(recordType: T.recordType, predicate: predicate)
+        return try await allRecords(
+            matching: query,
+            in: privateDB,
+            zoneID: houseZoneID,
+            desiredKeys: desiredKeys.resolve(for: T.self)
+        ).compactMap(T.init(record:))
+    }
+    
+    /// Every `T` in every shared zone that matches `predicate`. Throws on failure.
+    private func fetchSharedOrThrow<T: CloudKitSyncable>(
+        _ type: T.Type,
+        predicate: NSPredicate,
+        desiredKeys: DesiredKeys
+    ) async throws -> [T] {
+        let zones = try await sharedZonesOrThrow()
+        guard !zones.isEmpty else { return [] }
+        
+        return try await withThrowingTaskGroup(of: [T].self) { group in
+            for zone in zones {
+                group.addTask {
+                    let query = CKQuery(recordType: T.recordType, predicate: predicate)
+                    return try await self.allRecords(
+                        matching: query,
+                        in: self.sharedDB,
+                        zoneID: zone.zoneID,
+                        desiredKeys: desiredKeys.resolve(for: T.self)
+                    ).compactMap(T.init(record:))
+                }
+            }
+            var all: [T] = []
+            for try await items in group { all.append(contentsOf: items) }
+            return all
+        }
+    }
+    
+    /// Every record that matches `query` in `zoneID`, reading all pages of results.
     private func allRecords(
         matching query: CKQuery,
         in database: CKDatabase,
@@ -397,6 +435,8 @@ extension CloudKitManager {
         }
     }
     
+    /// Saves a raw record, in the private or shared database depending on its zone.
+    /// - Returns: `false` when the save fails (see ``errorMessage``).
     func update(record: CKRecord) async -> Bool {
         let database = record.recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
         
@@ -441,6 +481,8 @@ extension CloudKitManager {
         }
     }
     
+    /// Deletes the record `recordID` of type `T`.
+    /// - Returns: `false` when the delete fails (see ``errorMessage``).
     @discardableResult
     func delete<T: CloudKitSyncable>(_ type: T.Type, recordID: CKRecord.ID) async -> Bool {
         let database = recordID.zoneID.ownerName == CKCurrentUserDefaultName ? privateDB : sharedDB
@@ -643,6 +685,7 @@ extension CloudKitManager {
         return findings
     }
     
+    /// A readable name of a reference action, for logs.
     private func describe(_ action: CKRecord.ReferenceAction) -> String {
         switch action {
         case .none: return "action: none"
@@ -651,6 +694,7 @@ extension CloudKitManager {
         }
     }
     
+    /// Whether the signed-in user owns the zone of `recordID` (for a house: whether they are its admin).
     func isOwner<T: CloudKitSyncable>(_ type: T.Type, recordID: CKRecord.ID) -> Bool {
         return recordID.zoneID.ownerName == CKCurrentUserDefaultName ? true : false
     }
@@ -663,6 +707,7 @@ enum DesiredKeys {
     /// Every field on the record.
     case all
     
+    /// The field names to request for `type`, or `nil` for every field.
     func resolve<T: CloudKitSyncable>(for type: T.Type) -> [CKRecord.FieldKey]? {
         switch self {
         case .list: return T.listDesiredKeys

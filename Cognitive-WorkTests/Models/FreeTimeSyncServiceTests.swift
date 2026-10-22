@@ -25,7 +25,7 @@ private final class FakeFreeTimeStore: FreeTimeProfileStore {
     private(set) var loadCalls = 0
     private(set) var saveCalls = 0
 
-    init(snapshot: FreeTimeSnapshot? = nil, saveDay: Date = Date(timeIntervalSince1970: 1_000_000)) {
+    nonisolated init(snapshot: FreeTimeSnapshot? = nil, saveDay: Date = Date(timeIntervalSince1970: 1_000_000)) {
         self.snapshot = snapshot
         self.saveDay = saveDay
     }

@@ -14,8 +14,11 @@ import SwiftUI
 /// blocked with ``BlockingOperationOverlay`` for the duration of the unlink.
 @Observable
 final class SharedMembershipCleanup {
+    /// The single instance the UI observes.
     static let shared = SharedMembershipCleanup()
+    /// `true` while a membership is being removed. Only changed by ``CloudKitManager``.
     fileprivate(set) var isUnlinking = false
+    /// Use ``shared``.
     private init() {}
 }
 
@@ -59,6 +62,7 @@ extension CloudKitManager {
         defaults.removeObject(forKey: PendingJoinKey.date)
     }
     
+    /// Whether `zoneID` is the house the user saved as "joining" in `UserDefaults`.
     private func isPendingJoinZone(_ zoneID: CKRecordZone.ID) -> Bool {
         let defaults = UserDefaults.standard
         return defaults.string(forKey: PendingJoinKey.zoneName) == zoneID.zoneName
@@ -103,6 +107,8 @@ extension CloudKitManager {
         return removed
     }
     
+    /// Leaves every shared house zone where the user has no member record (and isn't still joining).
+    /// - Returns: How many houses were left.
     private func performMembershipPrune() async -> Int {
         let zones: [CKRecordZone]
         do {
@@ -485,6 +491,7 @@ extension CloudKitManager {
         )
     }
     
+    /// Deletes `recordIDs`, treating records that are already gone as deleted.
     private func deleteRecordsIgnoringMissing(_ recordIDs: [CKRecord.ID], in database: CKDatabase) async throws {
         guard !recordIDs.isEmpty else { return }
         

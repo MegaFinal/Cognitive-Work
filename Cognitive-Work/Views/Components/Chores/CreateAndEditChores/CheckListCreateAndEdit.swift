@@ -21,6 +21,7 @@ struct CheckListCreateAndEdit: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // MARK: - One row per item: check button, text field, remove button
             ForEach($localChecklist) { $item in
                 HStack {
                     Button {
@@ -60,6 +61,7 @@ struct CheckListCreateAndEdit: View {
                     .voiceControlNames([L10n.tr("Remover"), L10n.tr("Remover %@", accessibilityName(of: item)), L10n.tr("Menos")])
                 }
             }
+            // MARK: - "Adicionar item"
             Button {
                 appendItem()
             } label: {
@@ -111,6 +113,7 @@ struct CheckListCreateAndEdit: View {
         focusedItemID = newItem.id
     }
     
+    /// Removes the item `id`; turns the checklist off when it gets empty.
     private func remove(_ id: UUID) {
         if let item = localChecklist.first(where: { $0.id == id }) {
             VoiceOver.announce(L10n.tr("%@ removido", accessibilityName(of: item)))

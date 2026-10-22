@@ -109,6 +109,7 @@ nonisolated struct CategoryChartDescriptor: AXChartDescriptorRepresentable {
     /// One bar per category.
     let points: [(label: String, value: Double)]
 
+    /// Builds the chart description VoiceOver uses for its audio graph.
     func makeChartDescriptor() -> AXChartDescriptor {
         let categories = points.map(\.label)
         let maxValue = max(points.map(\.value).max() ?? 0, 1)

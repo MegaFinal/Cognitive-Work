@@ -78,7 +78,7 @@ class CloudKitManager {
     /// In-flight shared-zone listing, deduplicated the same way. `nil` result means the
     /// listing failed and must not be cached.
     @ObservationIgnored
-    private var sharedZonesLookup: Task<[CKRecordZone]?, Never>?
+    private var sharedZonesLookup: Task<[CKRecordZone], Error>?
     
     // MARK: - Data revision
     
@@ -99,6 +99,7 @@ class CloudKitManager {
         }
     }
     
+    /// Connects to the app's iCloud container. Use ``shared``.
     private init() {
         container = CKContainer(
             identifier: "iCloud.JonasMelo.Cognitive-Work"
@@ -116,6 +117,8 @@ class CloudKitManager {
     }
     
     
+    /// A copy of `asset` in a new temporary file, so the same image can be saved in another record.
+    /// - Throws: When the file can't be copied.
     private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
         guard let origem = asset.fileURL else { return nil }
         
@@ -205,26 +208,33 @@ class CloudKitManager {
         return user
     }
     
-    /// Every record zone shared with this account, resolved once per session.
-    func sharedZones() async -> [CKRecordZone] {
+    /// Like ``sharedZones()``, but throws when CloudKit fails instead of returning `[]`
+    /// (which would read as "this account has no shared house"). Resolved once per session;
+    /// simultaneous callers share the same request.
+    func sharedZonesOrThrow() async throws -> [CKRecordZone] {
         if let cachedSharedZones { return cachedSharedZones }
-        if let sharedZonesLookup { return await sharedZonesLookup.value ?? [] }
+        if let sharedZonesLookup { return try await sharedZonesLookup.value }
         
-        let lookup = Task<[CKRecordZone]?, Never> { [weak self] in
-            guard let self else { return nil }
-            do {
-                return try await self.sharedDB.allRecordZones()
-            } catch {
-                self.errorMessage = UserFacingError.message(for: error, doing: .share)
-                return nil
-            }
+        let lookup = Task<[CKRecordZone], Error> { [weak self] in
+            guard let self else { return [] }
+            return try await self.sharedDB.allRecordZones()
         }
         sharedZonesLookup = lookup
+        defer { sharedZonesLookup = nil }
         
-        let zones = await lookup.value
-        sharedZonesLookup = nil
-        if let zones { cachedSharedZones = zones }
-        return zones ?? []
+        let zones = try await lookup.value
+        cachedSharedZones = zones
+        return zones
+    }
+    
+    /// Every record zone shared with this account, resolved once per session.
+    func sharedZones() async -> [CKRecordZone] {
+        do {
+            return try await sharedZonesOrThrow()
+        } catch {
+            errorMessage = UserFacingError.message(for: error, doing: .share)
+            return []
+        }
     }
     
     /// Drops every session-cached lookup.
@@ -372,6 +382,7 @@ class CloudKitManager {
         return recordName.hasSuffix(houseUserSuffix)
     }
     
+    /// The record ID of the signed-in iCloud account, or `nil` when it can't be read.
     func fetchCurrentUserRecordID() async -> CKRecord.ID? {
         return try? await container.userRecordID()
     }
@@ -450,6 +461,10 @@ class CloudKitManager {
         }
     }
     
+    /// The share (invite link) of `houseModel`, creating it the first time.
+    ///
+    /// The share lets anyone with the link join and edit the house.
+    /// - Returns: `nil` when the house can't be read or the share can't be saved (see ``errorMessage``).
     func resolveShare(for houseModel: HouseModel) async -> CKShare? {
         guard let house = await fetchRecord(for: houseModel)
         else {
@@ -534,6 +549,8 @@ class CloudKitManager {
         return accepted
     }
     
+    /// Creates the signed-in user's member record inside the current house, copying their profile.
+    /// - Returns: `false` when the house or the profile can't be found, or the save fails.
     private func addMyselfToCurrentHouse() async -> Bool {
         var found: HouseModel?
         for _ in 0..<3 where found == nil {
@@ -556,9 +573,9 @@ class CloudKitManager {
             name: profile.name,
             profilePicture: profilePictureDuplicate,
             banner: profile.banner,
-            tier: profile.tier,
+            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
+            tier: .bronze1,
             coins: profile.coins,
-            points: profile.points,
             house: CKRecord.Reference(recordID: houseID, action: .none),
             couponLimit: profile.couponLimit,
             ownerRecordName: ownerName
@@ -575,6 +592,9 @@ class CloudKitManager {
         return true
     }
     
+    /// Leaves the shared house the user is in, removing their member record first.
+    /// - Returns: `false` when there is no shared house to leave.
+    /// - Throws: ``CloudKitErrors/currentHouseOwnerCannotLeaveTheHouse`` when the user created the house.
     @discardableResult
     func leaveCurrentHouse() async throws -> Bool {
         guard let house = try? await fetchFirst(HouseModel.self),
@@ -595,6 +615,9 @@ class CloudKitManager {
         return await leaveSharedHouse(in: share.recordID.zoneID)
     }
     
+    /// Leaves the current house and accepts the invitation to another one.
+    /// - Parameter metadata: The invitation of the new house.
+    /// - Returns: `false` when leaving or accepting fails.
     @discardableResult
     func switchHouse(to metadata: CKShare.Metadata) async -> Bool {
         do {
@@ -695,6 +718,8 @@ class CloudKitManager {
         return url
     }
     
+    /// A `CKAsset` for `data` (for example, a profile picture), written to a temporary file.
+    /// - Returns: `nil` when the file can't be written.
     func createAsset(from data: Data) -> CKAsset? {
         //Create a temporary file URL
         let temporaryDirectory = FileManager.default.temporaryDirectory
@@ -755,6 +780,8 @@ class CloudKitManager {
         }
     }
     
+    /// Saves changes to several models at once, grouped by database (private or shared).
+    /// - Returns: `true` when every group was saved.
     @discardableResult
     func batchUpdate<T: CloudKitSyncable>(_ items: [T]) async -> Bool {
         guard !items.isEmpty else { return true }

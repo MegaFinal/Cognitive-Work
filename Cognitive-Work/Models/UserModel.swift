@@ -8,8 +8,10 @@ import CloudKit
 
 /// A member of a house, including their gamification progress.
 class UserModel: CloudKitSyncable, Identifiable, Hashable {
+    /// Identifier used before the user is saved (when it has no `recordID`).
     private let localID = UUID().uuidString
     
+    /// Identifier for SwiftUI lists: the record name once saved, a local ID before that.
     var id: String {
         recordID?.recordName ?? localID
     }
@@ -36,6 +38,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Identifier of the stored record, or `nil` before the user is saved.
     var recordID: CKRecord.ID?
     
+    /// The record name of the person's iCloud account. The same person can have more than one
+    /// `UserModel` record (a private profile and one inside the house); this value ties them together.
     var ownerRecordName: String
     
     /// Display name shown to other members.
@@ -50,14 +54,28 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// The user's Pix key, so housemates can pay what they owe. `nil` until it is set.
     var pixKey: String?
     
-    /// Progression level reached by the user.
+    /// Rank in the current cycle. Always derived from ``points``; not saved.
     var tier: Tier
     
-    /// Currency available to redeem coupons.
+    /// Legacy coin balance.
+    ///
+    /// > Important: no longer the source of truth — coins live in ``CoinWalletModel``, which only
+    /// > the purchase and payout flows write. This field is still written by every
+    /// > ``populate(record:)`` (e.g. each profile edit), so a value read here can be stale.
+    /// > It only seeds a wallet the first time one is created.
     var coins: Int
     
-    /// Score accumulated from completed chores.
-    var points: Int
+    /// Points in the current cycle — an in-memory copy of the person's ``UserScoreModel``.
+    ///
+    /// > Important: not saved by ``populate(record:)``. Points change only through
+    /// > ``ScoreManager`` and ``CycleSettlementService``, which write the ``UserScoreModel``;
+    /// > ``HouseDataStore`` copies it here on every load. Decoding a record reads its old `points`
+    /// > field (the legacy value, which seeds the score the first time one is created).
+    ///
+    /// ``tier`` follows it: every change recomputes the rank (see ``Tier/init(points:)``).
+    var points: Int {
+        didSet { tier = Tier(points: points) }
+    }
     
     /// References to the badges the user has earned.
     var badgesReference: [CKRecord.Reference]?
@@ -81,13 +99,15 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     // /// When this user's record was created. Used as the "joined the house" date.
     // var joinedAt: Date?
     
+    /// Whether this record's name is the same as ``ownerRecordName``. Not used by the app.
     var isTheHouseOwner: Bool {
         return ownerRecordName == id
     }
-    
+    /// When this member joined the house. Used for the "entrou na casa" notification.
     /// To verifies when new user joins the house
     var joinedAt: Date?
     
+    /// The member's chores, fetched from CloudKit.
     var chores: [ChoreModel] {
         get async {
             if let choresReference {
@@ -97,6 +117,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         }
     }
     
+    /// The member's free time records, fetched from CloudKit.
     var availableTime: [AvailableTimeModel] {
         get async {
             if let availableTimeReference {
@@ -106,6 +127,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         }
     }
     
+    /// The member's house, fetched from CloudKit. `nil` if not set or not found.
     var house: HouseModel? {
         get async {
             if let houseReference {
@@ -119,15 +141,15 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
     /// Creates a model from a CloudKit record.
     ///
     /// - Parameter record: The record to decode.
-    /// - Returns: `nil` when `name`, `coins`, `points`, or `couponLimit` is missing.
+    /// - Returns: `nil` when `name`, `coins`, or `couponLimit` is missing.
     ///
-    /// Unknown or missing ``Tier`` values fall back to `.tier1`; missing collections decode as
-    /// empty or `nil` rather than failing.
+    /// `points` is the legacy field (0 when absent, as on records created after scores moved to
+    /// ``UserScoreModel``) and ``tier`` is derived from it; missing collections decode as empty or
+    /// `nil` rather than failing.
     required init?(record: CKRecord) {
         guard
             let name = record["name"] as? String,
             let coins = record["coins"] as? Int,
-            let points = record["points"] as? Int,
             let couponLimit = record["couponLimit"] as? Int,
             let ownerRecordName = record["ownerRecordName"] as? String
         else {
@@ -137,9 +159,12 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         self.recordID = record.recordID
         self.name = name
         self.coins = coins
+        let points = record["points"] as? Int ?? 0
         self.points = points
         self.couponLimit = couponLimit
-        self.tier = Tier(rawValue: record["tier"] as? String ?? "") ?? .tier1
+        // The rank is derived from the points, not read from the record, so it is right even
+        // for records saved before ranks followed the points.
+        self.tier = Tier(points: points)
         self.profilePicture = record["profilePicture"] as? CKAsset
         self.banner = ProfileBanner(
             storedColor: record["bannerColor"] as? String,
@@ -207,9 +232,8 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         record["bannerPattern"] = banner.pattern.rawValue
         // Written even when `nil`, so removing the key clears it on the record too.
         record["pixKey"] = pixKey
-        record["tier"] = tier.rawValue
         record["coins"] = coins
-        record["points"] = points
+        // `points` and `tier` are deliberately not written: they live in `UserScoreModel`.
         if let badgesReference {
             record["badges"] = badgesReference
         }
@@ -230,6 +254,15 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         
     }
     
+    /// Saves the member's weekly free time for the next weeks and replaces the old records.
+    ///
+    /// Each item of `times` is one weekday (Monday first). For every weekday with free time, one
+    /// ``AvailableTimeModel`` is created per week, for `weeks` weeks.
+    ///
+    /// - Parameters:
+    ///   - times: The free time of each weekday, Monday first.
+    ///   - weeks: How many weeks ahead to create records for.
+    /// - Returns: `false` if the member is not saved yet or CloudKit rejects the save.
     @discardableResult
     func setAvailableTimes(_ times: [AvailableTimeModel], forWeeks weeks: Int = 4) async -> Bool {
         guard let recordID else {
@@ -304,6 +337,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         return true
     }
     
+    /// Saves one free time value as the member's free time (see ``setAvailableTimes(_:forWeeks:)``).
     @discardableResult
     func setAvailableTime(capacityMinutes: Int, day: Date) async -> Bool {
         await setAvailableTimes([
@@ -311,7 +345,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         ])
     }
     
-    // To conform to Hashable
+    /// Two users are equal when they point to the same record (or are the same object, before saving).
     static func == (lhs: UserModel, rhs: UserModel) -> Bool {
         // compare both records
         if let l = lhs.recordID, let r = rhs.recordID { return l == r }
@@ -319,7 +353,7 @@ class UserModel: CloudKitSyncable, Identifiable, Hashable {
         return lhs === rhs
     }
     
-    // To conform to Hashable -> creates hash
+    /// Hashes the record ID (or the object itself, before saving).
     func hash(into hasher: inout Hasher) {
         if let recordID {
             hasher.combine(recordID)

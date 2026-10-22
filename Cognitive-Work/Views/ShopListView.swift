@@ -8,13 +8,18 @@
 import SwiftUI
 import CloudKit
 
-/// Shows the house's shopping list.
+/// The shopping tab: the house's shopping list grouped in sections, with a button to add items,
+/// a sort menu and a link to the "Pendências" (who owes whom) screen.
 struct ShopListView: View {
 
+    /// Loads the list, saves changes and works out the sections.
     @State private var viewModel: ShopListViewModel
 
+    /// Shows the "new item" sheet.
     @State private var isPresentingAddItem = false
+    /// The item being edited, or `nil`.
     @State private var editingItem: ShopListItem?
+    /// Opens the "Pendências" screen.
     @State private var isShowingPendingPayments = false
 
     /// Whether the "add several items with AI" sheet is open.
@@ -31,6 +36,7 @@ struct ShopListView: View {
     /// The delete button matches the card: same height, same 22-point corners.
     private let swipeStyle = SwipeToDeleteStyle(cornerRadius: 22, topInset: 0)
 
+    /// Creates the screen. Pass a ready view model for previews.
     init(viewModel: ShopListViewModel? = nil) {
         let shopList = viewModel ?? ShopListViewModel()
         self._viewModel = State(initialValue: shopList)
@@ -39,6 +45,7 @@ struct ShopListView: View {
 
     var body: some View {
         NavigationStack {
+            // MARK: - Content and the "Pendências" link
             content
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(isPresented: $isShowingPendingPayments) {
@@ -47,21 +54,29 @@ struct ShopListView: View {
         }
     }
 
+    /// The page: title and buttons, then the list (or a spinner / empty state).
     private var content: some View {
         VStack(alignment: .leading, spacing: 20) {
+            // MARK: - Title and buttons
             header
 
             // One-tap chips for what might be missing; hidden when there's nothing to suggest.
             ShopSuggestionsRow(model: suggestionsModel)
                 .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
 
-            if viewModel.hasLoaded && viewModel.items.isEmpty {
+            // MARK: - Spinner, empty state or list
+            if !viewModel.hasLoaded {
+                // Only on a cold start without data in memory; otherwise the cached list shows at once.
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.isListEmpty {
                 ShopListEmptyState()
                     .frame(maxHeight: .infinity)
             } else {
                 itemList
             }
         }
+        // MARK: - Add button and price pop-up
         .overlay(alignment: .bottomTrailing) {
             // The AI button sits right above "+", centred on it.
             VStack(spacing: 12) {
@@ -74,6 +89,7 @@ struct ShopListView: View {
         .background(Color(.white).ignoresSafeArea())
         .overlay { purchasePriceOverlay }
         .animation(.easeInOut(duration: 0.25), value: viewModel.purchasePrompt?.id)
+        // MARK: - Loading and refreshing
         .task {
             canUseAI = viewModel.canSuggestItemDetails
             guard !viewModel.hasLoaded else { return }
@@ -100,6 +116,7 @@ struct ShopListView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             viewModel.requestRefresh()
         }
+        // MARK: - New item and edit item sheets
         .sheet(isPresented: $isPresentingAddItem) {
             ShopListItemFormView(
                 mode: .create,
@@ -120,6 +137,7 @@ struct ShopListView: View {
                 viewModel: viewModel
             )
         }
+        // MARK: - Error alert
         .alert(
             "Não foi possível concluir",
             isPresented: Binding(
@@ -178,6 +196,7 @@ struct ShopListView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
+                // MARK: Title and pending summary
                 Text("Compras")
                     .font(.system(size: 34))
                     .fontWeight(.bold)
@@ -195,6 +214,7 @@ struct ShopListView: View {
 
             Spacer()
 
+            // MARK: "Pendências" button and sort menu
             HStack(spacing: 4) {
                 Button {
                     HapticsManager.selection()
@@ -235,6 +255,7 @@ struct ShopListView: View {
 
     // MARK: - List
 
+    /// The scrolling list: the sections to buy, a black line, then the "bought" section.
     private var itemList: some View {
         let pendingSections = viewModel.pendingSections
         let boughtSection = viewModel.boughtSection
@@ -260,8 +281,10 @@ struct ShopListView: View {
         .scrollDismissesKeyboard(.immediately)
     }
 
+    /// Space between two sections.
     private let sectionSpacing: CGFloat = 40
 
+    /// The black line above the "bought" section.
     private var boughtDivider: some View {
         Capsule()
             .fill(Color.black)
@@ -269,6 +292,7 @@ struct ShopListView: View {
             .frame(maxWidth: .infinity)
     }
 
+    /// The thin line between two items.
     private var itemDivider: some View {
         Capsule()
             .fill(Color.gray.opacity(0.3))
@@ -280,7 +304,9 @@ struct ShopListView: View {
 
     /// A collapsible section: the title, then its cards separated by thin lines.
     ///
-    /// - Parameter isFirst: The first section sits right under the header
+    /// - Parameters:
+    ///   - section: The section to show.
+    ///   - isFirst: `true` for the first section, which sits closer to the header.
     @ViewBuilder
     private func sectionView(_ section: ShopListSection, isFirst: Bool) -> some View {
         sectionTitle(section)
@@ -300,6 +326,7 @@ struct ShopListView: View {
         }
     }
 
+    /// The section's title, count and arrow; tapping it opens or closes the section.
     private func sectionTitle(_ section: ShopListSection) -> some View {
         let isCollapsed = viewModel.isCollapsed(section)
 
@@ -330,6 +357,7 @@ struct ShopListView: View {
         .accessibilityAddTraits(.isHeader)
     }
 
+    /// One item card that can be swiped to delete and tapped to edit.
     private func row(for item: ShopListItem) -> some View {
         SwipeToDeleteRow(
             id: item.id,
@@ -355,10 +383,9 @@ struct ShopListView: View {
         .accessibilityAction(named: Text(verbatim: L10n.tr("Editar"))) {
             editingItem = item
         }
-        // "Excluir" comes from SwipeToDeleteRow itself (it calls onDelete above).
     }
 
-    /// Opens ``ShopListAIBatchSheet`` to add several items from one text.
+    /// Opens ``AddMoreItensInteligence`` to add several items from one text.
     private var aiBatchButton: some View {
         Button {
             HapticsManager.selection()
@@ -378,34 +405,25 @@ struct ShopListView: View {
         .transition(.scale.combined(with: .opacity))
     }
 
+    /// The floating "+" button that opens the new item sheet.
     private var addButton: some View {
-        Button {
+        FloatingActionButton(systemImage: "plus") {
             HapticsManager.selection()
             isPresentingAddItem = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 28))
-                .foregroundColor(.white)
-                .padding(20)
-                .contentShape(Circle())
         }
-        .buttonStyle(.plain)
-        .glassEffect(
-            .regular.interactive().tint(.black),
-            in: .circle
-        )
         .disabled(!viewModel.canAddItems)
         .voiceOverLabel(L10n.tr("Adicionar item"))
         .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Adicionar item")])
-        .padding(.horizontal, 30)
-        .padding(.bottom)
+        .floatingActionPlacement()
     }
 }
 
 // MARK: - Empty state
 
+/// Shown when the list has no items: the mascot and a hint to tap "+".
 private struct ShopListEmptyState: View {
 
+    /// Makes the sparkles grow a little once the view appears.
     @State private var isAnimating = false
 
     var body: some View {
@@ -448,15 +466,12 @@ private struct ShopListEmptyState: View {
         .onAppear { isAnimating = true }
     }
 
+    /// A small yellow sparkle around the mascot.
     private func sparkle(size: CGFloat) -> some View {
         Image(systemName: "sparkle")
             .font(.system(size: size, weight: .bold))
             .foregroundStyle(.choreYellow)
             .scaleEffect(isAnimating ? 1.15 : 0.85)
-            .animation(
-                .easeInOut(duration: 1.4).repeatForever(autoreverses: true),
-                value: isAnimating
-            )
     }
 }
 

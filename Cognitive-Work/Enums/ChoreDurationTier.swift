@@ -8,15 +8,25 @@
 import Foundation
 import SwiftUI
 
-/// Abstract tier categorizing length constraints mapping expected completion difficulty.
+/// How long a chore takes, in broad groups (quick, moderate, slow, very slow).
+///
+/// Used in the chore form (the user picks a group instead of typing minutes) and to draw the
+/// chore's duration tag and bar.
 enum ChoreDurationTier: Int, CaseIterable, Hashable {
+    /// No duration was chosen yet.
     case undefined = -1
+    /// Less than 20 minutes.
     case quick = 1
+    /// From 20 to 59 minutes.
     case moderate = 2
+    /// From 60 to 89 minutes.
     case slow = 3
+    /// 90 minutes or more.
     case verySlow = 4
 
-    /// Resolves an exact minute value into an abstracted layout representation.
+    /// The group a duration belongs to.
+    /// - Parameter minutes: The chore's duration, in minutes.
+    /// - Returns: The matching group (never ``undefined``).
     static func from(minutes: Double) -> ChoreDurationTier {
         switch minutes {
         case ..<20:
@@ -41,7 +51,7 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         }
     }
 
-    /// Derives proportion scaling specific to a visual representation logic sequence.
+    /// Relative height of the duration bar drawn for this group (``slow`` is `1.0`).
     var heightRatio: Double {
         switch self {
         case .undefined: return 0
@@ -52,7 +62,7 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         }
     }
 
-    /// Localized structural string.
+    /// The group's name shown to the user, translated.
     var displayText: String {
         switch self {
         case .undefined: return L10n.tr("indefinido")
@@ -63,7 +73,7 @@ enum ChoreDurationTier: Int, CaseIterable, Hashable {
         }
     }
     
-    /// Color schema context representation dictating visual complexity.
+    /// The tag color of this group: blue (quick) to red (very slow).
     var color: Color {
         switch self {
         case .undefined: return .gray

@@ -7,27 +7,30 @@
 
 import SwiftUI
 
-/// Forms a textual UI element encapsulated within a pill shape.
+/// A small colored pill with text, used for a chore's tags (frequency, priority, duration).
 struct CapsuleTag: View {
     
-    /// Central display string.
+    /// The text.
     var tagName: String
     
-    /// Defines background aesthetics.
+    /// The pill's color.
     var tagColor: Color
     
     /// Color of the tag's text.
     var textColor: Color = .white
     
-    /// External layout horizontal constraints.
+    /// Space on the left and right of the text.
     var horizontalPadding: Double
     
-    /// External layout vertical constraints.
+    /// Space above and below the text.
     var verticalPadding: Double
     
     var body: some View {
+        // MARK: - Text inside a colored capsule
         Text(tagName)
             .font(.system(size: 13))
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
             .foregroundColor(textColor)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)

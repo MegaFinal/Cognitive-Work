@@ -21,7 +21,9 @@ struct QuantityStepper: View {
     /// The quantities an item can have.
     static let allowedRange = 1...1000
 
+    /// The quantity (0 while the field is empty).
     @Binding var value: Int
+    /// The quantities allowed.
     var range: ClosedRange<Int> = Self.allowedRange
 
     /// How VoiceOver reads the number ("5 unidades"); just the number when `nil`.
@@ -29,14 +31,18 @@ struct QuantityStepper: View {
 
     /// What the field shows. Kept apart from ``value`` so an empty field stays empty while typing.
     @State private var text: String = ""
+    /// Whether the number field has the keyboard.
     @FocusState private var isFocused: Bool
 
+    /// How many digits the field accepts (from the range's top).
     private var maxDigits: Int { String(range.upperBound).count }
 
     var body: some View {
         HStack(spacing: 18) {
+            // MARK: - "−" button
             stepButton(systemImage: "minus", delta: -1)
 
+            // MARK: - Number field
             TextField("0", text: $text)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
@@ -58,6 +64,7 @@ struct QuantityStepper: View {
                     applyTyped(newText)
                 }
 
+            // MARK: - "+" button
             stepButton(systemImage: "plus", delta: 1)
         }
         .onAppear { text = displayText(for: value) }
@@ -70,6 +77,7 @@ struct QuantityStepper: View {
 
     // MARK: - Buttons
 
+    /// A round glass button that changes the quantity by `delta`; dimmed when that leaves the range.
     private func stepButton(systemImage: String, delta: Int) -> some View {
         let isEnabled = range.contains(value + delta)
 
@@ -92,6 +100,7 @@ struct QuantityStepper: View {
             : [L10n.tr("Menos"), L10n.tr("Diminuir"), L10n.tr("Diminuir quantidade")])
     }
 
+    /// Changes the quantity by `delta` if it stays inside the range, closing the keypad.
     private func change(by delta: Int) {
         let next = value + delta
         guard range.contains(next) else { return }
@@ -102,6 +111,7 @@ struct QuantityStepper: View {
 
     // MARK: - Typing
 
+    /// The field's text for `number` (empty for 0).
     private func displayText(for number: Int) -> String {
         number == 0 ? "" : String(number)
     }

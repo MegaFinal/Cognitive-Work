@@ -43,6 +43,7 @@ enum DefaultChoreCatalog {
         entries.contains(key(name: name, description: description))
     }
     
+    /// One string that identifies a name + description pair (used to compare chores).
     private static func key(name: String, description: String) -> String {
         // Unit separator: cannot appear in text typed by the user.
         "\(name)\u{1F}\(description)"

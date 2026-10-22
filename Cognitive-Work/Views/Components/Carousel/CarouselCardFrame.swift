@@ -8,27 +8,33 @@
 import SwiftUI
 import CloudKit
 
-/// `Frame` ensures all images fit the card's ratio
-/// /// - `Parameters:`
-///   - `frontFace:` View that represents the front face of the card
-///   - `quantity:` View that represents the back of the card
+/// One card of the chores carousel, with its two faces: the chore's front card and, when
+/// flipped, its details card. Handles the flip, the focus zoom and which face VoiceOver reads.
 struct CarouselCardFrame: View {
+    /// The chore on the card.
     let chore: ChoreModel
     /// The specific occurrence this card represents, when it comes from the list
     /// layout. `nil` in the grid, where cards stand for the chore as a whole.
     var recurrentAssignment: RecurrentAssignmentModel?
     
+    /// The chores screen's view model.
     let carouselViewModel: CarouselViewModel
+    /// Shared namespace for the card's matched-geometry animations.
     let namespace: Namespace.ID
     
     
+    /// Whether the card is open in the middle of the screen (it grows).
     var isFocused: Bool = false
+    /// The card's flip angle, in degrees.
     var rotation: Double = 0
+    /// Whether the back face (details) is the one showing.
     var isShowingBack: Bool = false
+    /// How fast the faces cross-fade during the flip.
     private let fadeDuration: Double = 0.03
     
     var body: some View {
         ZStack {
+            // MARK: - Front face: the chore card
             ChoreCarouselCard(chore: chore, namespace: namespace, carouselViewModel: carouselViewModel)
                 .opacity(isShowingBack ? 0 : 1)
                 .scaleEffect(
@@ -38,6 +44,7 @@ struct CarouselCardFrame: View {
                 // Only the face currently shown is read by VoiceOver.
                 .accessibilityHidden(isShowingBack)
 
+            // MARK: - Back face: the details card (mirrored so it reads correctly after the flip)
             if isShowingBack || rotation != 0 {
                 ChoreDetailsCard(
                     chore: chore,

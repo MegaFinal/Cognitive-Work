@@ -9,6 +9,9 @@ import Foundation
 import EventKit
 import CloudKit
 
+/// Keeps the user's chores in sync with a "Pipa" calendar in the Apple Calendar app.
+///
+/// Only chores the signed-in member is responsible for and hasn't done yet become events.
 @Observable
 class CalendarManager {
     /// Global shared singleton instance
@@ -19,6 +22,7 @@ class CalendarManager {
     /// Dedicated calendar name used by the application
     private let calendarTitle = "Pipa"
     
+    /// Use ``shared``.
     private init() {}
     
     /// Requests full access to the user's event calendar.
@@ -88,7 +92,7 @@ class CalendarManager {
         let events = store.events(matching: predicate)
           
         // Reuse matching event and self-heal its identifier
-        if let matchedEvent = events.first(where: { $0.title == choreName }),
+        if let matchedEvent = events.first(where: { $0.title == choreName || $0.title == choreName.localizedDefault }),
            let matchedID = matchedEvent.eventIdentifier {
             assignment.calendarEventIdentifier = matchedID
             return matchedEvent
@@ -112,7 +116,7 @@ class CalendarManager {
             let predicate = store.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: [calendar])
             let events = store.events(matching: predicate)
               
-            if let matchedEvent = events.first(where: { $0.title == chore.name }) {
+            if let matchedEvent = events.first(where: { $0.title == chore.name || $0.title == chore.localizedName }) {
                 if let matchedID = matchedEvent.eventIdentifier {
                     chore.calendarEventIdentifier = matchedID
                 }
@@ -125,6 +129,11 @@ class CalendarManager {
       
     // MARK: - Event Construction & Staging (For Batch Sync)
      
+    /// Creates or updates the calendar event of a one-off chore, without committing it yet.
+    ///
+    /// Nothing happens unless the chore is one-off, has a due date, isn't done and belongs to
+    /// `currentUserID`. Call the store's commit after staging every event (batch sync).
+    /// - Returns: `true` when the chore got a new event ID (so it must be saved).
     @discardableResult
     func upsertOneOffEventWithoutPersisting(for chore: ChoreModel, currentUserID: CKRecord.ID) throws -> Bool {
         // Check conditions: one-off chore, current user is responsible, has due date, and not completed
@@ -146,10 +155,8 @@ class CalendarManager {
         let event = try findOrCreateOneOffEvent(for: chore, calendar: calendar)
           
         // Populate event details
-        event.title = "\(chore.name)"
-        event.notes = chore.description.isEmpty
-            ? "Room Chore - Estimated duration: \(Int(chore.duration)) min"
-            : "\(chore.description)\n\nEstimated duration: \(Int(chore.duration)) min"
+        event.title = chore.localizedName
+        event.notes = eventNotes(for: chore, separator: "\n\n")
           
         event.isAllDay = true
         event.startDate = dueDate
@@ -167,6 +174,11 @@ class CalendarManager {
         return false
     }
       
+    /// Creates, updates or removes the calendar event of one occurrence of a recurring chore,
+    /// without committing it yet.
+    ///
+    /// The event is removed when the occurrence is done or belongs to someone else.
+    /// - Returns: `true` when the occurrence's event ID changed (so it must be saved).
     @discardableResult
     func upsertRecurrentEventWithoutPersisting(for assignment: RecurrentAssignmentModel, chore: ChoreModel, currentUserID: CKRecord.ID) throws -> Bool {
         let isAssignedToMe = (assignment.userReferences ?? []).contains { $0.recordID == currentUserID }
@@ -186,10 +198,8 @@ class CalendarManager {
         let event = try findOrCreateRecurrentEvent(for: assignment, choreName: chore.name, calendar: calendar)
           
         // Populate event details
-        event.title = "\(chore.name)"
-        event.notes = chore.description.isEmpty
-            ? "Room Chore\nEstimated duration: \(Int(chore.duration)) min"
-            : "\(chore.description)\nEstimated duration: \(Int(chore.duration)) min"
+        event.title = chore.localizedName
+        event.notes = eventNotes(for: chore, separator: "\n")
           
         event.isAllDay = true
         event.startDate = assignment.day
@@ -296,10 +306,8 @@ class CalendarManager {
         let calendar = try dedicatedCalendar()
         let event = try findOrCreateOneOffEvent(for: chore, calendar: calendar)
           
-        event.title = "\(chore.name)"
-        event.notes = chore.description.isEmpty
-            ? "Room Chore - Estimated duration: \(Int(chore.duration)) min"
-            : "\(chore.description)\n\nEstimated duration: \(Int(chore.duration)) min"
+        event.title = chore.localizedName
+        event.notes = eventNotes(for: chore, separator: "\n\n")
           
         event.isAllDay = true
         event.startDate = dueDate
@@ -332,10 +340,8 @@ class CalendarManager {
         let calendar = try dedicatedCalendar()
         let event = try findOrCreateRecurrentEvent(for: assignment, choreName: chore.name, calendar: calendar)
           
-        event.title = "\(chore.name)"
-        event.notes = chore.description.isEmpty
-            ? "Room Chore\nEstimated duration: \(Int(chore.duration)) min"
-            : "\(chore.description)\nEstimated duration: \(Int(chore.duration)) min"
+        event.title = chore.localizedName
+        event.notes = eventNotes(for: chore, separator: "\n")
           
         event.isAllDay = true
         event.startDate = assignment.day
@@ -351,6 +357,12 @@ class CalendarManager {
         }
     }
       
+    /// Event notes in the app's language: the chore description (or "Room chore") and its estimated duration.
+    private func eventNotes(for chore: ChoreModel, separator: String) -> String {
+        let description = chore.localizedDescription.isEmpty ? L10n.tr("Tarefa do cômodo") : chore.localizedDescription
+        return description + separator + L10n.tr("Duração estimada: %lld min", Int(chore.duration))
+    }
+
     /// Removes a calendar event using identifier-first lookup with title and date fallback matching.
     func removeEvent(identifier: String?, title: String, date: Date?) {
         // Try direct removal via identifier
@@ -373,7 +385,7 @@ class CalendarManager {
         let events = store.events(matching: predicate)
         
         for event in events {
-            if event.title == title {
+            if event.title == title || event.title == title.localizedDefault {
                 try? store.remove(event, span: .thisEvent, commit: true)
             }
         }

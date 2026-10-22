@@ -7,15 +7,22 @@
 
 import SwiftUI
 
-/// Enumerates strict constraints defining urgency characteristics applied within context filters.
+/// How urgent a chore is. Used for its tag, to sort and filter chores and to give points.
+///
+/// The raw value is the Portuguese name, kept stable because it is saved; show ``displayName`` instead.
 enum PriorityTag: String, CaseIterable, Hashable {
+    /// No priority was chosen.
     case undefined = "indefinido"
+    /// Low priority.
     case low = "não urgente"
+    /// Medium priority.
     case medium = "pouco urgente"
+    /// Important.
     case high = "urgente"
+    /// Urgent: should be done first.
     case urgent = "muito urgente"
     
-    /// Structural value evaluating ranking priorities.
+    /// A number to compare priorities: `-1` (undefined) to `3` (urgent).
     var intValue: Int {
         switch self {
         case .undefined: return -1
@@ -26,7 +33,7 @@ enum PriorityTag: String, CaseIterable, Hashable {
         }
     }
     
-    /// Color layout representing an abstract priority urgency.
+    /// The tag color: blue (low) to red (urgent).
     var color: Color {
         switch self {
         case .undefined: return .gray
@@ -37,6 +44,7 @@ enum PriorityTag: String, CaseIterable, Hashable {
         }
     }
     
+    /// The priority's name shown to the user, translated.
     var displayName: String {
         switch self {
         case .low: return L10n.tr("baixa")
@@ -47,6 +55,7 @@ enum PriorityTag: String, CaseIterable, Hashable {
         }
     }
     
+    /// Points a chore of this priority adds to its score (more urgent, more points).
     var scoreValue: Int {
         switch self {
         case .undefined: return 0
@@ -57,7 +66,7 @@ enum PriorityTag: String, CaseIterable, Hashable {
         }
     }
     
-    /// Verifies superiority evaluation directly between conflicting constraint instances.
+    /// Whether `lhs` is *less* urgent than `rhs`. Used to sort chores by priority.
     static func isLarger (lhs: PriorityTag, rhs: PriorityTag) -> Bool {
         lhs.intValue < rhs.intValue
     }

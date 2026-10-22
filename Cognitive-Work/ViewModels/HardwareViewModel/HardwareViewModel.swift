@@ -18,8 +18,10 @@ class HardwareViewModel {
     /// The host name  of the target hardware device.
     var hostName = ""
     
+    /// The device's host name as saved in CloudKit for the house.
     var hardwareHostName: HardwareHostNameModel?
     
+    /// The user's house.
     var house: HouseModel?
     
     /// The name (SSID) of the user's local Wi-Fi network.
@@ -37,8 +39,11 @@ class HardwareViewModel {
     /// An optional error message capturing the latest failure state.
     var errorMessage: String?
     
+    /// `true` while pairing with the device.
     var isPairing = false
+    /// Result of the last pairing attempt, shown on the pairing screen.
     var conectionResult: ConectionResult?
+    /// `true` while sending data to the device.
     var isSending = false
 
     /// Result shown on the WiFi screen (failure only; success just moves on to pairing).
@@ -47,8 +52,10 @@ class HardwareViewModel {
     /// Whether this phone already has a pairing hash for the device.
     var isPaired: Bool { hardwareNetworkManager.isConnected }
     
+    /// Talks to the device over the local network.
     private var hardwareNetworkManager = HardwareNetworkManager()
     
+    /// Loads the saved device address.
     init() {
         hostName = hardwareNetworkManager.host
     }
@@ -95,10 +102,14 @@ class HardwareViewModel {
     
     /// Outcome of a pairing attempt, used to drive the result alert.
     enum ConectionResult {
+        /// The phone paired with the device.
         case success
+        /// The device couldn't join the Wi-Fi.
         case failureWiFi
+        /// The device joined the Wi-Fi, but pairing failed.
         case failureParing
 
+        /// The alert's title for this result, translated.
         var title: String {
             switch self {
             case .success: L10n.tr("Pareamento completo!")
@@ -109,15 +120,16 @@ class HardwareViewModel {
 
         var message: String {
             switch self {
-            case .success: L10n.tr("Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvi!")
-            case .failureWiFi: L10n.tr("Não conseguimos enviar os dados para o Harvi. Confira se o seu celular está conectado à rede HARVI e tente novamente.")
-            case .failureParing: L10n.tr("Certifique-se que o Harvi está conectado no WiFi e tente novamente.")
+            case .success: L10n.tr("Seu pareamento foi concluído com sucesso, agora seu celular está conectado ao Harvii!")
+            case .failureWiFi: L10n.tr("Não conseguimos enviar os dados para o Harvii. Confira se o seu celular está conectado à rede HARVII e tente novamente.")
+            case .failureParing: L10n.tr("Certifique-se que o Harvii está conectado no WiFi e tente novamente.")
             }
         }
     }
     
     // MARK: - Background delivery
 
+    /// `UserDefaults` key of the "device is missing changes" flag.
     private static let pendingUpdateKey = "hardware.pendingUpdate"
 
     /// Marks that the device is missing the latest changes. Delivered on the next chance
@@ -220,8 +232,11 @@ class HardwareViewModel {
         let choresViewModel = HardwareDailyChoresViewModel()
         await choresViewModel.setup()
 
+        // ImageRenderer draws outside the app's view tree, so it doesn't inherit the
+        // in-app language set at the root: pass it explicitly.
         let chartView = HardwareDailyChoresView(viewModel: choresViewModel)
             .frame(width: 800, height: 480)
+            .environment(\.locale, L10n.locale)
 
         let renderer = ImageRenderer(content: chartView)
         renderer.scale = 1.0
@@ -229,7 +244,8 @@ class HardwareViewModel {
         guard let image = renderer.uiImage else {
             throw NSError(domain: "HardwareViewModel", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Failed to render the chart view."])
         }
-        guard let imageData = image.levelBitmap4Gray() else {
+        // The dashboard uses the in-between tones to tell the rooms apart.
+        guard let imageData = image.levelBitmap4Gray(halfTones: true) else {
             throw NSError(domain: "HardwareViewModel", code: 1002, userInfo: [NSLocalizedDescriptionKey: "Failed to convert the chart image into e-paper format."])
         }
         
@@ -238,7 +254,7 @@ class HardwareViewModel {
     
     /// Prepares and sends a static image (rendered from a SwiftUI View) to the ESP32.
     func prepareImageForESP32<Content: View>(view: Content) async throws {
-        let renderer = ImageRenderer(content: view)
+        let renderer = ImageRenderer(content: view.environment(\.locale, L10n.locale))
         renderer.scale = 1.0
         
         guard let image = renderer.uiImage else {
@@ -290,7 +306,7 @@ class HardwareViewModel {
             zoneID: houseRecordID.zoneID,
             parent: houseReference
         ) else {
-            errorMessage = L10n.tr("Erro ao criar nome do host (Harvi).")
+            errorMessage = L10n.tr("Erro ao criar nome do host (Harvii).")
             return false
         }
 

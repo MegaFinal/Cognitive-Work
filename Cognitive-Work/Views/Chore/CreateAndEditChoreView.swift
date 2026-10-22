@@ -8,9 +8,17 @@
 import SwiftUI
 import CloudKit
 
-/// A form view utilized to create a new chore or edit an existing one.
+/// The form to create a new chore or edit an existing one: name and room, priority, duration,
+/// frequency, date, description, checklist, who is responsible and whether it's for the house.
+/// When editing it can also delete the chore (only this occurrence for recurring chores).
 struct CreateAndEditChoreView: View {
     
+    /// Creates the form.
+    /// - Parameters:
+    ///   - originalModel: The chore to edit, or a new empty chore to create.
+    ///   - availableHouseUsers: The members that can be made responsible.
+    ///   - carouselViewModel: The chores screen's view model, updated after saving.
+    ///   - targetAssignments: The occurrence(s) being edited, for recurring chores.
     init(originalModel: ChoreModel,
          availableHouseUsers: [UserModel],
          carouselViewModel: CarouselViewModel,
@@ -23,8 +31,10 @@ struct CreateAndEditChoreView: View {
         ))
     }
     
+    /// Holds the draft and saves, deletes and validates it.
     @State private var viewModel: CreateAndEditChoreViewModel
     
+    /// Shows the "delete chore?" alert.
     @State private var showDeleteConfirmation = false
     
     /// `true` from the moment the confirm button is tapped until the screen is dismissed
@@ -37,9 +47,10 @@ struct CreateAndEditChoreView: View {
         !viewModel.isLoaded || isSubmitting || viewModel.isSaving || viewModel.isDeleting
     }
     
+    /// Closes the form.
     @Environment(\.dismiss) private var dismiss
     
-    // MARK: - Main Body
+    // MARK: - Form
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 25) {
@@ -121,12 +132,14 @@ struct CreateAndEditChoreView: View {
             }
             .padding(.vertical)
             .frame(width: width * 0.9)
+            // MARK: - Locks the form while loading, saving or deleting
             // `load()` rebuilds the draft, so anything typed before it finishes would be lost.
             // While saving or deleting, edits would be ignored (the draft was already sent).
             .disabled(isFormLocked)
             .opacity(isFormLocked ? 0.5 : 1)
         }
         .hidesTabBar()
+        // MARK: - Loading spinner
         .overlay {
             if !viewModel.isLoaded {
                 ProgressView()
@@ -168,6 +181,7 @@ struct CreateAndEditChoreView: View {
                 }
             }
         }
+        // MARK: - Loading and reacting to visibility and frequency changes
         .task {
             await viewModel.load()
         }
@@ -179,6 +193,7 @@ struct CreateAndEditChoreView: View {
         }
         .hidesTabBar()
         .dismissKeyboardOnTap()
+        // MARK: - Delete alert, error alert and deleting overlay
         .alert("Excluir Tarefa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
             Button("Excluir", role: .destructive) {
@@ -406,6 +421,7 @@ struct CreateAndEditChoreView: View {
         .padding(.top, 4)
     }
     
+    /// A room option in the room menu: a colored circle and the room's name.
     private struct ColorIconTagLabel: View {
         
         /// The string to be displayed next to the icon.

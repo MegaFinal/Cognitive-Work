@@ -6,20 +6,28 @@
 //
 
 import SwiftUI
+import PhotosUI
 
-/// Sheet where the user picks their profile banner: a color and a texture, the same ones rooms use.
+/// Sheet where the user picks their picture and profile banner
 struct ProfileBannerSheet: View {
     @Environment(\.dismiss) private var dismiss
-    
-    let image: UIImage?
-    
-    let onConfirm: (ProfileBanner) -> Void
-    
+    @Binding var photoSelection: PhotosPickerItem?
     @State private var selectedColor: RoomColor
     @State private var selectedPattern: RoomTexturePattern
     
-    init(banner: ProfileBanner, image: UIImage? = nil, onConfirm: @escaping (ProfileBanner) -> Void) {
+    let image: UIImage?
+    
+    let photoPickerStyle: ProfilePhotoPicker.Style
+    let onConfirm: (ProfileBanner) -> Void
+    
+    init(banner: ProfileBanner,
+         image: UIImage? = nil,
+         photoSelection: Binding<PhotosPickerItem?>,
+         photoPickerStyle: ProfilePhotoPicker.Style,
+         onConfirm: @escaping (ProfileBanner) -> Void) {
         self.image = image
+        _photoSelection = photoSelection
+        self.photoPickerStyle = photoPickerStyle
         self.onConfirm = onConfirm
         _selectedColor = State(initialValue: banner.color)
         _selectedPattern = State(initialValue: banner.pattern)
@@ -41,8 +49,10 @@ struct ProfileBannerSheet: View {
             }
             .ignoresSafeArea(edges: .top)
             .scrollBounceBehavior(.basedOnSize)
-            .navigationTitle("Banner do perfil")
+            .background(Color.groupedBackground.ignoresSafeArea())
+            .navigationTitle("Editar Perfil")
             .navigationBarTitleDisplayMode(.inline)
+            // MARK: - Toolbar: cancel / confirm
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -69,81 +79,58 @@ struct ProfileBannerSheet: View {
         }
     }
     
-    // MARK: - Hero
+    // MARK: - Banner
     
-    /// The banner across the top of the sheet, with the profile picture over it.
     private var hero: some View {
-        ZStack {
-            RoomTextureBackground(color: selectedColor, pattern: pattern, zoom: 3)
-                .id("\(selectedColor.rawValue).\(pattern.rawValue)")
-                .transition(.opacity)
-            
-            avatar
-                .padding(.top, 50)
+        ProfileHero(
+            banner: ProfileBanner(color: selectedColor, pattern: pattern),
+            image: image
+        ) {
+            ProfilePhotoPicker(selection: $photoSelection, style: photoPickerStyle)
         }
-        .frame(height: 260)
-        .frame(maxWidth: .infinity)
-        .clipped()
         .animation(.easeInOut(duration: 0.3), value: selectedColor)
         .animation(.easeInOut(duration: 0.3), value: pattern)
-        // One summary of the live preview (the photo itself isn't informative here).
-        .accessibilityElement(children: .ignore)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(L10n.tr("Pré-visualização do banner: %@, %@",
                                     selectedColor.voiceOverName,
                                     pattern.displayName))
-        .accessibilityAddTraits(.isImage)
-    }
-    
-    private var avatar: some View {
-        Group {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(.gray)
-                    .background(.white)
-            }
-        }
-        .frame(width: 140, height: 140)
-        .clipShape(Circle())
-        .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 3))
-        .shadow(color: .black.opacity(0.25), radius: 6.85, x: 0, y: 4)
     }
     
     // MARK: - Color
     
+    /// One swatch per room color.
     private var colorPicker: some View {
         VStack(alignment: .leading, spacing: 14) {
             sectionTitle("Cor")
             
-            HStack(spacing: 0) {
+            HStack(spacing: 29) {
                 ForEach(RoomColor.allCases) { color in
-                    ColorSwatch(color: color, pattern: pattern, isSelected: selectedColor == color) {
+                    ColorSwatch(color: color, isSelected: selectedColor == color) {
                         HapticsManager.selection()
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
                             selectedColor = color
                             selectedPattern = selectedPattern.resolved(for: color)
                         }
                     }
-                    .frame(maxWidth: .infinity)
                 }
+                .padding(.bottom, 10)
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .foregroundColor(.white)
+        )
     }
     
     // MARK: - Pattern
     
-    /// One textured tile per pattern, in the selected color. Patterns the asset catalog
     private var patternPicker: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionTitle("Grafismo")
+            sectionTitle("Estampas")
             
-            HStack(spacing: 10) {
+            HStack(spacing: 14) {
                 ForEach(RoomTexturePattern.allCases, id: \.self) { option in
                     PatternSwatch(
                         color: selectedColor,
@@ -156,20 +143,26 @@ struct ProfileBannerSheet: View {
                             selectedPattern = option
                         }
                     }
-                    .frame(maxWidth: .infinity)
                 }
+                .padding(.bottom, 10)
             }
         }
+        .padding(.vertical, 10)
         .padding(.horizontal, 24)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .foregroundColor(.white)
+        )
     }
     
+    /// A section title ("Cor", "Grafismo").
     private func sectionTitle(_ title: LocalizedStringKey) -> some View {
         Text(title)
-            .font(.system(size: 20, weight: .bold))
+            .font(.system(size: 18, weight: .medium))
             .accessibilityAddTraits(.isHeader)
     }
 }
 
 #Preview {
-    ProfileBannerSheet(banner: .default) { _ in }
+    ProfileBannerSheet(banner: .default, photoSelection: .constant(nil), photoPickerStyle: .pencilButton) { _ in }
 }

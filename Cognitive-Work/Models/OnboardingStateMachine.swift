@@ -19,8 +19,11 @@ class OnboardingStateMachine {
 
     /// UserDefaults keys used to persist onboarding progress across app launches.
     private enum StorageKey {
+        /// Key of the saved ``index``.
         static let index = "onboarding.index"
+        /// Key of the saved ``flow``.
         static let flow = "onboarding.flow"
+        /// Key of the saved ``skippedToCreateOrEnter``.
         static let skippedToCreateOrEnter = "onboarding.skippedToCreateOrEnter"
     }
 
@@ -194,6 +197,7 @@ class OnboardingStateMachine {
         UserDefaults.standard.removeObject(forKey: StorageKey.skippedToCreateOrEnter)
     }
 
+    /// Moves straight to the step at `index` of the current flow, kept inside the valid range.
     func jumpToStep(index: Int) {
         self.index = min(max(index, 0), steps.count - 1)
     }

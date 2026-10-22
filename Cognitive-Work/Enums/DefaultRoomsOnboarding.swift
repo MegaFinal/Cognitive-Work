@@ -16,21 +16,33 @@ import Foundation
 ///
 /// Example:
 /// ```swift
-/// let chores = Room.kitchen.defaultChores
+/// let chores = DefaultRoomsOnboarding.kitchen.defaultChores
 /// // -> [Lavar a louça, Limpar a bancada e o fogão, ...]
 /// ```
 enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
 
+    /// The raw value is the room's Portuguese name, which is also saved as the room's `kind`.
+    /// A bedroom.
     case bedroom = "Quarto"
+    /// The living room.
     case livingRoom = "Sala de Estar"
+    /// The laundry area.
     case laundryRoom = "Área de Serviço"
+    /// The kitchen.
     case kitchen = "Cozinha"
+    /// A bathroom.
     case bathroom = "Banheiro"
+    /// A home office.
     case homeOffice = "Escritório"
+    /// A balcony.
     case balcony = "Varanda"
+    /// The pantry.
     case pantry = "Despensa"
+    /// A small guest bathroom (toilet and sink only).
     case powderRoom = "Lavabo"
+    /// The garage.
     case garage = "Garagem"
+    /// The garden.
     case garden = "Jardim"
 
     // MARK: - Identity
@@ -52,7 +64,7 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
         self.init(rawValue: kind ?? name)
     }
     
-    /// SF Symbol shown for this room
+    /// SF Symbol shown for this room.
     var symbol: String {
         switch self {
         case .bedroom: "bed.double"
@@ -97,7 +109,6 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
     /// > brand new batch of instances. Store the result once (in the view model
     /// > or in `@State`) instead of calling this inside `body`, otherwise the
     /// > toggles reset on each redraw.
-    /// Chores suggested for this room during onboarding.
     var defaultChores: [ChoreDTO] {
         switch self {
         case .bedroom:
@@ -131,6 +142,7 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
 
 private extension DefaultRoomsOnboarding {
 
+    /// Suggested chores for a ``bedroom``.
     static var bedroomChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.bedroom.roomDTO
         return [
@@ -177,6 +189,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``livingRoom``.
     static var livingRoomChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.livingRoom.roomDTO
         return [
@@ -232,6 +245,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``laundryRoom``.
     static var laundryRoomChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.laundryRoom.roomDTO
         return [
@@ -286,6 +300,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``kitchen``.
     static var kitchenChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.kitchen.roomDTO
         return [
@@ -340,6 +355,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``bathroom``.
     static var bathroomChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.bathroom.roomDTO
         return [
@@ -394,6 +410,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``homeOffice``.
     static var homeOfficeChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.homeOffice.roomDTO
         return [
@@ -448,6 +465,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``balcony``.
     static var balconyChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.balcony.roomDTO
         return [
@@ -494,6 +512,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``pantry``.
     static var pantryChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.pantry.roomDTO
         return [
@@ -540,6 +559,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``powderRoom``.
     static var powderRoomChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.powderRoom.roomDTO
         return [
@@ -594,6 +614,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``garage``.
     static var garageChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.garage.roomDTO
         return [
@@ -640,6 +661,7 @@ private extension DefaultRoomsOnboarding {
         ]
     }
 
+    /// Suggested chores for a ``garden``.
     static var gardenChores: [ChoreDTO] {
         let room = DefaultRoomsOnboarding.garden.roomDTO
         return [
