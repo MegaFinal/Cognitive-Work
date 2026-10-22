@@ -8,17 +8,9 @@
 import SwiftUI
 import CloudKit
 
-/// The form to create a new chore or edit an existing one: name and room, priority, duration,
-/// frequency, date, description, checklist, who is responsible and whether it's for the house.
-/// When editing it can also delete the chore (only this occurrence for recurring chores).
+/// The sheet to create a new chore or edit an existing one, in two steps
 struct CreateAndEditChoreView: View {
-    
-    /// Creates the form.
-    /// - Parameters:
-    ///   - originalModel: The chore to edit, or a new empty chore to create.
-    ///   - availableHouseUsers: The members that can be made responsible.
-    ///   - carouselViewModel: The chores screen's view model, updated after saving.
-    ///   - targetAssignments: The occurrence(s) being edited, for recurring chores.
+
     init(originalModel: ChoreModel,
          availableHouseUsers: [UserModel],
          carouselViewModel: CarouselViewModel,
@@ -31,156 +23,39 @@ struct CreateAndEditChoreView: View {
         ))
     }
     
-    /// Holds the draft and saves, deletes and validates it.
+    @Environment(\.dismiss) private var dismiss
     @State private var viewModel: CreateAndEditChoreViewModel
-    
-    /// Shows the "delete chore?" alert.
+    @State private var showsScheduleStep = false
     @State private var showDeleteConfirmation = false
-    
-    /// `true` from the moment the confirm button is tapped until the screen is dismissed
-    /// (or the save fails). Unlike `viewModel.isSaving`, it doesn't drop back to `false`
-    /// right before `dismiss()`, so the form stays locked during the closing animation too.
     @State private var isSubmitting = false
+    @State private var showsCalendar = false
     
     /// Whether the form must ignore edits: still loading, saving or deleting.
     private var isFormLocked: Bool {
-        !viewModel.isLoaded || isSubmitting || viewModel.isSaving || viewModel.isDeleting
+        !viewModel.isLoaded || isBusy
     }
     
-    /// Closes the form.
-    @Environment(\.dismiss) private var dismiss
+    /// Saving or deleting.
+    private var isBusy: Bool {
+        isSubmitting || viewModel.isSaving || viewModel.isDeleting
+    }
     
-    // MARK: - Form
+    private var roomColor: Color {
+        (viewModel.draft.room?.color ?? .blue).uiColor
+    }
+    
+    // MARK: - Body
+    
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 25) {
-                header
-                
-                // MARK: - Validation warnings
-                validationWarning
-                
-                // MARK: - Pickers
-                VStack(spacing: 10) {
-                    HStack {
-                        Text("Prioridade")
-                            .accessibilityHidden(true) // the picker says "Prioridade"
-                        Spacer()
-                        ChoreTagPicker(chore: $viewModel.draft, type: .priority)
-                    }
-                    
-                    HStack {
-                        Text("Duração")
-                            .accessibilityHidden(true) // the picker says "Duração"
-                        Spacer()
-                        ChoreTagPicker(chore: $viewModel.draft, type: .duration)
-                    }
-                    
-                    HStack {
-                        Text("Frequência")
-                            .accessibilityHidden(true) // the picker says "Frequência"
-                        Spacer()
-                        ChoreTagPicker(chore: $viewModel.draft, type: .frequency)
-                    }
-                    
-                    if viewModel.showsDateSection {
-                        dateSection
-                    }
-                    
+        NavigationStack {
+            detailsStep
+                .navigationDestination(isPresented: $showsScheduleStep) {
+                    scheduleStep
                 }
-                .font(.system(size: 15))
-                .fontWeight(.semibold)
-                
-                // MARK: - Description
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Descrição")
-                        .font(.system(size: 15))
-                        .fontWeight(.semibold)
-                        .accessibilityAddTraits(.isHeader)
-                    
-                    TextField("Descrição da Tarefa", text: $viewModel.draft.description, axis: .vertical)
-                        .voiceControlNames([L10n.tr("Descrição da Tarefa"), L10n.tr("Descrição")])
-                        .font(.system(size: 17))
-                        .foregroundColor(.gray)
-                        .characterLimit(TextLimits.choreDescription, text: $viewModel.draft.description)
-                }
-                
-                // MARK: - Checklist
-                checklistSection
-                
-                // MARK: - Responsible Users
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Responsáveis")
-                        .font(.system(size: 15))
-                        .fontWeight(.semibold)
-                        .accessibilityAddTraits(.isHeader)
-                    
-                    ResponsibleUserPicker(
-                        availableUsers: viewModel.selectableResponsibleUsers,
-                        selectedUsers: $viewModel.draft.responsibleUsers
-                    )
-                }
-                
-                // MARK: - Visibility Toggle
-                publicToggleSection
-                
-                Spacer()
-                
-                // MARK: - Delete Button
-                if viewModel.showsDeleteButton {
-                    deleteButton
-                }
-            }
-            .padding(.vertical)
-            .frame(width: width * 0.9)
-            // MARK: - Locks the form while loading, saving or deleting
-            // `load()` rebuilds the draft, so anything typed before it finishes would be lost.
-            // While saving or deleting, edits would be ignored (the draft was already sent).
-            .disabled(isFormLocked)
-            .opacity(isFormLocked ? 0.5 : 1)
         }
-        .hidesTabBar()
-        // MARK: - Loading spinner
-        .overlay {
-            if !viewModel.isLoaded {
-                ProgressView()
-                    .controlSize(.large)
-                    .voiceOverLabel(L10n.tr("Carregando"))
-            }
-        }
-        .navigationBarBackButtonHidden(isSubmitting || viewModel.isSaving || viewModel.isDeleting)
-        .toolbar {
-            // MARK: - Confirmation Button
-            ToolbarItem(placement: .confirmationAction) {
-                if isSubmitting || viewModel.isSaving {
-                    ProgressView()
-                        .voiceOverLabel(L10n.tr("Salvando"))
-                } else {
-                    Button {
-                        // Lock the form right away, before the first `await`.
-                        isSubmitting = true
-                        Task {
-                            if await viewModel.confirm() {
-                                HapticsManager.notify(.success)
-                                dismiss()
-                            } else {
-                                // Save failed or was refused: let the user fix the form.
-                                isSubmitting = false
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 12))
-                            .bold()
-                            .foregroundColor(.white)
-                    }
-                    .tint(.blue)
-                    .buttonStyle(.glassProminent)
-                    .disabled(!viewModel.canConfirm)
-                    .voiceOverLabel(L10n.tr("Confirmar"))
-                    .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
-                }
-            }
-        }
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color.groupedBackground)
+        .interactiveDismissDisabled(isBusy)
         // MARK: - Loading and reacting to visibility and frequency changes
         .task {
             await viewModel.load()
@@ -191,8 +66,6 @@ struct CreateAndEditChoreView: View {
         .onChange(of: viewModel.draft.frequency) { _, _ in
             viewModel.frequencyDidChange()
         }
-        .hidesTabBar()
-        .dismissKeyboardOnTap()
         // MARK: - Delete alert, error alert and deleting overlay
         .alert("Excluir Tarefa?", isPresented: $showDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
@@ -224,216 +97,367 @@ struct CreateAndEditChoreView: View {
         )
     }
     
-    // MARK: - Subviews
+    // MARK: - Step 1: details
     
-    /// The uppermost structural section of the form: iconography, chore name field and room selection.
-    private var header: some View {
+    /// Photo, name, room, description and checklist.
+    private var detailsStep: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 20) {
+                roomSymbol
+                
+                // MARK: Name
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Nome da tarefa")
+                        .font(.title2.bold())
+                        .accessibilityHidden(true)
+                    
+                    TextField("", text: $viewModel.draft.name, prompt: Text("Adicione o nome da tarefa"))
+                        .characterLimit(TextLimits.choreName, text: $viewModel.draft.name)
+                        .submitLabel(.done)
+                        .voiceOverLabel(L10n.tr("Nome da tarefa"))
+                        .voiceControlNames([L10n.tr("Nome da tarefa"), L10n.tr("Nome")])
+                        .formField(in: Capsule())
+                }
+                
+                // MARK: Room and the line in its color
+                VStack(alignment: .leading, spacing: 6) {
+                    roomRow
+                        .formField(in: Capsule())
+                    
+                    if viewModel.showsMissingRoomWarning {
+                        warning("Escolha um cômodo para confirmar a tarefa.")
+                            .padding(.horizontal, 20)
+                    }
+                }
+                
+                Capsule()
+                    .fill(roomColor)
+                    .frame(height: 4)
+                    .accessibilityHidden(true)
+                
+                // MARK: Description
+                VStack(alignment: .leading, spacing: 10) {
+                    sectionTitle("Detalhes")
+                    
+                    TextField("Descrição da tarefa", text: $viewModel.draft.description, axis: .vertical)
+                        .characterLimit(TextLimits.choreDescription, text: $viewModel.draft.description)
+                        .voiceControlNames([L10n.tr("Descrição da tarefa"), L10n.tr("Detalhes")])
+                        .formField(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                }
+                
+                // MARK: Checklist
+                VStack(alignment: .leading, spacing: 10) {
+                    sectionTitle("Checklist")
+                    
+                    CheckListCreateAndEdit(localChecklist: $viewModel.draft.checklist)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 32)
+            .disabled(isFormLocked)
+            .opacity(isFormLocked ? 0.5 : 1)
+        }
+        .background(Color.groupedBackground)
+        .dismissKeyboardOnTap()
+        // MARK: - Loading spinner
+        .overlay {
+            if !viewModel.isLoaded {
+                ProgressView()
+                    .controlSize(.large)
+                    .voiceOverLabel(L10n.tr("Carregando"))
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(role: .close) { dismiss() }
+                    .disabled(isBusy)
+            }
+            
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    showsScheduleStep = true
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .buttonStyle(.glassProminent)
+                .tint(.blue)
+                .disabled(!viewModel.isLoaded || !viewModel.hasValidName || !viewModel.hasRoom)
+                .voiceOverLabel(L10n.tr("Próximo"))
+                .voiceControlNames([L10n.tr("Próximo"), L10n.tr("Continuar")])
+            }
+        }
+    }
+    
+    /// "Cômodo" with a menu of the house's rooms.
+    private var roomRow: some View {
+        let roomName = viewModel.draft.room?.name.localizedDefault.capitalized(with: L10n.locale)
+            ?? L10n.tr("Sem Cômodo")
+        
+        return ChoreAttributeMenuRow(title: "Cômodo", value: roomName, color: roomColor) {
+            Picker("Cômodo", selection: $viewModel.draft.room) {
+                ForEach(viewModel.availableRooms, id: \.self) { room in
+                    ChoreMenuOption(
+                        title: room.name.localizedDefault.capitalized(with: L10n.locale),
+                        color: room.color.uiColor
+                    )
+                    .tag(RoomModel?(room))
+                }
+            }
+        }
+    }
+    
+    // MARK: - Step 2: schedule
+    
+    /// Priority, duration, frequency and date; who is responsible; sharing with the house.
+    private var scheduleStep: some View {
+        List {
+            // MARK: Room symbol
+            Section {
+                roomSymbol
+            }
+            .listRowBackground(Color.clear)
+            // No extra padding around the symbol.
+            .listRowInsets(EdgeInsets())
+            
+            // MARK: Attributes and date
+            Section {
+                attributeRows
+                
+                if viewModel.showsDateSection {
+                    dateRow
+                }
+            } footer: {
+                if viewModel.showsMissingDateWarning {
+                    warning("Escolha uma data para confirmar a tarefa.")
+                }
+            }
+            
+            // MARK: Responsible members
+            Section {
+                ResponsibleUserPicker(
+                    availableUsers: viewModel.selectableResponsibleUsers,
+                    selectedUsers: $viewModel.draft.responsibleUsers
+                )
+                .padding(.vertical, 6)
+            } header: {
+                sectionTitle("Responsáveis")
+            }
+            
+            // MARK: Sharing with the house
+            Section {
+                Toggle(isOn: $viewModel.draft.isPublic) {
+                    Text("Dividir com a casa?")
+                        .fontWeight(.semibold)
+                }
+                .tint(.green)
+                .voiceControlNames([L10n.tr("Dividir com a casa?"), L10n.tr("Dividir")])
+            } footer: {
+                Text("Ao dividir, qualquer morador pode receber essa tarefa. Sem dividir, ela fica apenas com quem você selecionou e não aparece para os outros moradores da casa.")
+                    .italic()
+            }
+            
+            // MARK: Delete (editing only)
+            if viewModel.showsDeleteButton {
+                Section {
+                    deleteButton
+                }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        // The list's default top margin left a gap under the navigation bar.
+        .contentMargins(.top, 0, for: .scrollContent)
+        .background(Color.groupedBackground)
+        .disabled(isFormLocked)
+        .navigationTitle(viewModel.draft.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isBusy)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                confirmButton
+            }
+        }
+    }
+    
+    /// Priority, duration and frequency menus.
+    @ViewBuilder
+    private var attributeRows: some View {
+        let draft = viewModel.draft
+        
+        ChoreAttributeMenuRow(
+            title: "Prioridade",
+            value: draft.priorityTag.displayName.firstLetterCapitalized,
+            color: draft.priorityTag.color
+        ) {
+            Picker("Prioridade", selection: $viewModel.draft.priorityTag) {
+                ForEach(PriorityTag.allCases.filter { $0 != .undefined }, id: \.self) { tag in
+                    ChoreMenuOption(title: tag.displayName.firstLetterCapitalized, color: tag.color)
+                        .tag(tag)
+                }
+            }
+        }
+        
+        let tier = ChoreDurationTier.from(minutes: draft.duration)
+        ChoreAttributeMenuRow(
+            title: "Duração",
+            value: tier.displayText.firstLetterCapitalized,
+            color: tier.color
+        ) {
+            Picker("Duração", selection: durationTierBinding) {
+                ForEach(ChoreDurationTier.allCases.filter { $0 != .undefined }, id: \.self) { tier in
+                    ChoreMenuOption(title: tier.displayText.firstLetterCapitalized, color: tier.color)
+                        .tag(tier)
+                }
+            }
+        }
+        
+        ChoreAttributeMenuRow(
+            title: "Frequência",
+            value: draft.frequency.displayName.firstLetterCapitalized,
+            color: draft.frequency.color
+        ) {
+            Picker("Frequência", selection: $viewModel.draft.frequency) {
+                ForEach(Recurrence.allCases.filter { $0 != .undefined }, id: \.self) { frequency in
+                    ChoreMenuOption(title: frequency.displayName.firstLetterCapitalized, color: frequency.color)
+                        .tag(frequency)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var confirmButton: some View {
+        if isSubmitting || viewModel.isSaving {
+            ProgressView()
+                .voiceOverLabel(L10n.tr("Salvando"))
+        } else {
+            Button {
+                isSubmitting = true
+                Task {
+                    if await viewModel.confirm() {
+                        HapticsManager.notify(.success)
+                        dismiss()
+                    } else {
+                        isSubmitting = false
+                    }
+                }
+            } label: {
+                Image(systemName: "checkmark")
+            }
+            .buttonStyle(.glassProminent)
+            .tint(.blue)
+            .disabled(!viewModel.canConfirm)
+            .voiceOverLabel(L10n.tr("Confirmar"))
+            .voiceControlNames([L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")])
+        }
+    }
+    
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            showDeleteConfirmation = true
+        } label: {
+            Text("Excluir Tarefa")
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+        }
+        .disabled(isBusy)
+        .voiceControlNames([L10n.tr("Excluir Tarefa"), L10n.tr("Excluir")])
+    }
+    
+    // MARK: - Room symbol
+    
+    private var roomSymbol: some View {
+        SymbolImage(name: viewModel.draft.room?.symbol ?? "kite")
+            .foregroundStyle(roomColor)
+            .frame(width: width * 0.4, height: height * 0.14)
+            .frame(maxWidth: .infinity)
+            .accessibilityHidden(true)
+    }
+    
+    // MARK: - Date
+    
+    /// "Calendário" with the picked date in a gray pill; tapping it opens the calendar.
+    private var dateRow: some View {
         HStack {
-            SymbolImage(name: viewModel.draft.room?.symbol ?? viewModel.draft.symbolName)
-                .frame(width: width * 0.2)
-                .accessibilityDecorative()
+            Text("Calendário")
+                .fontWeight(.semibold)
             
             Spacer()
             
-            VStack(spacing: 25) {
-                VStack(spacing: 2) {
-                    TextField(
-                        "",
-                        text: $viewModel.draft.name,
-                        prompt: Text("Nome da Tarefa")
-                            .foregroundStyle(.black)
-                    )
-                    .font(.custom("Alan Sans", size: 28))
-                    .fontWeight(.semibold)
-                    .characterLimit(TextLimits.choreName, text: $viewModel.draft.name)
-                    .submitLabel(.done)
-                    .voiceOverLabel(L10n.tr("Nome da Tarefa"))
-                    .voiceControlNames([L10n.tr("Nome da Tarefa"), L10n.tr("Nome")])
-                    
-                    Capsule()
-                        .frame(height: height * 0.0015)
-                        .accessibilityDecorative()
-                }
-                
-                HStack {
-                    Text("Cômodo")
-                        .bold()
-                        .accessibilityHidden(true) // the menu says "Cômodo"
-                    
-                    Spacer()
-                    
-                    Menu {
-                        Picker("Cômodo", selection: $viewModel.draft.room) {
-                            ForEach(viewModel.availableRooms, id: \.self) { room in
-                                ColorIconTagLabel(title: room.name.localizedDefault.capitalized(with: L10n.locale), color: room.color.uiColor)
-                                    .tag(RoomModel?(room))
-                            }
-                        }
-                    }
-                    label: {
-                        HStack {
-                            CapsuleTag(
-                                tagName: viewModel.draft.room?.name.localizedDefault.capitalized(with: L10n.locale) ?? L10n.tr("Sem Cômodo"),
-                                tagColor: viewModel.draft.room?.color.uiColor ?? .gray,
-                                horizontalPadding: 10.0,
-                                verticalPadding: 1.5
-                            )
-                            
-                            Image(systemName: "chevron.up.chevron.down")
-                                .foregroundColor(.black)
-                                .imageScale(.small)
-                        }
-                        .fixedSize()
-                    }
-                    .voiceOverLabel(L10n.tr("Cômodo"))
-                    .voiceOverValue(viewModel.draft.room?.name.localizedDefault ?? L10n.tr("Sem Cômodo"))
-                    .voiceControlNames([
-                        L10n.tr("Cômodo"),
-                        viewModel.draft.room?.name.localizedDefault.capitalized(with: L10n.locale) ?? L10n.tr("Sem Cômodo")
-                    ])
-                    .id(viewModel.draft.room?.recordID)
-                }
+            Button {
+                showsCalendar = true
+            } label: {
+                Text(selectedDateText)
+                    .foregroundStyle(viewModel.selectedDate == nil ? Color.secondary : Color.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(.systemGray5), in: Capsule())
             }
-            .frame(width: width * 0.65)
-        }
-        
-    }
-    
-    /// Calendar shown below the pickers for every frequency except daily.
-    private var dateSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Data")
-                .font(.system(size: 15))
-                .fontWeight(.semibold)
-                .accessibilityAddTraits(.isHeader)
-            
-            CustomCalendar(
-                selectedDate: $viewModel.selectedDate,
-                window: viewModel.dateWindow,
-                opacityForDay: { viewModel.loadOpacity(on: $0) },
-                earliestSelectable: viewModel.earliestSelectableDay
-            )
-        }
-    }
-    
-    /// Encapsulates the toggle and the inline editor for the chore's checklist.
-    private var checklistSection: some View {
-        VStack {
-            HStack {
-                Text("Checklist")
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                    .accessibilityHidden(true) // the switch says "Checklist"
-                
-                Spacer()
-                
-                Toggle("", isOn: $viewModel.draft.hasChecklist)
-                    .toggleStyle(.switch)
-                    .voiceOverLabel(L10n.tr("Checklist"))
-                    .voiceControlNames([L10n.tr("Checklist"), L10n.tr("Lista de itens")])
-                    .onChange(of: viewModel.draft.hasChecklist) { _, isOn in
-                        viewModel.checklistToggleDidChange(isOn: isOn)
-                    }
-                    .padding(.trailing, 3)
-            }
-            .frame(width: width * 0.9)
-            
-            if viewModel.draft.hasChecklist {
-                CheckListCreateAndEdit(
-                    hasChecklist: $viewModel.draft.hasChecklist,
-                    localChecklist: $viewModel.draft.checklist
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.tr("Calendário"))
+            .accessibilityValue(selectedDateText)
+            .popover(isPresented: $showsCalendar) {
+                CustomCalendar(
+                    selectedDate: $viewModel.selectedDate,
+                    window: viewModel.dateWindow,
+                    opacityForDay: { viewModel.loadOpacity(on: $0) },
+                    earliestSelectable: viewModel.earliestSelectableDay
                 )
+                .padding()
+                .frame(width: 340)
+                .presentationCompactAdaptation(.popover)
             }
+        }
+        .onChange(of: viewModel.selectedDate) { _, date in
+            if date != nil { showsCalendar = false }
         }
     }
     
-    /// Contains the switch for deciding whether the chore should be public to the household.
-    private var publicToggleSection: some View {
-        VStack {
-            HStack {
-                Text("Essa tarefa é para a casa?")
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                    .accessibilityHidden(true) // the switch says it
-                
-                Spacer()
-                
-                Toggle("", isOn: $viewModel.draft.isPublic)
-                    .toggleStyle(.switch)
-                    .voiceOverLabel(L10n.tr("Essa tarefa é para a casa?"))
-                    .voiceControlNames([L10n.tr("Essa tarefa é para a casa?"), L10n.tr("Para a casa"), L10n.tr("Tarefa da casa")])
-                    .padding(.trailing, 7)
-                    .frame(width: width * 0.37)
-            }
-            .frame(width: width * 0.9)
-            
-            Text(viewModel.visibilityDescription)
-                .font(.system(size: 15))
-                .italic()
-                .foregroundColor(.gray)
-        }
+    private var selectedDateText: String {
+        guard let date = viewModel.selectedDate else { return L10n.tr("Escolher data") }
+        return date.formatted(.dateTime.day().month(.abbreviated).year().locale(L10n.locale))
     }
     
-    /// Explains why the (top-right) confirm button is disabled. Shown near the top so it is
-    /// visible without scrolling.
-    @ViewBuilder
-    private var validationWarning: some View {
-        if viewModel.showsMissingRoomWarning {
-            Text("Escolha um cômodo para confirmar a tarefa.")
-                .font(.system(size: 13))
-                .foregroundColor(.red)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .onAppear { VoiceOver.announce(L10n.tr("Escolha um cômodo para confirmar a tarefa.")) }
-        } else if viewModel.showsMissingDateWarning {
-            Text("Escolha uma data para confirmar a tarefa.")
-                .font(.system(size: 13))
-                .foregroundColor(.red)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .onAppear { VoiceOver.announce(L10n.tr("Escolha uma data para confirmar a tarefa.")) }
-        }
+    private var durationTierBinding: Binding<ChoreDurationTier> {
+        Binding(
+            get: { ChoreDurationTier.from(minutes: viewModel.draft.duration) },
+            set: { viewModel.draft.duration = $0.minutes }
+        )
     }
     
-    /// Bottom-anchored destructive action that deletes the chore being edited
-    private var deleteButton: some View {
-        Button {
-            showDeleteConfirmation = true
-        } label: {
-            Group {
-                if viewModel.isDeleting {
-                    ProgressView()
-                        .tint(.red)
-                        .voiceOverLabel(L10n.tr("Excluindo tarefa..."))
-                } else {
-                    Text("Excluir Tarefa")
-                        .fontWeight(.semibold)
-                }
-            }
-            .frame(height: height * 0.03)
-        }
-        .foregroundColor(.red)
-        .voiceControlNames([L10n.tr("Excluir Tarefa"), L10n.tr("Excluir")])
-        .disabled(isSubmitting || viewModel.isSaving || viewModel.isDeleting)
-        .frame(maxWidth: .infinity)
-        .padding(.top, 4)
+    // MARK: - Helpers
+    
+    private func sectionTitle(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .textCase(nil)
+            .accessibilityAddTraits(.isHeader)
     }
     
-    /// A room option in the room menu: a colored circle and the room's name.
-    private struct ColorIconTagLabel: View {
-        
-        /// The string to be displayed next to the icon.
-        let title: String
-        
-        /// The background color for the circular icon shape.
-        let color: Color
-        
-        var body: some View {
-            Label {
-                Text(title)
-            } icon: {
-                Image(uiImage: .coloredCircle(color: color))
-                    .renderingMode(.original)
-            }
-        }
+    private func warning(_ text: LocalizedStringKey) -> some View {
+        Text(text)
+            .font(.footnote)
+            .foregroundStyle(.red)
+    }
+}
+
+// MARK: - Form field style
+
+private extension String {
+    var firstLetterCapitalized: String {
+        prefix(1).uppercased(with: L10n.locale) + dropFirst()
+    }
+}
+
+private extension View {
+    func formField<S: Shape>(in shape: S) -> some View {
+        padding(.horizontal, 20)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.white, in: shape)
     }
 }
 
@@ -457,11 +481,9 @@ struct CreateAndEditChoreView: View {
     )
     chore.recordID = CKRecord.ID(recordName: "preview-chore")
     
-    return NavigationStack {
-        CreateAndEditChoreView(
-            originalModel: chore,
-            availableHouseUsers: [user],
-            carouselViewModel: CarouselViewModel()
-        )
-    }
+    return CreateAndEditChoreView(
+        originalModel: chore,
+        availableHouseUsers: [user],
+        carouselViewModel: CarouselViewModel()
+    )
 }
