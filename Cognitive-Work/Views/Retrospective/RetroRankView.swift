@@ -63,6 +63,9 @@ struct RetroRankView: View {
                 Text(content.tierName)
                     .bold()
                     .font(.system(size: 56))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 24)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, height * 0.014)
                     .accessibilityAddTraits(.isHeader)
@@ -119,7 +122,8 @@ struct RetroRankView: View {
                 }
             } label: {
                 Text("Continuar")
-                    .frame(width: width * 0.69, height: height * 0.037)
+                    .frame(minWidth: width * 0.69, minHeight: height * 0.037)
+                    .multilineTextAlignment(.center)
                     .fontWeight(.medium)
                     .font(.system(size: 17))
             }

@@ -61,6 +61,11 @@ struct ChoresView: View {
                         header
                         progressSection
                     }
+                    // Solid at the top (under the status bar), fading out below the progress
+                    // cards, so the list scrolls "under" the fixed block.
+                    .background(alignment: .top) { headerFade }
+                    // Above the list (zIndex 1000) so the fade covers the cards scrolling past.
+                    .zIndex(1001)
                     
                     Spacer()
                         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
@@ -269,6 +274,27 @@ struct ChoresView: View {
         carouselVM.layoutMode == .grid ? "Seu dia" : "Sua divisão"
     }
     
+    /// White gradient behind the fixed block: opaque, then transparent a little below it.
+    private var headerFade: some View {
+        LinearGradient(
+            stops: [
+                .init(color: Color(.systemBackground), location: 0),
+                .init(color: Color(.systemBackground), location: 0.8),
+                .init(color: Color(.systemBackground).opacity(0), location: 1)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        // Extends over the status bar and 24 pt below the block for the fade.
+        .padding(.bottom, -24)
+        .ignoresSafeArea(edges: .top)
+        .allowsHitTesting(false)
+    }
+    
+    /// Side margin shared by the header, the progress cards and the chore list (the list's
+    /// cards are 92% of the screen wide, so 4% is left on each side).
+    private var sideMargin: CGFloat { width * 0.04 }
+    
     /// Page title alongside the layout toggle control.
     private var header: some View {
         HStack {
@@ -279,7 +305,7 @@ struct ChoresView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .layoutPriority(1)
-                .padding(.horizontal, 30)
+                .padding(.horizontal, sideMargin)
                 .padding(.top, 20)
                 .accessibilityAddTraits(.isHeader)
             
@@ -346,7 +372,7 @@ struct ChoresView: View {
                 in: .capsule
             )
             .padding(.top, 20)
-            .padding(.trailing, 30)
+            .padding(.trailing, sideMargin)
         }
     }
     
@@ -374,7 +400,7 @@ struct ChoresView: View {
                 color: cardColor
             )
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, sideMargin)
         .animation(.easeInOut, value: activeRoomColor)
         .accessibilityElement(children: .contain)
         .voiceOverLabel(L10n.tr("Progresso do dia"))

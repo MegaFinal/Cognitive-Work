@@ -26,7 +26,7 @@ struct ChorePopOverComponent: View {
             ChorePriority(chore: chore, user: user)
         }
         .foregroundColor(.black)
-        .frame(width: width * 0.55, alignment: .leading)
+        .frame(minWidth: width * 0.55, alignment: .leading)
         .frame(minHeight: height * 0.1)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         // Room, chore name and the three tags read as one sentence.
