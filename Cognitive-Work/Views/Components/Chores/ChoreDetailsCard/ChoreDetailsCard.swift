@@ -47,6 +47,9 @@ struct ChoreDetailsCard: View {
     /// Shown when the new date couldn't be saved.
     @State private var didFailToPostpone = false
     
+    /// Shows the edit form (pencil button).
+    @State private var showsEditSheet = false
+    
     /// The chore's room (icon, color and name).
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     /// Every member responsible for the chore.
@@ -350,16 +353,19 @@ struct ChoreDetailsCard: View {
                     .voiceOverLabel(carouselViewModel.accessibilityResponsibleText(for: occurrenceResponsibleUsers))
             }
             
-            NavigationLink {
+            Button {
+                showsEditSheet = true
+            } label: {
+                Image(systemName: "pencil")
+                    .foregroundColor(.white)
+            }
+            .sheet(isPresented: $showsEditSheet) {
                 CreateAndEditChoreView(
                     originalModel: chore,
                     availableHouseUsers: carouselViewModel.userModels,
                     carouselViewModel: carouselViewModel,
                     targetAssignments: targetAssignments
                 )
-            } label: {
-                Image(systemName: "pencil")
-                    .foregroundColor(.white)
             }
             .voiceOverLabel(L10n.tr("Editar tarefa"))
             .voiceControlNames([L10n.tr("Editar"), L10n.tr("Editar tarefa"), L10n.tr("Lápis")])

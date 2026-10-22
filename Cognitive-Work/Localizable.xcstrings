@@ -1292,6 +1292,7 @@
       }
     },
     "Adicionar item" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1322,6 +1323,16 @@
         }
       }
     },
+    "Adicionar subtarefa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add subtask"
+          }
+        }
+      }
+    },
     "Adicionar tarefa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1329,6 +1340,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add chore"
+          }
+        }
+      }
+    },
+    "Adicione o nome da tarefa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the chore name"
           }
         }
       }
@@ -1618,6 +1639,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tapping \"Restart\" will delete the current chore split."
+          }
+        }
+      }
+    },
+    "Ao dividir, qualquer morador pode receber essa tarefa. Sem dividir, ela fica apenas com quem você selecionou e não aparece para os outros moradores da casa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When shared, any resident can get this chore. If not, it stays only with the people you picked and doesn't show up for the other residents."
           }
         }
       }
@@ -2191,7 +2222,6 @@
       }
     },
     "Calendário" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3348,6 +3378,7 @@
       }
     },
     "Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3473,7 +3504,28 @@
         }
       }
     },
+    "Descrição da subtarefa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtask description"
+          }
+        }
+      }
+    },
+    "Descrição da tarefa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chore description"
+          }
+        }
+      }
+    },
     "Descrição da Tarefa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3575,6 +3627,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leaving an old home..."
+          }
+        }
+      }
+    },
+    "Detalhes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details"
           }
         }
       }
@@ -3740,12 +3802,33 @@
         }
       }
     },
+    "Dividir" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
+    },
     "Dividir a casa vai além da faxina" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sharing a home goes beyond cleaning"
+          }
+        }
+      }
+    },
+    "Dividir com a casa?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share with the house?"
           }
         }
       }
@@ -4669,6 +4752,17 @@
         }
       }
     },
+    "Escolher data" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a date"
+          }
+        }
+      }
+    },
     "Escovar por dentro, desinfetar o assento e a parte externa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4790,6 +4884,7 @@
       }
     },
     "Essa tarefa é para a casa?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7821,6 +7916,7 @@
       }
     },
     "Nome da Tarefa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7920,6 +8016,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New split is ready"
+          }
+        }
+      }
+    },
+    "Nova subtarefa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New subtask"
           }
         }
       }
