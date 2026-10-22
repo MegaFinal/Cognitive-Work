@@ -41,21 +41,16 @@ final class RoomsManagementViewModel {
     /// Name of the room that represents chores for the whole house.
     static let houseWideRoomName = "Casa"
     
-    /// Default SF Symbol for rooms created here (same one the onboarding uses for custom rooms).
-    static let customRoomSymbol = "lamp.table"
+    /// Default icon for rooms created here (same one the onboarding uses for custom rooms).
+    static let customRoomSymbol = "armchair"
     
-    /// Icons a custom room can pick from: the custom-room set followed by the icons of every
-    /// default room type (Quarto, Cozinha…), without repeats.
-    static let customRoomSymbols: [String] = {
-        let customSymbols = [
-            "lamp.table", "tv", "books.vertical", "gamecontroller",
-            "dumbbell", "pawprint", "car", "tree",
-            "shippingbox", "stairs", "bathtub", "music.note"
-        ]
-        var seen = Set<String>()
-        return (customSymbols + DefaultRoomsOnboarding.allCases.map(\.symbol))
-            .filter { seen.insert($0).inserted }
-    }()
+    /// Icons a custom room can pick from: the artwork in the `ChoresSymbols` asset folder that
+    /// isn't taken by a default room type (those live in its `DefaultRooms` subfolder).
+    static let customRoomSymbols: [String] = [
+        "armchair", "twin.bed.stripes", "laptop", "stove.pans",
+        "shower", "washing.machine", "clothes.basket", "clothes.line.filled",
+        "balcony.aluminum.chair", "default.plant", "bicicle", "kite"
+    ]
     
     /// Creates the view model for `house`'s rooms.
     init(house: HouseModel? = nil) {

@@ -280,13 +280,9 @@ struct ShopListItemFormView: View {
     /// The category's icon beside the name field, like the chore editor's header.
     private var header: some View {
         HStack(spacing: 18) {
-            Image(systemName: category.symbol)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 54, height: 54)
-                .fontWeight(.thin)
+            SymbolImage(name: category.symbol)
+                .frame(width: 64, height: 64)
                 .foregroundStyle(category.color)
-                .contentTransition(.symbolEffect(.replace))
                 .padding(.leading, 6)
                 .accessibilityHidden(true)
 

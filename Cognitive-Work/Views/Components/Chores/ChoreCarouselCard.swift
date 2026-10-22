@@ -36,12 +36,9 @@ struct ChoreCarouselCard: View {
             .padding(.top, 30)
             
             // MARK: - Room icon (center)
-            Image(systemName: room?.symbol ?? chore.symbolName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: width * 0.17, height: height * 0.17)
-                .fontWeight(.ultraLight)
-                .padding(.top, height * 0.05)
+            SymbolImage(name: room?.symbol ?? chore.symbolName)
+                .frame(width: width * 0.6, height: height * 0.4)
+                .padding(.top)
         }
         // MARK: - Card style and accessibility
         .foregroundColor(.white)
@@ -77,7 +74,7 @@ struct ChoreCarouselCard: View {
     @Previewable @Namespace var namespace
 
     let vm: CarouselViewModel = {
-        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "clothes.line.stripes", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
 
         let vm = CarouselViewModel()
@@ -87,7 +84,7 @@ struct ChoreCarouselCard: View {
 
     let chore: ChoreModel = {
         let chore = ChoreModel(
-            name: "Repor papel e produtos de higiene",
+            name: "Repor papel",
             description: "Depois do jantar",
             frequency: .daily,
             duration: 20,

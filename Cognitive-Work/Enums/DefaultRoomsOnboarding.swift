@@ -64,20 +64,20 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
         self.init(rawValue: kind ?? name)
     }
     
-    /// SF Symbol shown for this room.
+    /// Name of the room's icon in the `ChoresSymbols/DefaultRooms` asset folder.
     var symbol: String {
         switch self {
-        case .bedroom: "bed.double"
+        case .bedroom: "bed.stripes"
         case .livingRoom: "sofa"
-        case .laundryRoom: "washer"
-        case .kitchen: "cooktop"
+        case .laundryRoom: "clothes.line.stripes"
+        case .kitchen: "stove"
         case .bathroom: "toilet"
-        case .homeOffice: "macbook.and.iphone"
-        case .balcony: "window.casement"
-        case .pantry: "cabinet"
+        case .homeOffice: "computer"
+        case .balcony: "balcony.plastic.chair"
+        case .pantry: "pantry"
         case .powderRoom: "sink"
-        case .garage: "door.garage.open"
-        case .garden: "sprinkler.and.droplets"
+        case .garage: "garage.car"
+        case .garden: "snake.plant"
         }
     }
     

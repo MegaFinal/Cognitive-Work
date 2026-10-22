@@ -152,7 +152,7 @@ struct ShopCategoryTile: View {
     let category: ShopItemCategory
         
     /// The icon's size.
-    private let iconSide: CGFloat = 32
+    private let iconSide: CGFloat = 42
     
     var body: some View {
         // MARK: - Category color, texture and icon
@@ -168,9 +168,7 @@ struct ShopCategoryTile: View {
                     .allowsHitTesting(false)
             }
             .overlay {
-                Image(systemName: category.symbol)
-                    .resizable()
-                    .scaledToFit()
+                SymbolImage(name: category.symbol)
                     .frame(width: iconSide, height: iconSide)
                     .foregroundColor(.white)
             }

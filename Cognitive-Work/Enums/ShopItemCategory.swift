@@ -48,17 +48,18 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// SF Symbol drawn on cards and chips.
+    /// Icon drawn on cards and chips: the `ShoppingListSymbols` artwork (the home category has
+    /// none yet, so it keeps an SF Symbol). Drawn with ``SymbolImage``.
     var symbol: String {
         switch self {
-        case .food: return "fork.knife"
-        case .produce: return "carrot.fill"
-        case .drinks: return "mug.fill"
-        case .cleaning: return "sparkles"
-        case .hygiene: return "shower.fill"
+        case .food: return "food"
+        case .produce: return "fruit"
+        case .drinks: return "drinks"
+        case .cleaning: return "cleaning"
+        case .hygiene: return "farmacy"
         case .home: return "house"
-        case .pets: return "pawprint"
-        case .other: return "basket"
+        case .pets: return "pets"
+        case .other: return "plastic.bag"
         }
     }
 
