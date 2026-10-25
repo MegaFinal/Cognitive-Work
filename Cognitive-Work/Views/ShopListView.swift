@@ -8,14 +8,27 @@
 import SwiftUI
 import CloudKit
 
-/// Shows the house's shopping list.
+/// The shopping tab: the house's shopping list grouped in sections, with a button to add items,
+/// a sort menu and a link to the "Pendências" (who owes whom) screen.
 struct ShopListView: View {
 
+    /// Loads the list, saves changes and works out the sections.
     @State private var viewModel: ShopListViewModel
 
+    /// Shows the "new item" sheet.
     @State private var isPresentingAddItem = false
+    /// The item being edited, or `nil`.
     @State private var editingItem: ShopListItem?
+    /// Opens the "Pendências" screen.
     @State private var isShowingPendingPayments = false
+
+    /// Whether the "add several items with AI" sheet is open.
+    @State private var isPresentingAIBatch = false
+    /// Whether the AI button shows: the on-device model can run on this device and language.
+    @State private var canUseAI = false
+
+    /// "Pode estar faltando": usual items and products that go with the list.
+    @State private var suggestionsModel: ShopListSuggestionViewModel
 
     /// Which card is swiped open; shared so only one can be open at a time.
     @State private var revealedItemID: String?
@@ -23,12 +36,16 @@ struct ShopListView: View {
     /// The delete button matches the card: same height, same 22-point corners.
     private let swipeStyle = SwipeToDeleteStyle(cornerRadius: 22, topInset: 0)
 
+    /// Creates the screen. Pass a ready view model for previews.
     init(viewModel: ShopListViewModel? = nil) {
-        self._viewModel = State(initialValue: viewModel ?? ShopListViewModel())
+        let shopList = viewModel ?? ShopListViewModel()
+        self._viewModel = State(initialValue: shopList)
+        self._suggestionsModel = State(initialValue: ShopListSuggestionViewModel(shopList: shopList))
     }
 
     var body: some View {
         NavigationStack {
+            // MARK: - Content and the "Pendências" link
             content
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(isPresented: $isShowingPendingPayments) {
@@ -37,37 +54,69 @@ struct ShopListView: View {
         }
     }
 
+    /// The page: title and buttons, then the list (or a spinner / empty state).
     private var content: some View {
         VStack(alignment: .leading, spacing: 20) {
+            // MARK: - Title and buttons
             header
 
+            // One-tap chips for what might be missing; hidden when there's nothing to suggest.
+            ShopSuggestionsRow(model: suggestionsModel)
+                .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
+
+            // MARK: - Spinner, empty state or list
             if !viewModel.hasLoaded {
                 // Only on a cold start without data in memory; otherwise the cached list shows at once.
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.items.isEmpty {
+            } else if viewModel.isListEmpty {
                 ShopListEmptyState()
                     .frame(maxHeight: .infinity)
             } else {
                 itemList
             }
         }
+        // MARK: - Add button and price pop-up
         .overlay(alignment: .bottomTrailing) {
-            addButton
+            // The AI button sits right above "+", centred on it.
+            VStack(spacing: 12) {
+                if canUseAI {
+                    aiBatchButton
+                }
+                addButton
+            }
         }
         .background(Color(.white).ignoresSafeArea())
         .overlay { purchasePriceOverlay }
         .animation(.easeInOut(duration: 0.25), value: viewModel.purchasePrompt?.id)
+        // MARK: - Loading and refreshing
         .task {
+            canUseAI = viewModel.canSuggestItemDetails
             guard !viewModel.hasLoaded else { return }
             await viewModel.setup()
         }
+        // Suggestions follow the list: an item added, bought or removed changes them.
+        .onChange(of: suggestionsKey, initial: true) { _, _ in
+            suggestionsModel.refresh()
+        }
+        #if DEBUG
+        // DEBUG test mode: a "day" is a minute, so time alone can make an item due; check again
+        // every 30 seconds instead of waiting for the list to change.
+        .task {
+            guard ShopListSuggestionViewModel.usesMinutesAsDays else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                suggestionsModel.refresh()
+            }
+        }
+        #endif
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             viewModel.requestRefresh()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             viewModel.requestRefresh()
         }
+        // MARK: - New item and edit item sheets
         .sheet(isPresented: $isPresentingAddItem) {
             ShopListItemFormView(
                 mode: .create,
@@ -75,6 +124,10 @@ struct ShopListView: View {
                 currentUser: viewModel.currentUser,
                 viewModel: viewModel
             )
+        }
+        // Several items at once with the on-device model, reviewed before saving.
+        .sheet(isPresented: $isPresentingAIBatch) {
+            AddMoreItensInteligence(viewModel: viewModel)
         }
         .sheet(item: $editingItem) { item in
             ShopListItemFormView(
@@ -84,10 +137,12 @@ struct ShopListView: View {
                 viewModel: viewModel
             )
         }
+        // MARK: - Error alert
         .alert(
             "Não foi possível concluir",
             isPresented: Binding(
-                get: { viewModel.errorMessage != nil && !isPresentingAddItem && editingItem == nil },
+                // The AI sheet shows its own errors.
+                get: { viewModel.errorMessage != nil && !isPresentingAddItem && editingItem == nil && !isPresentingAIBatch },
                 set: { if !$0 { viewModel.clearError() } }
             )
         ) {
@@ -95,6 +150,13 @@ struct ShopListView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+    }
+
+    /// Changes whenever an item is added, removed, bought or renamed.
+    private var suggestionsKey: String {
+        viewModel.items
+            .map { "\($0.id)\($0.isBought)\($0.name)" }
+            .joined(separator: "|")
     }
 
     // MARK: - Price pop-up
@@ -134,8 +196,9 @@ struct ShopListView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
+                // MARK: Title and pending summary
                 Text("Compras")
-                    .font(.system(size: 34))
+                    .font(.custom("Alan Sans", size: 34))
                     .fontWeight(.bold)
                     .accessibilityAddTraits(.isHeader)
 
@@ -151,6 +214,7 @@ struct ShopListView: View {
 
             Spacer()
 
+            // MARK: "Pendências" button and sort menu
             HStack(spacing: 4) {
                 Button {
                     HapticsManager.selection()
@@ -191,6 +255,7 @@ struct ShopListView: View {
 
     // MARK: - List
 
+    /// The scrolling list: the sections to buy, a black line, then the "bought" section.
     private var itemList: some View {
         let pendingSections = viewModel.pendingSections
         let boughtSection = viewModel.boughtSection
@@ -216,8 +281,10 @@ struct ShopListView: View {
         .scrollDismissesKeyboard(.immediately)
     }
 
+    /// Space between two sections.
     private let sectionSpacing: CGFloat = 40
 
+    /// The black line above the "bought" section.
     private var boughtDivider: some View {
         Capsule()
             .fill(Color.black)
@@ -225,6 +292,7 @@ struct ShopListView: View {
             .frame(maxWidth: .infinity)
     }
 
+    /// The thin line between two items.
     private var itemDivider: some View {
         Capsule()
             .fill(Color.gray.opacity(0.3))
@@ -236,7 +304,9 @@ struct ShopListView: View {
 
     /// A collapsible section: the title, then its cards separated by thin lines.
     ///
-    /// - Parameter isFirst: The first section sits right under the header
+    /// - Parameters:
+    ///   - section: The section to show.
+    ///   - isFirst: `true` for the first section, which sits closer to the header.
     @ViewBuilder
     private func sectionView(_ section: ShopListSection, isFirst: Bool) -> some View {
         sectionTitle(section)
@@ -256,6 +326,7 @@ struct ShopListView: View {
         }
     }
 
+    /// The section's title, count and arrow; tapping it opens or closes the section.
     private func sectionTitle(_ section: ShopListSection) -> some View {
         let isCollapsed = viewModel.isCollapsed(section)
 
@@ -286,6 +357,7 @@ struct ShopListView: View {
         .accessibilityAddTraits(.isHeader)
     }
 
+    /// One item card that can be swiped to delete and tapped to edit.
     private func row(for item: ShopListItem) -> some View {
         SwipeToDeleteRow(
             id: item.id,
@@ -313,6 +385,27 @@ struct ShopListView: View {
         }
     }
 
+    /// Opens ``AddMoreItensInteligence`` to add several items from one text.
+    private var aiBatchButton: some View {
+        Button {
+            HapticsManager.selection()
+            isPresentingAIBatch = true
+        } label: {
+            Image(systemName: "sparkles")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.black)
+                .padding(14)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .disabled(!viewModel.canAddItems)
+        .voiceOverLabel(L10n.tr("Adicionar com IA"))
+        .voiceControlNames([L10n.tr("Adicionar com IA"), L10n.tr("IA")])
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    /// The floating "+" button that opens the new item sheet.
     private var addButton: some View {
         FloatingActionButton(systemImage: "plus") {
             HapticsManager.selection()
@@ -327,20 +420,21 @@ struct ShopListView: View {
 
 // MARK: - Empty state
 
+/// Shown when the list has no items: the mascot and a hint to tap "+".
 private struct ShopListEmptyState: View {
 
+    /// Makes the sparkles grow a little once the view appears.
     @State private var isAnimating = false
 
     var body: some View {
         VStack(spacing: 28) {
             ZStack {
                 Circle()
-                    .fill(RoomColor.yellow.lowOpacityColor.opacity(0.3))
+                    .fill(RoomColor.orange.lowOpacityColor.opacity(0.3))
 
-                Image("loadingIcon")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 112)
+                SymbolImage(name: "plastic.bag")
+                    .foregroundStyle(RoomColor.orange.uiColor)
+                    .frame(width: 128, height: 128)
             }
             .frame(width: 176, height: 176)
             .clipShape(Circle())
@@ -371,15 +465,12 @@ private struct ShopListEmptyState: View {
         .onAppear { isAnimating = true }
     }
 
+    /// A small yellow sparkle around the mascot.
     private func sparkle(size: CGFloat) -> some View {
         Image(systemName: "sparkle")
             .font(.system(size: size, weight: .bold))
-            .foregroundStyle(.choreYellow)
+            .foregroundStyle(RoomColor.orange.uiColor)
             .scaleEffect(isAnimating ? 1.15 : 0.85)
-            .animation(
-                .easeInOut(duration: 1.4).repeatForever(autoreverses: true),
-                value: isAnimating
-            )
     }
 }
 

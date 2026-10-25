@@ -7,22 +7,36 @@
 
 import SwiftUI
 
+/// A month-style calendar for a range of days (the cycle).
+///
+/// Days outside the range or before `earliestSelectable` are grey and can't be tapped.
+/// Each day's background shows how busy it is, using `opacityForDay`.
 struct CustomCalendar: View {
+    /// The selected day, or `nil`. Tapping it again clears it.
     @Binding var selectedDate: Date?
+    /// The days that can be picked (the end is not included).
     let window: Range<Date>
+    /// How strong each day's background is (0 = no background). Used to show how busy a day is.
     let opacityForDay: (Date) -> Double
+    /// Extra days to show as selected (e.g. other days of a chore).
     var highlightedDays: [Date] = []
+    /// The first day that can be picked. Defaults to today.
     var earliestSelectable: Date? = nil   // days before this are shown grey and can't be tapped
+    /// If set, only these days can be picked.
     var selectableDays: Set<Date>? = nil
+    /// If set, called on tap instead of changing `selectedDate`.
     var onTapDay: ((Date) -> Void)? = nil
     
     /// Computed (not stored) so it follows a language change without recreating the view.
     private var daysOfWeek: [String] { Date.capitalizedFirstLettersOfWeekdays }
+    /// Seven equal columns, one per weekday.
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
+    /// The calendar used for all date math.
     private let calendar = Calendar.current
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // MARK: - Month title, weekday letters and day grid
             header
                 .padding(5)
             weekdayRow
@@ -63,6 +77,7 @@ struct CustomCalendar: View {
     
     // MARK: - Header
     
+    /// The month (and year) of the range, e.g. "Março - Abril 2026".
     private var headerTitle: String {
         let first = window.lowerBound
         let last = calendar.date(byAdding: .day, value: -1, to: window.upperBound) ?? first
@@ -82,6 +97,7 @@ struct CustomCalendar: View {
         return "\(monthName(first)) \(firstYear)"
     }
     
+    /// The full month name in the app's language.
     private func monthName(_ date: Date) -> String {
         date.formatted(.dateTime.month(.wide).locale(L10n.locale))
             .capitalized(with: L10n.locale)
@@ -89,6 +105,7 @@ struct CustomCalendar: View {
     
     // MARK: - Subviews
     
+    /// The month title.
     private var header: some View {
         Text(headerTitle)
             .font(.system(size: 16))
@@ -97,6 +114,7 @@ struct CustomCalendar: View {
             .accessibilityAddTraits(.isHeader)
     }
     
+    /// The weekday letters on top of the grid.
     private var weekdayRow: some View {
         HStack {
             ForEach(daysOfWeek.indices, id: \.self) { index in
@@ -110,6 +128,7 @@ struct CustomCalendar: View {
         .accessibilityHidden(true)
     }
     
+    /// The grid of day cells.
     private var dayGrid: some View {
         LazyVGrid(columns: columns, spacing: 10) {
             ForEach(gridDays, id: \.self) { day in
@@ -138,6 +157,7 @@ struct CustomCalendar: View {
         }
     }
         
+    /// The selected date written out, or "Nenhuma data selecionada".
     private var selectedDateLabel: some View {
         if let selectedDate {
             Text(selectedDate.formatted(
@@ -158,16 +178,19 @@ struct CustomCalendar: View {
     
     // MARK: - Actions
     
+    /// Whether `day` is the selected day.
     private func isSelected(_ day: Date) -> Bool {
         guard let selectedDate else { return false }
         return calendar.isDate(selectedDate, inSameDayAs: day)
     }
     
+    /// Selects `day`, or clears it if it was already selected.
     private func select(_ day: Date) {
         // Tapping an already selected date again = deselects it
         selectedDate = isSelected(day) ? nil : day.startOfDay
     }
     
+    /// Whether `day` is one of `highlightedDays`.
     private func isHighlighted(_ day: Date) -> Bool {
         highlightedDays.contains { calendar.isDate($0, inSameDayAs: day) }
     }
@@ -175,8 +198,11 @@ struct CustomCalendar: View {
 
 // MARK: - Previews
 
+/// Preview wrapper that keeps the selected day in `@State`.
 private struct ChoreDatePickerPreview: View {
+    /// The days that can be picked.
     let window: Range<Date>
+    /// The selected day.
     @State private var selected: Date?
     
     var body: some View {

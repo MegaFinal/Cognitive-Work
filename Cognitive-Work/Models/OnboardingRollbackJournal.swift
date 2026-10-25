@@ -24,16 +24,21 @@ struct OnboardingRollbackJournal: Codable {
 
     /// A `CKRecord.ID` in a form that can be encoded.
     struct StoredRecordID: Codable, Hashable {
+        /// The record's name.
         var recordName: String
+        /// The name of the record's zone.
         var zoneName: String
+        /// The owner of the record's zone.
         var zoneOwnerName: String
 
+        /// Stores `recordID` in an encodable form.
         init(_ recordID: CKRecord.ID) {
             recordName = recordID.recordName
             zoneName = recordID.zoneID.zoneName
             zoneOwnerName = recordID.zoneID.ownerName
         }
 
+        /// The stored ID turned back into a `CKRecord.ID`.
         var recordID: CKRecord.ID {
             CKRecord.ID(
                 recordName: recordName,
@@ -67,8 +72,10 @@ struct OnboardingRollbackJournal: Codable {
 
     // MARK: - Persistence
 
+    /// The `UserDefaults` key the journal is saved under.
     private static let storageKey = "onboarding.rollbackJournal"
 
+    /// The saved journal, or an empty one when there is none.
     static func load() -> OnboardingRollbackJournal {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let journal = try? JSONDecoder().decode(OnboardingRollbackJournal.self, from: data)
@@ -76,11 +83,13 @@ struct OnboardingRollbackJournal: Codable {
         return journal
     }
 
+    /// Saves the journal in `UserDefaults`.
     func save() {
         guard let data = try? JSONEncoder().encode(self) else { return }
         UserDefaults.standard.set(data, forKey: Self.storageKey)
     }
 
+    /// Deletes the saved journal (when the onboarding ends or starts over).
     static func clear() {
         UserDefaults.standard.removeObject(forKey: storageKey)
     }

@@ -74,6 +74,7 @@ enum FreeTimeSyncError: Error, Equatable, LocalizedError {
     /// The private profile could not be written. The house profile was left untouched.
     case privateWriteFailed(String)
 
+    /// A short message describing the error (in English, for logs).
     var errorDescription: String? {
         switch self {
         case .invalidInput:
@@ -110,6 +111,7 @@ enum FreeTimeRestoreResult: Equatable {
 
 /// Result of ``FreeTimeSyncService/reconcile()``.
 enum FreeTimeReconcileResult: Equatable {
+    /// Both profiles already have the same free time.
     case alreadyInSync
     /// The house profile was overwritten with the private value.
     case updatedPublic
@@ -158,12 +160,18 @@ final class FreeTimeSyncService {
         static let noRetry = RetryPolicy(maxAttempts: 1, baseDelay: .zero)
     }
 
+    /// `UserDefaults` key of the free time waiting to be copied to the house profile.
     static let pendingKey = "onboarding.pendingFreeTime"
 
+    /// Gives the store of the private profile, or `nil` when unavailable.
     private let privateProvider: () async -> FreeTimeProfileStore?
+    /// Gives the store of the house profile, or `nil` when the user has no house.
     private let publicProvider: () async -> FreeTimeProfileStore?
+    /// Where the pending free time is saved.
     private let defaults: UserDefaults
+    /// How transient errors are retried.
     private let retryPolicy: RetryPolicy
+    /// Waits between retries (replaced in tests so they don't wait).
     private let sleep: (Duration) async -> Void
 
     /// - Parameters:
@@ -362,6 +370,8 @@ final class FreeTimeSyncService {
         }
     }
 
+    /// Saves `minutes` to `store`, with retries.
+    /// - Returns: `success` when it worked, or a failure result.
     private func copy(
         _ minutes: [Int],
         to store: FreeTimeProfileStore,
@@ -376,6 +386,8 @@ final class FreeTimeSyncService {
         }
     }
 
+    /// Saves `minutes` to the house profile. If it fails, keeps them as pending so a later
+    /// ``reconcile()`` tries again.
     private func pushToPublic(_ minutes: [Int], store: FreeTimeProfileStore) async -> FreeTimeReconcileResult {
         do {
             try await withRetry { try await store.saveMinutes(Self.normalized(minutes)) }
@@ -405,6 +417,7 @@ final class FreeTimeSyncService {
         }
     }
 
+    /// A readable reason for `error`.
     private static func describe(_ error: Error) -> String {
         switch error {
         case FreeTimeStoreError.transient(let reason), FreeTimeStoreError.permanent(let reason):
@@ -455,6 +468,11 @@ final class FreeTimeSyncService {
 /// Decides where the welcome screen leads. A returning user (profile and free time already
 /// known, e.g. after leaving a house) goes straight to "create or enter a house".
 enum OnboardingRouting {
+    /// The step after the welcome screen.
+    /// - Parameters:
+    ///   - hasProfile: Whether the user already has a profile.
+    ///   - hasFreeTime: Whether the user already told their free time.
+    /// - Returns: Create the profile, choose free time, or go straight to create/enter a house.
     static func stepAfterWelcome(hasProfile: Bool, hasFreeTime: Bool) -> OnboardingNavigationSteps {
         guard hasProfile else { return .createProfile }
         return hasFreeTime ? .createOrEnterHome : .chooseFreeTime

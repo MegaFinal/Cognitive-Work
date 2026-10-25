@@ -8,6 +8,10 @@
 import SwiftUI
 import CloudKit
 
+/// Builds every card of the progress tab (Dashboard) for the signed-in member: today's ring,
+/// rooms, points, the week chart and the chores nobody owns.
+///
+/// Works on data already loaded by ``HouseDataStore``, so switching weeks needs no request.
 @Observable
 class DashboardViewModel {
     
@@ -30,10 +34,15 @@ class DashboardViewModel {
     
     // MARK: - Cache
     
+    /// The signed-in member.
     private var user: UserModel?
+    /// The house members.
     private var houseMembers: [UserModel] = []
+    /// Every chore of the house.
     private var chores: [ChoreModel] = []
+    /// Every chore occurrence of the house.
     private var assignments: [RecurrentAssignmentModel] = []
+    /// Every room of the house.
     private var rooms: [RoomModel] = []
     
     /// "Current division" card data. Loaded in the same pass as everything else,
@@ -44,6 +53,7 @@ class DashboardViewModel {
     
     /// Monday of the selected week. The chart always goes from Monday to Sunday.
     var periodStart: Date = DashboardViewModel.mondayOfWeek(containing: .now)
+    /// The last day of the selected period.
     var periodFinish: Date = DashboardViewModel.mondayOfWeek(containing: Calendar.current.date(byAdding: .day, value: 13, to: .now) ?? Date())
     
     /// Monday of the week that contains `date` (weeks run Monday → Sunday).
@@ -56,9 +66,13 @@ class DashboardViewModel {
     
     // MARK: - 1. Daily Completion Ring
     
+    /// Today's chores the member already did.
     var completedToday: Int = 0
+    /// Today's chores of the member.
     var totalToday: Int = 0
+    /// Fraction of today's chores done, from `0` to `1`.
     var completionProgress: Double = 0.0
+    /// ``completionProgress`` as text (e.g. `"75%"`).
     var completionText: String = "0%"
     
     // MARK: - 2. Room Distribution (legend)
@@ -70,24 +84,34 @@ class DashboardViewModel {
     
     /// The user's points (also used by the "42 pontos" card).
     var myCognitiveLoad: Int = 0
+    /// Points of every member added up.
     var houseCognitiveLoad: Int = 0
+    /// The member's share of the house's points, from `0` to `1`.
     var myCognitiveShare: Double = 0.0
+    /// The fair share if everyone did the same (1 ÷ number of members).
     var idealCognitiveShare: Double = 0.0
+    /// ``myCognitiveShare`` as text.
     var myCognitiveShareText: String = "0%"
+    /// ``idealCognitiveShare`` as text.
     var idealCognitiveShareText: String = "0%"
     
     // MARK: - 4. Daily Distribution by Room
     
+    /// The member's chores per day of the selected week, split by room.
     var dailyRoomDistribution: [DaySlice] = []
     
     // MARK: - 5. Unowned Public Chores
     
+    /// Pending chores nobody is responsible for.
     var unownedPublicCount: Int = 0
+    /// Every pending chore of the house.
     var totalPublicCount: Int = 0
+    /// ``unownedPublicCount`` divided by ``totalPublicCount``.
     var unownedPublicProgress: Double = 0.0
     
     // MARK: - Load
     
+    /// `true` while the data is loading.
     var isLoading: Bool = true
     
     /// Changes every time the cards are rebuilt from a new snapshot. The view uses it as an
@@ -144,8 +168,8 @@ class DashboardViewModel {
     @MainActor
     private func build(from snapshot: HouseSnapshot) async {
         // `snapshot.houseUser` comes from CloudKitManager's per-session cache, which is never
-        // refreshed: it is a different object from the one ScoreManager updates, so its points
-        // stay frozen. The same record inside `userRecords` was fetched in this very pass.
+        // refreshed (only its points are, from `UserScoreModel`). The same record inside
+        // `userRecords` was fetched in this very pass.
         let freshUser = snapshot.userRecords.first { $0.recordID == snapshot.houseUser?.recordID }
         user = freshUser ?? snapshot.houseUser
         houseMembers = snapshot.users
@@ -164,6 +188,7 @@ class DashboardViewModel {
         contentVersion &+= 1
         isLoading = false
     }
+    /// Rebuilds every card from the data in memory.
     func refresh() {
         loadCompletionRing()
         loadCognitiveLoad()
@@ -172,6 +197,7 @@ class DashboardViewModel {
         loadUnownedPublicChores()
     }
     
+    /// Moves the selected week by `offset` weeks (negative goes back) and rebuilds the charts.
     func changePeriod(by offset: Int) {
         guard let newStart = Calendar.current.date(
             byAdding: .day,
@@ -188,6 +214,7 @@ class DashboardViewModel {
     
     // MARK: - 1. Completion Ring
     
+    /// Fills today's ring from the member's chores of today.
     func loadCompletionRing() {
         guard let user else { return }
         
@@ -220,6 +247,7 @@ class DashboardViewModel {
     
     // MARK: - 3. Cognitive Load
     
+    /// Fills the points card: the member's points, the house's total and the shares.
     func loadCognitiveLoad() {
         guard let user else { return }
         
@@ -233,6 +261,7 @@ class DashboardViewModel {
     
     // MARK: - 4. Daily Room Distribution
     
+    /// Fills the week chart: the member's chores per day and room.
     func loadDailyRoomDistribution() {
         guard let userID = user?.recordID else { return }
         let calendar = Calendar.current
@@ -306,11 +335,13 @@ class DashboardViewModel {
     
     // MARK: - Helpers
     
+    /// `value ÷ total`, or `0` when `total` is `0`.
     private func fraction(_ value: Int, of total: Int) -> Double {
         guard total > 0 else { return 0 }
         return Double(value) / Double(total)
     }
     
+    /// `value` (0 to 1) as a whole percentage, e.g. `"45%"`.
     private func percentText(_ value: Double) -> String {
         "\(Int((value * 100).rounded()))%"
     }

@@ -18,6 +18,9 @@ struct UserModelFreeTimeStore: FreeTimeProfileStore {
     /// `availableTimeReference` in place.
     let user: UserModel
 
+    /// Reads the profile's free time.
+    /// - Returns: The minutes per weekday, or `nil` when the profile has no free time saved.
+    /// - Throws: ``FreeTimeStoreError`` when CloudKit fails.
     func loadSnapshot() async throws -> FreeTimeSnapshot? {
         guard let references = user.availableTimeReference, !references.isEmpty else { return nil }
 
@@ -35,6 +38,8 @@ struct UserModelFreeTimeStore: FreeTimeProfileStore {
         )
     }
 
+    /// Saves `minutes` (one value per weekday, Monday first) as the profile's free time.
+    /// - Throws: ``FreeTimeStoreError`` when the profile is not saved yet or CloudKit fails.
     func saveMinutes(_ minutes: [Int]) async throws {
         guard user.recordID != nil else {
             throw FreeTimeStoreError.permanent("The profile has no record yet")

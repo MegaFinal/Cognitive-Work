@@ -7,11 +7,14 @@
 
 import SwiftUI
 
-/// Defines the overlay layout region containing core chore action buttons
+/// The floating buttons at the bottom-right of the chores screen: show the chores nobody took,
+/// and create a new chore.
 struct ChoresViewButtonsSection: View {
     
+    /// Opens the new-chore form.
     @State private var showCreateView = false
     
+    /// The chores screen's view model.
     @Bindable var carouselViewModel: CarouselViewModel
 
     /// The house members offered in the new-chore form.
@@ -23,6 +26,7 @@ struct ChoresViewButtonsSection: View {
         HStack {
             Spacer()
             
+            // MARK: - Unassigned chores button
             FloatingActionButton(systemImage: "hand.tap", symbolSize: 32, foreground: .black, tint: nil) {
                 carouselViewModel.toggleUnassignedList()
             }
@@ -31,6 +35,7 @@ struct ChoresViewButtonsSection: View {
             .voiceOverHint(L10n.tr("Mostra as tarefas sem responsável."))
             .voiceOverValue(carouselViewModel.isShowingUnassignedList ? L10n.tr("expandido") : L10n.tr("recolhido"))
             
+            // MARK: - New chore button
             FloatingActionButton(systemImage: "plus") {
                 showCreateView = true
             }
@@ -38,7 +43,8 @@ struct ChoresViewButtonsSection: View {
             .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Nova tarefa"), L10n.tr("Adicionar tarefa")])
         }
         .floatingActionPlacement()
-        .navigationDestination(isPresented: $showCreateView) {
+        // MARK: - New-chore form
+        .sheet(isPresented: $showCreateView) {
             CreateAndEditChoreView(
                 originalModel: ChoreModel(
                     name: "",

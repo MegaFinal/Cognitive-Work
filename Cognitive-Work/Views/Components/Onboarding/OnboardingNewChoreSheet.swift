@@ -12,6 +12,7 @@ import CloudKit
 /// back through `onCreate` already marked, and is persisted with the selected default chores
 /// by ``OnboardingViewModel/createDefaultChores()`` when the step is confirmed.
 struct OnboardingNewChoreSheet: View {
+    /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
     
     /// Rooms the chore can belong to.
@@ -20,8 +21,11 @@ struct OnboardingNewChoreSheet: View {
     /// Called with the new chore (already linked to its room) when the user confirms.
     let onCreate: (ChoreDTO, RoomModel) -> Void
     
+    /// The chore being filled in.
     @State private var draft = ChoreDTO()
+    /// The room picked for the chore.
     @State private var selectedRoomID: RoomModel.ID?
+    /// Focus of the name field.
     @FocusState private var isNameFocused: Bool
     
     /// - Parameters:
@@ -34,19 +38,21 @@ struct OnboardingNewChoreSheet: View {
         _selectedRoomID = State(initialValue: initialRoom?.id ?? rooms.first?.id)
     }
     
+    /// The room picked, or `nil`.
     private var selectedRoom: RoomModel? {
         rooms.first { $0.id == selectedRoomID }
     }
     
+    /// The name without spaces at the ends.
     private var trimmedName: String {
         draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
+    /// Whether the chore can be created (it has a name and a room).
     private var canCreate: Bool {
         !trimmedName.isEmpty && selectedRoom != nil
     }
     
-    // MARK: - Body
     
     /// The selected room's color drives the whole sheet, like the room cards do elsewhere.
     private var accent: RoomColor {
@@ -57,6 +63,7 @@ struct OnboardingNewChoreSheet: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
+                    // MARK: - Title, room card, attributes and description
                     titleBlock
                     heroCard
                     attributesCard
@@ -67,7 +74,9 @@ struct OnboardingNewChoreSheet: View {
                 .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.interactively)
+            // MARK: - "Criar tarefa" button pinned to the bottom
             .safeAreaInset(edge: .bottom) { createButton }
+            // MARK: - Close button
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -90,6 +99,7 @@ struct OnboardingNewChoreSheet: View {
     
     // MARK: - Subviews
     
+    /// The "Nova tarefa" title and its subtitle.
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Nova tarefa")
@@ -108,13 +118,9 @@ struct OnboardingNewChoreSheet: View {
     /// icon, and the chore's name written straight on it.
     private var heroCard: some View {
         VStack(spacing: 18) {
-            Image(systemName: selectedRoom?.symbol ?? "house")
-                .resizable()
-                .scaledToFit()
-                .fontWeight(.light)
-                .frame(width: 64, height: 64)
-                .contentTransition(.symbolEffect(.replace))
-                .accessibilityDecorative()
+            SymbolImage(name: selectedRoom?.symbol ?? "house")
+                .frame(width: 88, height: 88)
+                .accessibilityHidden(true)
             
             VStack(spacing: 6) {
                 TextField(
@@ -155,6 +161,7 @@ struct OnboardingNewChoreSheet: View {
         .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
     }
     
+    /// The menu to pick the chore's room.
     private var roomMenu: some View {
         Menu {
             Picker("Cômodo", selection: $selectedRoomID) {
@@ -206,6 +213,7 @@ struct OnboardingNewChoreSheet: View {
         .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
     
+    /// One attribute row: a tinted icon, a title and the picker.
     private func attributeRow<Control: View>(
         icon: String,
         title: LocalizedStringKey,
@@ -230,6 +238,7 @@ struct OnboardingNewChoreSheet: View {
         .padding(.vertical, 12)
     }
     
+    /// The optional description field.
     private var descriptionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label {
@@ -255,6 +264,7 @@ struct OnboardingNewChoreSheet: View {
         .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
     
+    /// The "Criar tarefa" button (disabled until there's a name).
     private var createButton: some View {
         Button {
             create()
@@ -284,6 +294,7 @@ struct OnboardingNewChoreSheet: View {
     
     // MARK: - Actions
     
+    /// Fills in the chore's room and icon, sends it back through `onCreate` and closes the sheet.
     private func create() {
         guard canCreate, let room = selectedRoom else { return }
         

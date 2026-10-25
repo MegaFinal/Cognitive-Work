@@ -8,10 +8,12 @@
 import SwiftUI
 import CloudKit
 
-/// The primary view for displaying and managing the user's chores.
+/// The chores tab, the app's main screen.
 ///
-/// `ChoresView` coordinates the display of chores in either a carousel (grid) or a vertical list format.
-/// It integrates a progress section, layout toggles, and floating action buttons for creating new chores.
+/// It shows the chores as a carousel of today's chores ("Seu dia") or as a list of the whole
+/// division ("Sua divisão"), with three progress cards on top and floating buttons to create
+/// chores and to take chores that have no owner. Popups (a focused card, a chore opened from a
+/// notification, the chores without owner, the new member pop-up) are drawn on top.
 struct ChoresView: View {
     
     /// The view model controlling the state and data of the chores carousel.
@@ -42,6 +44,7 @@ struct ChoresView: View {
         carouselVM.hasFocusedCard || choreFromNotification != nil || carouselVM.itemAwaitingDate != nil
     }
     
+    /// Opens the screen that creates a new division (from the new member pop-up).
     @State private var isResetting = false
     
     /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
@@ -58,6 +61,11 @@ struct ChoresView: View {
                         header
                         progressSection
                     }
+                    // Solid at the top (under the status bar), fading out below the progress
+                    // cards, so the list scrolls "under" the fixed block.
+                    .background(alignment: .top) { headerFade }
+                    // Above the list (zIndex 1000) so the fade covers the cards scrolling past.
+                    .zIndex(1001)
                     
                     Spacer()
                         .matchedGeometryEffect(id: "Spawnpoint", in: cardAnimation)
@@ -73,6 +81,7 @@ struct ChoresView: View {
                 }
                 .accessibilityHidden(isOverlayShown || carouselVM.isShowingUnassignedList)
                 
+                // MARK: - Floating buttons
                 VStack {
                     Spacer()
                     ChoresViewButtonsSection(carouselViewModel: carouselVM)
@@ -214,13 +223,14 @@ struct ChoresView: View {
                     }
             )
             .tabBarVisibilityRoot()
-            // Must be inside the NavigationStack, otherwise SwiftUI ignores it.
+            // MARK: - New division screen (must be inside the NavigationStack, otherwise SwiftUI ignores it)
             .navigationDestination(isPresented: $isResetting) {
                 FortnightlyScheduleView(shouldGenerate: true) {
                     isResetting = false
                 }
             }
         }
+        // MARK: - Loading and the progress cards' color
         .task {
             await carouselVM.fetchAllData()
             updateActiveRoomColor()
@@ -231,16 +241,18 @@ struct ChoresView: View {
         .task(id: carouselVM.dataVersion) {
             updateActiveRoomColor()
         }
-        // VoiceOver re-reads the screen whenever a card or popup opens or closes.
+        // MARK: - VoiceOver re-reads the screen whenever a card or popup opens or closes
         .onChange(of: carouselVM.hasFocusedCard) { _, _ in VoiceOver.screenChanged() }
         .onChange(of: choreFromNotification?.id) { _, _ in VoiceOver.screenChanged() }
         .onChange(of: carouselVM.isShowingUnassignedList) { _, _ in VoiceOver.screenChanged() }
         .onChange(of: carouselVM.itemAwaitingDate?.id) { _, _ in VoiceOver.screenChanged() }
+        // MARK: - Reloads when CloudKit changes
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
             Task {
                 await carouselVM.fetchAllData(afterRemoteChange: true)
             }
         }
+        // MARK: - Delete error alert and new member pop-up
         .alert(
             "Não foi possível excluir",
             isPresented: Binding(
@@ -262,22 +274,46 @@ struct ChoresView: View {
         carouselVM.layoutMode == .grid ? "Seu dia" : "Sua divisão"
     }
     
+    /// White gradient behind the fixed block: opaque, then transparent a little below it.
+    private var headerFade: some View {
+        LinearGradient(
+            stops: [
+                .init(color: Color(.systemBackground), location: 0),
+                .init(color: Color(.systemBackground), location: 0.8),
+                .init(color: Color(.systemBackground).opacity(0), location: 1)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        // Extends over the status bar and 24 pt below the block for the fade.
+        .padding(.bottom, -24)
+        .ignoresSafeArea(edges: .top)
+        .allowsHitTesting(false)
+    }
+    
+    /// Side margin shared by the header, the progress cards and the chore list (the list's
+    /// cards are 92% of the screen wide, so 4% is left on each side).
+    private var sideMargin: CGFloat { width * 0.04 }
+    
     /// Page title alongside the layout toggle control.
     private var header: some View {
         HStack {
+            // MARK: Title
             Text(headerTitle)
-                .font(.system(size: 34))
-                .fontWeight(.bold)
+                .font(.custom("Alan Sans", size: 34))
+                .bold()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .layoutPriority(1)
-                .padding(.horizontal, 30)
+                .padding(.horizontal, sideMargin)
                 .padding(.top, 20)
                 .accessibilityAddTraits(.isHeader)
+//                .frame(width: width * 0.6)
             
             Spacer()
             
             HStack (spacing: 4) {
+                // MARK: Layout toggle
                 Button {
                     toggleLayout()
                 } label: {
@@ -291,6 +327,7 @@ struct ChoresView: View {
                     ? [L10n.tr("Lista"), L10n.tr("Ver como lista"), L10n.tr("Layout")]
                     : [L10n.tr("Carrossel"), L10n.tr("Ver como carrossel"), L10n.tr("Layout")])
                 
+                // MARK: Notifications
                 NavigationLink {
                     NotificationsView(
                         onPickChores: {
@@ -314,6 +351,7 @@ struct ChoresView: View {
                 .voiceOverLabel(L10n.tr("Notificações"))
                 .voiceControlNames([L10n.tr("Notificações"), L10n.tr("Avisos")])
                 
+                // MARK: Filter menu (list only)
                 if carouselVM.layoutMode == .list {
                     Menu {
                         FilterOptionsMenu(viewModel: carouselVM)
@@ -335,7 +373,7 @@ struct ChoresView: View {
                 in: .capsule
             )
             .padding(.top, 20)
-            .padding(.trailing, 30)
+            .padding(.trailing, sideMargin)
         }
     }
     
@@ -363,7 +401,7 @@ struct ChoresView: View {
                 color: cardColor
             )
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, sideMargin)
         .animation(.easeInOut, value: activeRoomColor)
         .accessibilityElement(children: .contain)
         .voiceOverLabel(L10n.tr("Progresso do dia"))
@@ -409,9 +447,11 @@ struct ChoresView: View {
         carouselVM.dashboard
     }
     
+    /// The "new member" pop-up over a dark background. Confirming opens a new division.
+    ///
+    /// Only the house admin gets `showNewUserPopUp == true` (see `CarouselViewModel.checkNewUser`).
     @ViewBuilder
     private var newUserPopUpOverlay: some View {
-        // Only the house admin gets `showNewUserPopUp == true` (see `CarouselViewModel.checkNewUser`).
         if carouselVM.showNewUserPopUp {
             ZStack {
                 Color.black.opacity(0.45)
@@ -439,9 +479,11 @@ struct ChoresView: View {
 
 /// Renders statistics paired with a title tag.
 private struct ProgressIndicatorCard: View {
+    /// The card's label (e.g. "A fazer").
     var title: LocalizedStringKey
     /// Formatted data result (e.g., "1h 30m").
     var data: String
+    /// The card's background color.
     var color: Color = .gray
     
     var body: some View {
@@ -449,12 +491,12 @@ private struct ProgressIndicatorCard: View {
             Spacer()
             Text(title)
                 .font(.system(size: 12))
-                .fontWeight(.medium)
+                .fontWeight(.semibold)
                 .foregroundColor(.white.opacity(0.8))
             
             Text(data)
-                .font(.system(size: 15))
-                .fontWeight(.bold)
+                .font(.custom("Alan Sans", size: 15))
+                .fontWeight(.semibold)
                 .foregroundColor(.white)
             Spacer()
         }
@@ -472,9 +514,12 @@ private struct ProgressIndicatorCard: View {
 ///
 /// One-off chores have no assignment; their date comes from `chore.dueDate`.
 struct ChoreOccurrence: Identifiable {
+    /// The chore.
     let chore: ChoreModel
+    /// The occurrence's assignment, or `nil` for one-off chores.
     let assignment: RecurrentAssignmentModel?
     
+    /// A unique id: the assignment's record name, or the chore's id.
     var id: String {
         if let assignmentId = assignment?.recordID {
             return assignmentId.recordName
@@ -482,6 +527,7 @@ struct ChoreOccurrence: Identifiable {
         return chore.id.uuidString
     }
     
+    /// The day of this occurrence.
     var day: Date? {
         return assignment?.day ?? chore.dueDate
     }

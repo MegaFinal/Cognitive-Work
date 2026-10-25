@@ -7,11 +7,16 @@
 
 import SwiftUI
 
+/// A dashboard card with a horizontal bar. It shows one of two things:
+/// - The user's share of the house's mental effort, with the ideal share marked on the bar.
+/// - How many public chores have no owner yet.
 struct BarPercentageComponent: View {
+    /// Provides the shares, the counts and their texts.
     @State var viewModel: DashboardViewModel
     
-    // Temporary visualization for unowned chores.
-    // This will be replaced when the pending chores section is finalized.
+    /// `true` shows the "chores without owner" card; `false` shows the mental effort card.
+    ///
+    /// The "without owner" layout is temporary and will change when the pending chores section is done.
     let isUnassignedChores: Bool
 
     var body: some View {
@@ -35,6 +40,7 @@ struct BarPercentageComponent: View {
     
     // MARK: - Cognitive Load
     
+    /// The mental effort card: title, the big percentage, the bar and its legend.
     private var cognitiveLoadContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             
@@ -58,6 +64,7 @@ struct BarPercentageComponent: View {
                         averageLine
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .frame(height: height * 0.05)
                 // The percentage above already reads the whole bar (value, ideal and status).
                 .accessibilityHidden(true)
@@ -76,6 +83,7 @@ struct BarPercentageComponent: View {
     // MARK: - Unassigned Chores
     // TODO: Temporary visualization. Replace this layout when the pending chores section is finalized.
     
+    /// The "chores without owner" card: the count, the bar and its legend.
     private var unasingededChoresContent: some View {
         
         VStack(alignment: .leading, spacing: 16) {
@@ -103,6 +111,7 @@ struct BarPercentageComponent: View {
                     baseBarChart
                     unassignedChoresChart
                 }
+                .frame(maxWidth: .infinity)
                 .frame(height: height * 0.05)
                 .accessibilityElement(children: .ignore)
                 .voiceOverLabel(L10n.tr("Gráfico de tarefas sem dono"))
@@ -121,26 +130,24 @@ struct BarPercentageComponent: View {
     
     // MARK: - Charts
     
+    /// The full gray bar behind the colored one.
     private var baseBarChart: some View {
         Capsule()
-            .frame(width: width * 0.85, height: height * 0.03)
+            .frame(maxWidth: .infinity)
+            .frame(height: height * 0.03)
             .foregroundStyle(Color(.systemGray5).opacity(0.8))
     }
     
-    // Temporary chart for unowned chores.
+    /// The orange part of the bar: the share of public chores without owner (temporary).
     private var unassignedChoresChart: some View {
         
-        Capsule()
-            .frame(
-                width: width * 0.87
-                * CGFloat(viewModel.unownedPublicProgress),
-                height: height * 0.03
-            )
-            .foregroundStyle(.orange)
+        filledBar(progress: viewModel.unownedPublicProgress, color: .orange)
     }
     
     // MARK: - Charts Cognive workload
     
+    /// The color of the user's part, based on how far it is from the ideal share:
+    /// orange (much lower), yellow (lower), green (about right), blue (higher), purple (much higher).
     private var myContributionColor: Color {
         let share = viewModel.myCognitiveShare
         let ideal = viewModel.idealCognitiveShare
@@ -163,16 +170,28 @@ struct BarPercentageComponent: View {
         }
     }
     
+    /// The user's part of the bar.
     private var myContributionChart: some View {
-        Capsule()
-            .frame(width: width * 0.87 * CGFloat(viewModel.myCognitiveShare), height: height * 0.03)
-            .foregroundStyle(myContributionColor)
+        filledBar(progress: viewModel.myCognitiveShare, color: myContributionColor)
     }
     
+    /// A bar that fills `progress` (clamped to 0...1) of the width the card gives it, so it
+    /// never goes past the gray bar, even at 100% or more.
+    private func filledBar(progress: Double, color: Color) -> some View {
+        GeometryReader { proxy in
+            Capsule()
+                .foregroundStyle(color)
+                .frame(width: proxy.size.width * CGFloat(min(max(progress, 0), 1)))
+        }
+        .frame(height: height * 0.03)
+    }
+    
+    /// The big percentage and its sentence (also read by VoiceOver for the whole bar).
     private var myContribuitionPercentage: some View {
         HStack(alignment: .center, spacing: 8) {
             Text(viewModel.myCognitiveShareText)
-                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .font(.custom("Alan Sans", size: 64))
+                .bold()
                 .foregroundStyle(.primary)
                 // Keeps "100%" on one line: the number shrinks instead of dropping the "%" down.
                 .lineLimit(1)
@@ -182,7 +201,7 @@ struct BarPercentageComponent: View {
                 .font(.footnote)
                 .lineLimit(nil)
         }
-        .frame(width: width * 0.8)
+        .frame(maxWidth: .infinity, alignment: .leading)
         // One element for the number and the bar below it:
         // "Sua parte do esforço mental da casa esta semana: 40%, ideal 50%, abaixo do ideal".
         .accessibilityElement(children: .ignore)
@@ -190,16 +209,16 @@ struct BarPercentageComponent: View {
         .voiceOverValue(viewModel.cognitiveShareAccessibilityValue)
     }
     
-    // MARK: - Expected contribution average as separate positioned views
+    // MARK: - Ideal share marker
+    /// A thin line on the bar at the ideal share, with an "ideal X%" label.
     private var averageLine: some View {
-        VStack {
-            let barWidth = width * 0.87
-            let idealX = barWidth * CGFloat(viewModel.idealCognitiveShare)
+        GeometryReader { proxy in
+            let idealX = proxy.size.width * CGFloat(min(max(viewModel.idealCognitiveShare, 0), 1))
             
             Capsule()
                 .frame(width: 3, height: height * 0.045)
                 .foregroundStyle(Color.black.opacity(0.8))
-                .position(x: idealX, y: (height * 0.05)/2)
+                .position(x: idealX, y: proxy.size.height / 2)
             
             Text("ideal \(viewModel.idealCognitiveShareText)")
                 .font(.caption2)
@@ -208,10 +227,10 @@ struct BarPercentageComponent: View {
         }
     }
     
-    // MARK: - Load
     
     // MARK: - Chart Caption
     
+    /// One legend item: a colored dot and its text.
     private func caption(_ text: LocalizedStringKey, _ color: Color) -> some View {
         HStack(spacing: 6) {
             Circle()

@@ -15,7 +15,7 @@ struct ChoreListLayout: View {
     /// The carousel view model controlling the global collection of chores.
     @Bindable var viewModel: CarouselViewModel
     
-    /// Closure triggered to dismiss or toggle the layout context.
+    /// Called when the list is pulled down past the top: switches back to the carousel.
     let onSwipeDown: () -> Void
     
     /// Namespace required for geometric transitions into the grid view.
@@ -51,6 +51,7 @@ struct ChoreListLayout: View {
     /// Look and feel of the swipe-to-delete — see ``SwipeToDeleteStyle``.
     private let swipeStyle = SwipeToDeleteStyle()
     
+    /// Creates the list.
     init(viewModel: CarouselViewModel, onSwipeDown: @escaping () -> Void, namespace: Namespace.ID) {
         self.viewModel = viewModel
         self.onSwipeDown = onSwipeDown
@@ -60,6 +61,7 @@ struct ChoreListLayout: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 0) {
+                // MARK: - One title and its cards per day
                 ForEach(dayGroups) { group in
                     dayTitle(for: group)
                         .padding(.top, daySpacing)
@@ -77,6 +79,8 @@ struct ChoreListLayout: View {
             .padding(.bottom, 120)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .scrollClipDisabled()
+        // MARK: - Pull down past the top to go back to the carousel
         .onScrollGeometryChange(for: Bool.self) { geometry in
             -(geometry.contentOffset.y + geometry.contentInsets.top) > pullDownThreshold
         } action: { _, isPastThreshold in
@@ -88,6 +92,7 @@ struct ChoreListLayout: View {
             }
         }
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
+        // MARK: - Empty state
         .overlay {
             if viewModel.visibleOccurrences.isEmpty {
                 emptyState
@@ -221,10 +226,14 @@ struct SwipeToDeleteStyle {
     /// Corner radius of the button. The card's own is 25.
     var cornerRadius: CGFloat = 25
     
+    /// Space above the button, so it lines up with the card's body below its folder tab.
     var topInset: CGFloat = 38
     
+    /// The button's background color.
     var backgroundColor: Color = .red
+    /// The icon and title color.
     var foregroundColor: Color = .white
+    /// The button's SF Symbol.
     var systemImage: String = "trash.fill"
     
     /// Label under the icon; `nil` shows the icon alone.
@@ -242,13 +251,17 @@ struct SwipeToDeleteStyle {
 /// Shared by the chore list and the shopping list.
 struct SwipeToDeleteRow<Content: View>: View {
     
+    /// This row's id.
     let id: String
     
     /// Which row is revealed; shared by every row so only one can be open at a time.
     @Binding var revealedID: String?
     
+    /// The look and feel of the swipe.
     let style: SwipeToDeleteStyle
+    /// Called after the card slid away.
     let onDelete: () -> Void
+    /// The card inside the row.
     let content: Content
     
     /// Live horizontal translation of the drag in progress (0 when idle).
@@ -261,8 +274,16 @@ struct SwipeToDeleteRow<Content: View>: View {
     /// Set once deleting starts, sliding the card off screen.
     @State private var isDeleting = false
     
+    /// The row's width, to know when a drag is a full swipe.
     @State private var rowWidth: CGFloat = 0
     
+    /// Creates a row.
+    /// - Parameters:
+    ///   - id: This row's id.
+    ///   - revealedID: Which row is open, shared by every row.
+    ///   - style: The look and feel of the swipe.
+    ///   - onDelete: Called after the card slid away.
+    ///   - content: The card.
     init(
         id: String,
         revealedID: Binding<String?>,
@@ -277,11 +298,13 @@ struct SwipeToDeleteRow<Content: View>: View {
         self.content = content()
     }
     
+    /// Whether this row is the open one.
     private var isRevealed: Bool { revealedID == id }
     
     /// How far the card slides to reveal the button.
     private var revealDistance: CGFloat { style.buttonWidth + style.gap }
     
+    /// How far a drag must go to delete without tapping the button.
     private var fullSwipeDistance: CGFloat { rowWidth * style.fullSwipeFraction }
     
     /// The card's current horizontal offset (always ≤ 0: it only ever slides left).
@@ -298,8 +321,9 @@ struct SwipeToDeleteRow<Content: View>: View {
     }
     
     var body: some View {
+        // MARK: - The card, with the delete button behind it
         content
-            // VoiceOver alternative to the swipe: an "Excluir" action on the row.
+            // MARK: - VoiceOver alternative to the swipe: an "Excluir" action on the row
             .accessibilityAction(named: Text(L10n.tr(style.title ?? "Excluir"))) {
                 dismissAndDelete()
             }
@@ -308,6 +332,7 @@ struct SwipeToDeleteRow<Content: View>: View {
                     .offset(x: -offset)
             }
             .offset(x: offset)
+            // MARK: - Measures the row and handles the swipe
             .background {
                 GeometryReader { proxy in
                     Color.clear
@@ -318,6 +343,7 @@ struct SwipeToDeleteRow<Content: View>: View {
             .gesture(swipeGesture)
     }
     
+    /// The red delete button, fading in as the card slides.
     private var deleteButton: some View {
         Button(action: dismissAndDelete) {
             VStack(spacing: 4) {
@@ -343,6 +369,7 @@ struct SwipeToDeleteRow<Content: View>: View {
         .accessibilityHidden(true)
     }
 
+    /// The swipe: follows the finger, opens/closes the button, or deletes on a full swipe.
     private var swipeGesture: HorizontalPanGesture {
         HorizontalPanGesture(
             onBegan: {
@@ -412,16 +439,19 @@ struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
     /// Called when the drag finishes, with the final horizontal translation
     var onEnded: (_ translation: CGFloat, _ velocity: CGFloat, _ wasCancelled: Bool) -> Void
     
+    /// Creates the delegate that only lets horizontal drags start.
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
         Coordinator()
     }
     
+    /// Creates the UIKit pan recognizer.
     func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
         let pan = UIPanGestureRecognizer()
         pan.delegate = context.coordinator
         return pan
     }
     
+    /// Sends the pan's changes to the closures above.
     func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
         let translation = recognizer.translation(in: recognizer.view).x
         
@@ -440,6 +470,7 @@ struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
         }
     }
     
+    /// The pan's delegate.
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         /// Only start for drags that move more sideways than up/down.
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -454,12 +485,15 @@ struct HorizontalPanGesture: UIGestureRecognizerRepresentable {
 
 /// One day's section in the list layout.
 private struct DayGroup: Identifiable {
+    /// The app's language, for the weekday and date.
     private static var locale: Locale { L10n.locale }
     
     /// The day, at its start; `nil` for occurrences with no date.
     let day: Date?
+    /// The day's occurrences, in order.
     var occurrences: [IndexedOccurrence]
     
+    /// A unique id: the day (undated groups use a far future date).
     var id: Date { day ?? .distantFuture }
     
     /// "Hoje", "Amanhã", or the weekday's name ("Sexta-feira"). Past days never get a
@@ -496,8 +530,11 @@ private struct DayGroup: Identifiable {
 /// An occurrence plus its position in ``CarouselViewModel/visibleOccurrences``, which the
 /// details card's focus (`focusDetailsImmediately`) is indexed by.
 private struct IndexedOccurrence: Identifiable {
+    /// Its position in ``CarouselViewModel/visibleOccurrences``.
     let index: Int
+    /// The occurrence.
     let occurrence: ChoreOccurrence
     
+    /// The occurrence's id.
     var id: String { occurrence.id }
 }

@@ -7,79 +7,85 @@
 
 import SwiftUI
 
-/// An interactive list allowing users to add, edit, or remove sub-items within a chore's checklist.
+/// The chore's checklist inside the form: one row per subtask (check circle and text), separated
+/// by lines, and "Adicionar subtarefa" at the end. There's always at least one row to type into.
 struct CheckListCreateAndEdit: View {
     
-    /// Binding dictating whether the checklist feature is currently active for this chore.
-    @Binding var hasChecklist: Bool
-    
-    /// A draft array of `CheckItemDTO` items backing the visual list.
+    /// The subtasks being edited. Blank rows are dropped when the chore is saved.
     @Binding var localChecklist: [CheckItemDTO]
     
     /// The row whose text field currently has the keyboard.
     @FocusState private var focusedItemID: UUID?
     
+    /// Indent of the separators and of "Adicionar subtarefa", so they line up with the text.
+    private let textIndent: CGFloat = 34
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
+            // MARK: - One row per subtask
             ForEach($localChecklist) { $item in
-                HStack {
-                    Button {
-                        item.isDone.toggle()
-                        HapticsManager.selection()
-                    } label: {
-                        Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
-                            .foregroundColor(item.isDone ? .black : .gray)
-                            .font(.system(size: 17, weight: .semibold))
-                    }
-                    .voiceOverLabel(accessibilityName(of: item))
-                    .voiceOverValue(item.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
-                    .voiceOverHint(L10n.tr("Toque duas vezes para alternar."))
-                    .voiceControlNames([L10n.tr("Marcar %@", accessibilityName(of: item)), L10n.tr("Concluir %@", accessibilityName(of: item))])
-                    
-                    TextField("Novo item", text: $item.name)
-                        .strikethrough(item.isDone, color: .gray)
-                        .foregroundColor(item.isDone ? .gray : .black)
-                        .font(.system(size: 15))
-                        .characterLimit(TextLimits.checklistItem, text: $item.name)
-                        .voiceControlNames([accessibilityName(of: item), L10n.tr("Item")])
-                        .focused($focusedItemID, equals: item.id)
-                        .submitLabel(.next)
-                        .onSubmit {
-                            insertItem(after: item.id)
-                        }
-                    
-                    Spacer()
-                    
-                    Button {
-                        remove(item.id)
-                    } label: {
-                        Image(systemName: "minus.circle.fill")
-                            .foregroundColor(.red)
-                    }
-                    .voiceOverLabel(L10n.tr("Remover %@", accessibilityName(of: item)))
-                    .voiceControlNames([L10n.tr("Remover"), L10n.tr("Remover %@", accessibilityName(of: item)), L10n.tr("Menos")])
-                }
+                row(for: $item)
+                
+                Divider()
+                    .padding(.leading, textIndent)
             }
+            
+            // MARK: - "Adicionar subtarefa"
             Button {
                 appendItem()
             } label: {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Adicionar item")
-                        .font(.system(size: 15))
-                }
-                .foregroundColor(.blue)
-                .padding(.top, 5)
+                Text("Adicionar subtarefa")
+                    .foregroundStyle(.blue)
             }
-            .voiceOverLabel(L10n.tr("Adicionar item"))
-            .voiceControlNames([L10n.tr("Adicionar item"), L10n.tr("Adicionar"), L10n.tr("Mais")])
+            .padding(.leading, textIndent)
+            .padding(.vertical, 12)
+            .voiceControlNames([L10n.tr("Adicionar subtarefa"), L10n.tr("Adicionar"), L10n.tr("Mais")])
         }
     }
     
-    /// The item's text, or "Novo item" while it's still blank.
+    /// Check circle, text field and, when there's more than one row, a remove button.
+    private func row(for item: Binding<CheckItemDTO>) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                item.wrappedValue.isDone.toggle()
+                HapticsManager.selection()
+            } label: {
+                Image(systemName: item.wrappedValue.isDone ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(item.wrappedValue.isDone ? Color.primary : Color.secondary)
+            }
+            .buttonStyle(.plain)
+            .voiceOverLabel(accessibilityName(of: item.wrappedValue))
+            .voiceOverValue(item.wrappedValue.isDone ? L10n.tr("Concluído") : L10n.tr("Pendente"))
+            .voiceOverHint(L10n.tr("Toque duas vezes para alternar."))
+            
+            TextField("Descrição da subtarefa", text: item.name)
+                .strikethrough(item.wrappedValue.isDone, color: .gray)
+                .foregroundStyle(item.wrappedValue.isDone ? Color.secondary : Color.primary)
+                .characterLimit(TextLimits.checklistItem, text: item.name)
+                .focused($focusedItemID, equals: item.wrappedValue.id)
+                .submitLabel(.next)
+                .onSubmit { insertItem(after: item.wrappedValue.id) }
+                .voiceControlNames([accessibilityName(of: item.wrappedValue), L10n.tr("Item")])
+            
+            if localChecklist.count > 1 {
+                Button {
+                    remove(item.wrappedValue.id)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .voiceOverLabel(L10n.tr("Remover %@", accessibilityName(of: item.wrappedValue)))
+            }
+        }
+        .padding(.vertical, 12)
+    }
+    
+    /// The item's text, or "Nova subtarefa" while it's still blank.
     private func accessibilityName(of item: CheckItemDTO) -> String {
         let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return name.isEmpty ? L10n.tr("Novo item") : name
+        return name.isEmpty ? L10n.tr("Nova subtarefa") : name
     }
     
     // MARK: - Actions
@@ -99,7 +105,7 @@ struct CheckListCreateAndEdit: View {
         focusedItemID = newItem.id
     }
     
-    /// "Adicionar item": reuses a trailing blank row if there is one, otherwise appends.
+    /// "Adicionar subtarefa": reuses a trailing blank row if there is one, otherwise appends.
     private func appendItem() {
         if let last = localChecklist.last,
            last.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -111,13 +117,14 @@ struct CheckListCreateAndEdit: View {
         focusedItemID = newItem.id
     }
     
+    /// Removes the item `id`, always leaving one row to type into.
     private func remove(_ id: UUID) {
         if let item = localChecklist.first(where: { $0.id == id }) {
             VoiceOver.announce(L10n.tr("%@ removido", accessibilityName(of: item)))
         }
         localChecklist.removeAll { $0.id == id }
         if localChecklist.isEmpty {
-            hasChecklist = false
+            localChecklist.append(CheckItemDTO(name: "", isDone: false))
         }
     }
 }

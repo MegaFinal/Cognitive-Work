@@ -8,16 +8,27 @@
 import SwiftUI
 
 /// The aisle a shopping list item belongs to.
+///
+/// The raw value is saved in CloudKit, so cases must not be renamed.
 enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
+    /// Packaged food (rice, pasta, snacks...).
     case food
+    /// Fruits and vegetables.
     case produce
+    /// Drinks.
     case drinks
+    /// Cleaning products.
     case cleaning
+    /// Personal hygiene products.
     case hygiene
+    /// Things for the house (bulbs, batteries...).
     case home
+    /// Pet food and supplies.
     case pets
+    /// Anything else.
     case other
 
+    /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
 
     /// Preselected when adding an item: the first one in the picker.
@@ -37,17 +48,18 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// SF Symbol drawn on cards and chips.
+    /// Icon drawn on cards and chips: the `ShoppingListSymbols` artwork (the home category has
+    /// none yet, so it keeps an SF Symbol). Drawn with ``SymbolImage``.
     var symbol: String {
         switch self {
-        case .food: return "fork.knife"
-        case .produce: return "carrot.fill"
-        case .drinks: return "mug.fill"
-        case .cleaning: return "sparkles"
-        case .hygiene: return "shower.fill"
+        case .food: return "food"
+        case .produce: return "fruit"
+        case .drinks: return "drinks"
+        case .cleaning: return "cleaning"
+        case .hygiene: return "farmacy"
         case .home: return "house"
-        case .pets: return "pawprint"
-        case .other: return "basket"
+        case .pets: return "pets"
+        case .other: return "plastic.bag"
         }
     }
 
@@ -77,6 +89,8 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// The category's main color (from ``roomColor``).
     var color: Color { roomColor.uiColor }
+    /// The soft version of ``color``, for backgrounds.
     var softColor: Color { roomColor.lowOpacityColor }
 }

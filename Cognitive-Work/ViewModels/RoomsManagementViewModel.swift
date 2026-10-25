@@ -41,22 +41,18 @@ final class RoomsManagementViewModel {
     /// Name of the room that represents chores for the whole house.
     static let houseWideRoomName = "Casa"
     
-    /// Default SF Symbol for rooms created here (same one the onboarding uses for custom rooms).
-    static let customRoomSymbol = "lamp.table"
+    /// Default icon for rooms created here (same one the onboarding uses for custom rooms).
+    static let customRoomSymbol = "armchair"
     
-    /// Icons a custom room can pick from: the custom-room set followed by the icons of every
-    /// default room type (Quarto, Cozinha…), without repeats.
-    static let customRoomSymbols: [String] = {
-        let customSymbols = [
-            "lamp.table", "tv", "books.vertical", "gamecontroller",
-            "dumbbell", "pawprint", "car", "tree",
-            "shippingbox", "stairs", "bathtub", "music.note"
-        ]
-        var seen = Set<String>()
-        return (customSymbols + DefaultRoomsOnboarding.allCases.map(\.symbol))
-            .filter { seen.insert($0).inserted }
-    }()
+    /// Icons a custom room can pick from: the artwork in the `ChoresSymbols` asset folder that
+    /// isn't taken by a default room type (those live in its `DefaultRooms` subfolder).
+    static let customRoomSymbols: [String] = [
+        "armchair", "twin.bed.stripes", "laptop", "stove.pans",
+        "shower", "washing.machine", "clothes.basket", "clothes.line.filled",
+        "balcony.aluminum.chair", "default.plant", "bicicle", "kite"
+    ]
     
+    /// Creates the view model for `house`'s rooms.
     init(house: HouseModel? = nil) {
         self.house = house
     }
@@ -75,6 +71,7 @@ final class RoomsManagementViewModel {
             .caseInsensitiveCompare(houseWideRoomName) == .orderedSame
     }
     
+    /// How many chores `room` has.
     func choreCount(for room: RoomModel) -> Int {
         guard let recordID = room.recordID else { return 0 }
         return choreCountByRoom[recordID] ?? 0
@@ -256,10 +253,12 @@ final class RoomsManagementViewModel {
     
     // MARK: - Private
     
+    /// Whether `room` is the "Casa" room that holds chores of the whole house.
     private static func isHouseWideRoom(_ room: RoomModel) -> Bool {
         room.kind == nil && room.name == houseWideRoomName
     }
     
+    /// `rooms` in alphabetical order.
     private func sorted(_ rooms: [RoomModel]) -> [RoomModel] {
         rooms.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }

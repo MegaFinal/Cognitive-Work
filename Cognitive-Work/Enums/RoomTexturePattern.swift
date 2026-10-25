@@ -10,10 +10,15 @@ import UIKit
 
 /// The texture drawn over a room's color on its cards.
 enum RoomTexturePattern: String, CaseIterable {
+    /// Soft cloud shapes. The only pattern that exists in every color.
     case clouds
+    /// Half circles.
     case halfCircle
+    /// Small sparkles.
     case sparkles
+    /// Stars.
     case stars
+    /// Short rounded sticks.
     case worms
     
     /// Used for rooms that aren't one of the default types (custom rooms). Must exist in every

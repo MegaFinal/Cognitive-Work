@@ -7,55 +7,66 @@
 
 import SwiftUI
 
+/// The progress tab: today's ring, the points, how the house's work is split, the current
+/// division and the chores nobody owns.
 struct DashboardView: View {
+    /// Builds every card from the house's data.
     @State var viewModel = DashboardViewModel()
+    /// Whether the app is active (the data reloads when it comes back).
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         NavigationStack {
             
-            VStack(spacing: 16) {
-                
-                header
-                
-                ScrollView {
-                    VStack(spacing: 16) {
-                        
-                        HStack(spacing: 16) {
-                            DoughnutChart(viewModel: $viewModel)
-                            PointsComponent(
-                                points: viewModel.myCognitiveLoad
-                            )
-                        }
-                        
-                        // MARK: - House cognitive division
-                        BarPercentageComponent(
-                            viewModel: viewModel,
-                            isUnassignedChores: false
-                        )
-                        
-                        // MARK: - Current Division
-                        UserCurrentDivisionComponent(
-                            periodStart: viewModel.periodStart,
-                            sharedViewModel: viewModel.schedule
-                        )
-                            .padding(.horizontal, 16)
-                        
-                        // MARK: - Unassigned chore
-                        // This will be replaced when the pending chores section is finalized.
-                        BarPercentageComponent(
-                            viewModel: viewModel,
-                            isUnassignedChores: true
+            ScrollView {
+                VStack(spacing: 16) {
+                    
+                    // MARK: - Title and current division dates
+                    header
+                    
+                    // MARK: - Today ring and points
+                    HStack(spacing: 16) {
+                        DoughnutChart(viewModel: $viewModel)
+                        PointsComponent(
+                            points: viewModel.myCognitiveLoad
                         )
                     }
-                    // New content version = new identity: the charts are recreated and draw the
-                    // rebuilt data. Applied inside the ScrollView so the scroll position is kept.
-                    .id(viewModel.contentVersion)
+                    // Both cards take the height of the taller one.
+                    .fixedSize(horizontal: false, vertical: true)
+                    
+                    // MARK: - How the house's work is split
+                    BarPercentageComponent(
+                        viewModel: viewModel,
+                        isUnassignedChores: false
+                    )
+                    
+                    // MARK: - Current division
+                    UserCurrentDivisionComponent(
+                        periodStart: viewModel.periodStart,
+                        sharedViewModel: viewModel.schedule
+                    )
+                        .padding(.horizontal, 16)
+                    
+                    // MARK: - Chores nobody owns
+                    // This will be replaced when the pending chores section is finalized.
+                    BarPercentageComponent(
+                        viewModel: viewModel,
+                        isUnassignedChores: true
+                    )
                 }
-                .refreshable {
-                    await viewModel.reloadAfterRemoteChange()
-                }
+                // Same width as the screen, so the side margins stay what they were
+                // when the title sat outside the scroll.
+                .containerRelativeFrame(.horizontal)
+                // Keeps the last card off the tab bar.
+                .padding(.bottom, 24)
+                // New content version = new identity: the charts are recreated and draw the
+                // rebuilt data. Applied inside the ScrollView so the scroll position is kept.
+                .id(viewModel.contentVersion)
             }
+            .refreshable {
+                await viewModel.reloadAfterRemoteChange()
+            }
+            // MARK: - Hidden while loading, with a spinner
             .disabled(viewModel.isLoading)
             .opacity(viewModel.isLoading ? 0 : 1)
             // Invisible while loading, so VoiceOver must not reach it either.
@@ -65,6 +76,7 @@ struct DashboardView: View {
                 if viewModel.isLoading { ProgressView() }
             }
         }
+        // MARK: - Reloading on local changes, pushes and returning to the app
         // Local changes: `markDataChanged()` bumps `dataRevision`.
         .task(id: CloudKitManager.shared.dataRevision) {
             await viewModel.loadIfNeeded()
@@ -81,10 +93,11 @@ struct DashboardView: View {
         }
     }
     
+    /// "Seu progresso" and the current division's dates.
     private var header: some View {
         VStack(alignment: .leading) {
             Text("Seu progresso")
-                .font(.system(size: 34))
+                .font(.custom("Alan Sans", size: 34))
                 .fontWeight(.bold)
                 .padding(.top, 20)
                 .accessibilityAddTraits(.isHeader)

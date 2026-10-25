@@ -10,8 +10,8 @@ import CloudKit
 
 /// The shared state and business logic for the entire onboarding flow.
 ///
-/// `OnboardingViewModel` is created once by ``FirstOnboardingView`` and injected into
-/// the SwiftUI environment, so every subsequent onboarding screen reads and mutates the same instance.
+/// `OnboardingViewModel` is created once by ``Onboarding`` and passed to every step,
+/// so every onboarding screen reads and changes the same instance.
 ///
 /// It owns:
 /// - Navigation flags that drive `navigationDestination` pushes between steps
@@ -23,6 +23,7 @@ class OnboardingViewModel {
     /// The name entered by the user for their profile
     var userName: String = ""
     
+    /// The picture picked for the profile being created.
     var userProfilePicture: UIImage?
     /// Banner picked for the profile being created.
     var userBanner: ProfileBanner = .default
@@ -33,6 +34,7 @@ class OnboardingViewModel {
     
     /// Whether an asynchronous CloudKit operation is currently in progress
     var isLoading: Bool = false
+    /// `true` while checking whether the iCloud account already has a profile.
     var isCheckingAccount: Bool = true
     /// A message describing the most recent error, if any
     var errorMessage: String? = nil
@@ -42,8 +44,10 @@ class OnboardingViewModel {
     /// free-time screen shows it before moving on.
     var freeTimeSyncWarning: String? = nil
 
+    /// Which onboarding step is showing, saved across launches.
     var stateMachine = OnboardingStateMachine()
     
+    /// `true` once the onboarding finished; the root view then shows the main tabs.
     var isOnboardingSkipped: Bool = false
     /// The CloudKit user record created during onboarding
     var currentUser: UserModel?
@@ -55,12 +59,15 @@ class OnboardingViewModel {
         RoomDTO(name: "Outro", symbol: "plus", isAddButton: true, color: .purple)
     ]
     
+    /// Whether at least one room is selected.
     var hasSelectedRooms: Bool {
         availableRooms.contains { $0.isSelected && !$0.isAddButton }
     }
     
+    /// The chores picked on the chores step.
     var selectedChores: [ChoreDTO] = []
     
+    /// `true` once the first division of chores exists.
     var isScheduleReady: Bool = false
 
     /// True while the invited user is being added to the house. Separate from ``isLoading`` so
@@ -71,8 +78,10 @@ class OnboardingViewModel {
     /// Covers the share acceptance, which runs *before* ``joinHouse()`` and takes a few seconds.
     var isAcceptingInvite = false
     
+    /// `true` while checking whether the division exists, so checks don't overlap.
     private var isCheckingSchedule = false
     
+    /// `true` while the previous session (step, house, profile) is being restored at launch.
     var isRestoringSession: Bool = true
     
     // MARK: - Going back
@@ -92,6 +101,7 @@ class OnboardingViewModel {
     
     // MARK: - Free time sync
 
+    /// The free time sync service, created on first use.
     @ObservationIgnored
     private var freeTimeSyncStorage: FreeTimeSyncService?
 
@@ -218,9 +228,9 @@ class OnboardingViewModel {
             name: user.name,
             profilePicture: assetCopy,
             banner: user.banner,
-            tier: user.tier,
+            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
+            tier: .bronze1,
             coins: user.coins,
-            points: user.points,
             badges: user.badgesReference,
             tasks: user.choresReference,
             // Free time is no longer copied from the private profile: those records live outside
@@ -403,6 +413,7 @@ class OnboardingViewModel {
         return users.sorted { ($0.recordID?.recordName ?? "") < ($1.recordID?.recordName ?? "") }
     }
     
+    /// The rooms of the house being set up.
     @MainActor
     func fetchRooms() async -> [RoomModel] {
         guard let houseID = currentHouse?.recordID else { return [] }
@@ -440,6 +451,7 @@ class OnboardingViewModel {
         })
         
         var recordsToCreate: [CKRecord] = []
+        var couponRecords: [CKRecord] = []
         
         for choreDTO in selectedChores {
             // The room the chore was picked under (set on selection). Matching by name alone
@@ -481,10 +493,18 @@ class OnboardingViewModel {
             record.parent = parentReference
             
             recordsToCreate.append(record)
+            
+            // The chore's coupon, saved in the same batch. Its `task` reference deletes it
+            // together with the chore, so the rollback journal only needs the chore.
+            let coupon = CouponModel(for: choreModel, choreRecordID: record.recordID)
+            let couponRecord = CKRecord(recordType: CouponModel.recordType, zoneID: zoneID)
+            coupon.populate(record: couponRecord)
+            couponRecord.parent = CKRecord.Reference(recordID: record.recordID, action: .none)
+            couponRecords.append(couponRecord)
         }
         
         if !recordsToCreate.isEmpty {
-            let success = await CloudKitManager.shared.batchSave(records: recordsToCreate, zoneID: zoneID)
+            let success = await CloudKitManager.shared.batchSave(records: recordsToCreate + couponRecords, zoneID: zoneID)
             if success {
                 rollbackJournal.createdChores += recordsToCreate.map { OnboardingRollbackJournal.StoredRecordID($0.recordID) }
             } else {
@@ -495,10 +515,12 @@ class OnboardingViewModel {
         isLoading = false
     }
     
+    /// Moves to the next step.
     func goToNextView() {
         stateMachine.next()
     }
     
+    /// Moves to the previous step (without undoing anything; see the "Going back" section).
     func goToPreviousView() {
         stateMachine.back()
     }
@@ -742,6 +764,7 @@ class OnboardingViewModel {
         pendingFreeTimeMinutes ?? rollbackJournal.lastFreeTimeMinutes
     }
     
+    /// Ends the onboarding and shows the main tabs.
     func finishOnboarding() {
         isOnboardingSkipped = true
         // `pendingFreeTimeMinutes` is deliberately kept: it is only set while the house profile
@@ -998,6 +1021,7 @@ class OnboardingViewModel {
         }
     }
     
+    /// Loads the house the user belongs to into ``currentHouse``.
     func fetchHouse() async {
         currentHouse = try? await CloudKitManager.shared.fetchFirst(HouseModel.self)
     }
@@ -1045,9 +1069,9 @@ class OnboardingViewModel {
             name: profile.name,
             profilePicture: assetCopy,
             banner: profile.banner,
-            tier: profile.tier,
+            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
+            tier: .bronze1,
             coins: profile.coins,
-            points: profile.points,
             house: houseReference,
             couponLimit: profile.couponLimit,
             ownerRecordName: ownerRecordName
@@ -1147,6 +1171,7 @@ class OnboardingViewModel {
         if let currentHouse { stateMachine.house = currentHouse }
     }
     
+    /// A copy of `asset` in a new temporary file, so the picture can be saved in another record.
     private func duplicateCKAsset(_ asset: CKAsset) throws -> CKAsset? {
         guard let origem = asset.fileURL else { return nil }
         

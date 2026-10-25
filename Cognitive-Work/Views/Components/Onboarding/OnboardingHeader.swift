@@ -13,7 +13,9 @@ import SwiftUI
 /// so every step looks the same. It adds no top padding: the navigation bar (with the back
 /// button) already separates it from the top of the screen.
 struct OnboardingHeader: View {
+    /// The step's title.
     var title: LocalizedStringKey
+    /// The text under the title.
     var description: LocalizedStringKey
     
     /// Optional second paragraph, shown under ``description``.
@@ -23,17 +25,21 @@ struct OnboardingHeader: View {
     /// the header's own side margin so the text starts at the same x on every screen.
     var containerInset: CGFloat = 0
     
+    /// The side margin of every onboarding title (8% of the screen).
     private var sideMargin: CGFloat { width * 0.08 }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: height * 0.014) {
+            // MARK: - Title
             Text(title)
-                .font(.system(size: 30))
+                .font(.custom("Alan Sans", size: 32, relativeTo: .largeTitle))
                 .bold()
                 .foregroundStyle(.titleGray)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
+                .frame(width: width * 0.8778, alignment: .leading)
             
+            // MARK: - Description and optional detail
             VStack(alignment: .leading, spacing: 10) {
                 Text(description)
                 

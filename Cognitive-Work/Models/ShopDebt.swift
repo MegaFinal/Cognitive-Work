@@ -16,11 +16,13 @@ enum DebtDirection: CaseIterable, Identifiable {
     /// Items bought by the signed-in user for a housemate (the housemate owes the user).
     case owedToYou
 
+    /// Identifier for SwiftUI lists (the case itself).
     var id: Self { self }
 }
 
 /// One item's share of a debt.
 struct DebtEntry: Identifiable {
+    /// The bought item this share comes from.
     let item: ShopListItem
 
     /// Who owes this share: the one whose payment settles it.
@@ -31,13 +33,16 @@ struct DebtEntry: Identifiable {
     /// when it goes the other way and is discounted from the total.
     let amount: Double
 
+    /// Identifier for SwiftUI lists (the item's ID).
     var id: String { item.id }
+    /// The item's name.
     var name: String { item.name }
 }
 
 /// The net balance between the signed-in user and one housemate: what each owes the other is
 /// netted, and the group lands on the side of whoever still owes.
 struct DebtGroup: Identifiable {
+    /// The side of the debt this group is on.
     let direction: DebtDirection
 
     /// The other housemate: the buyer when ``direction`` is ``DebtDirection/youOwe``, the debtor
@@ -47,6 +52,7 @@ struct DebtGroup: Identifiable {
     /// Both ways: the shares in ``direction`` (positive) and the ones the other way (negative).
     let entries: [DebtEntry]
 
+    /// Identifier for SwiftUI lists, unique per side and housemate.
     var id: String { "\(direction)-\(counterparty.id)" }
 
     /// The net amount, always positive.
@@ -55,9 +61,12 @@ struct DebtGroup: Identifiable {
 
 /// The result of ``DebtCalculator``: debts grouped by housemate, plus the two totals.
 struct DebtLedger {
+    /// Housemates the signed-in user owes money to.
     var youOwe: [DebtGroup] = []
+    /// Housemates who owe money to the signed-in user.
     var owedToYou: [DebtGroup] = []
 
+    /// The groups on one side of the debt.
     func groups(for direction: DebtDirection) -> [DebtGroup] {
         switch direction {
         case .youOwe: return youOwe
@@ -65,6 +74,7 @@ struct DebtLedger {
         }
     }
 
+    /// The total amount on one side of the debt.
     func total(for direction: DebtDirection) -> Double {
         groups(for: direction).reduce(0) { $0 + $1.total }
     }
@@ -77,11 +87,16 @@ struct DebtLedger {
 /// housemate ends up in a single group, on one side only.
 enum DebtCalculator {
 
+    /// Works out every open debt between the signed-in user and each housemate.
+    ///
     /// - Parameters:
     ///   - items: Every item of the list.
     ///   - users: The house members, one per person, used for names and avatars.
     ///   - userRecords: Every user record of the house, to know whose a reference is.
     ///   - me: The signed-in user's house record. Without it the ledger is empty.
+    ///   - settledOverrides: Shares the screen already marked as paid but that are not saved yet
+    ///     (see ``settlementKey(item:debtor:)``). They are left out.
+    /// - Returns: The debts grouped by housemate, on each side.
     static func ledger(
         items: [ShopListItem],
         users: [UserModel],

@@ -10,19 +10,28 @@ import SwiftUI
 import UIKit
 import CloudKit
 
-/// A compact row representation of a chore, utilized in the vertical list layout mode.
+/// A compact chore row used by the list layout: the room's folder shape with its icon,
+/// who does it, the tags, the room and chore names and a button to mark it as done.
 struct ChoreCardListStyle: View {
+    /// The chore shown.
     var chore: ChoreModel
+    /// The occurrence shown, for recurring chores. `nil` uses the chore's next occurrence.
     var recurrentAssignment: RecurrentAssignmentModel?
+    /// Shared namespace for matched animations between the layouts.
     let namespace: Namespace.ID
     
+    /// Gives the room, dates, assignments and members, and marks chores as done.
     @Bindable var carouselViewModel: CarouselViewModel
+    /// Called when the row is tapped (opens the details).
     var onTap: () -> Void = {}
     
+    /// The chore's room (its color and icon).
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
     
+    /// The next day the chore is due.
     var nextDate: Date? { carouselViewModel.nextDate(for: chore) }
     
+    /// The occurrence(s) this row is about.
     var targetAssignments: [RecurrentAssignmentModel] {
         if let recurrentAssignment {
             return [recurrentAssignment]
@@ -30,6 +39,7 @@ struct ChoreCardListStyle: View {
         return carouselViewModel.getAssignments(for: chore, on: nextDate)
     }
     
+    /// Who is responsible for this occurrence (or for the chore, if the occurrence has nobody set).
     var occurrenceResponsibleUsers: [UserModel] {
         if let target = targetAssignments.first {
             if let refs = target.userReferences {
@@ -61,10 +71,12 @@ struct ChoreCardListStyle: View {
     /// Avatars shown before the "+N" badge takes over.
     private let maxVisibleUsers = 2
     
+    /// The avatars that are drawn.
     private var visibleResponsibleUsers: [UserModel] {
         Array(occurrenceResponsibleUsers.prefix(maxVisibleUsers))
     }
     
+    /// How many responsible members don't fit (the "+N").
     private var hiddenResponsibleCount: Int {
         max(0, occurrenceResponsibleUsers.count - maxVisibleUsers)
     }
@@ -82,12 +94,14 @@ struct ChoreCardListStyle: View {
             .clipShape(Circle())
     }
     
+    /// Whether this occurrence is already done.
     var isOccurrenceDone: Bool {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
     
     var body: some View {
         ZStack {
+            // MARK: - Folder background
             FolderShape(
                 cornerRadius: 25,
                 tabWidth: 95,
@@ -96,16 +110,15 @@ struct ChoreCardListStyle: View {
             .fill(room?.color.uiColor ?? .gray)
             .shadow(color: .black.opacity(0.21), radius: 3.35, x: 0, y: 5)
             
-            HStack(spacing: 30) {
-                Image(systemName: room?.symbol ?? chore.symbolName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: width * 0.1, height: height * 0.08)
+            // MARK: - Room icon and content
+            HStack(spacing: 15) {
+                SymbolImage(name: room?.symbol ?? chore.symbolName)
+                    .frame(width: width * 0.18, height: height * 0.08)
                     .foregroundColor(.white)
-                    .fontWeight(.thin)
                 
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 10) {
+                        // MARK: - Avatars
                         HStack(spacing: -10) {
                             ForEach(visibleResponsibleUsers, id: \.recordID) { user in
                                 UserProfilePictureTag(user: user, widthMultiplier: 0.07)
@@ -118,7 +131,6 @@ struct ChoreCardListStyle: View {
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
                         }
-                        .padding(.leading, 4)
                         .padding(.bottom, 8)
                         
                         // MARK: - Tags
@@ -161,7 +173,7 @@ struct ChoreCardListStyle: View {
                     }
                 }
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, 18.5)
         }
         .frame(width: width * 0.92)
         .frame(minHeight: height * 0.14)
@@ -199,7 +211,7 @@ struct ChoreCardListStyle: View {
     @Previewable @Namespace var namespace
     
     let room: RoomModel = {
-        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "sofa", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()

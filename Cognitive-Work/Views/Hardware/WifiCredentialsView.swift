@@ -9,9 +9,12 @@ import SwiftUI
 
 /// Collects the home WiFi credentials and sends them to the ESP32 while the phone is on its network.
 struct WifiCredentialsView: View {
+    /// The device connection's view model.
     @Bindable var viewModel: HardwareViewModel
+    /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// Whether both fields are filled.
     private var canSubmit: Bool {
         !viewModel.userWifiName.isEmpty &&
         !viewModel.userWifiPassord.isEmpty
@@ -21,6 +24,7 @@ struct WifiCredentialsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    // MARK: - Title and instructions
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Conectar Harvii")
                             .font(.largeTitle)
@@ -31,6 +35,7 @@ struct WifiCredentialsView: View {
                             .foregroundStyle(.secondary)
                     }
                     
+                    // MARK: - Skip to pairing (Wi-Fi already sent), or the Wi-Fi fields
                     if !viewModel.hostName.isEmpty {
                         Button("Já enviei o WiFi, ir para o pareamento") {
                             viewModel.navigateToParingView = true
@@ -69,6 +74,7 @@ struct WifiCredentialsView: View {
             }
             .navigationTitle("Conectar com WiFi")
             .navigationBarTitleDisplayMode(.inline)
+            // MARK: - Toolbar: close / continue (spinner while sending)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) { dismiss() }
@@ -89,6 +95,7 @@ struct WifiCredentialsView: View {
                     }
                 }
             }
+            // MARK: - Pairing step, result alert and keyboard
             .navigationDestination(isPresented: $viewModel.navigateToParingView) {
                 DevicePairView(hardwareViewModel: viewModel, onClose: { dismiss() })
             }
@@ -102,10 +109,13 @@ struct WifiCredentialsView: View {
     }
 }
 
+/// A form field with its title above it, used for the Wi-Fi name and password.
 struct LabeledInput<Content: View>: View {
+    /// The field's title (also its accessibility label).
     let title: LocalizedStringKey
     /// Extra Voice Control names after the visible title ("Toque em Senha").
     var spokenAlternatives: [String] = []
+    /// The field itself.
     @ViewBuilder var content: () -> Content
 
     /// Voice Control names: the visible title first, then the alternatives.
@@ -119,12 +129,14 @@ struct LabeledInput<Content: View>: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // MARK: Title
             Text(title)
                 .font(.body)
                 .padding(.leading, 12)
                 // The field below reads this title as its own label.
                 .accessibilityHidden(true)
             
+            // MARK: Field in a rounded box
             content()
                 .accessibilityLabel(Text(title))
                 // Voice Control: the visible title first, then shorter alternatives.

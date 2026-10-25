@@ -35,12 +35,14 @@ struct InfinityRow: View {
     /// Vertical space between cards.
     let spacing: CGFloat = 16
 
+    /// Whether the user turned on Reduce Motion (pauses the scrolling).
     @Environment(\.accessibilityReduceMotion) private var reduceMotion: Bool
 
     var body: some View {
         /// Height of one full set of cards: the distance traveled before the loop restarts.
         let cycleHeight = Double(cards.count) * Double(cardHeight + spacing)
 
+        // MARK: - Time-driven scrolling column of repeated cards
         TimelineView(.animation(paused: reduceMotion)) { context in
             let time = context.date.timeIntervalSinceReferenceDate
             

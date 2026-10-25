@@ -7,13 +7,15 @@
 
 import SwiftUI
 
-/// A horizontally scrolling row of category chips
+/// A horizontally scrolling row of category chips for the shopping item form.
 struct ShopCategoryPicker: View {
 
+    /// The selected category.
     @Binding var selection: ShopItemCategory
 
     var body: some View {
         ScrollViewReader { proxy in
+            // MARK: - Scrolling row of chips (starts scrolled to the selection)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(ShopItemCategory.allCases) { category in
@@ -30,6 +32,7 @@ struct ShopCategoryPicker: View {
         }
     }
 
+    /// One chip: the category's icon and name, filled with its color when selected.
     private func chip(for category: ShopItemCategory) -> some View {
         let isSelected = category == selection
 
@@ -38,8 +41,8 @@ struct ShopCategoryPicker: View {
             withAnimation(.snappy) { selection = category }
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: category.symbol)
-                    .font(.system(size: 14, weight: .semibold))
+                SymbolImage(name: category.symbol)
+                    .frame(width: 24, height: 24)
 
                 Text(category.displayName)
                     .font(.system(size: 15, weight: .semibold))

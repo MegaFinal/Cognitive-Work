@@ -8,13 +8,18 @@
 import SwiftUI
 import Foundation
 
+/// A small chore card used in the onboarding's animated background: name and room icon over
+/// the room's color and texture.
 struct OnboardingChoreCard: View {
+    /// The chore on the card.
     let chore: ChoreDTO
     
+    /// The chore's room.
     private var room: RoomDTO { chore.roomDTO }
     
     var body: some View {
         VStack(spacing: 0) {
+            // MARK: - Chore name
             Text(chore.name)
                 .font(.system(size: 16, weight: .semibold))
                 .padding(.top, 14)
@@ -22,14 +27,13 @@ struct OnboardingChoreCard: View {
             
             Spacer(minLength: 8)
             
-            Image(systemName: room.symbol)
-                .resizable()
-                .scaledToFit()
-                .fontWeight(.light)
-                .frame(width: 72, height: 72)
+            // MARK: - Room icon
+            SymbolImage(name: room.symbol)
+                .frame(width: 112, height: 112)
             
             Spacer(minLength: 12)
         }
+        // MARK: - Card style
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
@@ -55,6 +59,7 @@ extension ChoreDTO {
                  room: room.roomDTO)
     }
     
+    /// Four columns of sample chores, mixing colors so neighboring cards don't repeat.
     static let columnsMock: [[ChoreDTO]] = {
         let blue = [mock("Lavar o box", .bathroom), mock("Limpar a pia", .powderRoom),
                     mock("Lavar a roupa", .laundryRoom), mock("Limpar o espelho", .bathroom),

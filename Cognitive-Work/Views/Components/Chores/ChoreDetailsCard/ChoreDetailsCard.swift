@@ -14,12 +14,14 @@ import CloudKit
 /// This view is revealed when the user flips or taps a card, providing full details, checklist progress,
 /// postponement actions, and a completion swipe toggle.
 struct ChoreDetailsCard: View {
+    /// The chore shown.
     @Bindable var chore: ChoreModel
     
     /// The specific occurrence this card represents, when opened from the list
     /// layout. `nil` in the grid, where the card stands for the chore as a whole.
     var recurrentAssignment: RecurrentAssignmentModel?
     
+    /// Gives the room, members, dates and assignments, and saves completion and postponing.
     @Bindable var carouselViewModel: CarouselViewModel
     
     /// The day being shown: this occurrence's own day, or the chore's next date.
@@ -27,10 +29,13 @@ struct ChoreDetailsCard: View {
         recurrentAssignment?.day ?? nextDate
     }
     
+    /// The next day the chore is due.
     var nextDate: Date? { carouselViewModel.nextDate(for: chore) }
     
+    /// Whether the card is flipped to this side (the checklist loads only then).
     var isShowingBack: Bool
     
+    /// The chore's checklist items.
     @State private var checkList: [CheckItemModel] = []
     
     /// `true` while the checklist items are fetched the first time the card is flipped.
@@ -42,9 +47,15 @@ struct ChoreDetailsCard: View {
     /// Shown when the new date couldn't be saved.
     @State private var didFailToPostpone = false
     
+    /// Shows the edit form (pencil button).
+    @State private var showsEditSheet = false
+    
+    /// The chore's room (icon, color and name).
     var room: RoomModel? { carouselViewModel.getRoom(for: chore) }
+    /// Every member responsible for the chore.
     var allResponsibleUsers: [UserModel] { carouselViewModel.getUsers(for: chore) }
     
+    /// The occurrence(s) this card is about.
     var targetAssignments: [RecurrentAssignmentModel] {
         // A card opened from a specific occurrence shows only that one
         if let recurrentAssignment { return [recurrentAssignment] }
@@ -83,6 +94,7 @@ struct ChoreDetailsCard: View {
         }
     }
     
+    /// Whether this occurrence is already done.
     var isOccurrenceDone: Bool {
         carouselViewModel.isDone(for: chore, assignment: recurrentAssignment)
     }
@@ -90,10 +102,13 @@ struct ChoreDetailsCard: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                // MARK: - Icon, name and tags
                 header
                 
+                // MARK: - Description, room and checklist
                 info
                 
+                // MARK: - Postpone buttons and swipe to complete
                 VStack {
                     // Daily chores can't be postponed: tomorrow already has its own occurrence.
                     if chore.frequency != .daily {
@@ -122,10 +137,12 @@ struct ChoreDetailsCard: View {
             }
             .padding(.top, 8)
             
+            // MARK: - Close, avatars and edit (top bar)
             actionBar
                 // Drawn on top but read first: close, people, edit.
                 .accessibilitySortPriority(1)
         }
+        // MARK: - Loads the checklist and shows the postpone error
         .task(id: isShowingBack) {
             if isShowingBack && checkList.isEmpty && !(chore.checkListReference ?? []).isEmpty {
                 isLoadingChecklist = true
@@ -150,15 +167,12 @@ struct ChoreDetailsCard: View {
     /// The upper header section: the chore's primary icon, name, and status tags.
     private var header: some View {
         VStack(spacing: 10) {
-            Image(systemName: room?.symbol ?? chore.symbolName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: width * 0.19, height: height * 0.09)
-                .fontWeight(.thin)
-                .accessibilityDecorative()
+            SymbolImage(name: room?.symbol ?? chore.symbolName)
+                .frame(width: width * 0.25, height: height * 0.106)
+                .accessibilityHidden(true)
             
             Text(chore.localizedName)
-                .font(.system(size: 25))
+                .font(.custom("Alan Sans", size: 28))
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
                 .frame(width: width * 0.7)
@@ -339,16 +353,19 @@ struct ChoreDetailsCard: View {
                     .voiceOverLabel(carouselViewModel.accessibilityResponsibleText(for: occurrenceResponsibleUsers))
             }
             
-            NavigationLink {
+            Button {
+                showsEditSheet = true
+            } label: {
+                Image(systemName: "pencil")
+                    .foregroundColor(.white)
+            }
+            .sheet(isPresented: $showsEditSheet) {
                 CreateAndEditChoreView(
                     originalModel: chore,
                     availableHouseUsers: carouselViewModel.userModels,
                     carouselViewModel: carouselViewModel,
                     targetAssignments: targetAssignments
                 )
-            } label: {
-                Image(systemName: "pencil")
-                    .foregroundColor(.white)
             }
             .voiceOverLabel(L10n.tr("Editar tarefa"))
             .voiceControlNames([L10n.tr("Editar"), L10n.tr("Editar tarefa"), L10n.tr("Lápis")])
@@ -406,7 +423,7 @@ private struct ChecklistItemButton: View {
     @Previewable @State var isShowingBack = true
     
     let room: RoomModel = {
-        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "bed.stripes", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()

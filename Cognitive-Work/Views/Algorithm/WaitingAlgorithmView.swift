@@ -7,12 +7,17 @@
 
 import SwiftUI
 
+/// The waiting screen shown while the division of chores is generated: still chore cards in the
+/// background and a card with a spinning icon and "Levantando escalas".
 struct WaitingAlgorithmView: View {
+    /// Sample chores for the background columns.
     private let columns = ChoreDTO.columnsMock
+    /// The icon's angle; animated forever.
     @State private var isRotating = 0.0
     
     var body: some View {
         ZStack {
+            // MARK: - Background: columns of sample chore cards
             HStack(alignment: .top, spacing: 16) {
                 ForEach(columns.indices, id: \.self) { index in
                     InfinityRow(
@@ -30,6 +35,7 @@ struct WaitingAlgorithmView: View {
             // Moving cards in the background are decoration.
             .accessibilityDecorative()
             
+            // MARK: - Card: spinning icon, title and explanation
             VStack(spacing: 30) {
                 Image("loadingIcon")
                     .rotationEffect(.degrees(isRotating))
@@ -42,8 +48,9 @@ struct WaitingAlgorithmView: View {
                     }
                 
                 Text("Levantando escalas")
-                    .font(.system(size: 32))
+                    .font(.custom("Alan Sans", size: 32, relativeTo: .largeTitle))
                     .bold()
+                    .foregroundStyle(.titleGray)
                 
                 VStack(spacing: 15) {
                     Text("Estamos ponderando, sorteando e dividindo as tarefas entre os moradores")
