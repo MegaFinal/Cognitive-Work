@@ -18,6 +18,8 @@ struct UserProfilePictureList: View {
     let users: [UserModel]
     /// Each avatar's size, as a fraction of the screen width.
     var widthMultiplier: Double
+    /// Space between two avatars; negative to overlap them.
+    var spacing: CGFloat = -18
     
     /// Maximum number of circles (avatars + overflow badge) shown at once.
     private let maxVisible = 3
@@ -32,7 +34,7 @@ struct UserProfilePictureList: View {
     private var overflowCount: Int { users.count - visibleUsers.count }
     
     var body: some View {
-        HStack(spacing: -18) {
+        HStack(spacing: spacing) {
             // MARK: - Avatars
             ForEach(visibleUsers, id: \.recordID) { user in
                 UserProfilePictureTag(user: user, widthMultiplier: widthMultiplier)

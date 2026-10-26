@@ -31,6 +31,9 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
     /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
 
+    /// The fixed order of the cards on the shopping list
+    static let listOrder: [ShopItemCategory] = [.food, .drinks, .produce, .cleaning, .other, .hygiene, .pets, .home]
+
     /// Preselected when adding an item: the first one in the picker.
     static let `default`: ShopItemCategory = .food
 
@@ -40,8 +43,8 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
         case .food: return L10n.tr("Alimentos")
         case .produce: return L10n.tr("Hortifruti")
         case .drinks: return L10n.tr("Bebidas")
-        case .cleaning: return L10n.tr("Limpeza")
-        case .hygiene: return L10n.tr("Higiene")
+        case .cleaning: return L10n.tr("Produtos de limpeza")
+        case .hygiene: return L10n.tr("Farmácia")
         case .home: return L10n.tr("Casa")
         case .pets: return L10n.tr("Pets")
         case .other: return L10n.tr("Outros")
@@ -68,7 +71,7 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .food: return .orange
         case .produce: return .green
-        case .drinks: return .purple
+        case .drinks: return .yellow
         case .cleaning: return .blue
         case .hygiene: return .blue
         case .home: return .yellow
