@@ -659,6 +659,8 @@ final class ShopListViewModel {
             if ShopItemDuplicateFinder.isExactMatch(name, candidate.name) {
                 return candidate
             }
+            // Comparing with AI is Premium; the free plan only matches identical names.
+            guard PremiumManager.shared.allows(.shopAI) else { continue }
             if await IntelligenceManager.shared.isSameProduct(name, as: candidate.name) == true {
                 return candidate
             }

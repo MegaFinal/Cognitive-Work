@@ -19,6 +19,8 @@ struct HouseSettingsView: View {
     @State private var isLeavingHouse = false
     @State private var leaveErrorMessage: String?
     @State private var deleteErrorMessage: String?
+    /// The Premium paywall (re-dividing mid-cycle is Premium).
+    @State private var paywall: PremiumFeature?
     
     /// `true` while we still don't know if the user is the admin.
     private var isCheckingAdmin: Bool { !viewModel.isAdminResolved }
@@ -64,6 +66,7 @@ struct HouseSettingsView: View {
                     isResetting = false
                 }
             }
+            .premiumPaywall($paywall)
     }
     
     // MARK: - View
@@ -102,8 +105,16 @@ struct HouseSettingsView: View {
             // MARK: - Reset chores assignments
             if viewModel.isUserAdmin {
                 Section {
-                    DisclosureButton("Reiniciar divisão de tarefas") {
-                        showChoreResetConfirmation = true
+                    DisclosureButton(
+                        "Reiniciar divisão de tarefas",
+                        value: PremiumManager.shared.isPremium ? nil : L10n.tr("Premium")
+                    ) {
+                        // Free plan: the division is redone automatically once per cycle.
+                        if PremiumManager.shared.allows(.rebalanceDivision) {
+                            showChoreResetConfirmation = true
+                        } else {
+                            paywall = .rebalanceDivision
+                        }
                     }
                     .voiceControlNames([L10n.tr("Reiniciar divisão de tarefas"), L10n.tr("Reiniciar divisão"), L10n.tr("Reiniciar")])
                 }

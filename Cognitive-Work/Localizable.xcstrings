@@ -1014,6 +1014,9 @@
         }
       }
     },
+    "30% de desconto no plano anual" : {
+
+    },
     "A casa criada será apagada e os roomies que já entraram perderão o acesso." : {
       "localizations" : {
         "en" : {
@@ -5775,6 +5778,9 @@
         }
       }
     },
+    "Gerenciar assinatura" : {
+
+    },
     "Gráfico da escala quinzenal, %lld tarefas em %lld dias" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8830,6 +8836,9 @@
         }
       }
     },
+    "Ou pague uma vez" : {
+
+    },
     "Ouro" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9561,6 +9570,9 @@
           }
         }
       }
+    },
+    "Pipa Premium" : {
+
     },
     "Pipa. Para aqueles que notam." : {
       "localizations" : {
@@ -10653,6 +10665,9 @@
         }
       }
     },
+    "Restaurar compras" : {
+
+    },
     "Resto da casa" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11337,6 +11352,9 @@
         }
       }
     },
+    "Sou estudante" : {
+
+    },
     "Status" : {
       "localizations" : {
         "en" : {
@@ -11346,6 +11364,9 @@
           }
         }
       }
+    },
+    "Sua casa é Premium" : {
+
     },
     "Sua casa já está no Pipa?" : {
       "localizations" : {
@@ -12410,6 +12431,9 @@
           }
         }
       }
+    },
+    "Vale para a sua conta, em qualquer casa e com qualquer número de moradores." : {
+
     },
     "Vale por 15 dias" : {
       "localizations" : {

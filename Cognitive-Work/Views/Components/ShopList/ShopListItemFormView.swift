@@ -70,6 +70,8 @@ struct ShopListItemFormView: View {
 
     /// Whether the AI button shows in this form; set once when it appears (create mode only).
     @State private var canSuggest = false
+    /// The Premium paywall, when a free house taps the AI button.
+    @State private var paywall: PremiumFeature?
     /// The last suggestion applied; fields still holding its values show the sparkles icon.
     @State private var suggestion: ShopItemSuggestion?
     /// Whether the AI prompt (``AIItemPromptSheet``) is on screen.
@@ -228,6 +230,7 @@ struct ShopListItemFormView: View {
                 onConfirm: requestSuggestion
             )
         }
+        .premiumPaywall($paywall)
         .dismissKeyboardOnTap()
         .onChange(of: visibleWarning) { _, warning in
             if let warning { VoiceOver.announce(warning) }
@@ -325,6 +328,10 @@ struct ShopListItemFormView: View {
     /// Opens the AI prompt, pre-filled with the name typed so far.
     private var aiButton: some View {
         Button {
+            guard PremiumManager.shared.allows(.shopAI) else {
+                paywall = .shopAI
+                return
+            }
             aiInput = trimmedName
             aiDidFail = false
             isShowingAIPrompt = true

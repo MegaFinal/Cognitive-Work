@@ -34,6 +34,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Resources/Premium.storekit,
 			);
 			target = 910DAAE23026477D00F899C0 /* Cognitive-Work */;
 		};

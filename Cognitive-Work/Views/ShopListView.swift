@@ -27,6 +27,9 @@ struct ShopListView: View {
     /// Whether the AI button shows: the on-device model can run on this device and language.
     @State private var canUseAI = false
 
+    /// The Premium feature whose paywall is open, or `nil`.
+    @State private var paywall: PremiumFeature?
+
     /// "Pode estar faltando": usual items and products that go with the list.
     @State private var suggestionsModel: ShopListSuggestionViewModel
 
@@ -51,6 +54,7 @@ struct ShopListView: View {
                 .navigationDestination(isPresented: $isShowingPendingPayments) {
                     PendingPaymentsView(shopList: viewModel)
                 }
+                .premiumPaywall($paywall)
         }
     }
 
@@ -218,12 +222,21 @@ struct ShopListView: View {
             HStack(spacing: 4) {
                 Button {
                     HapticsManager.selection()
-                    isShowingPendingPayments = true
+                    // Premium: free houses still record prices, so the history is there
+                    // the day they subscribe.
+                    if PremiumManager.shared.allows(.debts) {
+                        isShowingPendingPayments = true
+                    } else {
+                        paywall = .debts
+                    }
                 } label: {
                     Image(systemName: "banknote")
                         .font(.system(size: 22))
                         .foregroundColor(.black)
                         .padding(8)
+                        .overlay(alignment: .topTrailing) {
+                            if !PremiumManager.shared.isPremium { PremiumBadge() }
+                        }
                 }
                 .accessibilityLabel("Pendências")
                 .voiceControlNames([L10n.tr("Pendências"), L10n.tr("Dinheiro"), L10n.tr("Pagamentos")])
@@ -389,13 +402,20 @@ struct ShopListView: View {
     private var aiBatchButton: some View {
         Button {
             HapticsManager.selection()
-            isPresentingAIBatch = true
+            if PremiumManager.shared.allows(.shopAI) {
+                isPresentingAIBatch = true
+            } else {
+                paywall = .shopAI
+            }
         } label: {
             Image(systemName: "sparkles")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.black)
                 .padding(14)
                 .contentShape(Circle())
+                .overlay(alignment: .topTrailing) {
+                    if !PremiumManager.shared.isPremium { PremiumBadge().padding(6) }
+                }
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive(), in: .circle)
