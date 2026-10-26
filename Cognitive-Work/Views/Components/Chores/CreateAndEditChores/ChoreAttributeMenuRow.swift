@@ -13,13 +13,24 @@ struct ChoreAttributeMenuRow<Options: View>: View {
     let title: LocalizedStringKey
     let value: String
     let color: Color
+    var isSuggested = false
     @ViewBuilder let options: () -> Options
     
     var body: some View {
         HStack {
-            Text(title)
-                .fontWeight(.semibold)
-                .accessibilityHidden(true)
+            HStack(spacing: 6) {
+                Text(title)
+                    .fontWeight(.semibold)
+
+                if isSuggested {
+                    Image(systemName: "sparkles")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.snappy, value: isSuggested)
+            .accessibilityHidden(true)
             
             Spacer(minLength: 12)
             
@@ -44,7 +55,7 @@ struct ChoreAttributeMenuRow<Options: View>: View {
             // override the gray of the value and the chevrons.
             .tint(.secondary)
             .accessibilityLabel(Text(title))
-            .accessibilityValue(value)
+            .accessibilityValue(isSuggested ? value + ", " + L10n.tr("Sugerido automaticamente") : value)
         }
     }
 }
