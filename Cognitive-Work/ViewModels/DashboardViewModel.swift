@@ -100,15 +100,6 @@ class DashboardViewModel {
     /// The member's chores per day of the selected week, split by room.
     var dailyRoomDistribution: [DaySlice] = []
     
-    // MARK: - 5. Unowned Public Chores
-    
-    /// Pending chores nobody is responsible for.
-    var unownedPublicCount: Int = 0
-    /// Every pending chore of the house.
-    var totalPublicCount: Int = 0
-    /// ``unownedPublicCount`` divided by ``totalPublicCount``.
-    var unownedPublicProgress: Double = 0.0
-    
     // MARK: - Load
     
     /// `true` while the data is loading.
@@ -194,7 +185,6 @@ class DashboardViewModel {
         loadCognitiveLoad()
         loadDailyRoomDistribution()
         loadRoomDistribution()
-        loadUnownedPublicChores()
     }
     
     /// Moves the selected week by `offset` weeks (negative goes back) and rebuilds the charts.
@@ -299,38 +289,6 @@ class DashboardViewModel {
             }
             return DaySlice(day: day, rooms: slices)
         }
-    }
-    
-    // MARK: - 5. Unowned Public Chores
-    
-    /// Same rule as the "sem dono" list on the chores screen (`CarouselViewModel.rebuildUnassignedItems`):
-    /// - recurring chore → has at least one upcoming slot (today on) with nobody assigned;
-    /// - one-off chore → has no current responsible and nobody in its rotation.
-    /// Finished chores are ignored. The total is every pending chore, so the bar is "sem dono × com dono".
-    func loadUnownedPublicChores() {
-        let today = Calendar.current.startOfDay(for: .now)
-        let assignmentsByID = Dictionary(
-            assignments.compactMap { assignment in assignment.recordID.map { ($0, assignment) } },
-            uniquingKeysWith: { first, _ in first }
-        )
-        
-        let pending = chores.filter { !$0.isDone }
-        
-        let unowned = pending.filter { chore in
-            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                return refs.contains { ref in
-                    guard let assignment = assignmentsByID[ref.recordID] else { return false }
-                    let nobody = assignment.userReferences?.isEmpty ?? true
-                    return nobody && assignment.day >= today
-                }
-            }
-            return chore.currentResponsibleReference == nil
-                && (chore.allResponsibleUsersReference?.isEmpty ?? true)
-        }
-        
-        totalPublicCount = pending.count
-        unownedPublicCount = unowned.count
-        unownedPublicProgress = fraction(unownedPublicCount, of: totalPublicCount)
     }
     
     // MARK: - Helpers

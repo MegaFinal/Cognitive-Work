@@ -43,6 +43,12 @@ enum RoomColor: String, CaseIterable, Identifiable {
         }
     }
     
+    /// The background of the progress cards on the chores screen: the soft ``lowOpacityColor``,
+    /// except for yellow, which uses the full `choreYellow` (the soft yellow looks washed out there).
+    var progressCardColor: Color {
+        self == .yellow ? .choreYellow : lowOpacityColor
+    }
+    
     /// Decodes a color stored in CloudKit, including values from palettes that no longer exist.
     ///
     /// Rooms saved by older builds may hold `"red"`, `"white"` or `"pink"`. Failing on those made

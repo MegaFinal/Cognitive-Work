@@ -140,6 +140,14 @@ final class HouseDataStore {
         return await load()
     }
 
+    #if DEBUG
+    /// Fills the store with sample data, so SwiftUI previews don't ask CloudKit.
+    func seed(_ snapshot: HouseSnapshot) {
+        self.snapshot = snapshot
+        isStale = false
+    }
+    #endif
+    
     // MARK: - Invalidation
 
     /// Marks the snapshot as outdated; the next ``load(force:)`` fetches again.
