@@ -10642,6 +10642,17 @@
         }
       }
     },
+    "Recebi" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Received"
+          }
+        }
+      }
+    },
     "Recolher a toalha de rosto usada e pendurar uma limpa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -12636,6 +12647,7 @@
       }
     },
     "Total" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

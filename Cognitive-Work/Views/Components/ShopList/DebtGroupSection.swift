@@ -7,154 +7,146 @@
 
 import SwiftUI
 
-/// What one housemate owes (or is owed) in the "Pendências" screen, drawn as a receipt: the
-/// person and the total on top, a dotted tear line, then the items and the "Pagar" button.
-/// It only renders what it's given.
+/// What one housemate owes (or is owed) in the "Pendências" screen, drawn as a receipt
 struct DebtGroupSection: View {
 
-    /// The housemate this receipt is about (for the avatar).
     let user: UserModel?
-    /// The housemate's name, shown on top.
     let title: String
-    /// The total as money text.
+    var banner: ProfileBanner = .default
     let totalText: String
-    /// The items on the receipt.
     let rows: [Row]
-    /// The settle button's title ("Pagar", "Foi pago", "Pago!").
     let settleTitle: String
-    /// SF Symbol shown before the button's title, e.g. the checkmark of "Foi pago".
     var settleSystemImage: String? = nil
-    /// Whether it is already settled (black button, disabled).
     let isPaid: Bool
-    /// `true` while settling is being saved (faded button).
     let isSettling: Bool
-    /// Called when the settle button is tapped.
     let onSettle: () -> Void
 
-    /// The "register the payment" confirmation, shown as a popover coming out of the button.
     var isConfirmingSettlement: Bool = false
-    /// The popover's title.
     var confirmationTitle: String = ""
-    /// The popover's warning text.
     var confirmationMessage: String = ""
-    /// The popover's confirm button title.
     var confirmationButtonTitle: String = ""
-    /// Called when the user confirms.
     var onConfirmSettlement: () -> Void = {}
-    /// Called when the user cancels or closes the popover.
     var onCancelSettlement: () -> Void = {}
 
-    /// VoiceOver texts; each falls back to what's on screen when `nil`.
-    /// "Isabela, total R$ 45,00".
     var headerAccessibilityText: String? = nil
-    /// The total as it should be read ("45 reais").
     var totalAccessibilityText: String? = nil
-    /// "Pagar R$ 45,00 para Isabela" / "Marcar que Isabela pagou".
     var settleAccessibilityLabel: String? = nil
-    /// "Pago" once settled.
     var settleAccessibilityValue: String = ""
 
     /// One item line of the receipt.
     struct Row: Identifiable {
-        /// A unique id for the list.
         let id: String
-        /// The item's name.
         let name: String
-        /// The amount as money text.
         let amountText: String
-        /// The amount as VoiceOver should read it; `amountText` when `nil`.
         var accessibilityAmount: String? = nil
     }
 
     /// The radius of the two half-circle bites on the receipt's sides.
-    private let notchRadius: CGFloat = 5
+    private let notchRadius: CGFloat = 10
 
-    /// Where the bites go: lined up with the tear line (measured from the header's height).
-    @State private var notchY: CGFloat = 0
+    /// Where the bites go: lined up with the tear line, measured from the receipt's top.
+    @State private var tearY: CGFloat = -1_000
+
+    /// Name of the coordinate space the tear line is measured in.
+    private let receiptSpace = "receipt"
+
+    private var paper: some View {
+        ZStack {
+            Color.white
+            Color.choreYellow.opacity(0.12)
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // MARK: - Avatar, name and settle button
-            header
-                .padding(.bottom, 18)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                    notchY = 20 + height + 18 + 1
-                }
+            // MARK: - Banner: avatar, name and settle button
+            bannerView
 
-            // MARK: - Tear line
-            tearLine
-                .padding(.bottom, 18)
-
-            // MARK: - Items and total
             VStack(alignment: .leading, spacing: 18) {
+                // MARK: - Items
                 itemRows
-                
-                HStack {
-                    Text("Total")
-                    Spacer()
-                    Text(totalText)
-                }
-                .font(.system(size: 22, weight: .bold))
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text(verbatim: "\(L10n.tr("Total")), \(totalAccessibilityText ?? totalText)"))
+
+                // MARK: - Tear line, with a bite on each side of the receipt
+                tearLine
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.frame(in: .named(receiptSpace)).midY
+                    } action: { tearY = $0 }
+
+                // MARK: - Total
+                totalRow
             }
+            .padding(.horizontal, 22)
+            .padding(.top, 20)
+            .padding(.bottom, 28)
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
+        .coordinateSpace(name: receiptSpace)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // MARK: - Receipt background
-        .background {
-            ReceiptShape(notchRadius: notchRadius, notchY: notchY)
-                .fill(.choreYellow.opacity(0.2))
-                .accessibilityHidden(true)
-        }
+        .background(paper)
+        .clipShape(ReceiptShape(notchRadius: notchRadius, notchY: tearY, tornBottom: true))
+        .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
         .accessibilityElement(children: .contain)
     }
 
     // MARK: - Pieces
 
-    /// The avatar, the name and the settle button.
-    private var header: some View {
+    /// The colored banner: avatar, name, how many items and the settle button.
+    private var bannerView: some View {
         HStack(spacing: 12) {
-            UserProfilePictureTag(user: user, widthMultiplier: 0.08)
+            UserProfilePictureTag(user: user, widthMultiplier: 0.1)
                 .accessibilityHidden(true)
 
-            Text(title)
-                .font(.system(size: 18, weight: .bold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .voiceOverLabel(headerAccessibilityText ?? "\(title), \(L10n.tr("Total")) \(totalText)")
-                .accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.custom("Alan Sans", size: 22))
+                    .fontWeight(.bold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .voiceOverLabel(headerAccessibilityText ?? "\(title), \(L10n.tr("Total")) \(totalText)")
+                    .accessibilityAddTraits(.isHeader)
+
+                Text(rows.count == 1 ? L10n.tr("1 item") : L10n.tr("%lld itens", rows.count))
+                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                    .opacity(0.85)
+                    .accessibilityHidden(true)
+            }
 
             Spacer(minLength: 8)
-            
+
             settleButton
         }
-        .foregroundStyle(.black)
+        .foregroundStyle(.white)
+        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity)
+        .frame(height: 84)
+        .background {
+            RoomTextureBackground(color: banner.color, pattern: banner.pattern, zoom: 1.5)
+        }
     }
 
-    /// The dotted line between the two bites.
+    /// The dotted tear line.
     private var tearLine: some View {
         Line()
-            .stroke(.choreYellow, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [6, 7]))
+            .stroke(banner.color.uiColor, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [6, 7]))
             .frame(height: 1.5)
-            .padding(.horizontal, notchRadius - 6)
             .accessibilityHidden(true)
     }
 
-    /// One line per item: the name and the amount.
+    /// One line per item, typed like a receipt
     private var itemRows: some View {
         VStack(spacing: 12) {
             ForEach(rows) { row in
-                HStack(alignment: .firstTextBaseline) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(row.name)
-                        .font(.system(size: 17))
+                        .font(.system(size: 16, design: .monospaced))
                         .lineLimit(2)
 
-                    Spacer(minLength: 12)
+                    Line()
+                        .stroke(Color.gray.opacity(0.55), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [0.1, 5]))
+                        .frame(minWidth: 12, maxHeight: 2)
+                        .alignmentGuide(.firstTextBaseline) { $0[.bottom] }
 
                     Text(row.amountText)
-                        .font(.system(size: 17, weight: .medium))
+                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
                 }
                 .foregroundStyle(.titleGray)
                 .accessibilityElement(children: .ignore)
@@ -163,7 +155,27 @@ struct DebtGroupSection: View {
         }
     }
 
-    /// "Pagar" (blue) until it's tapped, then a black "Pago!". When you owe, `onSettle` copies the
+    /// "TOTAL" and the amount, bigger than the items.
+    private var totalRow: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(L10n.tr("Total").uppercased())
+                .font(.system(size: 15, weight: .bold, design: .monospaced))
+                .tracking(2)
+
+            Spacer(minLength: 12)
+
+            Text(totalText)
+                .font(.custom("Alan Sans", size: 30))
+                .fontWeight(.bold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .foregroundStyle(.black)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "\(L10n.tr("Total")), \(totalAccessibilityText ?? totalText)"))
+    }
+
+    /// "Pagar" or "Recebi" until it's tapped, then "Pago!". It is always a black capsule. When you owe, `onSettle` copies the
     /// Pix "copia e cola".
     private var settleButton: some View {
         Button(action: onSettle) {
@@ -186,7 +198,6 @@ struct DebtGroupSection: View {
         }
         .voiceOverLabel(settleAccessibilityLabel ?? settleTitle)
         .voiceOverValue(settleAccessibilityValue)
-        // Voice Control: "Toque em Pagar" (numbered when there are several) or "Toque em Pagar Isabela".
         .voiceControlNames(settleInputLabels)
     }
 
@@ -195,11 +206,12 @@ struct DebtGroupSection: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(confirmationTitle)
                 .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(.black)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(confirmationMessage)
                 .font(.system(size: 15))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.subTitleGray)
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
@@ -215,10 +227,11 @@ struct DebtGroupSection: View {
                 Button(action: onConfirmSettlement) {
                     Text(confirmationButtonTitle)
                         .font(.system(size: 16, weight: .semibold))
+                        .lineLimit(1)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .background(Capsule().fill(Color.blue))
+                        .background(Capsule().fill(Color.black))
                 }
             }
             .buttonStyle(.plain)
@@ -232,20 +245,26 @@ struct DebtGroupSection: View {
         isPaid ? [settleTitle] : [settleTitle, L10n.tr("Pagar %@", title)]
     }
 
-    /// The settle button's look: optional icon and title on a blue (or black once paid) capsule.
+    /// The settle button's look: a black capsule with a short title on one line, and a checkmark
+    /// once paid.
     private var settleLabel: some View {
         HStack(spacing: 6) {
-            if let settleSystemImage {
+            if isPaid {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 13, weight: .bold))
+            } else if let settleSystemImage {
                 Image(systemName: settleSystemImage)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
             }
             Text(settleTitle)
+                .lineLimit(1)
         }
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(isPaid ? Color.black : Color.blue))
+        .font(.system(size: 16, weight: .semibold))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 8)
+        .fixedSize()
+        .background(Capsule().fill(Color.black))
     }
 
     /// A straight horizontal line across the middle of its frame.
@@ -263,6 +282,7 @@ struct DebtGroupSection: View {
     DebtGroupSection(
         user: ShopListPreviewData.isabela,
         title: "Isabela",
+        banner: ProfileBanner(color: .purple, pattern: .stars),
         totalText: "R$45,00",
         rows: [
             .init(id: "1", name: "Pizza", amountText: "R$30,00"),
