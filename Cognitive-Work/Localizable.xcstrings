@@ -3624,6 +3624,26 @@
         }
       }
     },
+    "Descreva o que deseja adicionar na sua lista, com quantidade, preço(opcional) e quem irá consumir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe what you want to add to your list, with quantity, price (optional) and who will use it."
+          }
+        }
+      }
+    },
+    "Descreva o que gostaria de comprar e preenchemos automaticamente." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe what you'd like to buy and we'll fill it in automatically."
+          }
+        }
+      }
+    },
     "Descrição" : {
       "localizations" : {
         "en" : {
@@ -4915,6 +4935,7 @@
       }
     },
     "Escreva um item por linha, com quantidade, preço e para quem é." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8290,6 +8311,17 @@
         }
       }
     },
+    "Nome: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name: %@"
+          }
+        }
+      }
+    },
     "Nosso intuito é remover a carga mental da organização de tarefas de maneira justa e visual para todos os moradores." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8538,6 +8570,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "What does the home share?"
+          }
+        }
+      }
+    },
+    "O que você disse" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you said"
           }
         }
       }
@@ -8826,6 +8869,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Housemates use this key to pay what they owe you in Pending payments."
+          }
+        }
+      }
+    },
+    "Ou" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or"
           }
         }
       }
@@ -10087,6 +10140,7 @@
       }
     },
     "Quem vai consumir/pagar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10627,6 +10681,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Assigned to: %@"
+          }
+        }
+      }
+    },
+    "Responsável" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responsible"
           }
         }
       }
@@ -12161,6 +12225,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap to speak"
+          }
+        }
+      }
+    },
+    "Toque para preencher o formulário." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to fill in the form."
           }
         }
       }

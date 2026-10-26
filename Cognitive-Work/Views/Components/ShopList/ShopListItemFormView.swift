@@ -60,8 +60,9 @@ struct ShopListItemFormView: View {
 
     // MARK: Apple Intelligence state
 
-    // The AI button next to the name opens a prompt; what the person describes there
-    // ("2kg de arroz") fills name, category, quantity and unit in one go.
+    // The name field also takes a description ("2kg de arroz 10 reais para mim"), typed or
+    // spoken with the mic beside it. When the person finishes, the AI fills the form and the
+    // field keeps just the name; what they said shows above it, like Calendar's quick add.
 
     /// Fields the form can pre-fill from an AI suggestion.
     private enum SuggestedField {
@@ -72,10 +73,27 @@ struct ShopListItemFormView: View {
     @State private var canSuggest = false
     /// The last suggestion applied; fields still holding its values show the sparkles icon.
     @State private var suggestion: ShopItemSuggestion?
-    /// Whether the AI prompt (``AIItemPromptSheet``) is on screen.
-    @State private var isShowingAIPrompt = false
-    /// What the person types in the AI prompt.
-    @State private var aiInput = ""
+    /// What the person typed or said, once the AI filled the form from it (not shown; it stops
+    /// the "Nome: …" preview while the name is being edited afterwards).
+    @State private var describedInput: String?
+    /// The name the AI last read or wrote, so leaving the field doesn't ask again for it.
+    @State private var lastReadName = ""
+    /// What the AI would fill from the description being typed, shown as "Nome: …" under it.
+    @State private var preview: ShopItemSuggestion?
+    /// The pending preview request, restarted after each keystroke pause.
+    @State private var previewTask: Task<Void, Never>?
+    /// Whether the running AI request reads what was spoken; then a small spinner shows beside
+    /// the spoken sentence (the mic itself never spins).
+    @State private var isReadingSpeech = false
+    /// What the person said, shown above the name and editable. Done (or Return) on it asks the
+    /// AI to fill the form again from the corrected sentence.
+    @State private var spokenText = ""
+    /// The sentence the AI last read, so it isn't read twice.
+    @State private var lastReadSpoken = ""
+    /// Focus of the spoken sentence's field.
+    @FocusState private var isSpokenFocused: Bool
+    /// Speech-to-text for the mic beside the name field (listens in the app's language).
+    @State private var voice = VoiceInputManager()
     /// Whether a request is running; the button shows a spinner meanwhile.
     @State private var isSuggesting = false
     /// Whether the last request returned nothing; shows a hint to fill in by hand.
@@ -93,6 +111,12 @@ struct ShopListItemFormView: View {
     private var isEditing: Bool {
         if case .edit = mode { return true }
         return false
+    }
+
+    /// The AI is listening to or reading a description, or the field still holds one longer
+    /// than a name: saving waits until the form is filled.
+    private var isReadingDescription: Bool {
+        isSuggesting || voice.isBusy || trimmedName.count > TextLimits.shopItemName
     }
 
     /// The name without spaces at the ends.
@@ -133,10 +157,13 @@ struct ShopListItemFormView: View {
 
                     validationWarning
 
-                    // Sparkles mark values filled in by the AI button.
-                    section("Categoria", isSuggested: isSuggested(.category)) {
-                        ShopCategoryPicker(selection: $category)
-                    }
+                    categoryCard
+
+                    RoundedRectangle(cornerRadius: 5)
+                        .foregroundStyle(.lowOpacityOrange)
+                        .frame(height: 5)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityHidden(true)
 
                     // Same as above for quantity and unit.
                     section("Quantidade", isSuggested: isSuggested(.quantity) || isSuggested(.unit)) {
@@ -147,15 +174,24 @@ struct ShopListItemFormView: View {
                         priceField
                     }
 
-                    section("Quem vai consumir/pagar", isSuggested: isSuggested(.consumers)) {
-                        ResponsibleUserPicker(availableUsers: availableUsers, selectedUsers: $relatedUsers)
-                        // How much each person pays, computed in code with the same equal split
-                        // as the debts screen.
-                        if let shareText {
-                            Text(shareText)
-                                .font(.system(size: 13))
-                                .foregroundStyle(.subTitleGray)
+                    section("Responsável", isSuggested: isSuggested(.consumers)) {
+                        // White card on the grey page, like quantity and price.
+                        VStack(alignment: .leading, spacing: 10) {
+                            ResponsibleUserPicker(availableUsers: availableUsers, selectedUsers: $relatedUsers)
+                            // How much each person pays, computed in code with the same equal
+                            // split as the debts screen.
+                            if let shareText {
+                                Text(shareText)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.subTitleGray)
+                            }
                         }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            Color.white,
+                            in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        )
                     }
 
                     if isEditing {
@@ -166,6 +202,7 @@ struct ShopListItemFormView: View {
                 .padding(.vertical)
             }
             .scrollDismissesKeyboard(.interactively)
+            .background(Color(.systemGray6).ignoresSafeArea())
             .navigationTitle(isEditing || isDraft ? "Editar item" : "Novo item")
             .navigationBarTitleDisplayMode(.inline)
             // MARK: - Toolbar: close and confirm
@@ -195,7 +232,7 @@ struct ShopListItemFormView: View {
                         }
                         .tint(.blue)
                         .buttonStyle(.glassProminent)
-                        .disabled(!missingFields.isEmpty)
+                        .disabled(!missingFields.isEmpty || isReadingDescription)
                         .voiceOverLabel(isEditing || isDraft ? L10n.tr("Salvar") : L10n.tr("Adicionar item"))
                         .voiceControlNames(isEditing || isDraft
                             ? [L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")]
@@ -207,26 +244,29 @@ struct ShopListItemFormView: View {
             .disabled(isSaving)
         }
         .presentationDragIndicator(.visible)
+        .presentationBackground(Color(.systemGray6))
         .interactiveDismissDisabled(isSaving)
         // MARK: - Loading, VoiceOver warnings, delete dialog and error alert
         .task {
             populateFromMode()
-            if !isEditing && !isDraft { isNameFocused = true }
+            // No keyboard on open: the person taps the name (or the mic) when ready.
             // AI button only when creating, and only if the model can run here.
             canSuggest = !isEditing && !isDraft && viewModel.canSuggestItemDetails
         }
         // No request keeps running after the sheet closes.
         .onDisappear {
             suggestionTask?.cancel()
+            previewTask?.cancel()
+            voice.cancel()
         }
-        // The AI prompt: type or speak the item, check the text, then confirm. The housemates'
-        // names help the speech recognizer hear them right.
-        .sheet(isPresented: $isShowingAIPrompt) {
-            ItemIntelligentSheet(
-                text: $aiInput,
-                contextualStrings: availableUsers.map(\.name),
-                onConfirm: requestSuggestion
-            )
+        // Spoken words show above the name as they're recognized (the name field is left
+        // alone); when the person stops, the AI reads the sentence and fills the form.
+        .onChange(of: voice.transcript) { _, spoken in
+            if !spoken.isEmpty { spokenText = spoken }
+        }
+        .onChange(of: voice.isBusy) { wasBusy, isBusy in
+            guard wasBusy, !isBusy else { return }
+            readSpoken()
         }
         .dismissKeyboardOnTap()
         .onChange(of: visibleWarning) { _, warning in
@@ -277,7 +317,10 @@ struct ShopListItemFormView: View {
 
     // MARK: - Sections
 
-    /// The category's icon beside the name field, like the chore editor's header.
+    /// The category's icon beside the name field, like the chore editor's header. The field also
+    /// takes a whole description ("2kg de arroz 10 reais para mim"): while typing, a grey pill
+    /// previews the name the AI would keep (like Reminders' quick add); once applied, the field
+    /// keeps just the name, which can still be edited.
     private var header: some View {
         HStack(spacing: 18) {
             SymbolImage(name: category.symbol)
@@ -285,67 +328,202 @@ struct ShopListItemFormView: View {
                 .foregroundStyle(category.color)
                 .padding(.leading, 6)
                 .accessibilityHidden(true)
+            
+            // Leading, so the hint under the field starts where the name starts.
+            VStack(alignment: .leading) {
+                HStack{
+                    VStack(spacing: 2) {
+                        // What was said, above the name; it can be corrected and read again.
+                        if !spokenText.isEmpty || isSpokenFocused || voice.isBusy {
+                            spokenLine
+                        }
 
-            VStack(spacing: 2) {
-                TextField(
-                    "",
-                    text: $name,
-                    prompt: Text("Nome do item").foregroundStyle(.black)
-                )
-                .font(.system(size: 28))
-                .bold()
-                .characterLimit(TextLimits.shopItemName, text: $name)
-                .submitLabel(.done)
-                .focused($isNameFocused)
-                .voiceOverLabel(L10n.tr("Nome do item"))
-                .voiceControlNames([L10n.tr("Nome do item"), L10n.tr("Nome")])
+                        TextField(
+                            "",
+                            text: $name,
+                            prompt: Text("Nome do item").foregroundStyle(.black)
+                        )
+                        .font(.system(size: 28))
+                        .bold()
+                        // A description is longer than a name; the AI shortens it to the name
+                        // limit. Without AI, the usual limit applies while typing.
+                        .characterLimit(canSuggest ? TextLimits.shopItemDescription : TextLimits.shopItemName, text: $name)
+                        .submitLabel(.done)
+                        .focused($isNameFocused)
+                        .disabled(voice.isBusy)
+                        // Done on the keyboard, or leaving the field, reads what was typed.
+                        .onSubmit { readDescription() }
+                        .onChange(of: isNameFocused) { _, isFocused in
+                            if !isFocused { readDescription() }
+                        }
+                        .onChange(of: name) { _, newName in
+                            // Clearing the name drops the old description above it.
+                            if newName.isEmpty { describedInput = nil }
+                            schedulePreview()
+                        }
+                        .voiceOverLabel(L10n.tr("Nome do item"))
+                        .voiceControlNames([L10n.tr("Nome do item"), L10n.tr("Nome")])
+                        
+                        Capsule()
+                            .frame(height: 1.5)
+                            .foregroundStyle(.gray.opacity(0.5))
+                            .accessibilityHidden(true)
 
-                Capsule()
-                    .frame(height: 1.5)
-                    .foregroundStyle(.gray.opacity(0.5))
-                    .accessibilityHidden(true)
+                        // While typing a description: the name the AI would keep. Tap (or Done)
+                        // to use it.
+                        if let preview, describedInput == nil {
+                            previewPill(preview)
+                                .padding(.top, 6)
+                        }
+                        
+                        if let voiceError = voice.errorMessage {
+                            Text(voiceError)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
 
-                // Shown when the AI couldn't fill in the item; the form stays as it was.
-                if aiDidFail {
-                    Text("Não foi possível preencher. Preencha manualmente.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.subTitleGray)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        // Shown when the AI couldn't fill in the item; the form stays as it was.
+                        if aiDidFail {
+                            Text("Não foi possível preencher. Preencha manualmente.")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.subTitleGray)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    
+                    if canSuggest {
+                        micButton
+                    }
                 }
-            }
-
-            if canSuggest {
-                aiButton
+                
+                // Only when the AI can fill the form from a description.
+                if canSuggest {
+                    Label {
+                        Text("Descreva o que gostaria de comprar e preenchemos automaticamente.")
+                    } icon: {
+                        Image(systemName: "sparkles")
+                    }
+                    .font(.system(size: 13))
+                    .foregroundStyle(.subTitleGray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
         .animation(.snappy, value: category)
         .animation(.snappy, value: aiDidFail)
+        .animation(.snappy, value: describedInput)
+        .animation(.snappy, value: preview?.name)
+        .animation(.snappy, value: spokenText.isEmpty)
     }
 
-    /// Opens the AI prompt, pre-filled with the name typed so far.
-    private var aiButton: some View {
+    /// "Nome: Arroz" under a description being typed; tapping it fills the form now.
+    private func previewPill(_ preview: ShopItemSuggestion) -> some View {
         Button {
-            aiInput = trimmedName
-            aiDidFail = false
-            isShowingAIPrompt = true
+            lastReadName = trimmedName
+            applySuggestion(preview)
+        } label: {
+            Text(L10n.tr("Nome: %@", preview.name))
+                .font(.system(size: 15))
+                .foregroundStyle(.subTitleGray)
+                .lineLimit(1)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white, in: Capsule()) // White, so it shows on the grey page.
+        }
+        .buttonStyle(.plain)
+        .transition(.opacity)
+        .voiceOverHint(L10n.tr("Toque para preencher o formulário."))
+    }
+
+    /// The mic beside the name: tap to say the item, tap again to stop. What was said goes
+    /// into the field, then the AI fills the form from it. Red while recording.
+    private var micButton: some View {
+        Button {
+            HapticsManager.selection()
+            if voice.isListening {
+                voice.stop()
+            } else if !voice.isBusy {
+                // Closing the keyboard shouldn't send the half-typed name: speech is read instead.
+                lastReadName = trimmedName
+                isNameFocused = false
+                isSpokenFocused = false
+                spokenText = ""
+                lastReadSpoken = ""
+                aiDidFail = false
+                Task { await voice.start(contextualStrings: availableUsers.map(\.name)) }
+            }
         } label: {
             Group {
-                if isSuggesting {
-                    ProgressView()
-                } else {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(category.color)
-                }
+                // The mic never spins; progress shows beside the spoken sentence instead.
+                Image(systemName: voice.isListening ? "stop.fill" : "mic.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(voice.isListening ? Color.white : .black)
+                    .symbolEffect(.pulse, isActive: voice.isListening)
             }
             .frame(width: 44, height: 44)
+            .background(Circle().fill(voice.isListening ? Color.red : Color.clear))
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive(), in: .circle)
-        .disabled(isSuggesting)
-        .voiceOverLabel(L10n.tr("Preencher com IA"))
-        .voiceControlNames([L10n.tr("Preencher com IA"), L10n.tr("IA")])
+        .disabled(isSuggesting || voice.isPreparing || voice.isFinishing)
+        .voiceOverLabel(voice.isListening ? L10n.tr("Parar de ouvir") : L10n.tr("Falar"))
+        .voiceControlNames(voice.isListening
+            ? [L10n.tr("Parar"), L10n.tr("Parar de ouvir")]
+            : [L10n.tr("Falar"), L10n.tr("Microfone")])
+    }
+
+    /// The spoken sentence above the name, small and grey but editable. Return or Done reads it
+    /// again; a small spinner shows while the speech is being transcribed or read by the AI.
+    private var spokenLine: some View {
+        HStack(alignment: .center, spacing: 6) {
+            Group {
+                if voice.isPreparing || voice.isFinishing || (isSuggesting && isReadingSpeech) {
+                    ProgressView()
+                        .controlSize(.mini)
+                } else {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.subTitleGray)
+                        .symbolEffect(.variableColor.iterative, isActive: voice.isListening)
+                }
+            }
+            .frame(width: 16, height: 16)
+            .accessibilityHidden(true)
+
+            TextField(L10n.tr("Ouvindo"), text: $spokenText, axis: .vertical)
+                .font(.system(size: 15))
+                .foregroundStyle(.subTitleGray)
+                .lineLimit(1...3)
+                .submitLabel(.done)
+                .focused($isSpokenFocused)
+                .disabled(voice.isBusy)
+                // A vertical field puts Return in the text: treat it as Done instead.
+                .onChange(of: spokenText) { _, newText in
+                    guard newText.contains("\n") else { return }
+                    spokenText = newText.replacingOccurrences(of: "\n", with: "")
+                    isSpokenFocused = false
+                }
+                .onChange(of: isSpokenFocused) { _, isFocused in
+                    if !isFocused { readSpoken() }
+                }
+                .voiceOverLabel(L10n.tr("O que você disse"))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .transition(.opacity)
+    }
+
+    /// Asks the AI to fill the form from the spoken sentence (as spoken or as corrected), once
+    /// per text.
+    private func readSpoken() {
+        let input = spokenText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canSuggest, !voice.isBusy, !input.isEmpty, input != lastReadSpoken else { return }
+        lastReadSpoken = input
+        aiDidFail = false
+        requestSuggestion(for: input)
+        isReadingSpeech = true
     }
 
     /// The warning on screen, if any; VoiceOver announces it whenever it appears or changes.
@@ -421,12 +599,8 @@ struct ShopListItemFormView: View {
                     }
                 } label: {
                     HStack {
-                        CapsuleTag(
-                            tagName: unitMeasurement.getDisplayName(for: Double(quantity)).capitalized(with: L10n.locale),
-                            tagColor: category.color,
-                            horizontalPadding: 10,
-                            verticalPadding: 1.5
-                        )
+                        // A dot in the category's color, then the choice (no capsule around it).
+                        menuValue(unitMeasurement.getDisplayName(for: Double(quantity)).capitalized(with: L10n.locale))
 
                         Image(systemName: "chevron.up.chevron.down")
                             .foregroundColor(.black)
@@ -445,18 +619,87 @@ struct ShopListItemFormView: View {
         .padding(16)
         .frame(maxWidth: .infinity)
         .background(
-            Color(.systemGray6).opacity(0.5),
+            Color.white,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
     }
 
-    /// The price field.
-    private var priceField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "tag")
-                .foregroundStyle(.subTitleGray)
+    /// Category as a menu row in a white card, the same pattern as "Unidade" in ``quantityCard``.
+    /// Sparkles beside the label mark a category the AI filled in.
+    private var categoryCard: some View {
+        HStack {
+            HStack(spacing: 6) {
+                Text("Categoria")
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+
+                if isSuggested(.category) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.subTitleGray)
+                        .transition(.opacity)
+                        .voiceOverLabel(L10n.tr("Sugerido automaticamente"))
+                }
+            }
+            .animation(.snappy, value: isSuggested(.category))
+
+            Spacer()
+
+            Menu {
+                Picker("Categoria", selection: $category) {
+                    ForEach(ShopItemCategory.allCases) { option in
+                        // Category icons are now image assets (see ``SymbolImage``); "house" is
+                        // still an SF Symbol, so pick whichever exists.
+                        Group {
+                            if UIImage(named: option.symbol) != nil {
+                                Label(option.displayName, image: option.symbol)
+                            } else {
+                                Label(option.displayName, systemImage: option.symbol)
+                            }
+                        }
+                        .tag(option)
+                    }
+                }
+            } label: {
+                HStack {
+                    // A dot in the category's color, then the choice (no capsule around it).
+                    menuValue(category.displayName)
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .foregroundColor(.black)
+                        .imageScale(.small)
+                }
+                .fixedSize()
+            }
+            .voiceOverLabel(L10n.tr("Categoria"))
+            .voiceOverValue(category.displayName)
+            .voiceControlNames([L10n.tr("Categoria"), category.displayName])
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .background(
+            Color.white,
+            in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+        )
+    }
+
+    /// What a menu row shows as its value: a small dot in the category's color, then the text.
+    private func menuValue(_ text: String) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(category.color)
+                .frame(width: 10, height: 10)
                 .accessibilityHidden(true)
 
+            Text(text)
+                .font(.system(size: 15))
+                .foregroundStyle(.black)
+        }
+        .animation(.snappy, value: category)
+    }
+
+    /// The price field.
+    private var priceField: some View {
             TextField(pricePlaceholder, text: $valueText)
                 .priceInput(text: $valueText)
                 .font(.system(size: 17))
@@ -464,11 +707,11 @@ struct ShopListItemFormView: View {
                 .voiceOverValue(ShopListViewModel.accessibilityPrice(valueText))
                 // Voice Control: "Toque em Preço", then dictate the value.
                 .voiceControlNames([L10n.tr("Preço por unidade"), L10n.tr("Preço"), L10n.tr("Valor")])
-        }
+
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .background(
-            Color(.systemGray6).opacity(0.5),
+            Color.white,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
     }
@@ -519,12 +762,70 @@ struct ShopListItemFormView: View {
     }
 
     /// Sends what the person typed in the AI prompt to the on-device model.
-    private func requestSuggestion() {
-        let input = aiInput
+    /// Asks the AI to fill the form from what is in the name field, once per text: nothing
+    /// happens if it's empty or it's the name the AI already read or wrote.
+    ///
+    /// - Returns: Whether a request started.
+    @discardableResult
+    private func readDescription() -> Bool {
+        let input = trimmedName
+        guard canSuggest, !voice.isBusy, !input.isEmpty, input != lastReadName else { return false }
+        lastReadName = input
+        aiDidFail = false
+
+        // The preview already read this exact text: use it instead of asking again.
+        if let preview, preview.input == input {
+            applySuggestion(preview)
+            return false
+        }
+        isReadingSpeech = false // Typed by default; the speech path sets it back right after.
+        requestSuggestion(for: input)
+        return true
+    }
+
+    /// After a short pause in typing, asks the AI what it would fill, to show "Nome: …".
+    /// Only for descriptions (two words or more) typed before the form was filled from one.
+    private func schedulePreview() {
+        previewTask?.cancel()
+        preview = nil
+        let input = trimmedName
+        guard canSuggest, isNameFocused, describedInput == nil, !voice.isBusy,
+              input != lastReadName,
+              input.split(separator: " ").count >= 2
+        else { return }
+
+        previewTask = Task {
+            do {
+                try await Task.sleep(for: .milliseconds(800))
+            } catch {
+                return // Still typing.
+            }
+            let result = await viewModel.suggestItemDetails(
+                for: input,
+                housemates: availableUsers,
+                currentUser: currentUser,
+                selectedConsumers: relatedUsers
+            )
+            guard !Task.isCancelled, let result, input == trimmedName else { return }
+            // Worth showing only when the AI took something out of the text.
+            if result.name.localizedCaseInsensitiveCompare(input) != .orderedSame {
+                preview = result
+            }
+        }
+    }
+
+    private func requestSuggestion(for input: String) {
         suggestionTask?.cancel()
+        previewTask?.cancel()
+        isSuggesting = true
         suggestionTask = Task {
-            isSuggesting = true
-            defer { isSuggesting = false }
+            defer {
+                // A request replaced by a newer one leaves the newer one's state alone.
+                if !Task.isCancelled {
+                    isSuggesting = false
+                    isReadingSpeech = false
+                }
+            }
 
             let result = await viewModel.suggestItemDetails(
                 for: input,
@@ -538,6 +839,12 @@ struct ShopListItemFormView: View {
                 applySuggestion(result)
             } else {
                 aiDidFail = true
+                // Typed: keep what they wrote, cut to the name limit so the item can still be
+                // saved. Spoken: the sentence stays above and the name is left as it was.
+                if !isReadingSpeech {
+                    name = String(input.prefix(TextLimits.shopItemName))
+                    lastReadName = name
+                }
                 VoiceOver.announce(L10n.tr("Não foi possível preencher. Preencha manualmente."))
             }
         }
@@ -548,8 +855,13 @@ struct ShopListItemFormView: View {
     /// change any of them before saving.
     private func applySuggestion(_ result: ShopItemSuggestion) {
         suggestion = result
+        previewTask?.cancel()
+        preview = nil
         withAnimation(.snappy) {
+            // Kept only when the AI changed the name (see `describedInput`).
+            describedInput = result.name.isEmpty || result.name == result.input ? nil : result.input
             if !result.name.isEmpty { name = result.name }
+            lastReadName = name
             category = result.category
             quantity = result.quantity
             unitMeasurement = result.unit

@@ -62,6 +62,8 @@ struct AddMoreItensInteligence: View {
                     writing
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGray6).ignoresSafeArea())
             .navigationTitle("Adicionar com IA")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -75,11 +77,40 @@ struct AddMoreItensInteligence: View {
                     .voiceOverLabel(L10n.tr("Cancelar"))
                     .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                 }
+
+                if suggestions == nil {
+                    ToolbarItem(placement: .confirmationAction) {
+                        if isGenerating {
+                            ProgressView()
+                        } else {
+                            Button {
+                                Task { await generate() }
+                            } label: {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12))
+                                    .bold()
+                                    .foregroundColor(.white)
+                            }
+                            .tint(.blue)
+                            .buttonStyle(.glassProminent)
+                            .disabled(trimmedText.count < 3 || voice.isBusy)
+                            .voiceOverLabel(L10n.tr("Gerar itens"))
+                            .voiceControlNames([L10n.tr("Gerar itens"), L10n.tr("Próximo"), L10n.tr("Continuar")])
+                        }
+                    }
+                }
+
+                // Closes the keyboard from the text box (Return adds a new line there).
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("OK") { isTextFocused = false }
+                        .fontWeight(.semibold)
+                }
             }
         }
         .presentationDragIndicator(.visible)
+        .presentationBackground(Color(.systemGray6))
         .interactiveDismissDisabled(isSaving)
-        .dismissKeyboardOnTap()
         // The arrow on a card opens the usual item form; confirming replaces that suggestion.
         .sheet(item: $editing) { draft in
             if let suggestions, suggestions.indices.contains(draft.id) {
@@ -100,9 +131,11 @@ struct AddMoreItensInteligence: View {
 
     // MARK: - Step 1: writing
 
+    /// Scrolls with the keyboard up, so the hint at the top stays reachable.
     private var writing: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Escreva um item por linha, com quantidade, preço e para quem é.")
+        ScrollView(showsIndicators: false) {
+        VStack(alignment: .leading, spacing: 24) {
+            Text("Descreva o que deseja adicionar na sua lista, com quantidade, preço(opcional) e quem irá consumir.")
                 .font(.system(size: 15))
                 .foregroundStyle(.subTitleGray)
 
@@ -120,13 +153,14 @@ struct AddMoreItensInteligence: View {
                     .focused($isTextFocused)
                     // Locked while speech is still turning into text.
                     .disabled(voice.isBusy)
-                    .voiceOverLabel(L10n.tr("Escreva um item por linha, com quantidade, preço e para quem é."))
+                    // Same words as the hint above it.
+                    .voiceOverLabel(L10n.tr("Descreva o que deseja adicionar na sua lista, com quantidade, preço(opcional) e quem irá consumir."))
             }
             .font(.system(size: 17))
             .frame(minHeight: 180)
             .padding(12)
             .background(
-                Color(.systemGray6).opacity(0.5),
+                Color.white,
                 in: RoundedRectangle(cornerRadius: 20, style: .continuous)
             )
 
@@ -135,6 +169,12 @@ struct AddMoreItensInteligence: View {
                     .font(.system(size: 13))
                     .foregroundColor(.red)
             }
+            
+            Text("Ou")
+                .font(.system(size: 13))
+                .fontWeight(.semibold)
+                .foregroundStyle(.subTitleGray)
+                .frame(maxWidth: .infinity, alignment: .center)
 
             // Say the items instead of typing; each recording becomes a new line, and the text
             // can still be fixed before generating the cards.
@@ -145,19 +185,10 @@ struct AddMoreItensInteligence: View {
                 appendsToText: true,
                 onStart: { isTextFocused = false }
             )
-
-            Spacer()
-
-            primaryButton(
-                title: L10n.tr("Gerar itens"),
-                isLoading: isGenerating,
-                isEnabled: trimmedText.count >= 3 && !voice.isBusy
-            ) {
-                Task { await generate() }
-            }
         }
         .padding(22)
-        .task { isTextFocused = true }
+        }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     // MARK: - Step 2: review
@@ -270,9 +301,10 @@ struct AddMoreItensInteligence: View {
 
                 Button(action: edit) {
                     HStack(spacing: 12) {
-                        Image(systemName: category.symbol)
-                            .font(.system(size: 18, weight: .semibold))
+                        // Category icons are image assets now; SymbolImage also handles SF Symbols.
+                        SymbolImage(name: category.symbol)
                             .foregroundStyle(category.color)
+                            .frame(width: 24, height: 24)
                             .frame(width: 40, height: 40)
                             .background(
                                 category.softColor.opacity(0.45),
@@ -336,7 +368,7 @@ struct AddMoreItensInteligence: View {
         .padding(.leading, 6)
         .padding(.trailing, 14)
         .background(
-            Color(.systemGray6).opacity(0.5),
+            Color.white,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
         .opacity(isIncluded ? 1 : 0.5)
