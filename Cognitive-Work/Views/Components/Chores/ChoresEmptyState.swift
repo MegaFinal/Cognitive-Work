@@ -87,12 +87,11 @@ struct ChoresEmptyState: View {
     private var mascot: some View {
         ZStack {
             Circle()
-                .fill(RoomColor.yellow.lowOpacityColor.opacity(0.3))
+                .fill(RoomColor.blue.lowOpacityColor.opacity(0.3))
             
-            Image("loadingIcon")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 112)
+            SymbolImage(name: "kite")
+                .foregroundStyle(RoomColor.blue.uiColor)
+                .frame(width: 156, height: 156)
         }
         .frame(width: 176, height: 176)
         .clipShape(Circle())
@@ -112,7 +111,7 @@ struct ChoresEmptyState: View {
     private func sparkle(size: CGFloat) -> some View {
         Image(systemName: "sparkle")
             .font(.system(size: size, weight: .bold))
-            .foregroundStyle(.choreYellow)
+            .foregroundStyle(RoomColor.blue.uiColor)
             .scaleEffect(isAnimating ? 1.15 : 0.85)
             .animation(
                 .easeInOut(duration: 1.4).repeatForever(autoreverses: true),

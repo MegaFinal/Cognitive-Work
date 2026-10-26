@@ -27,20 +27,18 @@ struct ChoreCarouselCard: View {
             // MARK: - Chore name (top)
             VStack {
                 Text(chore.localizedName)
-                    .font(.system(size: 26))
-                    .fontWeight(.bold)
+                    .font(.custom("Alan Sans", size: 32))
+                    .fontWeight(.semibold)
                     .multilineTextAlignment(.center)
-                    .frame(width: width * 0.6)
+                    .frame(width: width * 0.62)
                 Spacer()
             }
-            .padding(.top, 30)
+            .padding(.top, height * 0.05)
             
             // MARK: - Room icon (center)
-            Image(systemName: room?.symbol ?? chore.symbolName)
-                .resizable()
-                .scaledToFill()
-                .frame(width: width * 0.17, height: height * 0.17)
-                .fontWeight(.ultraLight)
+            SymbolImage(name: room?.symbol ?? chore.symbolName)
+                .frame(width: width * 0.6, height: height * 0.4)
+                .padding(.top, height * 0.07)
         }
         // MARK: - Card style and accessibility
         .foregroundColor(.white)
@@ -76,7 +74,7 @@ struct ChoreCarouselCard: View {
     @Previewable @Namespace var namespace
 
     let vm: CarouselViewModel = {
-        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "pantry", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
 
         let vm = CarouselViewModel()
@@ -86,7 +84,7 @@ struct ChoreCarouselCard: View {
 
     let chore: ChoreModel = {
         let chore = ChoreModel(
-            name: "Repor papel e produtos de higiene",
+            name: "Check expiration dates",
             description: "Depois do jantar",
             frequency: .daily,
             duration: 20,

@@ -101,7 +101,7 @@ struct GamificationView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("Recompensas")
-                .font(.system(size: 34))
+                .font(.custom("Alan Sans", size: 34))
                 .fontWeight(.bold)
                 .accessibilityAddTraits(.isHeader)
 

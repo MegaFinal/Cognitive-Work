@@ -1357,6 +1357,7 @@
       }
     },
     "Adicionar item" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1409,6 +1410,16 @@
         }
       }
     },
+    "Adicionar subtarefa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add subtask"
+          }
+        }
+      }
+    },
     "Adicionar tarefa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1416,6 +1427,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add chore"
+          }
+        }
+      }
+    },
+    "Adicione o nome da tarefa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the chore name"
           }
         }
       }
@@ -1705,6 +1726,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tapping \"Restart\" will delete the current chore split."
+          }
+        }
+      }
+    },
+    "Ao dividir, qualquer morador pode receber essa tarefa. Sem dividir, ela fica apenas com quem você selecionou e não aparece para os outros moradores da casa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When shared, any resident can get this chore. If not, it stays only with the people you picked and doesn't show up for the other residents."
           }
         }
       }
@@ -2145,6 +2176,17 @@
         }
       }
     },
+    "Bicicleta" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bicycle"
+          }
+        }
+      }
+    },
     "Blocos selecionados: %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2255,6 +2297,17 @@
         }
       }
     },
+    "Cadeira de varanda" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balcony chair"
+          }
+        }
+      }
+    },
     "Caixa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2267,12 +2320,22 @@
       }
     },
     "Calendário" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Calendar"
+          }
+        }
+      }
+    },
+    "Cama de solteiro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twin bed"
           }
         }
       }
@@ -2526,6 +2589,17 @@
         }
       }
     },
+    "Cesto de roupa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laundry basket"
+          }
+        }
+      }
+    },
     "Chave Pix" : {
       "localizations" : {
         "en" : {
@@ -2600,6 +2674,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tarefas"
+          }
+        }
+      }
+    },
+    "Chuveiro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shower"
           }
         }
       }
@@ -3413,6 +3498,7 @@
       }
     },
     "Data" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3568,7 +3654,28 @@
         }
       }
     },
+    "Descrição da subtarefa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtask description"
+          }
+        }
+      }
+    },
+    "Descrição da tarefa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chore description"
+          }
+        }
+      }
+    },
     "Descrição da Tarefa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3670,6 +3777,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leaving an old home..."
+          }
+        }
+      }
+    },
+    "Detalhes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details"
           }
         }
       }
@@ -3835,12 +3952,33 @@
         }
       }
     },
+    "Dividir" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
+    },
     "Dividir a casa vai além da faxina" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sharing a home goes beyond cleaning"
+          }
+        }
+      }
+    },
+    "Dividir com a casa?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share with the house?"
           }
         }
       }
@@ -4774,6 +4912,17 @@
         }
       }
     },
+    "Escolher data" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a date"
+          }
+        }
+      }
+    },
     "Escovar por dentro, desinfetar o assento e a parte externa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4906,6 +5055,7 @@
       }
     },
     "Essa tarefa é para a casa?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6778,6 +6928,17 @@
         }
       }
     },
+    "Máquina de lavar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Washing machine"
+          }
+        }
+      }
+    },
     "Marcar %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8099,6 +8260,7 @@
       }
     },
     "Nome da Tarefa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8171,6 +8333,17 @@
         }
       }
     },
+    "Notebook" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laptop"
+          }
+        }
+      }
+    },
     "Notificações" : {
       "localizations" : {
         "en" : {
@@ -8198,6 +8371,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New split is ready"
+          }
+        }
+      }
+    },
+    "Nova subtarefa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New subtask"
           }
         }
       }
@@ -8886,6 +9070,17 @@
         }
       }
     },
+    "Panelas no fogão" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pots on the stove"
+          }
+        }
+      }
+    },
     "para %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9409,6 +9604,17 @@
         }
       }
     },
+    "Pipa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kite"
+          }
+        }
+      }
+    },
     "Pipa. Para aqueles que notam." : {
       "localizations" : {
         "en" : {
@@ -9440,6 +9646,17 @@
         }
       }
     },
+    "Planta" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plant"
+          }
+        }
+      }
+    },
     "Platina" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9463,11 +9680,15 @@
       }
     },
     "Pode estar faltando" : {
+
+    },
+    "Poltrona" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Might be missing"
+            "value" : "Armchair"
           }
         }
       }
@@ -12307,6 +12528,17 @@
         }
       }
     },
+    "Varal" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clothes line"
+          }
+        }
+      }
+    },
     "Varanda" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -12762,13 +12994,13 @@
         }
       }
     },
-    "Você realizou %lld de %lld \n tarefas da sua escala" : {
+    "Você realizou **%lld de %lld** \n tarefas da sua escala" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You did %lld of %lld \n chores in your schedule"
+            "value" : "You did **%lld of %lld** \n chores in your schedule"
           }
         }
       }

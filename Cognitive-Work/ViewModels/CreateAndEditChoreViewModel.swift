@@ -181,13 +181,6 @@ final class CreateAndEditChoreViewModel {
         Calendar.current.startOfDay(for: now())
     }
     
-    /// Explains who will see the chore, depending on whether it is public.
-    var visibilityDescription: String {
-        draft.isPublic
-        ? L10n.tr("Caso essa tarefa seja para a sua casa ela aparecerá publica para todos os moradores.")
-        : L10n.tr("Tarefa privada: só aparece para você e é atribuída somente a você.")
-    }
-    
     /// Members who can be picked as responsible: everyone for a public chore, only the user for a private one.
     var selectableResponsibleUsers: [UserModel] {
         guard !draft.isPublic else { return availableHouseUsers }
@@ -247,7 +240,10 @@ final class CreateAndEditChoreViewModel {
         
         let checklistModels = await originalModel.checkList
         draft.checklist = checklistModels.map(CheckItemDTO.init(from:))
-        draft.hasChecklist = !draft.checklist.isEmpty
+        if draft.checklist.isEmpty {
+            draft.checklist.append(CheckItemDTO(name: "", isDone: false))
+        }
+        draft.hasChecklist = true
         
         isLoaded = true
     }
@@ -312,13 +308,6 @@ final class CreateAndEditChoreViewModel {
     func visibilityDidChange(isPublic: Bool) {
         guard isLoaded, !isPublic else { return }
         draft.responsibleUsers = currentHouseUserInList.map { [$0] } ?? []
-    }
-    
-    /// Turning the checklist on starts it with one empty row to type into.
-    func checklistToggleDidChange(isOn: Bool) {
-        if isOn && draft.checklist.isEmpty {
-            draft.checklist.append(CheckItemDTO(name: "", isDone: false))
-        }
     }
     
     // MARK: - Confirm

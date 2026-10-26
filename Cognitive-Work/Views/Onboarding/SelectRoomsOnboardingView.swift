@@ -368,10 +368,8 @@ private struct OnboardingRoomCard: View {
     /// The icon and name over the card's background.
     private var content: some View {
         ZStack {
-            Image(systemName: symbol)
-                .resizable()
-                .scaledToFit()
-                .frame(width: width * 0.2, height: height * 0.1)
+            SymbolImage(name: symbol)
+                .frame(width: width * 0.25, height: height * 0.12)
                 .padding(.bottom, 20)
                 .foregroundColor(isSelected ? .white : .black)
             

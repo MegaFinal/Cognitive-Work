@@ -311,11 +311,8 @@ private struct RoomCard: View {
     private var card: some View {
         ZStack {
             VStack(spacing: 14) {
-                Image(systemName: room.symbol)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 52, height: 52)
-                    .fontWeight(.light)
+                SymbolImage(name: room.symbol)
+                    .frame(width: 84, height: 84)
                     .accessibilityHidden(true)
                 
                 Text(room.name.localizedDefault)
@@ -568,14 +565,11 @@ struct RoomFormSheet: View {
                 .id("\(selectedColor.rawValue).\(pattern.rawValue)")
                 .transition(.opacity)
             
-            Image(systemName: selectedSymbol)
-                .resizable()
-                .scaledToFit()
-                .fontWeight(.light)
+            SymbolImage(name: selectedSymbol)
                 .foregroundStyle(.white)
-                .frame(width: 70, height: 70)
-                .contentTransition(.symbolEffect(.replace))
-                .symbolEffect(.bounce, value: selectedColor)
+                .frame(width: 96, height: 96)
+                .id(selectedSymbol)
+                .transition(.opacity)
                 .frame(width: 140, height: 140)
                 .background(
                     RoundedRectangle(cornerRadius: 14)
@@ -709,11 +703,9 @@ struct RoomFormSheet: View {
                 ForEach(RoomsManagementViewModel.customRoomSymbols, id: \.self) { symbol in
                     let isSelected = selectedSymbol == symbol
                     
-                    Image(systemName: symbol)
-                        .resizable()
-                        .scaledToFit()
-                        // Wide glyphs (car, gamecontroller…) shrink to fit instead of overflowing.
-                        .frame(width: 24, height: 24)
+                    SymbolImage(name: symbol)
+                        // Wide glyphs shrink to fit instead of overflowing.
+                        .frame(width: 36, height: 36)
                         .foregroundStyle(isSelected ? Color.white : Color.primary)
                         // Fill the whole grid cell as a square so the circle behind is full size.
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

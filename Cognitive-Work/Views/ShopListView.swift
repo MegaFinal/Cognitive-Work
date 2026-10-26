@@ -198,7 +198,7 @@ struct ShopListView: View {
             VStack(alignment: .leading, spacing: 2) {
                 // MARK: Title and pending summary
                 Text("Compras")
-                    .font(.system(size: 34))
+                    .font(.custom("Alan Sans", size: 34))
                     .fontWeight(.bold)
                     .accessibilityAddTraits(.isHeader)
 
@@ -421,12 +421,11 @@ private struct ShopListEmptyState: View {
         VStack(spacing: 28) {
             ZStack {
                 Circle()
-                    .fill(RoomColor.yellow.lowOpacityColor.opacity(0.3))
+                    .fill(RoomColor.orange.lowOpacityColor.opacity(0.3))
 
-                Image("loadingIcon")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 112)
+                SymbolImage(name: "plastic.bag")
+                    .foregroundStyle(RoomColor.orange.uiColor)
+                    .frame(width: 128, height: 128)
             }
             .frame(width: 176, height: 176)
             .clipShape(Circle())
@@ -461,7 +460,7 @@ private struct ShopListEmptyState: View {
     private func sparkle(size: CGFloat) -> some View {
         Image(systemName: "sparkle")
             .font(.system(size: size, weight: .bold))
-            .foregroundStyle(.choreYellow)
+            .foregroundStyle(RoomColor.orange.uiColor)
             .scaleEffect(isAnimating ? 1.15 : 0.85)
     }
 }

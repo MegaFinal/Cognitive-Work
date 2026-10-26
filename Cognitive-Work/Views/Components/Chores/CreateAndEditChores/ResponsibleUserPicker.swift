@@ -19,36 +19,26 @@ struct ResponsibleUserPicker: View {
     
     /// The collection of users currently bound to the chore.
     @Binding var selectedUsers: [UserModel]
-
-    /// Size of the avatars and of the "+" button, in points, so they line up.
-    private static let controlSize: CGFloat = 44
-
-    /// Shows a small red "−" on each avatar, so it's clear that tapping removes the person.
-    /// Off by default, so the chore editor looks as before; the shopping item form turns it on.
-    var showsRemoveBadge = false
     
     /// Evaluates if a given user is already present in the active selection.
     private func isSelected(_ user: UserModel) -> Bool {
         selectedUsers.contains { $0.id == user.id }
     }
     
+    /// Avatar and "+" button size, as a fraction of the screen width.
+    private let avatarWidthMultiplier = 0.11
+    
     var body: some View {
-        HStack(spacing: showsRemoveBadge ? 10 : 5) {
-            // MARK: - Selected members (tap one to remove it)
+        HStack(spacing: 10) {
+            // MARK: - Selected members (tap one, or its "–" badge, to remove it)
             ForEach(selectedUsers) { selectedUser in
-                UserProfilePictureTag(user: selectedUser, widthMultiplier: Self.controlSize / width)
-                    .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
+                UserProfilePictureTag(user: selectedUser, widthMultiplier: avatarWidthMultiplier)
                     .overlay(alignment: .topTrailing) {
-                        if showsRemoveBadge {
-                            Image(systemName: "minus")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 16, height: 16)
-                                .background(Color.red)
-                                .clipShape(Circle())
-                                .offset(x: 2, y: -2)
-                                .accessibilityHidden(true) // The avatar already says "remove".
-                        }
+                        Image(systemName: "minus.circle.fill")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, Color.choreOrange)
+                            .font(.system(size: 18))
+                            .offset(x: 3, y: -3)
                     }
                     .onTapGesture {
                         selectedUsers.removeAll { $0.id == selectedUser.id }
@@ -84,10 +74,10 @@ struct ResponsibleUserPicker: View {
                 }
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 20))
+                    .font(.system(size: 22))
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
-                    .frame(width: Self.controlSize, height: Self.controlSize)
+                    .frame(width: width * avatarWidthMultiplier, height: width * avatarWidthMultiplier)
                     .background(Color.blue)
                     .clipShape(Circle())
             }

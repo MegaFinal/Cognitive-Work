@@ -177,8 +177,7 @@ struct ShopListItemFormView: View {
                     section("Responsável", isSuggested: isSuggested(.consumers)) {
                         // White card on the grey page, like quantity and price.
                         VStack(alignment: .leading, spacing: 10) {
-                            // The red "−" on each avatar shows that tapping removes the person.
-                            ResponsibleUserPicker(availableUsers: availableUsers, selectedUsers: $relatedUsers, showsRemoveBadge: true)
+                            ResponsibleUserPicker(availableUsers: availableUsers, selectedUsers: $relatedUsers)
                             // How much each person pays, computed in code with the same equal
                             // split as the debts screen.
                             if let shareText {
@@ -324,13 +323,9 @@ struct ShopListItemFormView: View {
     /// keeps just the name, which can still be edited.
     private var header: some View {
         HStack(spacing: 18) {
-            Image(systemName: category.symbol)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 34, height: 73)
-                .fontWeight(.thin)
+            SymbolImage(name: category.symbol)
+                .frame(width: 64, height: 64)
                 .foregroundStyle(category.color)
-                .contentTransition(.symbolEffect(.replace))
                 .padding(.leading, 6)
                 .accessibilityHidden(true)
             
@@ -653,7 +648,16 @@ struct ShopListItemFormView: View {
             Menu {
                 Picker("Categoria", selection: $category) {
                     ForEach(ShopItemCategory.allCases) { option in
-                        Label(option.displayName, systemImage: option.symbol).tag(option)
+                        // Category icons are now image assets (see ``SymbolImage``); "house" is
+                        // still an SF Symbol, so pick whichever exists.
+                        Group {
+                            if UIImage(named: option.symbol) != nil {
+                                Label(option.displayName, image: option.symbol)
+                            } else {
+                                Label(option.displayName, systemImage: option.symbol)
+                            }
+                        }
+                        .tag(option)
                     }
                 }
             } label: {

@@ -111,13 +111,10 @@ struct ChoreCardListStyle: View {
             .shadow(color: .black.opacity(0.21), radius: 3.35, x: 0, y: 5)
             
             // MARK: - Room icon and content
-            HStack(spacing: 30) {
-                Image(systemName: room?.symbol ?? chore.symbolName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: width * 0.1, height: height * 0.08)
+            HStack(spacing: 15) {
+                SymbolImage(name: room?.symbol ?? chore.symbolName)
+                    .frame(width: width * 0.18, height: height * 0.08)
                     .foregroundColor(.white)
-                    .fontWeight(.thin)
                 
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 10) {
@@ -134,7 +131,6 @@ struct ChoreCardListStyle: View {
                                     .shadow(color: .black.opacity(0.24), radius: 1.83087, x: 1.71644, y: 1.14429)
                             }
                         }
-                        .padding(.leading, 4)
                         .padding(.bottom, 8)
                         
                         // MARK: - Tags
@@ -177,7 +173,7 @@ struct ChoreCardListStyle: View {
                     }
                 }
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, 18.5)
         }
         .frame(width: width * 0.92)
         .frame(minHeight: height * 0.14)
@@ -215,7 +211,7 @@ struct ChoreCardListStyle: View {
     @Previewable @Namespace var namespace
     
     let room: RoomModel = {
-        var room = RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange)
+        var room = RoomModel(name: "Cozinha", symbol: "sofa", color: .orange)
         room.recordID = CKRecord.ID(recordName: "preview-room")
         return room
     }()

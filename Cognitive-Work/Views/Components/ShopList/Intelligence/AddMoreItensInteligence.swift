@@ -301,9 +301,10 @@ struct AddMoreItensInteligence: View {
 
                 Button(action: edit) {
                     HStack(spacing: 12) {
-                        Image(systemName: category.symbol)
-                            .font(.system(size: 18, weight: .semibold))
+                        // Category icons are image assets now; SymbolImage also handles SF Symbols.
+                        SymbolImage(name: category.symbol)
                             .foregroundStyle(category.color)
+                            .frame(width: 24, height: 24)
                             .frame(width: 40, height: 40)
                             .background(
                                 category.softColor.opacity(0.45),

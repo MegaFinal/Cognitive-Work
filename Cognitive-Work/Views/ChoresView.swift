@@ -300,14 +300,15 @@ struct ChoresView: View {
         HStack {
             // MARK: Title
             Text(headerTitle)
-                .font(.system(size: 34))
-                .fontWeight(.bold)
+                .font(.custom("Alan Sans", size: 34))
+                .bold()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .layoutPriority(1)
                 .padding(.horizontal, sideMargin)
                 .padding(.top, 20)
                 .accessibilityAddTraits(.isHeader)
+//                .frame(width: width * 0.6)
             
             Spacer()
             
@@ -490,12 +491,12 @@ private struct ProgressIndicatorCard: View {
             Spacer()
             Text(title)
                 .font(.system(size: 12))
-                .fontWeight(.medium)
+                .fontWeight(.semibold)
                 .foregroundColor(.white.opacity(0.8))
             
             Text(data)
-                .font(.system(size: 15))
-                .fontWeight(.bold)
+                .font(.custom("Alan Sans", size: 15))
+                .fontWeight(.semibold)
                 .foregroundColor(.white)
             Spacer()
         }
