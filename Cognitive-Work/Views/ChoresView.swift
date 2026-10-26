@@ -173,10 +173,11 @@ struct ChoresView: View {
                 // MARK: - Unassigned chores popup, always on top of everything else
                 if carouselVM.isShowingUnassignedList {
                     
-                    Color.clear
+                    Color.black.opacity(0.3)
                         .contentShape(Rectangle())
                         .ignoresSafeArea()
                         .zIndex(2000)
+                        .transition(.opacity)
                         .onTapGesture {
                             carouselVM.dismissUnassignedList()
                         }
@@ -196,24 +197,8 @@ struct ChoresView: View {
                 }
                 
                 // MARK: - Pick Unassigned Chore Card Overlay
-                if let item = carouselVM.itemAwaitingDate {
-                    Color.black.opacity(0.45)
-                        .ignoresSafeArea()
-                        .contentShape(Rectangle())
-                        .onTapGesture { }
-                        .zIndex(2999)
-                        .transition(.opacity)
-                        .accessibilityHidden(true)
-                    
-                    VStack {
-                        Spacer()
-                        PickUnassignedChoreCard(item: item, carouselViewModel: carouselVM)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .zIndex(3000)
-                    .transition(.scale)
-                }
+                PickUnassignedChoreOverlay(carouselViewModel: carouselVM)
+                    .zIndex(2999)
             }
             .background(
                 Color(.white)
@@ -436,7 +421,7 @@ struct ChoresView: View {
         let centeredChore = carouselVM.visibleChores[carouselVM.activeIndex]
         
         if let room = carouselVM.getRoom(for: centeredChore) {
-            activeRoomColor = room.color.lowOpacityColor
+            activeRoomColor = room.color.progressCardColor
         } else {
             activeRoomColor = .gray
         }
@@ -484,7 +469,7 @@ private struct ProgressIndicatorCard: View {
     /// Formatted data result (e.g., "1h 30m").
     var data: String
     /// The card's background color.
-    var color: Color = .gray
+    var color: Color = .black
     
     var body: some View {
         VStack(spacing: 5) {

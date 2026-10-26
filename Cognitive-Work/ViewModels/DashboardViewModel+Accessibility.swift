@@ -81,12 +81,6 @@ extension DashboardViewModel {
         if let status = cognitiveShareStatusText { parts.append(status) }
         return parts.joined(separator: ", ")
     }
-
-    /// "3 de 10 tarefas públicas estão sem dono, 30%" for the unowned-chores bar.
-    var unownedAccessibilityValue: String {
-        L10n.tr("%lld de %lld tarefas públicas estão sem dono, %@",
-                unownedPublicCount, totalPublicCount, ChartA11y.percent(unownedPublicProgress))
-    }
 }
 
 // MARK: - Chart descriptor

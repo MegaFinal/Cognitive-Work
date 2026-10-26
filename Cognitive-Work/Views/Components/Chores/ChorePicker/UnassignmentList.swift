@@ -23,7 +23,7 @@ struct UnassignmentList: View {
             // MARK: - Header: title and close hint
             HStack {
                 Text("Tarefas para pegar")
-                    .font(.system(size: 22))
+                    .font(.system(size: 18))
                     .bold()
                     .foregroundStyle(.black)
                     .accessibilityAddTraits(.isHeader)
@@ -47,17 +47,17 @@ struct UnassignmentList: View {
                     .foregroundStyle(.gray)
                     .padding(.top, 8)
             } else {
-                ScrollView {
+                ScrollView(showsIndicators: false) {
                     VStack(spacing: 8) {
                         ForEach(items) { item in
-                            choreRow(for: item)
+                            UnassignedChoreRow(item: item, carouselViewModel: carouselViewModel, onPick: onPick)
                         }
                     }
                 }
                 .frame(maxHeight: 190)
             }
         }
-        .padding(15)
+        .padding(20)
         .frame(width: width * 0.7)
         .glassEffect(.regular.tint(.white.opacity(0.35)), in: .rect(cornerRadius: 28))
         .shadow(radius: 28, y: 4)
@@ -66,88 +66,6 @@ struct UnassignmentList: View {
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) {
             carouselViewModel.dismissUnassignedList()
-        }
-    }
-    
-    /// One chore row: name, frequency and priority tags, and a "hand" icon, tinted with the room's color.
-    private func choreRow(for item: CarouselViewModel.UnassignedItem) -> some View {
-        
-        let roomColor = carouselViewModel.getRoom(for: item.chore)?.color.uiColor ?? .gray
-        
-        return Button {
-            onPick(item)
-        } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.chore.localizedName)
-                        .font(.system(size: 15))
-                        .foregroundStyle(.black)
-                        .fontWeight(.semibold)
-                    
-                    HStack(spacing: 6) {
-                        CapsuleTag(
-                            tagName: item.chore.frequency.displayName,
-                            tagColor: item.chore.frequency.color,
-                            textColor: item.chore.frequency.textColor,
-                            horizontalPadding: 6,
-                            verticalPadding: 1.5
-                        )
-                        
-                        CapsuleTag(
-                            tagName: item.chore.priorityTag.displayName,
-                            tagColor: item.chore.priorityTag.color,
-                            horizontalPadding: 6,
-                            verticalPadding: 1.5
-                        )
-                    }
-                }
-                .padding(5)
-                
-                Spacer()
-                
-                Image(systemName: "hand.rays")
-                    .accessibilityDecorative()
-                    .font(.system(size: 15))
-                    .padding(7)
-                    .foregroundColor(.black)
-                    .background(
-                        Circle()
-                            .foregroundStyle(.white)
-                    )
-            }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(ScaleButtonStyle())
-        .voiceOverLabel(rowAccessibilityLabel(for: item))
-        .voiceControlNames([item.chore.localizedName, L10n.tr("Pegar %@", item.chore.localizedName)])
-        .voiceOverHint(L10n.tr("Toque duas vezes para pegar esta tarefa."))
-        .glassEffect(
-            .regular.tint(roomColor.opacity(0.2)),
-            in: .rect(cornerRadius: 16)
-        )
-    }
-    
-    /// "Lavar a louça, Cozinha, Prioridade média, …, sexta-feira, 25 de setembro".
-    private func rowAccessibilityLabel(for item: CarouselViewModel.UnassignedItem) -> String {
-        var parts = [
-            item.chore.localizedName,
-            carouselViewModel.accessibilityRoomName(for: item.chore),
-            carouselViewModel.accessibilityTagsText(for: item.chore)
-        ]
-        if let date = item.displayDate {
-            parts.append(CarouselViewModel.accessibilityDateText(date))
-        }
-        return parts.joined(separator: ", ")
-    }
-    
-    /// Shrinks the row while it is pressed.
-    private struct ScaleButtonStyle: ButtonStyle {
-        func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .scaleEffect(configuration.isPressed ? 0.7 : 1.0)
-                .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
         }
     }
 }

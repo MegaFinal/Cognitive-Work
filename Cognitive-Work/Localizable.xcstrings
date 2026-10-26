@@ -12991,6 +12991,391 @@
           }
         }
       }
+    },
+    "Abrir janelas e cortinas para renovar o ar do quarto." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the windows and curtains to freshen the air in the room."
+          }
+        }
+      }
+    },
+    "Arejar o quarto" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Air out the bedroom"
+          }
+        }
+      }
+    },
+    "Arrumar a cama" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make the bed"
+          }
+        }
+      }
+    },
+    "Aspirar sofá" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vacuum the sofa"
+          }
+        }
+      }
+    },
+    "Checar pragas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check for pests"
+          }
+        }
+      }
+    },
+    "Dobrar e guardar" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fold and put away"
+          }
+        }
+      }
+    },
+    "Estender roupas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hang the laundry"
+          }
+        }
+      }
+    },
+    "Esvaziar a lixeira e descartar papéis e embalagens." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty the bin and throw away paper and packaging."
+          }
+        }
+      }
+    },
+    "Esvaziar lixeira" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empty the trash bin"
+          }
+        }
+      }
+    },
+    "Lavar a louça" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wash the dishes"
+          }
+        }
+      }
+    },
+    "Lavar as roupas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do the laundry"
+          }
+        }
+      }
+    },
+    "Lavar o chão" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wash the floor"
+          }
+        }
+      }
+    },
+    "Lavar o piso" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wash the floor"
+          }
+        }
+      }
+    },
+    "Limpar a pia" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean the sink"
+          }
+        }
+      }
+    },
+    "Limpar computador" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean the computer"
+          }
+        }
+      }
+    },
+    "Limpar micro-ondas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean the microwave"
+          }
+        }
+      }
+    },
+    "Limpar o box" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean the shower"
+          }
+        }
+      }
+    },
+    "Limpar o chão" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean the floor"
+          }
+        }
+      }
+    },
+    "Limpar o tanque" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean the utility sink"
+          }
+        }
+      }
+    },
+    "Limpar o vaso" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean the toilet"
+          }
+        }
+      }
+    },
+    "Limpar pia e fogão" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean the sink and stove"
+          }
+        }
+      }
+    },
+    "Limpar por dentro e por fora com pano úmido e detergente neutro." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wipe the inside and outside with a damp cloth and mild detergent."
+          }
+        }
+      }
+    },
+    "Organizar a sala" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tidy the living room"
+          }
+        }
+      }
+    },
+    "Organizar armário" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize the closet"
+          }
+        }
+      }
+    },
+    "Organizar papéis" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize papers"
+          }
+        }
+      }
+    },
+    "Passar as peças que precisam e deixá-las prontas para guardar." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iron the pieces that need it and get them ready to put away."
+          }
+        }
+      }
+    },
+    "Passar roupa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iron clothes"
+          }
+        }
+      }
+    },
+    "Procurar traças, formigas e sinais de umidade nos mantimentos." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look for moths, ants and signs of moisture in the food."
+          }
+        }
+      }
+    },
+    "Repor mantimentos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restock groceries"
+          }
+        }
+      }
+    },
+    "Tirar o lixo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take out the trash"
+          }
+        }
+      }
+    },
+    "Tirar pó da sala" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dust the living room"
+          }
+        }
+      }
+    },
+    "Trocar a toalha" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the towel"
+          }
+        }
+      }
+    },
+    "Trocar lençóis" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the sheets"
+          }
+        }
+      }
+    },
+    "Trocar o saco da lixeira e levar o lixo para fora." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace the bin liner and take the trash out."
+          }
+        }
+      }
+    },
+    "Varrer o chão" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sweep the floor"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
