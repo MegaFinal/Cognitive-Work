@@ -16,6 +16,9 @@ enum TextLimits {
     static let choreName = 18
     /// Chore description.
     static let choreDescription = 250
+    /// What can be typed in the chore name field when the AI fills the form from it
+    /// ("lavar a louça toda semana, eu e Ana"); the AI then shortens it to ``choreName``.
+    static let choreNameDescription = 120
     /// One checklist item.
     static let checklistItem = 40
     /// Room names (onboarding cards and the custom-room sheet share it).

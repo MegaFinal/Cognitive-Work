@@ -360,10 +360,14 @@ extension IntelligenceManager {
     /// Who an item is for, read straight from its own text: housemates whose first name appears
     /// in it, the person typing for "eu" / "mim" / "me", or everyone for "todos" / "casa".
     /// `nil` when the text names no one, so the review shows "não informado".
-    private static func consumersMentioned(
+    ///
+    /// Also used for chores (see ChoreSuggestion.swift), where `everyoneCounts` is `false`:
+    /// "limpar a casa" names a place there, not the whole house as responsible.
+    static func consumersMentioned(
         in text: String,
         housemates: [UserModel],
-        currentUser: UserModel?
+        currentUser: UserModel?,
+        everyoneCounts: Bool = true
     ) -> [UserModel]? {
         let words = Set(
             folded(text)
@@ -371,7 +375,7 @@ extension IntelligenceManager {
                 .map(String.init)
         )
 
-        if !words.isDisjoint(with: everyoneWords) {
+        if everyoneCounts, !words.isDisjoint(with: everyoneWords) {
             return housemates.isEmpty ? nil : housemates
         }
 

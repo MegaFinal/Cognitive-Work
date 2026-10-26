@@ -85,8 +85,8 @@ struct ShopListItemFormView: View {
     /// Whether the running AI request reads what was spoken; then a small spinner shows beside
     /// the spoken sentence (the mic itself never spins).
     @State private var isReadingSpeech = false
-    /// What the person said, shown above the name and editable. Done (or Return) on it asks the
-    /// AI to fill the form again from the corrected sentence.
+    /// The description the form was filled from, typed in the name or spoken, shown above the
+    /// name with ✨ and editable. Done (or Return) on it asks the AI to fill the form again.
     @State private var spokenText = ""
     /// The sentence the AI last read, so it isn't read twice.
     @State private var lastReadSpoken = ""
@@ -159,8 +159,11 @@ struct ShopListItemFormView: View {
 
                     categoryCard
 
+                    // Follows the category: its light color (the same light tone as the orange
+                    // used before, for food).
                     RoundedRectangle(cornerRadius: 5)
-                        .foregroundStyle(.lowOpacityOrange)
+                        .foregroundStyle(category.softColor)
+                        .animation(.snappy, value: category)
                         .frame(height: 5)
                         .frame(maxWidth: .infinity)
                         .accessibilityHidden(true)
@@ -484,7 +487,8 @@ struct ShopListItemFormView: View {
                     ProgressView()
                         .controlSize(.mini)
                 } else {
-                    Image(systemName: "waveform")
+                    // ✨ for any description, typed or spoken.
+                    Image(systemName: "sparkles")
                         .font(.system(size: 13))
                         .foregroundStyle(.subTitleGray)
                         .symbolEffect(.variableColor.iterative, isActive: voice.isListening)
@@ -509,7 +513,7 @@ struct ShopListItemFormView: View {
                 .onChange(of: isSpokenFocused) { _, isFocused in
                     if !isFocused { readSpoken() }
                 }
-                .voiceOverLabel(L10n.tr("O que você disse"))
+                .voiceOverLabel(L10n.tr("O que você descreveu"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .transition(.opacity)
@@ -648,14 +652,11 @@ struct ShopListItemFormView: View {
             Menu {
                 Picker("Categoria", selection: $category) {
                     ForEach(ShopItemCategory.allCases) { option in
-                        // Category icons are now image assets (see ``SymbolImage``); "house" is
-                        // still an SF Symbol, so pick whichever exists.
-                        Group {
-                            if UIImage(named: option.symbol) != nil {
-                                Label(option.displayName, image: option.symbol)
-                            } else {
-                                Label(option.displayName, systemImage: option.symbol)
-                            }
+                        // Black icons: menus drew the template assets white.
+                        Label {
+                            Text(option.displayName)
+                        } icon: {
+                            Image(uiImage: Self.menuIcon(option.symbol))
                         }
                         .tag(option)
                     }
@@ -681,6 +682,14 @@ struct ShopListItemFormView: View {
             Color.white,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
+    }
+
+    /// A category icon for the menu, drawn black. Category icons are image assets now (see
+    /// ``SymbolImage``), and "house" is still an SF Symbol, so it takes whichever exists. Menus
+    /// ignore SwiftUI colors, so the color is baked into the image.
+    private static func menuIcon(_ name: String) -> UIImage {
+        let image = UIImage(named: name) ?? UIImage(systemName: name) ?? UIImage()
+        return image.withTintColor(.black, renderingMode: .alwaysOriginal)
     }
 
     /// What a menu row shows as its value: a small dot in the category's color, then the text.
@@ -862,6 +871,12 @@ struct ShopListItemFormView: View {
             describedInput = result.name.isEmpty || result.name == result.input ? nil : result.input
             if !result.name.isEmpty { name = result.name }
             lastReadName = name
+            // The sentence (typed or spoken) moves above the name, where it can be edited and
+            // read again; only when the AI changed it, so "Arroz" alone isn't repeated there.
+            if !result.name.isEmpty, result.name != result.input {
+                spokenText = result.input
+                lastReadSpoken = result.input
+            }
             category = result.category
             quantity = result.quantity
             unitMeasurement = result.unit

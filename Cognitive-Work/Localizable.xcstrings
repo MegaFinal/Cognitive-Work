@@ -1271,7 +1271,6 @@
       }
     },
     "Adicionar" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3610,6 +3609,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disconnect this phone"
+          }
+        }
+      }
+    },
+    "Descreva a tarefa, quando se repete e quem faz, e preenchemos o resto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe the chore, how often it repeats and who does it, and we'll fill in the rest."
           }
         }
       }
@@ -8574,13 +8583,13 @@
         }
       }
     },
-    "O que você disse" : {
+    "O que você descreveu" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What you said"
+            "value" : "What you described"
           }
         }
       }
