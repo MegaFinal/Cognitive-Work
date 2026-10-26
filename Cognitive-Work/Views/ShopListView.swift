@@ -78,13 +78,13 @@ struct ShopListView: View {
         }
         // MARK: - Add button and price pop-up
         .overlay(alignment: .bottomTrailing) {
-            // The AI button sits right above "+", centred on it.
-            VStack(spacing: 12) {
+            HStack {
                 if canUseAI {
                     aiBatchButton
                 }
                 addButton
             }
+            .floatingActionPlacement()
         }
         .background(Color(.white).ignoresSafeArea())
         .overlay { purchasePriceOverlay }
@@ -387,18 +387,10 @@ struct ShopListView: View {
 
     /// Opens ``AddMoreItensInteligence`` to add several items from one text.
     private var aiBatchButton: some View {
-        Button {
+        FloatingActionButton(systemImage: "sparkles", symbolSize: 28, foreground: .black, tint: nil) {
             HapticsManager.selection()
             isPresentingAIBatch = true
-        } label: {
-            Image(systemName: "sparkles")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.black)
-                .padding(14)
-                .contentShape(Circle())
         }
-        .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .circle)
         .disabled(!viewModel.canAddItems)
         .voiceOverLabel(L10n.tr("Adicionar com IA"))
         .voiceControlNames([L10n.tr("Adicionar com IA"), L10n.tr("IA")])
@@ -414,7 +406,6 @@ struct ShopListView: View {
         .disabled(!viewModel.canAddItems)
         .voiceOverLabel(L10n.tr("Adicionar item"))
         .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Adicionar item")])
-        .floatingActionPlacement()
     }
 }
 

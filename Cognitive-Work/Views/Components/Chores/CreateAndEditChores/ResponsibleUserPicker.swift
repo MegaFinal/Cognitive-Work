@@ -19,6 +19,13 @@ struct ResponsibleUserPicker: View {
     
     /// The collection of users currently bound to the chore.
     @Binding var selectedUsers: [UserModel]
+
+    /// Size of the avatars and of the "+" button, in points, so they line up.
+    private static let controlSize: CGFloat = 44
+
+    /// Shows a small red "−" on each avatar, so it's clear that tapping removes the person.
+    /// Off by default, so the chore editor looks as before; the shopping item form turns it on.
+    var showsRemoveBadge = false
     
     /// Evaluates if a given user is already present in the active selection.
     private func isSelected(_ user: UserModel) -> Bool {
@@ -26,11 +33,23 @@ struct ResponsibleUserPicker: View {
     }
     
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: showsRemoveBadge ? 10 : 5) {
             // MARK: - Selected members (tap one to remove it)
             ForEach(selectedUsers) { selectedUser in
-                UserProfilePictureTag(user: selectedUser, widthMultiplier: 0.1)
+                UserProfilePictureTag(user: selectedUser, widthMultiplier: Self.controlSize / width)
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
+                    .overlay(alignment: .topTrailing) {
+                        if showsRemoveBadge {
+                            Image(systemName: "minus")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 16, height: 16)
+                                .background(Color.red)
+                                .clipShape(Circle())
+                                .offset(x: 2, y: -2)
+                                .accessibilityHidden(true) // The avatar already says "remove".
+                        }
+                    }
                     .onTapGesture {
                         selectedUsers.removeAll { $0.id == selectedUser.id }
                     }
@@ -68,7 +87,7 @@ struct ResponsibleUserPicker: View {
                     .font(.system(size: 20))
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
-                    .frame(width: 38, height: 38)
+                    .frame(width: Self.controlSize, height: Self.controlSize)
                     .background(Color.blue)
                     .clipShape(Circle())
             }

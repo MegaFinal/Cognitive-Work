@@ -1,17 +1,6 @@
 {
   "sourceLanguage" : "pt-BR",
   "strings" : {
-    "%@ adicionado" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ added"
-          }
-        }
-      }
-    },
     "" : {
 
     },
@@ -32,6 +21,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ adicionado" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ added"
           }
         }
       }
@@ -102,17 +102,6 @@
         }
       }
     },
-    "%@ por pessoa" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ per person"
-          }
-        }
-      }
-    },
     "%@ está atrasado" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -153,6 +142,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ this cycle. You reached the top rank!"
+          }
+        }
+      }
+    },
+    "%@ por pessoa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ per person"
           }
         }
       }
@@ -3538,6 +3538,26 @@
         }
       }
     },
+    "Descreva o que deseja adicionar na sua lista, com quantidade, preço(opcional) e quem irá consumir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe what you want to add to your list, with quantity, price (optional) and who will use it."
+          }
+        }
+      }
+    },
+    "Descreva o que gostaria de comprar e preenchemos automaticamente." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe what you'd like to buy and we'll fill it in automatically."
+          }
+        }
+      }
+    },
     "Descrição" : {
       "localizations" : {
         "en" : {
@@ -4766,6 +4786,7 @@
       }
     },
     "Escreva um item por linha, com quantidade, preço e para quem é." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6899,17 +6920,6 @@
         }
       }
     },
-    "Microfone" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Microphone"
-          }
-        }
-      }
-    },
     "Mestre" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6917,6 +6927,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Master"
+          }
+        }
+      }
+    },
+    "Microfone" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone"
           }
         }
       }
@@ -8128,6 +8149,17 @@
         }
       }
     },
+    "Nome: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name: %@"
+          }
+        }
+      }
+    },
     "Nosso intuito é remover a carga mental da organização de tarefas de maneira justa e visual para todos os moradores." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8264,6 +8296,16 @@
         }
       }
     },
+    "O Harvii vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii will forget the Wi-Fi and every phone in the home will need to set it up and pair again."
+          }
+        }
+      }
+    },
     "O item que já está na lista usa outra unidade." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8271,16 +8313,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The item already on the list uses a different unit."
-          }
-        }
-      }
-    },
-    "O Harvii vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Harvii will forget the Wi-Fi and every phone in the home will need to set it up and pair again."
           }
         }
       }
@@ -8354,6 +8386,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "What does the home share?"
+          }
+        }
+      }
+    },
+    "O que você disse" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you said"
           }
         }
       }
@@ -8642,6 +8685,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Housemates use this key to pay what they owe you in Pending payments."
+          }
+        }
+      }
+    },
+    "Ou" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or"
           }
         }
       }
@@ -8960,6 +9013,17 @@
         }
       }
     },
+    "parabéns!" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "well done!"
+          }
+        }
+      }
+    },
     "Parar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8978,17 +9042,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop listening"
-          }
-        }
-      }
-    },
-    "parabéns!" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "well done!"
           }
         }
       }
@@ -9866,6 +9919,7 @@
       }
     },
     "Quem vai consumir/pagar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10049,6 +10103,16 @@
         }
       }
     },
+    "Recompensas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rewards"
+          }
+        }
+      }
+    },
     "Reconhecimento de fala indisponível agora." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10056,16 +10120,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Speech recognition isn't available right now."
-          }
-        }
-      }
-    },
-    "Recompensas" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rewards"
           }
         }
       }
@@ -10406,6 +10460,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Assigned to: %@"
+          }
+        }
+      }
+    },
+    "Responsável" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Responsible"
           }
         }
       }
@@ -11084,6 +11148,16 @@
         }
       }
     },
+    "Sobre nós" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About us"
+          }
+        }
+      }
+    },
     "Somar" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11102,16 +11176,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add to quantity (%lld → %lld)"
-          }
-        }
-      }
-    },
-    "Sobre nós" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About us"
           }
         }
       }
@@ -11940,6 +12004,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap to speak"
+          }
+        }
+      }
+    },
+    "Toque para preencher o formulário." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to fill in the form."
           }
         }
       }
