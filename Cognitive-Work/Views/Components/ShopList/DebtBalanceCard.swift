@@ -7,9 +7,7 @@
 
 import SwiftUI
 
-/// The overall balance on the "Pendências" screen: what you are owed minus what you owe, as plain
-/// text whose amount is green when you are ahead, orange when behind and yellow when even.
-/// It only renders what it's given.
+/// The overall balance on the "Pendências" screen
 struct DebtBalanceCard: View {
 
     /// "Saldo".
@@ -28,7 +26,8 @@ struct DebtBalanceCard: View {
             // MARK: - Title and caption
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.custom("Alan Sans", size: 24))
+                    .fontWeight(.bold)
                     .foregroundStyle(.black)
 
                 Text(caption)
@@ -40,7 +39,8 @@ struct DebtBalanceCard: View {
 
             // MARK: - Amount
             Text(amountText)
-                .font(.system(size: 38, weight: .bold))
+                .font(.custom("Alan Sans", size: 38))
+                .fontWeight(.bold)
                 .foregroundStyle(color.uiColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
@@ -56,7 +56,7 @@ struct DebtBalanceCard: View {
 }
 
 #Preview("Saldo") {
-    VStack(spacing: 12) {
+    VStack(spacing: 20) {
         DebtBalanceCard(title: "Saldo", caption: "A casa te deve", amountText: "+R$55,00", color: .green)
         DebtBalanceCard(title: "Saldo", caption: "Você deve à casa", amountText: "-R$30,00", color: .orange)
         DebtBalanceCard(title: "Saldo", caption: "Tudo certo por aqui", amountText: "R$0,00", color: .yellow)
