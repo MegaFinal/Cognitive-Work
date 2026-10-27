@@ -29,6 +29,14 @@ struct CreateAndEditChoreView: View {
     @State private var showDeleteConfirmation = false
     @State private var isSubmitting = false
     @State private var showsCalendar = false
+    /// Looking for an existing chore the new one repeats (before the second step).
+    @State private var isCheckingDuplicate = false
+    /// The existing chore the new one seems to repeat; shows the warning.
+    @State private var duplicateChore: ChoreModel?
+    /// The name the person chose to create anyway, so the warning isn't shown again for it.
+    @State private var acceptedDuplicateName: String?
+    /// The existing chore opened from the warning, to change it instead of creating a new one.
+    @State private var existingToEdit: ChoreModel?
 
     // MARK: Apple Intelligence state
     // The name field also takes a description ("lavar a louça toda semana, eu e Ana"), typed or
@@ -306,18 +314,90 @@ struct CreateAndEditChoreView: View {
             }
             
             ToolbarItem(placement: .confirmationAction) {
-                Button {
-                    showsScheduleStep = true
-                } label: {
-                    Image(systemName: "chevron.right")
+                // A spinner while looking for a chore that already exists.
+                if isCheckingDuplicate {
+                    ProgressView()
+                } else {
+                    Button {
+                        Task { await goToScheduleStep() }
+                    } label: {
+                        Image(systemName: "chevron.right")
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(.blue)
+                    .disabled(!viewModel.isLoaded || !viewModel.hasValidName || !viewModel.hasRoom || isReadingDescription)
+                    .voiceOverLabel(L10n.tr("Próximo"))
+                    .voiceControlNames([L10n.tr("Próximo"), L10n.tr("Continuar")])
                 }
-                .buttonStyle(.glassProminent)
-                .tint(.blue)
-                .disabled(!viewModel.isLoaded || !viewModel.hasValidName || !viewModel.hasRoom || isReadingDescription)
-                .voiceOverLabel(L10n.tr("Próximo"))
-                .voiceControlNames([L10n.tr("Próximo"), L10n.tr("Continuar")])
             }
         }
+        // The new chore seems to repeat one the house already has: say which, and let the person
+        // go on anyway or go back and change it.
+        .confirmationDialog(
+            duplicateTitle,
+            isPresented: Binding(
+                get: { duplicateChore != nil },
+                set: { if !$0 { duplicateChore = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: duplicateChore
+        ) { existing in
+            // Change the chore the house already has; this new one is dropped.
+            Button(L10n.tr("Editar a tarefa existente")) {
+                existingToEdit = existing
+            }
+            Button(L10n.tr("Criar mesmo assim")) {
+                acceptedDuplicateName = viewModel.draft.name
+                showsScheduleStep = true
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: { existing in
+            Text(duplicateMessage(for: existing))
+        }
+        // The existing chore's editor, on top of this form. When it closes, this new-chore form
+        // closes too: the person chose to change that chore instead.
+        .sheet(item: $existingToEdit, onDismiss: { dismiss() }) { existing in
+            CreateAndEditChoreView(
+                originalModel: existing,
+                availableHouseUsers: viewModel.carouselForEditing.userModels,
+                carouselViewModel: viewModel.carouselForEditing
+            )
+        }
+    }
+
+    // MARK: - Repeated chore
+
+    /// Before the second step, a new chore is checked against the house's chores (only once per
+    /// name, so "Criar mesmo assim" isn't asked again).
+    private func goToScheduleStep() async {
+        let name = viewModel.draft.name
+        guard viewModel.mode == .create, name != acceptedDuplicateName else {
+            showsScheduleStep = true
+            return
+        }
+        isCheckingDuplicate = true
+        let existing = await viewModel.existingDuplicate()
+        isCheckingDuplicate = false
+
+        if let existing {
+            HapticsManager.notify(.warning)
+            duplicateChore = existing
+        } else {
+            showsScheduleStep = true
+        }
+    }
+
+    /// "Já existe “Lavar a louça”".
+    private var duplicateTitle: String {
+        guard let duplicateChore else { return "" }
+        return L10n.tr("Já existe “%@”", duplicateChore.name)
+    }
+
+    /// Where the existing chore is and how often it repeats.
+    private func duplicateMessage(for existing: ChoreModel) -> String {
+        let summary = viewModel.summary(of: existing)
+        let base = L10n.tr("Parece que a casa já tem essa tarefa.")
+        return summary.isEmpty ? base : base + "\n" + summary
     }
     
     /// "Cômodo" with a menu of the house's rooms.
@@ -526,8 +606,17 @@ struct CreateAndEditChoreView: View {
     /// "Calendário" with the picked date in a gray pill; tapping it opens the calendar.
     private var dateRow: some View {
         HStack {
-            Text("Calendário")
-                .fontWeight(.semibold)
+            // ✨ while the date is the day said in the description.
+            HStack(spacing: 6) {
+                Text("Calendário")
+                    .fontWeight(.semibold)
+                if viewModel.isSuggested(.date) {
+                    Image(systemName: "sparkles")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .voiceOverLabel(L10n.tr("Sugerido automaticamente"))
+                }
+            }
             
             Spacer()
             
@@ -545,7 +634,14 @@ struct CreateAndEditChoreView: View {
             .accessibilityValue(selectedDateText)
             .popover(isPresented: $showsCalendar) {
                 CustomCalendar(
-                    selectedDate: $viewModel.selectedDate,
+                    // Picking a day by hand keeps a later description from changing it.
+                    selectedDate: Binding(
+                        get: { viewModel.selectedDate },
+                        set: {
+                            viewModel.selectedDate = $0
+                            viewModel.markChosenByHand(.date)
+                        }
+                    ),
                     window: viewModel.dateWindow,
                     opacityForDay: { viewModel.loadOpacity(on: $0) },
                     earliestSelectable: viewModel.earliestSelectableDay
