@@ -771,6 +771,17 @@
     "%lld%%" : {
 
     },
+    "%lldª de %lld hoje" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld of %2$lld today"
+          }
+        }
+      }
+    },
     "+%lld" : {
 
     },
@@ -3655,6 +3666,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "within the ideal"
+          }
+        }
+      }
+    },
+    "Depois de “%@”" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After “%@”"
+          }
+        }
+      }
+    },
+    "Depois de “%@” (%@)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After “%1$@” (%2$@)"
           }
         }
       }
@@ -9029,6 +9062,16 @@
         }
       }
     },
+    "Ordem sugerida para hoje" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggested order for today"
+          }
+        }
+      }
+    },
     "Ordenação" : {
       "localizations" : {
         "en" : {
@@ -9549,6 +9592,7 @@
       }
     },
     "Para: todos (não informado)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11954,6 +11998,17 @@
         }
       }
     },
+    "Sugestão: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggestion: %@"
+          }
+        }
+      }
+    },
     "Também entram na divisão: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -12513,6 +12568,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Every start counts, let's climb next time!"
+          }
+        }
+      }
+    },
+    "Todos" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everyone"
           }
         }
       }

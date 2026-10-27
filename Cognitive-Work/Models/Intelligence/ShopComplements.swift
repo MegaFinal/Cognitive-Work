@@ -10,46 +10,38 @@ import FoundationModels
 
 // MARK: - "Goes with your list" (on-device model)
 
-/// One product the model suggests adding.
+/// Up to two products of one supermarket section that go with what's listed there.
 @Generable
-nonisolated struct GeneratedComplement {
-    @Guide(description: "Short product name")
-    var name: String
-
-    var category: GeneratedShopCategory
-}
-
-/// Up to three products usually bought together with the ones on the list.
-@Generable
-nonisolated struct GeneratedComplementList {
-    @Guide(description: "Products usually bought together with the ones on the list and missing from it. Empty when nothing clearly fits.", .maximumCount(3))
-    var items: [GeneratedComplement]
+nonisolated struct GeneratedSectionIdeas {
+    @Guide(description: "Products of this section that usually go with the ones listed and are missing. Empty when nothing clearly fits.", .maximumCount(2))
+    var items: [String]
 }
 
 extension IntelligenceManager {
 
-    /// Products that usually go with the ones on the list ("macarrão" -> "molho de tomate").
+    /// Products of `category` that usually go with the items of that section ("detergente" ->
+    /// "esponja" in cleaning), so every category card can offer its own suggestions.
     ///
-    /// - Parameter names: What's still to buy.
-    /// - Returns: `nil` when AI is unavailable or the request fails. Names come in the app's
-    ///   language, since they're new text shown to the person.
-    func suggestComplements(for names: [String]) async -> [(name: String, category: ShopItemCategory)]? {
-        let prompt = IntelligencePrompts.ShopComplements.self
+    /// - Parameters:
+    ///   - sectionNames: What's still to buy in that section.
+    ///   - listNames: Everything still to buy, so nothing already listed is suggested.
+    /// - Returns: Names in the app's language, or `nil` when AI is unavailable or the request fails.
+    func suggestForSection(
+        _ category: ShopItemCategory,
+        sectionNames: [String],
+        listNames: [String]
+    ) async -> [String]? {
+        let prompt = IntelligencePrompts.ShopSectionIdeas.self
         guard let generated = await generate(
-            GeneratedComplementList.self,
-            prompt: prompt.prompt(for: names),
+            GeneratedSectionIdeas.self,
+            prompt: prompt.prompt(section: category.rawValue, sectionNames: sectionNames, listNames: listNames),
             instructions: instructions(task: prompt.task, output: .appLanguage),
             promptID: prompt.id
         ) else { return nil }
 
         return generated.items.compactMap { item in
-            let name = String(
-                item.name
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .prefix(TextLimits.shopItemName)
-            )
-            guard !name.isEmpty else { return nil }
-            return (name, ShopItemCategory(rawValue: item.category.rawValue) ?? .other)
+            let name = String(item.trimmingCharacters(in: .whitespacesAndNewlines).prefix(TextLimits.shopItemName))
+            return name.isEmpty ? nil : name
         }
     }
 }

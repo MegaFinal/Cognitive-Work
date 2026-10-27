@@ -140,27 +140,30 @@ enum IntelligencePrompts {
         }
     }
 
-    /// Suggests products usually bought together with the ones on the list.
-    enum ShopComplements {
+    /// Suggests products for one supermarket section, from what's listed in it.
+    enum ShopSectionIdeas {
 
-        static let id = "shop-complements-v1"
+        static let id = "shop-section-ideas-v1"
 
         static let task = """
-        You look at a household shopping list and suggest at most 3 products that people almost always buy together with something on it, and that are missing from the list.
-        Only suggest clear, common pairings. If nothing clearly fits, return an empty list.
-        Never suggest a product that is already on the list, or a variant of one (another brand or type).
+        You help complete one section of a household shopping list. Suggest at most 2 products from that same supermarket section that people usually buy along with the ones listed there.
+        Sections: food (groceries, meat, dairy, bread), produce (fruits, vegetables, herbs), drinks, cleaning (house, dishes and clothes), hygiene (personal care, toilet paper), home (household items), pets, other.
+        Never suggest something already on the list, or a variant of it (another brand, size or type). Only common, clear choices; if nothing fits, return an empty list.
         name: a short, common product name.
-        category is the supermarket section: food, produce, drinks, cleaning, hygiene, home, pets or other.
         Examples:
-        "macarrão, carne moída" -> "molho de tomate" (food)
-        "café" -> "filtro de café" (home)
-        "pão, presunto" -> "queijo" (food)
-        "detergente, esponja" -> nothing
+        cleaning: "detergente" -> "esponja", "sabão em pó"
+        produce: "tomate, cebola" -> "alho", "alface"
+        food: "macarrão" -> "molho de tomate", "queijo ralado"
+        drinks: "café" -> "leite"
         """
 
-        /// The list's names are the person's own text, so they go in the prompt.
-        static func prompt(for names: [String]) -> String {
-            "Shopping list: \(names.joined(separator: ", "))"
+        /// The names are the person's text, so they go in the prompt.
+        static func prompt(section: String, sectionNames: [String], listNames: [String]) -> String {
+            """
+            Section: \(section)
+            In this section: \(sectionNames.joined(separator: ", "))
+            Whole list: \(listNames.joined(separator: ", "))
+            """
         }
     }
 
@@ -235,6 +238,33 @@ enum IntelligencePrompts {
         /// Both names are the person's text, so they go in the prompt.
         static func prompt(newName: String, existingName: String) -> String {
             "New chore: \(newName)\nExisting chore: \(existingName)"
+        }
+    }
+
+    /// Where a chore fits in the day, to suggest the order of today's chores.
+    enum ChorePhase {
+
+        static let id = "chore-phase-v1"
+
+        /// The phase names match ``GeneratedChorePhase``; keep them in sync.
+        static let task = """
+        You classify one household chore by when it happens in the day's flow.
+        tidyUp: putting things away before cleaning ("arrumar a sala", "organizar o quarto").
+        cooking: preparing food ("fazer o almoço", "cozinhar o jantar").
+        afterMeal: cleaning up after a meal ("lavar a louça", "limpar o fogão", "limpar a mesa", "limpar a pia").
+        dusting: dusting or wiping furniture and surfaces ("tirar o pó", "limpar os móveis").
+        floorDry: sweeping or vacuuming ("varrer a casa", "aspirar a sala").
+        floorWet: mopping or washing the floor ("passar pano", "lavar o quintal").
+        laundryWash: washing clothes ("lavar roupa", "colocar roupa na máquina").
+        laundryDry: hanging or drying clothes ("estender roupa", "tirar roupa do varal").
+        laundryFold: folding, ironing or putting clothes away ("dobrar roupa", "passar roupa").
+        trash: taking out the trash ("tirar o lixo", "levar o lixo para fora").
+        other: anything that doesn't depend on other chores ("regar as plantas", "limpar o banheiro", "dar comida ao gato").
+        """
+
+        /// The chore's name is the person's text, so it goes in the prompt.
+        static func prompt(for name: String) -> String {
+            "Chore: \(name)"
         }
     }
 }

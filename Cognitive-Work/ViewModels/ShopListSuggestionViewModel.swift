@@ -38,7 +38,8 @@ final class ShopListSuggestionViewModel {
     /// Hidden by the person in this session ("Não sugerir agora").
     @ObservationIgnored private var dismissedIDs = Set<String>()
     /// The pending names the model last answered for, so it isn't asked again for the same list.
-    @ObservationIgnored private var lastComplementKey = ""
+    /// Each category's AI suggestions and the items they were made for (see ``complementItems(excluding:)``).
+    @ObservationIgnored private var sectionIdeas: [ShopItemCategory: (key: String, suggestions: [ShopListSuggestion])] = [:]
     @ObservationIgnored private var lastComplements: [ShopListSuggestion] = []
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
@@ -184,42 +185,55 @@ final class ShopListSuggestionViewModel {
 
     // MARK: - Goes with the list
 
+    /// AI suggestions for every category that has a card on the list (up to two each), so each
+    /// card can end with its own. One request per category, reused while that category's items
+    /// don't change.
     private func complementItems(excluding usual: [ShopListSuggestion]) async -> [ShopListSuggestion] {
-        let names = shopList.pendingItems.map(\.name)
-        guard !names.isEmpty, IntelligenceManager.shared.isAvailable else {
-            lastComplementKey = ""
-            lastComplements = []
+        let pending = shopList.pendingItems
+        guard !pending.isEmpty, IntelligenceManager.shared.isAvailable else {
+            sectionIdeas = [:]
             return []
         }
 
-        // Same list as last time: reuse the answer instead of asking again.
-        let key = names.map(Self.key(for:)).sorted().joined(separator: "|")
-        if key == lastComplementKey { return lastComplements }
+        // Only the 20 most recent names, to stay well inside the model's context.
+        let listNames = Array(pending.sorted { $0.createdAt > $1.createdAt }.prefix(20).map(\.name))
+        let categories = ShopItemCategory.allCases.filter { category in pending.contains { $0.category == category } }
 
-        // Only the 15 most recent names, to stay well inside the model's context.
-        let recent = Array(shopList.pendingItems
-            .sorted { $0.createdAt > $1.createdAt }
-            .prefix(15)
-            .map(\.name))
-        guard let ideas = await IntelligenceManager.shared.suggestComplements(for: recent) else {
-            return lastComplements
-        }
+        var fresh: [ShopItemCategory: (key: String, suggestions: [ShopListSuggestion])] = [:]
+        for category in categories {
+            let sectionNames = pending.filter { $0.category == category }.map(\.name)
+            let key = sectionNames.map(Self.key(for:)).sorted().joined(separator: "|")
 
-        let usualIDs = Set(usual.map(\.id))
-        let complements = ideas.compactMap { idea -> ShopListSuggestion? in
-            let id = Self.key(for: idea.name)
-            guard !id.isEmpty, !usualIDs.contains(id) else { return nil }
-            return ShopListSuggestion(
-                id: id,
-                kind: .goesWithList,
-                name: idea.name,
-                category: idea.category,
-                quantity: 1,
-                unit: .unit,
-                consumers: nil
-            )
+            // Same items in this category as last time: keep its suggestions.
+            if let cached = sectionIdeas[category], cached.key == key {
+                fresh[category] = cached
+                continue
+            }
+            guard !Task.isCancelled else { return [] }
+            let names = await IntelligenceManager.shared.suggestForSection(
+                category,
+                sectionNames: sectionNames,
+                listNames: listNames
+            ) ?? []
+            fresh[category] = (key, names.map { name in
+                ShopListSuggestion(
+                    id: Self.key(for: name),
+                    kind: .goesWithList,
+                    name: name,
+                    category: category,
+                    quantity: 1,
+                    unit: .unit,
+                    consumers: nil
+                )
+            })
         }
-        lastComplementKey = key
+        sectionIdeas = fresh
+
+        // In the list's category order, each product once, never one already suggested as usual.
+        var seen = Set(usual.map(\.id))
+        let complements = categories
+            .flatMap { fresh[$0]?.suggestions ?? [] }
+            .filter { !$0.id.isEmpty && seen.insert($0.id).inserted }
         lastComplements = complements
         return complements
     }
