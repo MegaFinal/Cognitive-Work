@@ -63,6 +63,17 @@ struct L10nTests {
         }
     }
 
+    @Test func translatesToSpanish() {
+        let name = "Ana"
+        withLanguage(.spanish) {
+            #expect(L10n.tr("Fechar") == "Cerrar")
+            #expect(L10n.tr("Assinado por \(name). Todos os moradores aproveitam os recursos Premium.")
+                    == "Suscrito por Ana. Todos los integrantes disfrutan de las funciones Premium.")
+            #expect(L10n.tr("\(1) moradores") == "1 integrante")
+            #expect(L10n.tr("\(5) moradores") == "5 integrantes")
+        }
+    }
+
     @Test func fallsBackToPortugueseWhenThereIsNoTranslation() {
         let value = 7
         withLanguage(.english) {
