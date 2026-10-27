@@ -3500,6 +3500,17 @@
         }
       }
     },
+    "Criar mesmo assim" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create anyway"
+          }
+        }
+      }
+    },
     "Criar tarefa" : {
       "localizations" : {
         "en" : {
@@ -4245,6 +4256,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit %@"
+          }
+        }
+      }
+    },
+    "Editar a tarefa existente" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit the existing chore"
           }
         }
       }
@@ -6452,6 +6474,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Already on the list: %@"
+          }
+        }
+      }
+    },
+    "Já existe “%@”" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” already exists"
           }
         }
       }
@@ -9608,6 +9641,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pair device"
+          }
+        }
+      }
+    },
+    "Parece que a casa já tem essa tarefa." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looks like the house already has this chore."
           }
         }
       }
