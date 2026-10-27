@@ -59,12 +59,10 @@ struct ShopListView: View {
     /// The page: title and buttons, then the list
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // MARK: - Fixed block: title, buttons and suggestions
+            // MARK: - Fixed block: title and buttons
+            // (The "Pode estar faltando" suggestions now sit inside each category's card.)
             VStack(alignment: .leading, spacing: 20) {
                 header
-
-                ShopSuggestionsRow(model: suggestionsModel)
-                    .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
             }
             .background(alignment: .top) { HeaderFade(color: .white) }
             .zIndex(1)
@@ -274,10 +272,24 @@ struct ShopListView: View {
 
         return ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 0) {
-                ShopSectionStack(viewModel: viewModel, sections: pendingSections) { item in
+                ShopSectionStack(
+                    viewModel: viewModel,
+                    sections: pendingSections,
+                    footer: { section in
+                        guard let category = section.category else { return AnyView(EmptyView()) }
+                        return AnyView(ShopSuggestionCards(model: suggestionsModel, category: category))
+                    }
+                ) { item in
                     row(for: item)
                 }
                 .padding(.top, 30)
+
+                ShopSuggestionsLeftoverBox(
+                    model: suggestionsModel,
+                    shownCategories: Set(pendingSections.compactMap(\.category))
+                )
+                .padding(.top, 24)
+                .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
 
                 if let boughtSection = viewModel.boughtSection {
                     if !pendingSections.isEmpty {
