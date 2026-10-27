@@ -15,16 +15,6 @@
         }
       }
     },
-    "%@ %@" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@"
-          }
-        }
-      }
-    },
     "%@ adicionado" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -164,16 +154,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ removed"
-          }
-        }
-      }
-    },
-    "%@, %@" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$@"
           }
         }
       }
@@ -5163,6 +5143,7 @@
       }
     },
     "Esse cômodo ainda não tem cupons disponíveis." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5859,6 +5840,9 @@
           }
         }
       }
+    },
+    "Gamificação" : {
+
     },
     "ganhas neste ciclo" : {
       "extractionState" : "manual",
@@ -8235,6 +8219,7 @@
       }
     },
     "Nenhum cômodo ainda" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8253,6 +8238,12 @@
           }
         }
       }
+    },
+    "Nenhum cupom ainda" : {
+
+    },
+    "Nenhum cupom disponível" : {
+
     },
     "Nenhum item encontrado. Tente escrever de outro jeito." : {
       "extractionState" : "stale",
@@ -9158,6 +9149,9 @@
           }
         }
       }
+    },
+    "Os cupons que você comprar neste ciclo aparecem aqui." : {
+
     },
     "Os moradores em verde já finalizaram essa etapa." : {
       "extractionState" : "stale",
@@ -10312,6 +10306,7 @@
       }
     },
     "Quando a casa tiver cômodos, os cupons de cada um aparecem aqui." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10320,6 +10315,9 @@
           }
         }
       }
+    },
+    "Quando a casa tiver tarefas, os cupons de cada uma aparecem aqui." : {
+
     },
     "Quando as tarefas forem divididas, elas aparecem aqui." : {
       "localizations" : {
@@ -10330,6 +10328,9 @@
           }
         }
       }
+    },
+    "Quando houver cupons à venda, eles aparecem aqui." : {
+
     },
     "Quando receber o link, é só tocar nele para entrar na casa!" : {
       "localizations" : {
@@ -11420,6 +11421,7 @@
       }
     },
     "Sem cupons por aqui" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12789,6 +12791,7 @@
       }
     },
     "Troque suas moedas por cupons" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13249,6 +13252,9 @@
       }
     },
     "Você" : {
+
+    },
+    "Você ainda não tem cupons" : {
 
     },
     "Você chegou ao rank máximo" : {

@@ -5,89 +5,102 @@
 //  Created by Jonas Fernando Nascimento Melo on 13/08/26.
 //
 
-/// Ranks, from lowest to highest, in the order of ``allCases``. Each rank's raw value is the name
-/// of its image in the asset catalog (`Assets.xcassets/Tiers`), so it is also what is stored.
+/// Ranks, from lowest to highest, in the order of ``allCases``. The raw value is what is stored.
+///
+/// Thirteen ranks form one ladder, each one ``pointsPerDivision`` points above the one before
+/// (see the extension below).
 enum Tier: String, CaseIterable {
-    /// Bronze, division 1 (the lowest rank, where every cycle starts).
-    case bronze1
-    case bronze2
-    case bronze3
-    /// Silver (Prata), division 1.
-    case silver1
-    case silver2
-    case silver3
-    /// Gold (Ouro), division 1.
-    case gold1
-    case gold2
-    case gold3
-    /// Platinum (Platina), division 1.
-    case platinum1
-    case platinum2
-    case platinum3
-    /// Diamond (Diamante), division 1.
-    case diamond1
-    case diamond2
-    case diamond3
-    /// Master (Mestre): the top rank, with no divisions.
-    case master = "Master"
-    
+    /// "Novato da casa": the lowest rank, where every cycle starts.
+    case novatoDaCasa
+    case aprendiz
+    case ajudanteOficial
+    case escudeiroDaFaxina
+    case vigiaDaCozinha
+    case sentinelaDaSala
+    case guardiaoDaCasa
+    case protetorDoLar
+    case cavaleiroDoRodo
+    case mestreDaCasa
+    case sabioDoLar
+    case lendaDaCasa
+    /// "Alma da casa": the top rank.
+    case almaDaCasa
+
     // MARK: - Legacy
-    
-    // Records saved before the ranks had names hold "tier1", "tier2" or "tier3"; these keep
-    // existing code that still says `.tier1` compiling. See ``init(stored:)``.
-    static let tier1 = Tier.bronze1
-    static let tier2 = Tier.bronze2
-    static let tier3 = Tier.bronze3
-    
-    /// Decodes a tier stored in CloudKit, including the old "tier1"…"tier3" values.
+
+    // Old code and records still say `.tier1`, `.tier2` or `.tier3`; these keep them compiling.
+    // See ``init(stored:)``.
+    static let tier1 = Tier.novatoDaCasa
+    static let tier2 = Tier.aprendiz
+    static let tier3 = Tier.ajudanteOficial
+
+    /// Decodes a tier stored in CloudKit.
     ///
-    /// Unknown or missing values become ``bronze1``.
+    /// Records saved before the current ranks hold "tier1"…"tier3" or one of the old 16 names
+    /// ("bronze1" … "diamond3", "Master"); those land on the rank at the same relative height of
+    /// the ladder. Unknown or missing values become ``novatoDaCasa``.
     init(stored value: String?) {
+        if let value, let tier = Tier(rawValue: value) {
+            self = tier
+            return
+        }
+        let legacy = ["bronze1", "bronze2", "bronze3", "silver1", "silver2", "silver3", "gold1", "gold2",
+                      "gold3", "platinum1", "platinum2", "platinum3", "diamond1", "diamond2", "diamond3", "Master"]
         switch value {
-        case "tier1": self = .bronze1
-        case "tier2": self = .bronze2
-        case "tier3": self = .bronze3
-        default: self = value.flatMap(Tier.init(rawValue:)) ?? .bronze1
+        case "tier1": self = .tier1
+        case "tier2": self = .tier2
+        case "tier3": self = .tier3
+        default:
+            guard let value, let old = legacy.firstIndex(of: value) else { self = .novatoDaCasa; return }
+            let top = Tier.allCases.count - 1
+            self = Tier.allCases[Int((Double(old) * Double(top) / Double(legacy.count - 1)).rounded())]
         }
     }
-    
+
     // MARK: - Presentation
-    
-    /// Name of the rank's image in the asset catalog.
-    var imageName: String { rawValue }
-    
-    /// "Bronze 1", "Ouro 3", "Mestre"… shown on the profile.
+
+    /// Name of the rank's image in the asset catalog (`Assets.xcassets/Tiers`).
+    ///
+    /// The catalog still holds the 16 old rank icons, so each rank borrows the one at the same
+    /// relative height of the ladder until icons for the new ranks exist.
+    var imageName: String {
+        let icons = ["bronze1", "bronze2", "bronze3", "silver1", "silver2", "silver3", "gold1", "gold2",
+                     "gold3", "platinum1", "platinum2", "platinum3", "diamond1", "diamond2", "diamond3", "Master"]
+        let index = Tier.allCases.firstIndex(of: self) ?? 0
+        let top = Tier.allCases.count - 1
+        return icons[Int((Double(index) * Double(icons.count - 1) / Double(top)).rounded())]
+    }
+
+    /// "Novato da casa", "Aprendiz", … "Alma da casa".
     var displayName: String {
         switch self {
-        case .bronze1: return "\(L10n.tr("Bronze")) 1"
-        case .bronze2: return "\(L10n.tr("Bronze")) 2"
-        case .bronze3: return "\(L10n.tr("Bronze")) 3"
-        case .silver1: return "\(L10n.tr("Prata")) 1"
-        case .silver2: return "\(L10n.tr("Prata")) 2"
-        case .silver3: return "\(L10n.tr("Prata")) 3"
-        case .gold1: return "\(L10n.tr("Ouro")) 1"
-        case .gold2: return "\(L10n.tr("Ouro")) 2"
-        case .gold3: return "\(L10n.tr("Ouro")) 3"
-        case .platinum1: return "\(L10n.tr("Platina")) 1"
-        case .platinum2: return "\(L10n.tr("Platina")) 2"
-        case .platinum3: return "\(L10n.tr("Platina")) 3"
-        case .diamond1: return "\(L10n.tr("Diamante")) 1"
-        case .diamond2: return "\(L10n.tr("Diamante")) 2"
-        case .diamond3: return "\(L10n.tr("Diamante")) 3"
-        case .master: return L10n.tr("Mestre")
+        case .novatoDaCasa: return L10n.tr("Novato da casa")
+        case .aprendiz: return L10n.tr("Aprendiz")
+        case .ajudanteOficial: return L10n.tr("Ajudante oficial")
+        case .escudeiroDaFaxina: return L10n.tr("Escudeiro da faxina")
+        case .vigiaDaCozinha: return L10n.tr("Vigia da cozinha")
+        case .sentinelaDaSala: return L10n.tr("Sentinela da sala")
+        case .guardiaoDaCasa: return L10n.tr("Guardião da casa")
+        case .protetorDoLar: return L10n.tr("Protetor do lar")
+        case .cavaleiroDoRodo: return L10n.tr("Cavaleiro do rodo")
+        case .mestreDaCasa: return L10n.tr("Mestre da casa")
+        case .sabioDoLar: return L10n.tr("Sábio do lar")
+        case .lendaDaCasa: return L10n.tr("Lenda da casa")
+        case .almaDaCasa: return L10n.tr("Alma da casa")
         }
     }
+
+    /// Position on the ladder, from 0 (``novatoDaCasa``) to 12 (``almaDaCasa``).
+    var position: Int { Tier.allCases.firstIndex(of: self) ?? 0 }
 }
 
 // MARK: - Progression
 
-/// The 16 cases form one ladder: five ranks of three divisions each (Bronze → Diamante) plus
-/// Mestre, which has no divisions. Every step costs ``pointsPerDivision`` points:
-/// - Inside a rank, reaching the threshold moves to the next division (Bronze 1 → Bronze 2).
-/// - From a rank's last division the next step is the next rank's first division
-///   (Bronze 3 → Prata 1), at the same cost. Points above a threshold carry over.
-/// - Mestre is reached at `15 × pointsPerDivision` points and is the top of the ladder: points
-///   keep adding up, the rank no longer changes.
+/// The 13 cases form one ladder. Every step costs ``pointsPerDivision`` points:
+/// - Reaching the threshold moves to the next rank (Novato da casa → Aprendiz); points above a
+///   threshold carry over.
+/// - Alma da casa is reached at `12 × pointsPerDivision` points and is the top of the ladder:
+///   points keep adding up, the rank no longer changes.
 /// - Every cycle starts over: when a cycle is settled, its rank goes to the history and the
 ///   points go back to 0 (see ``CycleSettlementService``).
 ///
@@ -95,7 +108,7 @@ enum Tier: String, CaseIterable {
 /// removes its points) can also bring the rank back down.
 extension Tier {
 
-    /// Points needed to climb one division (Bronze 1 → Bronze 2, or Bronze 3 → Prata 1).
+    /// Points needed to climb one rank.
     static let pointsPerDivision = 25
 
     /// Rank for `points`. Negative points count as zero.
@@ -105,13 +118,12 @@ extension Tier {
         self = ladder[min(step, ladder.count - 1)]
     }
 
-    /// Position of this rank on the ladder, from 0 (Bronze 1) to 15 (Mestre).
-    private var step: Int { Tier.allCases.firstIndex(of: self) ?? 0 }
+    private var step: Int { position }
 
     /// Points at which this rank starts.
     var minimumPoints: Int { step * Tier.pointsPerDivision }
 
-    /// The step after this rank, or `nil` for Mestre.
+    /// The step after this rank, or `nil` for the top one.
     var next: Tier? {
         let ladder = Tier.allCases
         return step + 1 < ladder.count ? ladder[step + 1] : nil
@@ -123,9 +135,9 @@ extension Tier {
         let tier: Tier
         /// Points earned since the current division started.
         let pointsIntoDivision: Int
-        /// Points still missing for the next step, or `nil` at Mestre.
+        /// Points still missing for the next step, or `nil` at the top.
         let pointsToNext: Int?
-        /// The rank after ``tier``, or `nil` at Mestre.
+        /// The rank after ``tier``, or `nil` at the top.
         let nextTier: Tier?
     }
 
@@ -152,23 +164,7 @@ extension Tier {
     /// Coins paid at the end of each cycle to someone at this rank. A higher rank never pays
     /// less than a lower one.
     var cycleCoins: Int {
-        switch self {
-        case .bronze1: return 10
-        case .bronze2: return 12
-        case .bronze3: return 14
-        case .silver1: return 18
-        case .silver2: return 21
-        case .silver3: return 24
-        case .gold1: return 30
-        case .gold2: return 34
-        case .gold3: return 38
-        case .platinum1: return 45
-        case .platinum2: return 50
-        case .platinum3: return 55
-        case .diamond1: return 65
-        case .diamond2: return 72
-        case .diamond3: return 80
-        case .master: return 100
-        }
+        let coins = [10, 12, 15, 18, 22, 26, 31, 37, 44, 52, 62, 74, 90]
+        return coins[position]
     }
 }

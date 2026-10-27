@@ -59,7 +59,7 @@ struct GamificationSchemaSeedTests {
         await seed(CoinPayoutModel(
             user: placeholder("user"),
             cycleKey: "2026-01-01",
-            tier: .gold2,
+            tier: .protetorDoLar,
             points: 1500,
             amount: 34,
             status: .confirmed,
@@ -73,7 +73,7 @@ struct GamificationSchemaSeedTests {
             cycleKey: "2026-01-01",
             cycleStart: .now,
             cycleEnd: .now,
-            tier: .gold2,
+            tier: .protetorDoLar,
             points: 1500
         ))
     }
@@ -93,7 +93,7 @@ struct GamificationSchemaSeedTests {
             name: "schema-seed-coupon",
             isOnSale: true,
             price: 1,
-            tier: .bronze1,
+            tier: .novatoDaCasa,
             currentUser: placeholder("user"),
             lastUser: placeholder("user"),
             task: placeholder("chore")
