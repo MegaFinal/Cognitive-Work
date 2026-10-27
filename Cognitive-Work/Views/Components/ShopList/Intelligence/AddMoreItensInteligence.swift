@@ -304,8 +304,7 @@ struct AddMoreItensInteligence: View {
                         // Category icons are image assets now; SymbolImage also handles SF Symbols.
                         SymbolImage(name: category.symbol)
                             .foregroundStyle(category.color)
-                            .frame(width: 24, height: 24)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 50, height: 50)
                             .background(
                                 category.softColor.opacity(0.45),
                                 in: RoundedRectangle(cornerRadius: 12, style: .continuous)

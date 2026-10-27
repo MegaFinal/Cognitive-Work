@@ -106,7 +106,7 @@ final class CreateAndEditChoreViewModel {
 
     /// Form fields the AI can fill from a description.
     enum SuggestedField: Hashable {
-        case room, frequency, duration, priority, responsible
+        case room, frequency, duration, priority, responsible, date
     }
 
     /// The "Detalhes" text the AI wrote last; it's replaced by a new description only while the
@@ -215,6 +215,14 @@ final class CreateAndEditChoreViewModel {
         }
         
         fill(.duration) { draft.duration = suggestion.durationMinutes }
+        // The day said ("amanhã", "sábado"): only when the chore asks for a date (daily chores
+        // start today on their own) and the calendar would offer that day.
+        if let date = suggestion.date, showsDateSection {
+            let day = Calendar.current.startOfDay(for: date)
+            if dateWindow.contains(day), day >= earliestSelectableDay {
+                fill(.date) { selectedDate = day }
+            }
+        }
         if let priority = suggestion.priority {
             fill(.priority) { draft.priorityTag = priority }
         }
@@ -241,6 +249,45 @@ final class CreateAndEditChoreViewModel {
                 fill(.responsible) { draft.responsibleUsers = picked }
             }
         }
+    }
+
+    // MARK: Repeated chores
+
+    /// An existing chore the new one seems to repeat, checked before going to the second step.
+    /// Exact names (ignoring case, accents and small words) count right away; similar ones are
+    /// confirmed by the on-device model when it's available. Chores in another room never count
+    /// ("Limpar o chão" of the kitchen and of the living room are different chores).
+    func existingDuplicate() async -> ChoreModel? {
+        guard mode == .create else { return nil }
+        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let roomID = draft.room?.recordID
+        let sameRoom = carouselViewModel.cardModels.filter { chore in
+            guard let roomID, let choreRoom = chore.roomReference?.recordID else { return true }
+            return choreRoom == roomID
+        }
+
+        for candidate in ChoreDuplicateFinder.candidates(for: name, in: sameRoom) {
+            if ChoreDuplicateFinder.isExactMatch(name, candidate.name) { return candidate }
+            if await IntelligenceManager.shared.isSameChore(name, as: candidate.name) == true {
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    /// The chores screen's model, to open the existing chore's editor from the warning.
+    var carouselForEditing: CarouselViewModel { carouselViewModel }
+
+    /// "Cozinha · Semanal": where the existing chore is and how often, for the warning.
+    func summary(of chore: ChoreModel) -> String {
+        var parts: [String] = []
+        if let room = carouselViewModel.getRoom(for: chore) {
+            parts.append(room.name.localizedDefault)
+        }
+        if chore.frequency != .undefined {
+            parts.append(chore.frequency.displayName.prefix(1).uppercased() + chore.frequency.displayName.dropFirst())
+        }
+        return parts.joined(separator: " · ")
     }
 
     /// Whether `field` still holds the AI's value; the form shows sparkles next to it.
