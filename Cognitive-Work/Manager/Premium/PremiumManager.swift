@@ -65,8 +65,15 @@ final class PremiumManager {
     }
 
     /// Whether the house record still grants Premium.
+    ///
+    /// The grace period is for *housemates*, who can't see the subscription. On the payer's own
+    /// device StoreKit is the source of truth, so the house record is ignored there: once the
+    /// subscription ends, it ends at once.
     private var isHousePremium: Bool {
         guard let houseExpiresAt else { return false }
+        if store.hasLoadedEntitlements, let myRecordName, houseOwnerRecordName == myRecordName {
+            return false
+        }
         return houseExpiresAt.addingTimeInterval(Self.gracePeriod) > .now
     }
 
@@ -153,9 +160,10 @@ final class PremiumManager {
                 houseOwnerRecordName = me
                 housePlan = myPlan
             }
-        } else if isMine, let houseDate, houseDate > .now {
-            // The house says I'm paying until a future date, but I'm not subscribed anymore:
-            // refunded or revoked. Remove Premium instead of waiting for the date.
+        } else if isMine, houseDate != nil {
+            // The house says I'm paying, but I'm not subscribed anymore: the period ended after a
+            // cancellation, or it was refunded. Remove Premium now instead of letting the
+            // housemates ride the grace period for a subscription that is known to be over.
             if await house.setPremium(expiresAt: nil, ownerRecordName: nil, productID: nil) {
                 houseExpiresAt = nil
                 houseOwnerRecordName = nil

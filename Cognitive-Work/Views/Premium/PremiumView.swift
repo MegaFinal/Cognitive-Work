@@ -156,7 +156,11 @@ struct PremiumView: View {
     private var houseBracket: some View {
         VStack(spacing: 12) {
             Label {
-                Text(L10n.tr("%lld moradores · preço para %@", premium.memberCount, premium.requiredTier.title.lowercased()))
+                // Two keys instead of one: "%lld moradores" varies by plural ("1 morador"), and
+                // a plural variation only works on a string with a single number.
+                Text(L10n.tr("%lld moradores", premium.memberCount)
+                     + " · "
+                     + L10n.tr("Preço para %@", premium.requiredTier.title.lowercased()))
             } icon: {
                 Image(systemName: "person.3.fill")
             }
