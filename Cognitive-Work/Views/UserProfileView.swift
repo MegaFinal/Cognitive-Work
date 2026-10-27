@@ -133,9 +133,22 @@ private struct SettingsButtonsSection: View {
     @Binding var viewModelOnboarding: OnboardingViewModel
     
     @State private var hardwareSheet: HardwareSheet?
+    /// Shows ``PremiumView`` (plans or subscription status).
+    @State private var isShowingPremium = false
 
     var body: some View {
         List {
+            // MARK: - Premium
+            Section {
+                DisclosureButton(
+                    "Pipa Premium",
+                    value: PremiumManager.shared.isPremium ? L10n.tr("Ativo") : nil
+                ) {
+                    isShowingPremium = true
+                }
+                .voiceControlNames([L10n.tr("Premium"), L10n.tr("Assinatura")])
+            }
+
             // MARK: - Settings
             Section {
                 NavigationLink("Configurações Gerais") {
@@ -175,6 +188,9 @@ private struct SettingsButtonsSection: View {
         .listSectionSpacing(.compact)
         .scrollContentBackground(.hidden)
         .scrollBounceBehavior(.basedOnSize)
+        .sheet(isPresented: $isShowingPremium) {
+            PremiumView()
+        }
         // MARK: - Hardware sheet
         .sheet(item: $hardwareSheet) { sheet in
             Group {

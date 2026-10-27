@@ -46,6 +46,9 @@ struct ChoresView: View {
     
     /// Opens the screen that creates a new division (from the new member pop-up).
     @State private var isResetting = false
+
+    /// The Premium paywall (re-dividing mid-cycle is Premium).
+    @State private var paywall: PremiumFeature?
     
     /// Opens the progress screen (from any of the progress cards).
     @State private var isShowingProgress = false
@@ -222,6 +225,7 @@ struct ChoresView: View {
                 DashboardView()
             }
         }
+        .premiumPaywall($paywall)
         // MARK: - Loading and the progress cards' color
         .task {
             await carouselVM.fetchAllData()
@@ -454,7 +458,13 @@ struct ChoresView: View {
                 NewUserPopUp {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         carouselVM.showNewUserPopUp = false
-                        isResetting = true
+                        // Free plan: the new member joins the division at the next cycle (and
+                        // can take chores without an owner meanwhile). Premium re-divides now.
+                        if PremiumManager.shared.allows(.rebalanceDivision) {
+                            isResetting = true
+                        } else {
+                            paywall = .rebalanceDivision
+                        }
                     }
                 } onDismiss: {
                     carouselVM.showNewUserPopUp = false
