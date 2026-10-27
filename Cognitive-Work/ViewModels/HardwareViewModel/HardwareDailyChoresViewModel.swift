@@ -26,7 +26,7 @@ struct UserDailyChoresGroup: Identifiable {
 
     /// ``shareOfDay`` formatted (e.g. `"45%"`).
     var shareOfDayFormatted: String {
-        "\(Int((shareOfDay * 100).rounded()))%"
+        ChartA11y.percent(shareOfDay)
     }
 }
 

@@ -5,6 +5,8 @@
 //  Created by Jonas Fernando Nascimento Melo on 13/08/26.
 //
 
+import Foundation
+
 /// Ranks, from lowest to highest, in the order of ``allCases``. Each rank's raw value is the name
 /// of its image in the asset catalog (`Assets.xcassets/Tiers`), so it is also what is stored.
 enum Tier: String, CaseIterable {

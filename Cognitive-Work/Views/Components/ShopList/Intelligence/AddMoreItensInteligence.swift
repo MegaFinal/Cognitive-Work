@@ -247,7 +247,7 @@ struct AddMoreItensInteligence: View {
                 }
 
                 primaryButton(
-                    title: L10n.tr("Adicionar itens (%lld)", included.count),
+                    title: L10n.tr("Adicionar itens (\(included.count))"),
                     isLoading: isSaving,
                     isEnabled: !included.isEmpty && !isCheckingDuplicates
                 ) {
@@ -295,9 +295,9 @@ struct AddMoreItensInteligence: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .voiceOverLabel(L10n.tr("Incluir %@", suggestion.name))
+                .voiceOverLabel(L10n.tr("Incluir \(suggestion.name)"))
                 .voiceOverTraits(.isSelected, when: isIncluded)
-                .voiceControlNames([L10n.tr("Incluir %@", suggestion.name)])
+                .voiceControlNames([L10n.tr("Incluir \(suggestion.name)")])
 
                 Button(action: edit) {
                     HStack(spacing: 12) {
@@ -327,7 +327,7 @@ struct AddMoreItensInteligence: View {
                                     .font(.system(size: 13))
                                     .foregroundStyle(.orange)
                             } else if !consumers.isEmpty {
-                                Text(L10n.tr("Para: %@", consumers.map(\.name).joined(separator: ", ")))
+                                Text(L10n.tr("Para: \(consumers.map(\.name).joined(separator: ", "))"))
                                     .font(.system(size: 13))
                                     .foregroundStyle(.subTitleGray)
                             }
@@ -354,7 +354,7 @@ struct AddMoreItensInteligence: View {
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
                 .voiceOverHint(L10n.tr("Toque duas vezes para editar."))
-                .voiceControlNames([L10n.tr("Editar %@", suggestion.name)])
+                .voiceControlNames([L10n.tr("Editar \(suggestion.name)")])
             }
 
             // Kept outside the edit button so its menu can be tapped on its own.
@@ -391,8 +391,8 @@ struct AddMoreItensInteligence: View {
                 .accessibilityHidden(true)
 
             Text(sameUnit
-                 ? L10n.tr("Já está na lista: %@", existingText)
-                 : L10n.tr("Já está na lista, em outra unidade: %@", existingText))
+                 ? L10n.tr("Já está na lista: \(existingText)")
+                 : L10n.tr("Já está na lista, em outra unidade: \(existingText)"))
                 .font(.system(size: 13))
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -402,7 +402,7 @@ struct AddMoreItensInteligence: View {
                     Button {
                         setMerging(true)
                     } label: {
-                        Label(L10n.tr("Somar à quantidade (%lld → %lld)", existing.quantity, existing.quantity + suggestion.quantity),
+                        Label(L10n.tr("Somar à quantidade (\(existing.quantity) → \(existing.quantity + suggestion.quantity))"),
                               systemImage: isMerging ? "checkmark" : "plus")
                     }
                     Button {

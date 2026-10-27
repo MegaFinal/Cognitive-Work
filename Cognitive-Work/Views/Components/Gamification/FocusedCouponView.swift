@@ -271,7 +271,7 @@ struct FocusedCouponView: View {
                             .foregroundStyle(roomColor.uiColor)
                             .symbolEffect(.bounce.down, options: .repeat(.periodic(delay: 1.2)), isActive: !reduceMotion)
                             .accessibilityHidden(true)
-                        Text(verbatim: L10n.tr("Puxe para baixo para destacar e comprar por %@", CouponTicket.priceText(coupon)))
+                        Text(verbatim: L10n.tr("Puxe para baixo para destacar e comprar por \(CouponTicket.priceText(coupon))"))
                     }
                 }
             }

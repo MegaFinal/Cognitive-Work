@@ -37,14 +37,8 @@ struct ChorePopOverComponent: View {
     /// "Cozinha: Lavar a louça. Semanal, prioridade alta, duração curta".
     private var accessibilityText: String {
         let tier = ChoreDurationTier.from(minutes: chore.duration)
-        return L10n.tr(
-            "%@: %@. %@, prioridade %@, duração %@",
-            room?.name.localizedDefault ?? L10n.tr("Cômodo"),
-            chore.localizedName,
-            chore.frequency.displayName,
-            chore.priorityTag.displayName,
-            tier.displayText
-        )
+        let roomName = room?.name.localizedDefault ?? L10n.tr("Cômodo")
+        return L10n.tr("\(roomName): \(chore.localizedName). \(chore.frequency.displayName), prioridade \(chore.priorityTag.displayName), duração \(tier.displayText)")
     }
     
     /// Room name over the chore name.

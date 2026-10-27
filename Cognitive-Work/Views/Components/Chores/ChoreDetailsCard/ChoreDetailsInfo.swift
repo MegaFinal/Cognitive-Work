@@ -42,7 +42,7 @@ struct ChoreDetailsInfo: View {
             )
         }
         .accessibilityElement(children: .ignore)
-        .voiceOverLabel(L10n.tr("Cômodo: %@", viewModel.carouselViewModel.accessibilityRoomName(for: viewModel.chore)))
+        .voiceOverLabel(L10n.tr("Cômodo: \(viewModel.carouselViewModel.accessibilityRoomName(for: viewModel.chore))"))
     }
     
     private var checklistHeader: some View {

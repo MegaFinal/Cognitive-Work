@@ -181,7 +181,7 @@ struct UserScheduleCard: View {
     
     /// "Gráfico da sua divisão, 12 tarefas em 14 dias".
     private var chartAccessibilityLabel: String {
-        L10n.tr("Gráfico da sua divisão, %lld tarefas em %lld dias", entries.count, daysToShow)
+        L10n.tr("Gráfico da sua divisão, \(entries.count) tarefas em \(daysToShow) dias")
     }
 }
 
@@ -227,7 +227,7 @@ private struct ScheduleDayColumn: View {
                 .accessibilityValue(
                     entries.isEmpty
                         ? L10n.tr("Sem tarefas")
-                        : L10n.tr("%lld tarefas", entries.count)
+                        : L10n.tr("\(entries.count) tarefas")
                 )
             
             // MARK: - The day's bars
@@ -404,7 +404,7 @@ private struct RoomScheduleCaption: View {
         // The swatches only matter visually (each bar already says its room): one summary line.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
-            L10n.tr("Cômodos na legenda: %@", ChartA11y.list(rooms.map { $0.name.localizedDefault }))
+            L10n.tr("Cômodos na legenda: \(ChartA11y.list(rooms.map { $0.name.localizedDefault }))")
         )
     }
 }

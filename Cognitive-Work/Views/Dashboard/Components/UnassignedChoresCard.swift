@@ -36,7 +36,7 @@ struct UnassignedChoresCard: View {
             header
                 .padding([.horizontal, .top], 16)
                 .accessibilityElement(children: .ignore)
-                .voiceOverLabel(L10n.tr("%lld tarefas sem dono", viewModel.items.count))
+                .voiceOverLabel(L10n.tr("\(viewModel.items.count) tarefas sem dono"))
                 .accessibilityAddTraits(.isHeader)
             
             if viewModel.isEmpty {

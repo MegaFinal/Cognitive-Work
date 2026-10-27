@@ -301,6 +301,6 @@ class DashboardViewModel {
     
     /// `value` (0 to 1) as a whole percentage, e.g. `"45%"`.
     private func percentText(_ value: Double) -> String {
-        "\(Int((value * 100).rounded()))%"
+        ChartA11y.percent(value)
     }
 }

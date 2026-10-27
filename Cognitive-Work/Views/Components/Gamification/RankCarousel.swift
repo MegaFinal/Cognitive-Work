@@ -236,11 +236,11 @@ private struct RankItem {
         switch kind {
         case .current:
             if let next = progress.nextTier, let missing = progress.pointsToNext {
-                return L10n.tr("Faltam %lld pontos para %@", missing, next.displayName)
+                return L10n.tr("Faltam \(missing) pontos para \(next.displayName)")
             }
             return L10n.tr("Você chegou ao rank máximo")
         case .past(let entry):
-            return L10n.tr("%lld pts", entry.points)
+            return L10n.tr("\(entry.points) pts")
         }
     }
 }

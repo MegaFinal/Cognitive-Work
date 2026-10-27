@@ -178,7 +178,7 @@ struct RetroCoinsContent: Equatable {
 
         return RetroCoinsContent(
             coins: coins,
-            coinsLabel: coins == 1 ? L10n.tr("1 moeda") : L10n.tr("%lld moedas", coins),
+            coinsLabel: coins == 1 ? L10n.tr("1 moeda") : L10n.tr("\(coins) moedas"),
             tierName: tier?.displayName,
             hasCoinPig: coins > 0,
             floatingCoinsCount: floating,

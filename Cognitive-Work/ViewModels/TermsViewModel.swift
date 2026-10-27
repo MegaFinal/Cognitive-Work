@@ -64,7 +64,7 @@ final class TermsViewModel {
 
     /// Version and last update date, translated.
     var subtitle: String {
-        L10n.tr("Versão %@ · Última atualização: %@", terms.version, terms.lastUpdated)
+        L10n.tr("Versão \(terms.version) · Última atualização: \(terms.lastUpdated)")
     }
 
     /// The confirmation's title, translated.
@@ -72,7 +72,7 @@ final class TermsViewModel {
 
     /// The confirmation's message, translated.
     var confirmationMessage: String {
-        L10n.tr("Ao tocar em Concordar, você aceita os Termos de Uso do %@.", terms.appName)
+        L10n.tr("Ao tocar em Concordar, você aceita os Termos de Uso do \(terms.appName).")
     }
 
     /// Title of the goodbye screen shown after declining.
@@ -80,7 +80,7 @@ final class TermsViewModel {
 
     /// Message of the goodbye screen shown after declining.
     var farewellMessage: String {
-        L10n.tr("Para usar o %@ é preciso aceitar os Termos de Uso. Se mudar de ideia, é só rever os termos: a casa vai estar te esperando.", terms.appName)
+        L10n.tr("Para usar o \(terms.appName) é preciso aceitar os Termos de Uso. Se mudar de ideia, é só rever os termos: a casa vai estar te esperando.")
     }
 
     // MARK: - Actions

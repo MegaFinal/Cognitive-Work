@@ -60,7 +60,7 @@ struct ShopSuggestionsRow: View {
                     .foregroundStyle(.titleGray)
 
                 if case .usual(let days) = suggestion.kind {
-                    Text(L10n.tr("~%lld d", days))
+                    Text(L10n.tr("~\(days) d"))
                         .font(.system(size: 12))
                         .foregroundStyle(.subTitleGray)
                 }
@@ -82,9 +82,9 @@ struct ShopSuggestionsRow: View {
                 Label(L10n.tr("Não sugerir agora"), systemImage: "eye.slash")
             }
         }
-        .voiceOverLabel(L10n.tr("Adicionar %@", suggestion.name))
+        .voiceOverLabel(L10n.tr("Adicionar \(suggestion.name)"))
         .voiceOverHint(hint(for: suggestion.kind))
-        .voiceControlNames([L10n.tr("Adicionar %@", suggestion.name), suggestion.name])
+        .voiceControlNames([L10n.tr("Adicionar \(suggestion.name)"), suggestion.name])
         .accessibilityAction(named: Text(verbatim: L10n.tr("Não sugerir agora"))) {
             withAnimation(.snappy) { model.dismiss(suggestion) }
         }
@@ -100,7 +100,7 @@ struct ShopSuggestionsRow: View {
     /// Why it's suggested, for VoiceOver.
     private func hint(for kind: ShopListSuggestion.Kind) -> String {
         switch kind {
-        case .usual(let days): return L10n.tr("Costuma entrar na lista a cada %lld dias.", days)
+        case .usual(let days): return L10n.tr("Costuma entrar na lista a cada \(days) dias.")
         case .goesWithList: return L10n.tr("Combina com o que está na lista.")
         }
     }
@@ -110,7 +110,7 @@ struct ShopSuggestionsRow: View {
         defer { addingID = nil }
         if await model.add(suggestion) {
             HapticsManager.notify(.success)
-            VoiceOver.announce(L10n.tr("%@ adicionado", suggestion.name))
+            VoiceOver.announce(L10n.tr("\(suggestion.name) adicionado"))
         } else {
             HapticsManager.notify(.error)
         }

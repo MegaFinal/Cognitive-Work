@@ -50,8 +50,8 @@ enum ProfileAccessibility {
         switch names.count {
         case 0: return ""
         case 1: return names[0]
-        case 2: return L10n.tr("%@ e %@", names[0], names[1])
-        default: return L10n.tr("%@, %@ e mais %lld", names[0], names[1], names.count - 2)
+        case 2: return L10n.tr("\(names[0]) e \(names[1])")
+        default: return L10n.tr("\(names[0]), \(names[1]) e mais \(names.count - 2)")
         }
     }
 }
