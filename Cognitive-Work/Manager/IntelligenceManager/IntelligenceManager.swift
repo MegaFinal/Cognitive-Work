@@ -68,6 +68,7 @@ final class IntelligenceManager {
         switch LanguageManager.shared.current {
         case .portuguese: lines.append("The person's locale is pt_BR.")
         case .spanish: lines.append("The person's locale is es_419.")
+        case .french: lines.append("The person's locale is fr_FR.")
         case .english: break
         }
 
@@ -77,6 +78,7 @@ final class IntelligenceManager {
             case .portuguese: lines.append("You MUST respond in Brazilian Portuguese.")
             case .english: lines.append("You MUST respond in English.")
             case .spanish: lines.append("You MUST respond in Latin American Spanish.")
+            case .french: lines.append("You MUST respond in French.")
             }
         case .sameAsInput:
             lines.append("Keep any text the person wrote in the same language and spelling they used. Do not translate it.")

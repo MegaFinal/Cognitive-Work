@@ -15,6 +15,8 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     case english = "en"
     /// Spanish (neutral Latin American: "tú", no regional slang).
     case spanish = "es"
+    /// French (France, informal "tu" like the rest of the app).
+    case french = "fr"
 
     /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
@@ -29,6 +31,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         case .portuguese: return "Português"
         case .english: return "English"
         case .spanish: return "Español"
+        case .french: return "Français"
         }
     }
 
@@ -37,6 +40,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         let preferred = Locale.preferredLanguages.first ?? AppLanguage.portuguese.rawValue
         if preferred.hasPrefix("en") { return .english }
         if preferred.hasPrefix("es") { return .spanish }
+        if preferred.hasPrefix("fr") { return .french }
         return .portuguese
     }
 }

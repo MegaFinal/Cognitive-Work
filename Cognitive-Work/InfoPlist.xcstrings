@@ -17,6 +17,12 @@
             "value" : "Pipa"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pipa"
+          }
+        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "new",
@@ -36,6 +42,12 @@
           }
         },
         "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cognitive-Work"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cognitive-Work"
@@ -63,6 +75,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Necesitamos acceso a tu calendario para sincronizar y actualizar las tareas domésticas que te asignaron."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous avons besoin d’accéder à ton calendrier pour synchroniser et mettre à jour les tâches ménagères qui te sont attribuées."
           }
         },
         "pt-BR" : {
@@ -101,6 +119,12 @@
             "value" : "Usamos la red local para encontrar y comunicarnos con Harvii."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous utilisons le réseau local pour trouver Harvii et communiquer avec lui."
+          }
+        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "new",
@@ -125,6 +149,12 @@
             "value" : "Usamos el micrófono para que puedas agregar ítems hablando."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous utilisons le micro pour que tu puisses ajouter des articles à la voix."
+          }
+        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "new",
@@ -147,6 +177,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Usamos el reconocimiento de voz para convertir lo que dices en ítems de la lista."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous utilisons la reconnaissance vocale pour transformer ce que tu dis en articles de la liste."
           }
         },
         "pt-BR" : {
