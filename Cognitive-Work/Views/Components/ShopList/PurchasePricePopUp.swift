@@ -10,26 +10,17 @@ import SwiftUI
 /// Asks how much an item cost when it's checked off without a price.
 struct PurchasePricePopUp: View {
 
-    /// The item's name.
     let itemName: String
-    /// How many were bought (to show the total).
     let quantity: Int
-    /// Runs with the typed price on ✓.
     let onConfirm: (String) -> Void
-    /// Runs on "Comprar sem valor".
     let onSkip: () -> Void
-    /// Runs on ✕ (doesn't buy).
     let onCancel: () -> Void
 
-    /// The typed price.
     @State private var text = ""
-    /// Whether the price field has the keyboard.
     @FocusState private var isFocused: Bool
 
-    /// Whether the typed text is a valid price.
     private var isValid: Bool { ShopListViewModel.isValidPrice(text) }
 
-    /// "3 × R$5,00 = R$15,00" once a price is typed; otherwise how the price is used.
     private var totalCaption: String {
         guard let unit = ShopListViewModel.parsePrice(text), unit > 0 else {
             return L10n.tr("O preço é por unidade. O total é dividido entre quem vai consumir e aparece em Pendências.")
@@ -46,15 +37,16 @@ struct PurchasePricePopUp: View {
             // MARK: - Title and item name
             VStack(alignment: .leading, spacing: 6) {
                 Text("Quanto custou cada um?")
-                    .font(.system(size: 28))
+                    .font(.system(size: 24))
                     .bold()
                     .accessibilityAddTraits(.isHeader)
 
                 Text(itemName)
-                    .font(.system(size: 22))
+                    .font(.system(size: 18))
                     .foregroundColor(.black)
                     .lineLimit(2)
             }
+            .padding(.top, 10)
 
             // MARK: - Price field
             HStack(spacing: 8) {
@@ -64,18 +56,17 @@ struct PurchasePricePopUp: View {
                     .accessibilityHidden(true)
 
                 TextField("0,00", text: $text)
-                    .font(.system(size: 32, weight: .bold))
+                    .font(.system(size: 26, weight: .bold))
                     .priceInput(text: $text)
                     .focused($isFocused)
                     .voiceOverLabel(L10n.tr("Preço por unidade"))
                     .voiceOverValue(ShopListViewModel.accessibilityPrice(text))
-                    // Voice Control: "Toque em Preço", then dictate the value.
                     .voiceControlNames([L10n.tr("Preço"), L10n.tr("Preço por unidade"), L10n.tr("Valor")])
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
             .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(Color(.systemGray6))
             )
 
@@ -108,7 +99,6 @@ struct PurchasePricePopUp: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 32))
         .onTapGesture { isFocused = false }
-        // VoiceOver stays inside the popup; the two-finger "Z" scrub cancels it like the xmark.
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) { onCancel() }
@@ -118,7 +108,6 @@ struct PurchasePricePopUp: View {
         }
     }
 
-    /// The ✕ (cancel) and ✓ (confirm) buttons.
     private var toolbar: some View {
         HStack {
             Button(action: onCancel) {

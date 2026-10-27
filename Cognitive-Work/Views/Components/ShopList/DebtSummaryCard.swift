@@ -28,7 +28,8 @@ struct DebtSummaryCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 // MARK: - Title
                 Text(title)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.custom("Alan Sans", size: 18))
+                    .fontWeight(.semibold)
                     .foregroundStyle(isSelected ? .white : .black)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -39,7 +40,8 @@ struct DebtSummaryCard: View {
                         .font(.system(size: 20, weight: .semibold))
 
                     Text(amount.whole)
-                        .font(.system(size: 30, weight: .bold))
+                        .font(.custom("Alan Sans", size: 30))
+                        .fontWeight(.bold)
                         .lineLimit(1)
                         .minimumScaleFactor(0.4)
 
@@ -48,24 +50,28 @@ struct DebtSummaryCard: View {
                 }
                 .foregroundStyle(isSelected ? .white : .black)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 24)
             .padding(.vertical, 18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // MARK: - Background: the user's banner when selected, gray otherwise
+            // MARK: - Background: a coupon, filled with the user's banner when selected and
             .background {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Color.clear)
-                        .overlay {
-                            RoomTextureBackground(color: banner.color, pattern: banner.pattern, zoom: 1.5)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                } else {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(Color(.systemGray6))
+                ZStack {
+                    if isSelected {
+                        RoomTextureBackground(color: banner.color, pattern: banner.pattern, zoom: 1.5)
+                    } else {
+                        Color.white
+                    }
                 }
+                .clipShape(TicketShape())
+                .overlay {
+                    if !isSelected {
+                        TicketShape()
+                            .stroke(Color.gray.opacity(0.45), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
+                    }
+                }
+                .shadow(color: .black.opacity(isSelected ? 0.18 : 0.05), radius: 6, y: 3)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .contentShape(TicketShape())
         }
         .buttonStyle(.plain)
         .animation(.snappy, value: isSelected)

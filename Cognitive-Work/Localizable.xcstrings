@@ -1185,6 +1185,17 @@
         }
       }
     },
+    "Abre o seu progresso." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens your progress."
+          }
+        }
+      }
+    },
     "Abrir %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1266,6 +1277,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Postpone 1 week"
+          }
+        }
+      }
+    },
+    "Adicionados há mais tempo" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added longest ago"
           }
         }
       }
@@ -5671,6 +5693,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You almost finished everything"
+          }
+        }
+      }
+    },
+    "Farmácia" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pharmacy"
           }
         }
       }
@@ -10203,7 +10236,19 @@
         }
       }
     },
+    "Produtos de limpeza" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaning products"
+          }
+        }
+      }
+    },
     "Progresso" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10637,6 +10682,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Get alerts about household chores."
+          }
+        }
+      }
+    },
+    "Recebi" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Received"
           }
         }
       }
@@ -12635,6 +12691,7 @@
       }
     },
     "Total" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
