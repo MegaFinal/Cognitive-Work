@@ -163,4 +163,78 @@ enum IntelligencePrompts {
             "Shopping list: \(names.joined(separator: ", "))"
         }
     }
+
+    /// Turns a chore description ("lavar a louça toda semana, urgente") into name, room,
+    /// frequency, duration and priority. People are read by code, not by the model.
+    enum ChoreParse {
+
+        static let id = "chore-parse-v5"
+
+        /// The frequency, duration and priority names match the `Generated…` enums in
+        /// ChoreSuggestion.swift; keep them in sync.
+        static let task = """
+        You fill in a household chore form from what the person wrote or said.
+        name: the chore itself, short (at most 18 characters), without frequency, dates or weekdays, room, people or urgency. Start with a verb when possible ("Lavar a louça").
+        room: one name copied exactly from the house's rooms list, the room where the chore happens. Use "none" when no room clearly fits.
+        frequency: what the person said ("todo dia", "todos os dias", "diariamente" -> daily; "toda semana" -> weekly; "a cada 15 dias" -> fortnightly; "uma vez por mês" -> monthly; "só hoje", "uma vez" -> once; a single day without how often, like "amanhã", "sábado" or "dia 30" -> once). If they didn't say, choose how often this chore is usually done in a home: daily, weekly, fortnightly or monthly.
+        duration: what the person said, or else how long the chore usually takes: quick (under 20 minutes), moderate (20 to 59 minutes), slow (60 to 89 minutes) or verySlow (90 minutes or more).
+        priority: only when the person says how urgent it is: low ("sem pressa"), medium, high ("importante"), urgent ("urgente", "hoje"). Otherwise notSaid.
+        details: how-to details the person said that fit no other field ("usar luva", "depois do jantar"), as a short sentence in their words. Never repeat the frequency, people, room or urgency there, and never add your own advice. Empty if there are none.
+        steps: the parts or steps the person listed ("o vaso, a pia e o box" -> "Vaso", "Pia", "Box"), one short item each. Empty if they listed none; do not invent steps.
+        Examples:
+        "eu vou lavar a louça todos os dias depois do jantar" -> name "Lavar a louça", room "Cozinha", frequency daily, duration quick, priority notSaid, details "Depois do jantar.", steps []
+        "limpar o banheiro toda semana, urgente, usar luva, limpar o vaso, a pia e o box" -> name "Limpar o banheiro", room "Banheiro", frequency weekly, duration moderate, priority urgent, details "Usar luva.", steps ["Vaso", "Pia", "Box"]
+        "tirar o lixo" -> name "Tirar o lixo", room "Cozinha", frequency daily, duration quick, priority notSaid, details "", steps []
+        "trocar a roupa de cama a cada 15 dias" -> name "Trocar roupa de cama", room "Quarto", frequency fortnightly, duration moderate, priority notSaid, details "", steps []
+        "limpar a geladeira" -> name "Limpar a geladeira", room "Cozinha", frequency monthly, duration slow, priority notSaid, details "", steps []
+        """
+
+        /// The person's text goes in the prompt (never in the instructions), with the house's rooms.
+        static func prompt(for text: String, rooms: [String]) -> String {
+            """
+            Rooms: \(rooms.isEmpty ? "none" : rooms.joined(separator: ", "))
+            Chore: \(text)
+            """
+        }
+    }
+
+    /// Typical checklist steps for a chore the person named, shown as chips to tap.
+    enum ChoreChecklistIdeas {
+
+        static let id = "chore-checklist-ideas-v1"
+
+        static let task = """
+        You suggest a checklist for a household chore: up to 5 short, concrete steps or parts (at most 40 characters each) that people usually do for it.
+        Only physical steps, no advice or safety tips. Never repeat an item already on the checklist. If the chore is too simple to split, return an empty list.
+        Examples:
+        "Limpar o banheiro" -> "Vaso", "Pia", "Box", "Espelho", "Trocar as toalhas"
+        "Lavar a louça" -> "Pratos e copos", "Panelas", "Secar e guardar", "Limpar a pia"
+        "Tirar o lixo" -> "Lixo da cozinha", "Lixo do banheiro", "Separar recicláveis"
+        """
+
+        /// The chore's name and what's already listed are the person's text, so they go here.
+        static func prompt(name: String, room: String?, existing: [String]) -> String {
+            var lines = ["Chore: \(name)"]
+            if let room { lines.append("Room: \(room)") }
+            if !existing.isEmpty { lines.append("Already on the checklist: \(existing.joined(separator: ", "))") }
+            return lines.joined(separator: "\n")
+        }
+    }
+
+    /// Decides whether a new chore repeats one the house already has.
+    enum SameChore {
+
+        static let id = "same-chore-v1"
+
+        static let task = """
+        You compare two household chores and decide if they are the same task.
+        same: the same work, even with other words ("Lavar louça" and "Lavar a louça", "Faxina no banheiro" and "Limpar o banheiro", "Tirar o lixo" and "Levar o lixo para fora").
+        different: different work, even if they share a word ("Limpar o banheiro" and "Trocar as toalhas do banheiro", "Lavar roupa" and "Passar roupa", "Lavar a louça" and "Guardar a louça").
+        """
+
+        /// Both names are the person's text, so they go in the prompt.
+        static func prompt(newName: String, existingName: String) -> String {
+            "New chore: \(newName)\nExisting chore: \(existingName)"
+        }
+    }
 }

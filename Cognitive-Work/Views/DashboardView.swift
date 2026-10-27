@@ -12,8 +12,16 @@ import SwiftUI
 struct DashboardView: View {
     /// Builds every card from the house's data.
     @State var viewModel = DashboardViewModel()
+    @State private var carouselViewModel: CarouselViewModel
+    @State private var clotheslineViewModel: ClotheslineViewModel
     /// Whether the app is active (the data reloads when it comes back).
     @Environment(\.scenePhase) private var scenePhase
+    
+    init() {
+        let carouselViewModel = CarouselViewModel()
+        _carouselViewModel = State(initialValue: carouselViewModel)
+        _clotheslineViewModel = State(initialValue: ClotheslineViewModel(carouselViewModel: carouselViewModel))
+    }
     
     var body: some View {
         NavigationStack {
@@ -35,10 +43,7 @@ struct DashboardView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     
                     // MARK: - How the house's work is split
-                    BarPercentageComponent(
-                        viewModel: viewModel,
-                        isUnassignedChores: false
-                    )
+                    BarPercentageComponent(viewModel: viewModel)
                     
                     // MARK: - Current division
                     UserCurrentDivisionComponent(
@@ -48,11 +53,7 @@ struct DashboardView: View {
                         .padding(.horizontal, 16)
                     
                     // MARK: - Chores nobody owns
-                    // This will be replaced when the pending chores section is finalized.
-                    BarPercentageComponent(
-                        viewModel: viewModel,
-                        isUnassignedChores: true
-                    )
+                    UnassignedChoresCard(viewModel: clotheslineViewModel)
                 }
                 // Same width as the screen, so the side margins stay what they were
                 // when the title sat outside the scroll.
@@ -64,7 +65,7 @@ struct DashboardView: View {
                 .id(viewModel.contentVersion)
             }
             .refreshable {
-                await viewModel.reloadAfterRemoteChange()
+                await reloadAfterRemoteChange()
             }
             // MARK: - Hidden while loading, with a spinner
             .disabled(viewModel.isLoading)
@@ -76,21 +77,28 @@ struct DashboardView: View {
                 if viewModel.isLoading { ProgressView() }
             }
         }
+        .overlay { PickUnassignedChoreOverlay(carouselViewModel: carouselViewModel) }
         // MARK: - Reloading on local changes, pushes and returning to the app
         // Local changes: `markDataChanged()` bumps `dataRevision`.
         .task(id: CloudKitManager.shared.dataRevision) {
             await viewModel.loadIfNeeded()
+            await carouselViewModel.fetchAllData()
         }
         // Changes made on another device (the CKDatabaseSubscription push posts this).
         .onReceive(NotificationCenter.default.publisher(for: .cloudKitDidChange)) { _ in
-            Task { await viewModel.reloadAfterRemoteChange() }
+            Task { await reloadAfterRemoteChange() }
         }
         // Pushes can be missed while the app is suspended, and "today" may have rolled over.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                Task { await viewModel.reloadAfterRemoteChange() }
+                Task { await reloadAfterRemoteChange() }
             }
         }
+    }
+    
+    private func reloadAfterRemoteChange() async {
+        await viewModel.reloadAfterRemoteChange()
+        await carouselViewModel.fetchAllData()
     }
     
     /// "Seu progresso" and the current division's dates.
@@ -110,5 +118,6 @@ struct DashboardView: View {
 }
 
 #Preview {
-    DashboardView()
+    HouseDataStore.shared.seed(.preview)
+    return DashboardView()
 }
