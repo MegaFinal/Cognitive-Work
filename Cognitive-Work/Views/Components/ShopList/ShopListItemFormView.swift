@@ -71,6 +71,8 @@ struct ShopListItemFormView: View {
 
     /// Whether the AI button shows in this form; set once when it appears (create mode only).
     @State private var canSuggest = false
+    /// The Premium paywall, when a free house taps the AI button.
+    @State private var paywall: PremiumFeature?
     /// The last suggestion applied; fields still holding its values show the sparkles icon.
     @State private var suggestion: ShopItemSuggestion?
     /// What the person typed or said, once the AI filled the form from it (not shown; it stops
@@ -271,6 +273,7 @@ struct ShopListItemFormView: View {
             guard wasBusy, !isBusy else { return }
             readSpoken()
         }
+        .premiumPaywall($paywall)
         .dismissKeyboardOnTap()
         .onChange(of: visibleWarning) { _, warning in
             if let warning { VoiceOver.announce(warning) }
@@ -423,6 +426,15 @@ struct ShopListItemFormView: View {
     /// "Nome: Arroz" under a description being typed; tapping it fills the form now.
     private func previewPill(_ preview: ShopItemSuggestion) -> some View {
         Button {
+//<<<<<<< HEAD
+//            guard PremiumManager.shared.allows(.shopAI) else {
+//                paywall = .shopAI
+//                return
+//            }
+//            aiInput = trimmedName
+//            aiDidFail = false
+//            isShowingAIPrompt = true
+//=======
             lastReadName = trimmedName
             applySuggestion(preview)
         } label: {
@@ -457,6 +469,7 @@ struct ShopListItemFormView: View {
                 aiDidFail = false
                 Task { await voice.start(contextualStrings: availableUsers.map(\.name)) }
             }
+//
         } label: {
             Group {
                 // The mic never spins; progress shows beside the spoken sentence instead.

@@ -140,27 +140,30 @@ enum IntelligencePrompts {
         }
     }
 
-    /// Suggests products usually bought together with the ones on the list.
-    enum ShopComplements {
+    /// Suggests products for one supermarket section, from what's listed in it.
+    enum ShopSectionIdeas {
 
-        static let id = "shop-complements-v1"
+        static let id = "shop-section-ideas-v1"
 
         static let task = """
-        You look at a household shopping list and suggest at most 3 products that people almost always buy together with something on it, and that are missing from the list.
-        Only suggest clear, common pairings. If nothing clearly fits, return an empty list.
-        Never suggest a product that is already on the list, or a variant of one (another brand or type).
+        You help complete one section of a household shopping list. Suggest at most 2 products from that same supermarket section that people usually buy along with the ones listed there.
+        Sections: food (groceries, meat, dairy, bread), produce (fruits, vegetables, herbs), drinks, cleaning (house, dishes and clothes), hygiene (personal care, toilet paper), home (household items), pets, other.
+        Never suggest something already on the list, or a variant of it (another brand, size or type). Only common, clear choices; if nothing fits, return an empty list.
         name: a short, common product name.
-        category is the supermarket section: food, produce, drinks, cleaning, hygiene, home, pets or other.
         Examples:
-        "macarrão, carne moída" -> "molho de tomate" (food)
-        "café" -> "filtro de café" (home)
-        "pão, presunto" -> "queijo" (food)
-        "detergente, esponja" -> nothing
+        cleaning: "detergente" -> "esponja", "sabão em pó"
+        produce: "tomate, cebola" -> "alho", "alface"
+        food: "macarrão" -> "molho de tomate", "queijo ralado"
+        drinks: "café" -> "leite"
         """
 
-        /// The list's names are the person's own text, so they go in the prompt.
-        static func prompt(for names: [String]) -> String {
-            "Shopping list: \(names.joined(separator: ", "))"
+        /// The names are the person's text, so they go in the prompt.
+        static func prompt(section: String, sectionNames: [String], listNames: [String]) -> String {
+            """
+            Section: \(section)
+            In this section: \(sectionNames.joined(separator: ", "))
+            Whole list: \(listNames.joined(separator: ", "))
+            """
         }
     }
 
@@ -168,15 +171,15 @@ enum IntelligencePrompts {
     /// frequency, duration and priority. People are read by code, not by the model.
     enum ChoreParse {
 
-        static let id = "chore-parse-v3"
+        static let id = "chore-parse-v5"
 
         /// The frequency, duration and priority names match the `Generated…` enums in
         /// ChoreSuggestion.swift; keep them in sync.
         static let task = """
         You fill in a household chore form from what the person wrote or said.
-        name: the chore itself, short (at most 18 characters), without frequency, room, people or urgency. Start with a verb when possible ("Lavar a louça").
+        name: the chore itself, short (at most 18 characters), without frequency, dates or weekdays, room, people or urgency. Start with a verb when possible ("Lavar a louça").
         room: one name copied exactly from the house's rooms list, the room where the chore happens. Use "none" when no room clearly fits.
-        frequency: what the person said ("todo dia", "todos os dias", "diariamente" -> daily; "toda semana" -> weekly; "a cada 15 dias" -> fortnightly; "uma vez por mês" -> monthly; "só hoje", "uma vez" -> once). If they didn't say, choose how often this chore is usually done in a home: daily, weekly, fortnightly or monthly.
+        frequency: what the person said ("todo dia", "todos os dias", "diariamente" -> daily; "toda semana" -> weekly; "a cada 15 dias" -> fortnightly; "uma vez por mês" -> monthly; "só hoje", "uma vez" -> once; a single day without how often, like "amanhã", "sábado" or "dia 30" -> once). If they didn't say, choose how often this chore is usually done in a home: daily, weekly, fortnightly or monthly.
         duration: what the person said, or else how long the chore usually takes: quick (under 20 minutes), moderate (20 to 59 minutes), slow (60 to 89 minutes) or verySlow (90 minutes or more).
         priority: only when the person says how urgent it is: low ("sem pressa"), medium, high ("importante"), urgent ("urgente", "hoje"). Otherwise notSaid.
         details: how-to details the person said that fit no other field ("usar luva", "depois do jantar"), as a short sentence in their words. Never repeat the frequency, people, room or urgency there, and never add your own advice. Empty if there are none.
@@ -218,6 +221,50 @@ enum IntelligencePrompts {
             if let room { lines.append("Room: \(room)") }
             if !existing.isEmpty { lines.append("Already on the checklist: \(existing.joined(separator: ", "))") }
             return lines.joined(separator: "\n")
+        }
+    }
+
+    /// Decides whether a new chore repeats one the house already has.
+    enum SameChore {
+
+        static let id = "same-chore-v1"
+
+        static let task = """
+        You compare two household chores and decide if they are the same task.
+        same: the same work, even with other words ("Lavar louça" and "Lavar a louça", "Faxina no banheiro" and "Limpar o banheiro", "Tirar o lixo" and "Levar o lixo para fora").
+        different: different work, even if they share a word ("Limpar o banheiro" and "Trocar as toalhas do banheiro", "Lavar roupa" and "Passar roupa", "Lavar a louça" and "Guardar a louça").
+        """
+
+        /// Both names are the person's text, so they go in the prompt.
+        static func prompt(newName: String, existingName: String) -> String {
+            "New chore: \(newName)\nExisting chore: \(existingName)"
+        }
+    }
+
+    /// Where a chore fits in the day, to suggest the order of today's chores.
+    enum ChorePhase {
+
+        static let id = "chore-phase-v1"
+
+        /// The phase names match ``GeneratedChorePhase``; keep them in sync.
+        static let task = """
+        You classify one household chore by when it happens in the day's flow.
+        tidyUp: putting things away before cleaning ("arrumar a sala", "organizar o quarto").
+        cooking: preparing food ("fazer o almoço", "cozinhar o jantar").
+        afterMeal: cleaning up after a meal ("lavar a louça", "limpar o fogão", "limpar a mesa", "limpar a pia").
+        dusting: dusting or wiping furniture and surfaces ("tirar o pó", "limpar os móveis").
+        floorDry: sweeping or vacuuming ("varrer a casa", "aspirar a sala").
+        floorWet: mopping or washing the floor ("passar pano", "lavar o quintal").
+        laundryWash: washing clothes ("lavar roupa", "colocar roupa na máquina").
+        laundryDry: hanging or drying clothes ("estender roupa", "tirar roupa do varal").
+        laundryFold: folding, ironing or putting clothes away ("dobrar roupa", "passar roupa").
+        trash: taking out the trash ("tirar o lixo", "levar o lixo para fora").
+        other: anything that doesn't depend on other chores ("regar as plantas", "limpar o banheiro", "dar comida ao gato").
+        """
+
+        /// The chore's name is the person's text, so it goes in the prompt.
+        static func prompt(for name: String) -> String {
+            "Chore: \(name)"
         }
     }
 }

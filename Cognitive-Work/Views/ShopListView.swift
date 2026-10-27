@@ -25,6 +25,9 @@ struct ShopListView: View {
     /// Whether the AI button shows: the on-device model can run on this device and language.
     @State private var canUseAI = false
 
+    /// The Premium feature whose paywall is open, or `nil`.
+    @State private var paywall: PremiumFeature?
+
     /// "Pode estar faltando": usual items and products that go with the list.
     @State private var suggestionsModel: ShopListSuggestionViewModel
 
@@ -49,18 +52,17 @@ struct ShopListView: View {
                 .navigationDestination(isPresented: $isShowingPendingPayments) {
                     PendingPaymentsView(shopList: viewModel)
                 }
+                .premiumPaywall($paywall)
         }
     }
 
     /// The page: title and buttons, then the list
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // MARK: - Fixed block: title, buttons and suggestions
+            // MARK: - Fixed block: title and buttons
+            // (The "Pode estar faltando" suggestions now sit inside each category's card.)
             VStack(alignment: .leading, spacing: 20) {
                 header
-
-                ShopSuggestionsRow(model: suggestionsModel)
-                    .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
             }
             .background(alignment: .top) { HeaderFade(color: .white) }
             .zIndex(1)
@@ -218,12 +220,21 @@ struct ShopListView: View {
             HStack(spacing: 4) {
                 Button {
                     HapticsManager.selection()
-                    isShowingPendingPayments = true
+                    // Premium: free houses still record prices, so the history is there
+                    // the day they subscribe.
+                    if PremiumManager.shared.allows(.debts) {
+                        isShowingPendingPayments = true
+                    } else {
+                        paywall = .debts
+                    }
                 } label: {
                     Image(systemName: "banknote.fill")
                         .font(.system(size: 22))
                         .foregroundColor(.black)
                         .padding(8)
+                        .overlay(alignment: .topTrailing) {
+                            if !PremiumManager.shared.isPremium { PremiumBadge() }
+                        }
                 }
                 .accessibilityLabel("Pendências")
                 .voiceControlNames([L10n.tr("Pendências"), L10n.tr("Dinheiro"), L10n.tr("Pagamentos")])
@@ -261,10 +272,24 @@ struct ShopListView: View {
 
         return ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 0) {
-                ShopSectionStack(viewModel: viewModel, sections: pendingSections) { item in
+                ShopSectionStack(
+                    viewModel: viewModel,
+                    sections: pendingSections,
+                    footer: { section in
+                        guard let category = section.category else { return AnyView(EmptyView()) }
+                        return AnyView(ShopSuggestionCards(model: suggestionsModel, category: category))
+                    }
+                ) { item in
                     row(for: item)
                 }
                 .padding(.top, 30)
+
+                ShopSuggestionsLeftoverBox(
+                    model: suggestionsModel,
+                    shownCategories: Set(pendingSections.compactMap(\.category))
+                )
+                .padding(.top, 24)
+                .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
 
                 if let boughtSection = viewModel.boughtSection {
                     if !pendingSections.isEmpty {
@@ -325,9 +350,18 @@ struct ShopListView: View {
 
     /// Opens ``AddMoreItensInteligence`` to add several items from one text.
     private var aiBatchButton: some View {
-        FloatingActionButton(systemImage: "sparkles", symbolSize: 28, foreground: .black, tint: nil) {
+        FloatingActionButton(
+            showsPremiumBadge: !PremiumManager.shared.isPremium, systemImage: "sparkles",
+            symbolSize: 28,
+            foreground: .black,
+            tint: nil
+        ) {
             HapticsManager.selection()
-            isPresentingAIBatch = true
+            if PremiumManager.shared.allows(.shopAI) {
+                isPresentingAIBatch = true
+            } else {
+                paywall = .shopAI
+            }
         }
         .disabled(!viewModel.canAddItems)
         .voiceOverLabel(L10n.tr("Adicionar com IA"))
