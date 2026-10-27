@@ -18,12 +18,63 @@ struct UnassignmentList: View {
     /// The chores screen's view model.
     @Bindable var carouselViewModel: CarouselViewModel
     
+    /// Height of the scrolling area (title included) while the popup rests.
+    private let scrollHeight: CGFloat = 220
+    /// How far the content fades out over the popup's bottom padding.
+    private let bottomFade: CGFloat = 20
+    
+    /// Hides the content gradually at its bottom edge (a mask, so it works over the glass).
+    private var bottomFadeMask: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+            
+            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                .frame(height: bottomFade)
+        }
+    }
+    
     var body: some View {
+        Group {
+            if items.isEmpty {
+                // MARK: - Empty message
+                content
+            } else {
+                // MARK: - Title and chores scroll together
+                ScrollView(showsIndicators: false) {
+                    content
+                }
+                // The content scrolls through the popup's bottom padding and fades out there,
+                // instead of being cut sharply above the edge. The content margin keeps the
+                // last row clear of the fade when the list is at rest.
+                .contentMargins(.bottom, bottomFade, for: .scrollContent)
+                .frame(maxHeight: scrollHeight + bottomFade)
+                // The mask goes before the negative padding: it has to cover the whole extended
+                // area, not just the smaller one the layout reserves.
+                .mask { bottomFadeMask }
+                .padding(.bottom, -bottomFade)
+            }
+        }
+        .padding(.horizontal, 15)
+        .padding(.vertical, 20)
+        .frame(width: width * 0.7)
+        .glassEffect(.regular.tint(.white.opacity(0.35)), in: .rect(cornerRadius: 28))
+        .shadow(radius: 28, y: 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityAction(.escape) {
+            carouselViewModel.dismissUnassignedList()
+        }
+    }
+    
+    // MARK: - Pieces
+    
+    /// The title with its close hint, then the empty message or the chores.
+    private var content: some View {
         VStack(alignment: .leading) {
-            // MARK: - Header: title and close hint
+            // MARK: Header: title and close hint
             HStack {
                 Text("Tarefas para pegar")
-                    .font(.system(size: 22))
+                    .font(.system(size: 18))
                     .bold()
                     .foregroundStyle(.black)
                     .accessibilityAddTraits(.isHeader)
@@ -40,114 +91,19 @@ struct UnassignmentList: View {
                     }
             }
             
-            // MARK: - Empty message or the scrolling list of chores
+            // MARK: Empty message or the chores
             if items.isEmpty {
                 Text("Nenhuma tarefa disponível no momento.")
                     .font(.system(size: 14))
                     .foregroundStyle(.gray)
                     .padding(.top, 8)
             } else {
-                ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(items) { item in
-                            choreRow(for: item)
-                        }
+                VStack(spacing: 8) {
+                    ForEach(items) { item in
+                        UnassignedChoreRow(item: item, carouselViewModel: carouselViewModel, onPick: onPick)
                     }
                 }
-                .frame(maxHeight: 190)
             }
-        }
-        .padding(15)
-        .frame(width: width * 0.7)
-        .glassEffect(.regular.tint(.white.opacity(0.35)), in: .rect(cornerRadius: 28))
-        .shadow(radius: 28, y: 4)
-        // Popup: keeps VoiceOver inside it; the escape gesture closes it.
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isModal)
-        .accessibilityAction(.escape) {
-            carouselViewModel.dismissUnassignedList()
-        }
-    }
-    
-    /// One chore row: name, frequency and priority tags, and a "hand" icon, tinted with the room's color.
-    private func choreRow(for item: CarouselViewModel.UnassignedItem) -> some View {
-        
-        let roomColor = carouselViewModel.getRoom(for: item.chore)?.color.uiColor ?? .gray
-        
-        return Button {
-            onPick(item)
-        } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.chore.localizedName)
-                        .font(.system(size: 15))
-                        .foregroundStyle(.black)
-                        .fontWeight(.semibold)
-                    
-                    HStack(spacing: 6) {
-                        CapsuleTag(
-                            tagName: item.chore.frequency.displayName,
-                            tagColor: item.chore.frequency.color,
-                            textColor: item.chore.frequency.textColor,
-                            horizontalPadding: 6,
-                            verticalPadding: 1.5
-                        )
-                        
-                        CapsuleTag(
-                            tagName: item.chore.priorityTag.displayName,
-                            tagColor: item.chore.priorityTag.color,
-                            horizontalPadding: 6,
-                            verticalPadding: 1.5
-                        )
-                    }
-                }
-                .padding(5)
-                
-                Spacer()
-                
-                Image(systemName: "hand.rays")
-                    .accessibilityDecorative()
-                    .font(.system(size: 15))
-                    .padding(7)
-                    .foregroundColor(.black)
-                    .background(
-                        Circle()
-                            .foregroundStyle(.white)
-                    )
-            }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(ScaleButtonStyle())
-        .voiceOverLabel(rowAccessibilityLabel(for: item))
-        .voiceControlNames([item.chore.localizedName, L10n.tr("Pegar %@", item.chore.localizedName)])
-        .voiceOverHint(L10n.tr("Toque duas vezes para pegar esta tarefa."))
-        .glassEffect(
-            .regular.tint(roomColor.opacity(0.2)),
-            in: .rect(cornerRadius: 16)
-        )
-    }
-    
-    /// "Lavar a louça, Cozinha, Prioridade média, …, sexta-feira, 25 de setembro".
-    private func rowAccessibilityLabel(for item: CarouselViewModel.UnassignedItem) -> String {
-        var parts = [
-            item.chore.localizedName,
-            carouselViewModel.accessibilityRoomName(for: item.chore),
-            carouselViewModel.accessibilityTagsText(for: item.chore)
-        ]
-        if let date = item.displayDate {
-            parts.append(CarouselViewModel.accessibilityDateText(date))
-        }
-        return parts.joined(separator: ", ")
-    }
-    
-    /// Shrinks the row while it is pressed.
-    private struct ScaleButtonStyle: ButtonStyle {
-        func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .scaleEffect(configuration.isPressed ? 0.7 : 1.0)
-                .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
         }
     }
 }

@@ -16,12 +16,18 @@ enum TextLimits {
     static let choreName = 18
     /// Chore description.
     static let choreDescription = 250
+    /// What can be typed in the chore name field when the AI fills the form from it
+    /// ("lavar a louça toda semana, eu e Ana"); the AI then shortens it to ``choreName``.
+    static let choreNameDescription = 120
     /// One checklist item.
     static let checklistItem = 40
     /// Room names (onboarding cards and the custom-room sheet share it).
     static let roomName = 16
     /// Shopping list item name.
     static let shopItemName = 18
+    /// What can be typed in the item name field when the AI fills the form from it
+    /// ("2kg de arroz 10 reais para mim"); the AI then shortens it to ``shopItemName``.
+    static let shopItemDescription = 120
     /// Price text, e.g. "99999,99".
     static let price = 9
     /// IEEE 802.11 SSID maximum.

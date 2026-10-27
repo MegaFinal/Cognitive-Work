@@ -173,16 +173,15 @@ final class PendingPaymentsViewModel {
         )
     }
 
-    /// "Pagar" when you owe, "Foi pago" when you are owed (it confirms they paid you), then "Pago!".
+    /// "Pagar" when you owe, "Recebi" when you are owed (it confirms they paid you), then "Pago!".
     func settleButtonTitle(for group: DebtGroup) -> String {
         if isPaid(group) { return L10n.tr("Pago!") }
-        return group.direction == .owedToYou ? L10n.tr("Registrar pagamento") : L10n.tr("Pagar")
+        return group.direction == .owedToYou ? L10n.tr("Recebi") : L10n.tr("Pagar")
     }
 
-    /// The popover's confirm button: the same words as the button that opened it.
+    /// The popover's confirm button: one short word, so it never wraps.
     var confirmationButtonTitle: String {
-        guard let group = settlementRequest else { return "" }
-        return settleButtonTitle(for: group)
+        settlementRequest == nil ? "" : L10n.tr("Confirmar")
     }
 
     /// Title of the "mark as paid" confirmation.

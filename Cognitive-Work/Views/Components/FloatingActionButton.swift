@@ -14,7 +14,8 @@ struct FloatingActionButton: View {
     static let diameter: CGFloat = 70
     /// Distance from the right edge of the screen.
     static let trailingInset: CGFloat = 22
-
+    /// premium badge
+    var showsPremiumBadge: Bool = false
     /// SF Symbol of the icon.
     let systemImage: String
     /// The icon's size.
@@ -34,6 +35,13 @@ struct FloatingActionButton: View {
                 .foregroundColor(foreground)
                 .frame(width: Self.diameter, height: Self.diameter)
                 .contentShape(Circle())
+            // if its a premium feature
+                .overlay(alignment: .topTrailing) {
+                    if showsPremiumBadge {
+                        PremiumBadge()
+                            .padding(6)
+                    }
+                }
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive().tint(tint), in: .circle)

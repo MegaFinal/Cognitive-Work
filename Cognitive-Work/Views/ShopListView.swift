@@ -11,8 +11,6 @@ import CloudKit
 /// The shopping tab: the house's shopping list grouped in sections, with a button to add items,
 /// a sort menu and a link to the "Pendências" (who owes whom) screen.
 struct ShopListView: View {
-
-    /// Loads the list, saves changes and works out the sections.
     @State private var viewModel: ShopListViewModel
 
     /// Shows the "new item" sheet.
@@ -36,8 +34,8 @@ struct ShopListView: View {
     /// Which card is swiped open; shared so only one can be open at a time.
     @State private var revealedItemID: String?
 
-    /// The delete button matches the card: same height, same 22-point corners.
-    private let swipeStyle = SwipeToDeleteStyle(cornerRadius: 22, topInset: 0)
+    /// The delete button matches the row: same height, 16-point corners.
+    private let swipeStyle = SwipeToDeleteStyle(cornerRadius: 16, topInset: 0)
 
     /// Creates the screen. Pass a ready view model for previews.
     init(viewModel: ShopListViewModel? = nil) {
@@ -58,19 +56,21 @@ struct ShopListView: View {
         }
     }
 
-    /// The page: title and buttons, then the list (or a spinner / empty state).
+    /// The page: title and buttons, then the list
     private var content: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // MARK: - Title and buttons
-            header
+        VStack(alignment: .leading, spacing: 0) {
+            // MARK: - Fixed block: title, buttons and suggestions
+            VStack(alignment: .leading, spacing: 20) {
+                header
 
-            // One-tap chips for what might be missing; hidden when there's nothing to suggest.
-            ShopSuggestionsRow(model: suggestionsModel)
-                .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
+                ShopSuggestionsRow(model: suggestionsModel)
+                    .animation(.snappy, value: suggestionsModel.suggestions.map(\.id))
+            }
+            .background(alignment: .top) { HeaderFade(color: .white) }
+            .zIndex(1)
 
             // MARK: - Spinner, empty state or list
             if !viewModel.hasLoaded {
-                // Only on a cold start without data in memory; otherwise the cached list shows at once.
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.isListEmpty {
@@ -82,13 +82,13 @@ struct ShopListView: View {
         }
         // MARK: - Add button and price pop-up
         .overlay(alignment: .bottomTrailing) {
-            // The AI button sits right above "+", centred on it.
-            VStack(spacing: 12) {
+            HStack {
                 if canUseAI {
                     aiBatchButton
                 }
                 addButton
             }
+            .floatingActionPlacement()
         }
         .background(Color(.white).ignoresSafeArea())
         .overlay { purchasePriceOverlay }
@@ -230,7 +230,7 @@ struct ShopListView: View {
                         paywall = .debts
                     }
                 } label: {
-                    Image(systemName: "banknote")
+                    Image(systemName: "banknote.fill")
                         .font(.system(size: 22))
                         .foregroundColor(.black)
                         .padding(8)
@@ -268,24 +268,27 @@ struct ShopListView: View {
 
     // MARK: - List
 
-    /// The scrolling list: the sections to buy, a black line, then the "bought" section.
+    /// The scrolling list: the stack of cards to buy, a black line, then the "bought" cards.
     private var itemList: some View {
         let pendingSections = viewModel.pendingSections
-        let boughtSection = viewModel.boughtSection
 
         return ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 0) {
-                ForEach(pendingSections) { section in
-                    sectionView(section, isFirst: section.id == pendingSections.first?.id)
+                ShopSectionStack(viewModel: viewModel, sections: pendingSections) { item in
+                    row(for: item)
                 }
+                .padding(.top, 30)
 
-                if let boughtSection {
+                if let boughtSection = viewModel.boughtSection {
                     if !pendingSections.isEmpty {
                         boughtDivider
                             .padding(.top, sectionSpacing)
                     }
 
-                    sectionView(boughtSection, isFirst: true)
+                    ShopSectionStack(viewModel: viewModel, sections: [boughtSection]) { item in
+                        row(for: item)
+                    }
+                    .padding(.top, 20)
                 }
             }
             .padding(.horizontal, 20)
@@ -294,7 +297,7 @@ struct ShopListView: View {
         .scrollDismissesKeyboard(.immediately)
     }
 
-    /// Space between two sections.
+    /// Space between the "to buy" stack and the "bought" line.
     private let sectionSpacing: CGFloat = 40
 
     /// The black line above the "bought" section.
@@ -303,71 +306,6 @@ struct ShopListView: View {
             .fill(Color.black)
             .frame(height: 1.5)
             .frame(maxWidth: .infinity)
-    }
-
-    /// The thin line between two items.
-    private var itemDivider: some View {
-        Capsule()
-            .fill(Color.gray.opacity(0.3))
-            .frame(height: 1)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 17)
-            .accessibilityHidden(true)
-    }
-
-    /// A collapsible section: the title, then its cards separated by thin lines.
-    ///
-    /// - Parameters:
-    ///   - section: The section to show.
-    ///   - isFirst: `true` for the first section, which sits closer to the header.
-    @ViewBuilder
-    private func sectionView(_ section: ShopListSection, isFirst: Bool) -> some View {
-        sectionTitle(section)
-            .padding(.top, isFirst ? 10 : sectionSpacing)
-            .padding(.bottom, 20)
-
-        if !viewModel.isCollapsed(section) {
-            VStack(spacing: 0) {
-                ForEach(section.items) { item in
-                    row(for: item)
-
-                    if item.id != section.items.last?.id {
-                        itemDivider
-                    }
-                }
-            }
-        }
-    }
-
-    /// The section's title, count and arrow; tapping it opens or closes the section.
-    private func sectionTitle(_ section: ShopListSection) -> some View {
-        let isCollapsed = viewModel.isCollapsed(section)
-
-        return Button {
-            withAnimation(.snappy) {
-                viewModel.toggleCollapsed(section)
-            }
-        } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(section.title)
-                    .font(.system(size: 22, weight: .bold))
-
-                Text("\(section.items.count)")
-                    .font(.system(size: 17))
-
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 15, weight: .semibold))
-                    .rotationEffect(.degrees(isCollapsed ? -90 : 0))
-            }
-            .foregroundStyle(.black)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .voiceOverLabel(viewModel.accessibilityLabel(for: section))
-        .voiceOverValue(viewModel.accessibilityValue(for: section))
-        .voiceControlNames([section.title])
-        .accessibilityAddTraits(.isHeader)
     }
 
     /// One item card that can be swiped to delete and tapped to edit.
@@ -400,25 +338,19 @@ struct ShopListView: View {
 
     /// Opens ``AddMoreItensInteligence`` to add several items from one text.
     private var aiBatchButton: some View {
-        Button {
+        FloatingActionButton(
+            showsPremiumBadge: !PremiumManager.shared.isPremium, systemImage: "sparkles",
+            symbolSize: 28,
+            foreground: .black,
+            tint: nil
+        ) {
             HapticsManager.selection()
             if PremiumManager.shared.allows(.shopAI) {
                 isPresentingAIBatch = true
             } else {
                 paywall = .shopAI
             }
-        } label: {
-            Image(systemName: "sparkles")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.black)
-                .padding(14)
-                .contentShape(Circle())
-                .overlay(alignment: .topTrailing) {
-                    if !PremiumManager.shared.isPremium { PremiumBadge().padding(6) }
-                }
         }
-        .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .circle)
         .disabled(!viewModel.canAddItems)
         .voiceOverLabel(L10n.tr("Adicionar com IA"))
         .voiceControlNames([L10n.tr("Adicionar com IA"), L10n.tr("IA")])
@@ -434,7 +366,6 @@ struct ShopListView: View {
         .disabled(!viewModel.canAddItems)
         .voiceOverLabel(L10n.tr("Adicionar item"))
         .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Mais"), L10n.tr("Adicionar item")])
-        .floatingActionPlacement()
     }
 }
 

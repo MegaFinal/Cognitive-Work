@@ -101,6 +101,158 @@ final class CreateAndEditChoreViewModel {
     
     /// An error to show, or `nil`.
     var alert: FormAlert?
+
+    // MARK: - Apple Intelligence
+
+    /// Form fields the AI can fill from a description.
+    enum SuggestedField: Hashable {
+        case room, frequency, duration, priority, responsible
+    }
+
+    /// The "Detalhes" text the AI wrote last; it's replaced by a new description only while the
+    /// field still holds exactly that (or is empty), so the person's own text is never lost.
+    private var suggestedDescription: String?
+
+    /// Checklist items the AI added (steps the person listed, or ideas they tapped). A new
+    /// description replaces the listed steps; items the person typed stay.
+    private(set) var aiChecklistIDs: Set<UUID> = []
+
+    /// Whether "Detalhes" still holds the AI's text (for sparkles).
+    var isDescriptionSuggested: Bool {
+        guard let suggestedDescription, !suggestedDescription.isEmpty else { return false }
+        return draft.description == suggestedDescription
+    }
+
+    /// Whether the checklist has items the AI added (for sparkles).
+    var hasSuggestedChecklistItems: Bool {
+        draft.checklist.contains { aiChecklistIDs.contains($0.id) && !$0.name.isEmpty }
+    }
+
+    /// Whether the person typed checklist items themselves; then no ideas are offered.
+    var hasHandWrittenChecklistItems: Bool {
+        draft.checklist.contains {
+            !aiChecklistIDs.contains($0.id)
+                && !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
+    /// Typical steps for the chore named so far, to offer as chips. Only for new chores.
+    func checklistIdeas() async -> [String]? {
+        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canSuggest, !name.isEmpty else { return nil }
+        return await IntelligenceManager.shared.suggestChecklist(
+            for: name,
+            room: draft.room?.name.localizedDefault,
+            existing: draft.checklist.map(\.name).filter { !$0.isEmpty }
+        )
+    }
+
+    /// Adds a tapped idea to the checklist (into the empty row if there is one).
+    func addChecklistIdea(_ idea: String) {
+        let item = CheckItemDTO(name: idea, isDone: false)
+        aiChecklistIDs.insert(item.id)
+        draft.checklist.removeAll { $0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        draft.checklist.append(item)
+    }
+
+    /// Puts the steps the person listed in the checklist, replacing steps from an earlier
+    /// description; items they typed stay first. There's always at least one row to type into.
+    private func applyChecklistSteps(_ steps: [String]) {
+        var kept = draft.checklist.filter {
+            !aiChecklistIDs.contains($0.id)
+                && !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        let keptKeys = Set(kept.map { IntelligenceManager.foldedKey($0.name) })
+        for step in steps where !keptKeys.contains(IntelligenceManager.foldedKey(step)) {
+            let item = CheckItemDTO(name: step, isDone: false)
+            aiChecklistIDs.insert(item.id)
+            kept.append(item)
+        }
+        if kept.isEmpty { kept.append(CheckItemDTO(name: "", isDone: false)) }
+        draft.checklist = kept
+    }
+
+    /// Fields the AI filled and the person hasn't picked by hand since (for sparkles).
+    private(set) var suggestedFields: Set<SuggestedField> = []
+
+    /// Fields the person picked by hand: a description never overwrites them. Everything else
+    /// can be filled, because a new chore starts with placeholder values (the first option of
+    /// each picker, see ``replaceUndefinedTags(in:)``), not real choices.
+    private var handPickedFields: Set<SuggestedField> = []
+
+    /// Whether the name field can take a description: only for a new chore, and only when the
+    /// on-device model can run here.
+    var canSuggest: Bool {
+        mode == .create && IntelligenceManager.shared.isAvailable
+    }
+
+    /// Asks the on-device model to fill the form from `text` ("lavar a louça toda semana, eu e Ana").
+    func suggestChore(for text: String) async -> ChoreSuggestion? {
+        await IntelligenceManager.shared.suggestChore(
+            for: text,
+            rooms: availableRooms,
+            housemates: availableHouseUsers,
+            currentUser: currentHouseUserInList
+        )
+    }
+
+    /// Applies a suggestion to both steps of the form. 
+    func apply(_ suggestion: ChoreSuggestion) {
+        draft.name = suggestion.name
+
+        func fill(_ field: SuggestedField, _ update: () -> Void) {
+            guard !handPickedFields.contains(field) else { return }
+            update()
+            suggestedFields.insert(field)
+        }
+
+        if let room = suggestion.room {
+            fill(.room) { draft.room = room }
+        }
+        
+        if let frequency = suggestion.frequency {
+            fill(.frequency) { draft.frequency = frequency }
+        }
+        
+        fill(.duration) { draft.duration = suggestion.durationMinutes }
+        if let priority = suggestion.priority {
+            fill(.priority) { draft.priorityTag = priority }
+        }
+
+        let currentDescription = draft.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let details = suggestion.details,
+           currentDescription.isEmpty || draft.description == suggestedDescription {
+            draft.description = details
+            suggestedDescription = details
+        }
+        // Steps the person listed go straight into the checklist.
+        if !suggestion.steps.isEmpty {
+            applyChecklistSteps(suggestion.steps)
+        }
+
+        if let people = suggestion.responsibleUsers {
+            let picked = people.compactMap { person in
+                selectableResponsibleUsers.first { candidate in
+                    (candidate.recordID != nil && candidate.recordID == person.recordID)
+                        || candidate.ownerRecordName == person.ownerRecordName
+                }
+            }
+            if !picked.isEmpty {
+                fill(.responsible) { draft.responsibleUsers = picked }
+            }
+        }
+    }
+
+    /// Whether `field` still holds the AI's value; the form shows sparkles next to it.
+    func isSuggested(_ field: SuggestedField) -> Bool {
+        suggestedFields.contains(field)
+    }
+
+    /// Called when the person picks a value by hand, so a later description leaves it alone.
+    func markChosenByHand(_ field: SuggestedField) {
+        suggestedFields.remove(field)
+        handPickedFields.insert(field)
+    }
     
     // MARK: - Init
     
