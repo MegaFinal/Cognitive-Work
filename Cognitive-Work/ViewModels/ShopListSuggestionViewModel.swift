@@ -190,7 +190,9 @@ final class ShopListSuggestionViewModel {
     /// don't change.
     private func complementItems(excluding usual: [ShopListSuggestion]) async -> [ShopListSuggestion] {
         let pending = shopList.pendingItems
-        guard !pending.isEmpty, IntelligenceManager.shared.isAvailable else {
+        // AI suggestions are Premium; the "usual items" (no AI) stay free.
+        guard !pending.isEmpty, IntelligenceManager.shared.isAvailable,
+              PremiumManager.shared.allows(.shopAI) else {
             sectionIdeas = [:]
             return []
         }
