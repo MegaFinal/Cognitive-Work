@@ -12,6 +12,8 @@ struct ShopSectionStack<Row: View>: View {
     var viewModel: ShopListViewModel
     let sections: [ShopListSection]
     let row: (ShopListItem) -> Row
+    /// Extra content at the end of an open card, after its items (the AI suggestions of that category); `nil` adds nothing.
+    let footer: ((ShopListSection) -> AnyView)?
 
     /// How much a closed card hides under the next one
     private let overlap: CGFloat = 24
@@ -23,10 +25,12 @@ struct ShopSectionStack<Row: View>: View {
     init(
         viewModel: ShopListViewModel,
         sections: [ShopListSection],
+        footer: ((ShopListSection) -> AnyView)? = nil,
         @ViewBuilder row: @escaping (ShopListItem) -> Row
     ) {
         self.viewModel = viewModel
         self.sections = sections
+        self.footer = footer
         self.row = row
     }
 
@@ -47,6 +51,7 @@ struct ShopSectionStack<Row: View>: View {
                             viewModel.toggleCollapsed(entry.section)
                         }
                     },
+                    footer: footer,
                     row: row
                 )
                 .padding(.bottom, entry.overlapsNext ? -overlap : (entry.precedesExpanded ? 0 : gap))
@@ -66,6 +71,8 @@ struct ShopSectionCard<Row: View>: View {
     let accessibilityLabel: String
     let accessibilityValue: String
     let onToggle: () -> Void
+    /// See ``ShopSectionStack/footer``.
+    var footer: ((ShopListSection) -> AnyView)? = nil
     let row: (ShopListItem) -> Row
 
     private var color: Color { section.category?.color ?? .titleGray }
@@ -142,6 +149,11 @@ struct ShopSectionCard<Row: View>: View {
                         .padding(.vertical, 12)
                 }
             }
+
+            // After the items: the AI suggestions of this category, if any.
+            if let footer {
+                footer(section)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
@@ -153,8 +165,8 @@ struct ShopSectionCard<Row: View>: View {
 
 // MARK: - Divider
 
-/// The dotted line between two items.
-private struct ShopDottedDivider: View {
+/// The dotted line between two items (also above a category's AI suggestions).
+struct ShopDottedDivider: View {
 
     var body: some View {
         GeometryReader { proxy in
