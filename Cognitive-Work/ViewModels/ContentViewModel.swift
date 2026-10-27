@@ -69,6 +69,8 @@ class ContentViewModel {
             let house = try await CloudKitManager.shared.currentHouse(forceRefresh: true)
             guard !Task.isCancelled else { return }
             userHasNoHouse = (house == nil)
+            // Reads the house's Premium status and, if this device pays, renews it in the record.
+            await PremiumManager.shared.refresh(house: house)
         } catch let error as CKError where [.zoneNotFound, .userDeletedZone, .unknownItem].contains(error.code) {
             userHasNoHouse = true   // the house is really gone
         } catch {

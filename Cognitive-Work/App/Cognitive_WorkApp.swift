@@ -40,12 +40,18 @@ struct Cognitive_WorkApp: App {
             .requiresTermsAcceptance()
             .dynamicTypeSize(.large)
             .environment(\.locale, languageManager.locale)
+            // MARK: - Premium: listen to the App Store from launch (renewals, refunds, purchases)
+            .task {
+                await PremiumManager.shared.start()
+            }
         }
         // MARK: - Harvii sync: send now when active, schedule a refresh when in background
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
                 Task { await HardwareViewModel.deliverNow() }
+                // The subscription may have expired or been cancelled while in the background.
+                Task { await StoreManager.shared.refreshEntitlements() }
             case .background:
                 HardwareBackgroundSync.scheduleAppRefresh()
             default:
