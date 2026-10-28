@@ -1405,23 +1405,43 @@ class CarouselViewModel {
     }
     
     /// Recomputes ``unassignedItems``.
+    ///
+    /// Recurring chores are found from their occurrences (each one points at its chore through
+    /// ``RecurrentAssignmentModel/choreReference``), the same way the "tarefas a pegar"
+    /// notifications do. The chore's own ``ChoreModel/dailyAssignmentsReference`` list is not
+    /// trusted for this: it can lag behind the occurrences (the scheduler repairs it), and a chore
+    /// that lagged would never show up as free to pick.
     private func rebuildUnassignedItems() {
         let today = Calendar.current.startOfDay(for: Date())
         var items: [UnassignedItem] = []
         
-        for chore in cardModels where !chore.isDone {
-            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
-                let openSlots = refs.compactMap { assignmentsByID[$0.recordID] }.filter { assignment in
-                    let isUnassigned = assignment.userReferences == nil || assignment.userReferences?.isEmpty == true
-                    return isUnassigned && assignment.day >= today
-                }
-                guard !openSlots.isEmpty else { continue }
+        // Open occurrences (upcoming, nobody responsible) and the chores that have occurrences.
+        var openSlotsByChore: [CKRecord.ID: [RecurrentAssignmentModel]] = [:]
+        var choresWithOccurrences: Set<CKRecord.ID> = []
+        for assignment in dailyAssignments {
+            guard let choreID = assignment.choreReference?.recordID else { continue }
+            choresWithOccurrences.insert(choreID)
+            
+            let isUnassigned = assignment.userReferences?.isEmpty ?? true
+            if isUnassigned, !assignment.isCompleted, assignment.day >= today {
+                openSlotsByChore[choreID, default: []].append(assignment)
+            }
+        }
+        
+        // Only chores the viewer can see are offered (private chores of others stay hidden).
+        for chore in cardModels {
+            let choreID = chore.recordID
+            let isRecurring = !(chore.dailyAssignmentsReference ?? []).isEmpty
+                || choreID.map(choresWithOccurrences.contains) == true
+            
+            if isRecurring {
+                guard let choreID, let openSlots = openSlotsByChore[choreID], !openSlots.isEmpty else { continue }
                 
                 if chore.frequency == .daily {
                     let earliest = openSlots.min { $0.day < $1.day }!
                     items.append(
                         UnassignedItem(
-                            id: chore.recordID?.recordName ?? UUID().uuidString,
+                            id: choreID.recordName,
                             chore: chore,
                             choreType: .recurring(assignment: earliest),
                             displayDate: earliest.day
@@ -1439,14 +1459,14 @@ class CarouselViewModel {
                         )
                     }
                 }
-            } else {
+            } else if !chore.isDone {
                 let hasResponsible = chore.currentResponsibleReference != nil
                     || !(chore.allResponsibleUsersReference?.isEmpty ?? true)
                 
                 if !hasResponsible {
                     items.append(
                         UnassignedItem(
-                            id: chore.recordID?.recordName ?? UUID().uuidString,
+                            id: choreID?.recordName ?? UUID().uuidString,
                             chore: chore,
                             choreType: .oneOff,
                             displayDate: chore.dueDate

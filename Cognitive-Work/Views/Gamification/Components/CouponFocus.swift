@@ -30,17 +30,34 @@ struct CouponCell: View {
                 .aspectRatio(CouponTicket.aspectRatio, contentMode: .fit)
                 .accessibilityHidden(true)
         } else {
-            CouponCard(
-                coupon: entry.coupon,
-                roomColor: entry.color,
-                roomSymbol: entry.symbol,
-                isAffordable: viewModel.canAfford(entry.coupon),
-                state: viewModel.state(of: entry),
-                isBuying: viewModel.buyingCouponName == entry.id,
-                metrics: metrics,
-                onSelect: { onSelect(entry.id) }
-            )
-            .matchedGeometryEffect(id: entry.id, in: namespace)
+            VStack(spacing: 10) {
+                CouponCard(
+                    coupon: entry.coupon,
+                    roomColor: entry.color,
+                    roomSymbol: entry.symbol,
+                    isAffordable: viewModel.canAfford(entry.coupon),
+                    state: viewModel.state(of: entry),
+                    isBuying: viewModel.buyingCouponName == entry.id,
+                    metrics: metrics,
+                    onSelect: { onSelect(entry.id) }
+                )
+                .matchedGeometryEffect(id: entry.id, in: namespace)
+                
+                HStack {
+                    Text("\(entry.coupon.price)")
+                        .font(.system(size: 20))
+                        .fontWeight(.bold)
+                        .foregroundColor(entry.color.uiColor)
+                    TintedCoinPig(color: entry.color.uiColor)
+                        .frame(width: width * 0.06)
+                }
+                .padding(.horizontal, 35)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule()
+                        .foregroundColor(entry.color.uiColor.opacity(0.2))
+                )
+            }
         }
     }
 }

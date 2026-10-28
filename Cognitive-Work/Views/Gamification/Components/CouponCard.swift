@@ -77,7 +77,7 @@ struct CouponTicket: View {
         static let card = Metrics(titleSize: 22, captionSize: 12, tierSize: 14, symbolSize: CGSize(width: 90, height: 80))
 
         /// For the ticket in focus.
-        static let focused = Metrics(titleSize: 44, captionSize: 26, tierSize: 30, symbolSize: CGSize(width: 210, height: 210))
+        static let focused = Metrics(titleSize: 51, captionSize: 26, tierSize: 30, symbolSize: CGSize(width: 250, height: 210))
     }
 
     var stubOffset: CGSize = .zero

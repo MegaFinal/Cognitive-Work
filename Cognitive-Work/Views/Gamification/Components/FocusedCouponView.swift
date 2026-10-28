@@ -293,13 +293,11 @@ struct FocusedCouponView: View {
                 case .available:
                     VStack(spacing: 6) {
                         Text(verbatim: L10n.tr("Destaque o ticket para comprá-lo"))
-                        Text(verbatim: CouponTicket.priceText(coupon))
-                            .font(.system(size: 13, weight: .regular))
                     }
                 }
             }
         }
-        .font(.system(size: 15, weight: .semibold))
+        .font(.system(size: 28, weight: .semibold))
         .foregroundStyle(.subTitleGray)
         .multilineTextAlignment(.center)
         .contentTransition(.opacity)
