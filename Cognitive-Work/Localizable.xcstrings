@@ -26089,6 +26089,160 @@
           }
         }
       }
+    },
+    "%@ fez %@ por você" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ did %@ for you"
+          }
+        }
+      }
+    },
+    "Essa tarefa estava na sua lista" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That chore was on your list"
+          }
+        }
+      }
+    },
+    "%@ comprou %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bought %@"
+          }
+        }
+      }
+    },
+    "Um item que você adicionou à lista de compras" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An item you added to the shopping list"
+          }
+        }
+      }
+    },
+    "Você tem pagamentos pendentes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have pending payments"
+          }
+        }
+      }
+    },
+    "Você tem pagamentos a receber" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have payments to receive"
+          }
+        }
+      }
+    },
+    "Você deve %@ a %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe %@ to %@"
+          }
+        }
+      }
+    },
+    "Você deve %@ a %lld pessoas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe %@ to %lld people"
+          }
+        }
+      }
+    },
+    "%@ te deve %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ owes you %@"
+          }
+        }
+      }
+    },
+    "%lld pessoas te devem %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld people owe you %@"
+          }
+        }
+      }
+    },
+    "Sincronize com o Calendário" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync with Calendar"
+          }
+        }
+      }
+    },
+    "Veja as suas tarefas direto no Apple Calendar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See your chores right in Apple Calendar"
+          }
+        }
+      }
+    },
+    "Refaça a divisão automática para incluir esse morador" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo the automatic split to include this member"
+          }
+        }
+      }
+    },
+    "Há notificações novas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There are new notifications"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
