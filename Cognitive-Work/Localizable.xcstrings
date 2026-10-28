@@ -71,6 +71,17 @@
         }
       }
     },
+    "%@ comprou %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bought %@"
+          }
+        }
+      }
+    },
     "%@ de desconto no plano anual" : {
       "localizations" : {
         "en" : {
@@ -156,6 +167,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ est en retard"
+          }
+        }
+      }
+    },
+    "%@ fez %@ por você" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ did %@ for you"
           }
         }
       }
@@ -246,6 +268,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ retiré"
+          }
+        }
+      }
+    },
+    "%@ te deve %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ owes you %@"
           }
         }
       }
@@ -1049,6 +1082,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%lld pessoas te devem %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld people owe you %@"
           }
         }
       }
@@ -9683,6 +9727,17 @@
         }
       }
     },
+    "Essa tarefa estava na sua lista" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That chore was on your list"
+          }
+        }
+      }
+    },
     "Esse cupom já é seu neste ciclo." : {
       "localizations" : {
         "en" : {
@@ -10062,6 +10117,7 @@
       }
     },
     "Ex.:\n2kg de arroz, R$ 25, eu e Ana\ndetergente para todos\n1 L de leite" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -11453,6 +11509,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gardien de la maison"
+          }
+        }
+      }
+    },
+    "Há notificações novas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There are new notifications"
           }
         }
       }
@@ -20289,7 +20356,6 @@
       }
     },
     "Receita: %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -20507,6 +20573,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réseau"
+          }
+        }
+      }
+    },
+    "Refaça a divisão automática para incluir esse morador" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo the automatic split to include this member"
           }
         }
       }
@@ -22533,6 +22610,17 @@
         }
       }
     },
+    "Sincronize com o Calendário" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync with Calendar"
+          }
+        }
+      }
+    },
     "Sobre nós" : {
       "localizations" : {
         "en" : {
@@ -24225,7 +24313,6 @@
       }
     },
     "Toque duas vezes para usar este preço." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24674,7 +24761,6 @@
       }
     },
     "Última vez: %@ / %@ · %@" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24692,6 +24778,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La dernière fois : %1$@ / %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "Um item que você adicionou à lista de compras" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An item you added to the shopping list"
           }
         }
       }
@@ -25229,6 +25326,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Balayer le balcon"
+          }
+        }
+      }
+    },
+    "Veja as suas tarefas direto no Apple Calendar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See your chores right in Apple Calendar"
           }
         }
       }
@@ -25807,6 +25915,28 @@
         }
       }
     },
+    "Você deve %@ a %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe %@ to %@"
+          }
+        }
+      }
+    },
+    "Você deve %@ a %lld pessoas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe %@ to %lld people"
+          }
+        }
+      }
+    },
     "Você deve à casa" : {
       "localizations" : {
         "en" : {
@@ -26137,6 +26267,28 @@
         }
       }
     },
+    "Você tem pagamentos a receber" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have payments to receive"
+          }
+        }
+      }
+    },
+    "Você tem pagamentos pendentes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have pending payments"
+          }
+        }
+      }
+    },
     "Voltar" : {
       "localizations" : {
         "en" : {
@@ -26177,160 +26329,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Revenir à l’étape précédente ?"
-          }
-        }
-      }
-    },
-    "%@ fez %@ por você" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ did %@ for you"
-          }
-        }
-      }
-    },
-    "Essa tarefa estava na sua lista" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "That chore was on your list"
-          }
-        }
-      }
-    },
-    "%@ comprou %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ bought %@"
-          }
-        }
-      }
-    },
-    "Um item que você adicionou à lista de compras" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "An item you added to the shopping list"
-          }
-        }
-      }
-    },
-    "Você tem pagamentos pendentes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have pending payments"
-          }
-        }
-      }
-    },
-    "Você tem pagamentos a receber" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have payments to receive"
-          }
-        }
-      }
-    },
-    "Você deve %@ a %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You owe %@ to %@"
-          }
-        }
-      }
-    },
-    "Você deve %@ a %lld pessoas" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You owe %@ to %lld people"
-          }
-        }
-      }
-    },
-    "%@ te deve %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ owes you %@"
-          }
-        }
-      }
-    },
-    "%lld pessoas te devem %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld people owe you %@"
-          }
-        }
-      }
-    },
-    "Sincronize com o Calendário" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync with Calendar"
-          }
-        }
-      }
-    },
-    "Veja as suas tarefas direto no Apple Calendar" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See your chores right in Apple Calendar"
-          }
-        }
-      }
-    },
-    "Refaça a divisão automática para incluir esse morador" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redo the automatic split to include this member"
-          }
-        }
-      }
-    },
-    "Há notificações novas" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There are new notifications"
           }
         }
       }
