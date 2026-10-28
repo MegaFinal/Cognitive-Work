@@ -56,9 +56,9 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     /// `key` translated into the app's current language and filled with `arguments` (`%@`).
     /// Arguments that are default content (such as a default chore name) are translated too.
     static func localized(_ key: String, _ arguments: [String] = []) -> String {
-        guard !arguments.isEmpty else { return L10n.tr(key) }
+        guard !arguments.isEmpty else { return L10n.tr(key: key) }
         let values = arguments.map { $0.localizedDefault as CVarArg }
-        return String(format: L10n.tr(key), locale: L10n.locale, arguments: values)
+        return String(format: L10n.tr(key: key), locale: L10n.locale, arguments: values)
     }
     
     /// How long a record stays relevant. Older records are deleted without being scheduled
