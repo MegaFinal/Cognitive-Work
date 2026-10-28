@@ -115,8 +115,8 @@ extension NotificationManager {
         return [Reminder(
             id: Self.reminderPrefix + "retro",
             kind: .retrospective,
-            title: L10n.tr(Notifications.retrospective.rawValue),
-            body: L10n.tr(Notifications.retrospective.subTitle),
+            title: L10n.tr(key: Notifications.retrospective.rawValue),
+            body: L10n.tr(key: Notifications.retrospective.subTitle),
             date: fire
         )]
     }
@@ -157,8 +157,8 @@ extension NotificationManager {
             return Reminder(
                 id: Self.reminderPrefix + "grab-\(Int(day.timeIntervalSince1970))",
                 kind: .grabChore,
-                title: L10n.tr("%lld tarefas a pegar hoje", count),
-                body: L10n.tr(Notifications.grabChore.subTitle),
+                title: L10n.tr("\(count) tarefas a pegar hoje"),
+                body: L10n.tr(key: Notifications.grabChore.subTitle),
                 date: fire
             )
         }
@@ -200,8 +200,8 @@ extension NotificationManager {
         let reminder = Reminder(
             id: Self.calendarSuggestionID,
             kind: .calendarSync,
-            title: L10n.tr(Notifications.calendarSync.rawValue),
-            body: L10n.tr(Notifications.calendarSync.subTitle),
+            title: L10n.tr(key: Notifications.calendarSync.rawValue),
+            body: L10n.tr(key: Notifications.calendarSync.subTitle),
             date: DebtReminders.daytime(now.addingTimeInterval(2 * 3600))
         )
         if await add(reminder) {
@@ -271,20 +271,20 @@ enum DebtReminders {
                 return DebtSummary(
                     key: "youOwe",
                     kind: .debtYouOwe,
-                    title: L10n.tr(Notifications.debtYouOwe.rawValue),
+                    title: L10n.tr(key: Notifications.debtYouOwe.rawValue),
                     body: groups.count == 1
-                        ? L10n.tr("Você deve %@ a %@", money, groups[0].counterparty.name)
-                        : L10n.tr("Você deve %@ a %lld pessoas", money, groups.count),
+                        ? L10n.tr("Você deve \(money) a \(groups[0].counterparty.name)")
+                        : L10n.tr("Você deve \(money) a \(groups.count) pessoas"),
                     since: since
                 )
             case .owedToYou:
                 return DebtSummary(
                     key: "owedToYou",
                     kind: .debtOwedToYou,
-                    title: L10n.tr(Notifications.debtOwedToYou.rawValue),
+                    title: L10n.tr(key: Notifications.debtOwedToYou.rawValue),
                     body: groups.count == 1
-                        ? L10n.tr("%@ te deve %@", groups[0].counterparty.name, money)
-                        : L10n.tr("%lld pessoas te devem %@", groups.count, money),
+                        ? L10n.tr("\(groups[0].counterparty.name) te deve \(money)")
+                        : L10n.tr("\(groups.count) pessoas te devem \(money)"),
                     since: since
                 )
             }

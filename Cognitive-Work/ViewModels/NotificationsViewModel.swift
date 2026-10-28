@@ -305,8 +305,8 @@ class NotificationsViewModel {
             NotificationModel(
                 id: "calendar-sync",
                 kind: .calendarSync,
-                title: L10n.tr(Notifications.calendarSync.rawValue),
-                subtitle: L10n.tr(Notifications.calendarSync.subTitle),
+                title: L10n.tr(key: Notifications.calendarSync.rawValue),
+                subtitle: L10n.tr(key: Notifications.calendarSync.subTitle),
                 date: joined,
                 destination: .calendarSync
             )
