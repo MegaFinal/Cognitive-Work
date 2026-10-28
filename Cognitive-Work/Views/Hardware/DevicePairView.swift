@@ -91,12 +91,12 @@ struct DevicePairView: View {
 }
 
 #Preview {
-    Text("Perfil")
-        .sheet(isPresented: .constant(true)) {
-            NavigationStack {
+//    Text("Perfil")
+//        .sheet(isPresented: .constant(true)) {
+//            NavigationStack {
                 DevicePairView(hardwareViewModel: HardwareViewModel(), onClose: {})
-            }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
+//            }
+//            .presentationDetents([.medium, .large])
+//            .presentationDragIndicator(.visible)
+//        }
 }

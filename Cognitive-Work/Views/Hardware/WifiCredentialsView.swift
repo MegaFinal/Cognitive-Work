@@ -19,21 +19,22 @@ struct WifiCredentialsView: View {
         !viewModel.userWifiName.isEmpty &&
         !viewModel.userWifiPassord.isEmpty
     }
+    
+    /// Side margin of the whole screen, the same as the onboarding steps.
+    private var sideMargin: CGFloat { width * 0.0565 }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // MARK: - Title and instructions
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Conectar Harvii")
-                            .font(.largeTitle)
-                            .bold()
-                            .accessibilityAddTraits(.isHeader)
-
-                        Text("Para que seja possível conectar o Harvii ao WiFi da sua casa, entre no WiFi HARVII, com senha 12345678, retorne ao app e envie o nome e senha do WiFi.")
-                            .foregroundStyle(.secondary)
-                    }
+            VStack (spacing: 64) {
+                // MARK: - Title and instructions
+                OnboardingHeader(
+                    title: "Agora, digite o Wi-Fi da sua casa",
+                    description: "É por ele que o Harvii vai receber as tarefas.",
+                    containerInset: sideMargin
+                )
+                
+                
+                VStack(alignment: .leading, spacing: 24) {
                     
                     // MARK: - Skip to pairing (Wi-Fi already sent), or the Wi-Fi fields
                     if !viewModel.hostName.isEmpty {
@@ -50,28 +51,54 @@ struct WifiCredentialsView: View {
                         .padding(.top, 8)
                     } else {
                         LabeledInput(
-                            title: "Nome do Wi-Fi",
+                            title: "Nome da sua rede",
                             spokenAlternatives: [L10n.tr("Nome da rede"), L10n.tr("Rede")]
                         ) {
-                            TextField("", text: $viewModel.userWifiName)
+                            TextField("Ex.: Casa da Bela", text: $viewModel.userWifiName)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .characterLimit(TextLimits.wifiName, text: $viewModel.userWifiName)
                         }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemGroupedBackground), in: .rect(cornerRadius: 20))
+                        
+                        // TODO: Colocar aquele negócio de olho pra ver a senha ou deixar bolina
                         LabeledInput(
-                            title: "Senha do Wi-Fi",
+                            title: "Sua senha",
                             spokenAlternatives: [L10n.tr("Senha")]
                         ) {
-                            SecureField("", text: $viewModel.userWifiPassord)
+                            SecureField("Senha do Wi-Fi", text: $viewModel.userWifiPassord)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .characterLimit(TextLimits.wifiPassword, text: $viewModel.userWifiPassord)
+                                
                         }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemGroupedBackground), in: .rect(cornerRadius: 20))
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+
+                Spacer()
             }
+            .padding(.horizontal, sideMargin)
+            .padding(.bottom, height * 0.02)
+            .overlay(alignment: .bottomTrailing) {
+                OnboardingProgressButton(
+                    width: width * 0.15,
+                    height: width * 0.15,
+                    text: "chevron.right",
+                    isSystemImage: true
+                ) {
+                    // TODO: go to the next Harvii step.
+                }
+                .padding(.bottom, height * 0.02)
+                .padding(.trailing, width * 0.061)
+            }
+            .frame(maxHeight: .infinity, alignment: .bottom)
+
+            
             .navigationTitle("Conectar com WiFi")
             .navigationBarTitleDisplayMode(.inline)
             // MARK: - Toolbar: close / continue (spinner while sending)
@@ -150,10 +177,10 @@ struct LabeledInput<Content: View>: View {
 }
 
 #Preview {
-    Text("Perfil")
-        .sheet(isPresented: .constant(true)) {
+//    Text("Perfil")
+//        .sheet(isPresented: .constant(true)) {
             WifiCredentialsView(viewModel: HardwareViewModel())
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
-        }
+//        }
 }
