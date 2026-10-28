@@ -18,6 +18,8 @@ class HardwareViewModel {
     /// The host name  of the target hardware device.
     var hostName = ""
     
+    var wifiName: String = ""
+    
     /// The device's host name as saved in CloudKit for the house.
     var hardwareHostName: HardwareHostNameModel?
     
@@ -58,6 +60,7 @@ class HardwareViewModel {
     /// Loads the saved device address.
     init() {
         hostName = hardwareNetworkManager.host
+        wifiName = hardwareNetworkManager.wifiName
     }
     
     //MARK: - Connection with Esp32
