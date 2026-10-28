@@ -28,15 +28,23 @@ struct RankSkyCard: View {
     private static let firstRowCenter: CGFloat = 0.690
     private static let rowSpacing: CGFloat = 0.3
 
-    /// The color of the rank names and lines over the light part of the sky.
+    /// The color of the rank names and lines
     private static let lineColor = Color(red: 0.27, green: 0.38, blue: 0.64)
-
     private static let artworkName = "rankBackground"
     private static let artworkSize = CGSize(width: 1029, height: 3767)
+    private static let backHillPeakY: CGFloat = 3350
+    private static let lowestRankOnHill: CGFloat = 0.1
+    private static var lowestRankY: CGFloat {
+        backHillPeakY + (artworkSize.height - backHillPeakY) * lowestRankOnHill
+    }
 
-    /// The clouds, placed as in the design: each one sits at the same place relative to the ranks
-    /// (``RankCloud/row``) and has the same size. They are the delivered images, only scaled, and
-    /// blow sideways slowly (``cloudsLayer(width:)``).
+    /// Where the artwork is split to insert more sky
+    private static let skySplitY: CGFloat = 2700
+
+    /// The flat color of the artwork's sky at ``skySplitY``.
+    private static let skyColor = Color(red: 223 / 255, green: 238 / 255, blue: 254 / 255)
+
+    /// The clouds, placed as in the design
     private static let clouds: [RankCloud] = [
         RankCloud(asset: "rankCloudDark", x: 0.170, row: 0.41, width: 0.936),
         RankCloud(asset: "rankCloudMid", x: 0.831, row: 0.93, width: 0.994),
@@ -63,11 +71,16 @@ struct RankSkyCard: View {
 
     private func artworkScale(width: CGFloat) -> CGFloat { width / Self.artworkSize.width }
 
-    private func contentHeight(width: CGFloat) -> CGFloat {
-        Self.artworkSize.height * artworkScale(width: width)
+    private func extraSkyHeight(width: CGFloat) -> CGFloat {
+        let lowestRowCenter = (Self.firstRowCenter + CGFloat(max(groups.count - 1, 0)) * Self.rowSpacing) * width
+        let lowestRankY = Self.lowestRankY * artworkScale(width: width)
+        return max(0, lowestRowCenter - lowestRankY)
     }
 
-    /// Height of the space each rank takes.
+    private func contentHeight(width: CGFloat) -> CGFloat {
+        Self.artworkSize.height * artworkScale(width: width) + extraSkyHeight(width: width)
+    }
+
     private func rowHeight(width: CGFloat) -> CGFloat {
         Self.rowSpacing * width
     }
@@ -101,16 +114,34 @@ struct RankSkyCard: View {
 
     // MARK: - Artwork
 
-    /// The background artwork, centered.
+    /// The background artwork
     private func artwork(width: CGFloat) -> some View {
         let scale = artworkScale(width: width)
-        return Image(Self.artworkName)
-            .resizable()
-            .frame(width: Self.artworkSize.width * scale, height: Self.artworkSize.height * scale)
-            .accessibilityHidden(true)
+        let fullHeight = Self.artworkSize.height * scale
+        let topHeight = Self.skySplitY * scale
+
+        return VStack(spacing: 0) {
+            artworkImage(width: width, height: fullHeight)
+                .frame(width: width, height: topHeight, alignment: .top)
+                .clipped()
+
+            Self.skyColor.frame(width: width, height: extraSkyHeight(width: width))
+
+            artworkImage(width: width, height: fullHeight)
+                .frame(width: width, height: fullHeight - topHeight, alignment: .bottom)
+                .clipped()
+        }
+        .background(Self.skyColor)
+        .accessibilityHidden(true)
     }
 
-    /// The clouds, over the artwork and under the ranks' names, blown slowly to the right.
+    private func artworkImage(width: CGFloat, height: CGFloat) -> some View {
+        Image(Self.artworkName)
+            .resizable()
+            .frame(width: width, height: height)
+    }
+
+    /// The clouds, over the artwork and under the ranks' names
     private func cloudsLayer(width: CGFloat) -> some View {
         let height = contentHeight(width: width)
         return TimelineView(.animation(paused: reduceMotion)) { timeline in
@@ -169,7 +200,6 @@ struct RankSkyCard: View {
 
     /// One rank: its name followed by a dotted line, and its members' vehicles at the end of it.
     private func row(for group: TierGroup, width: CGFloat) -> some View {
-        // The two top ranks sit in the dark part of the sky.
         let color = group.tier.position >= Tier.allCases.count - 2 ? Color.white.opacity(0.9) : Self.lineColor
 
         return ZStack {
@@ -196,7 +226,7 @@ struct RankSkyCard: View {
         }
     }
 
-    /// A member's vehicle, resting on the line of their rank, with their first name under it.
+    /// A member's vehicle
     private func marker(of user: UserModel, tier: Tier) -> some View {
         let vehicle = RankVehicle(tier: tier)
         let isMe = user.ownerRecordName == myOwnerRecordName
@@ -241,16 +271,10 @@ struct RankSkyCard: View {
 
 /// A cloud's place on the card, from the design.
 private struct RankCloud {
-    /// The images are all this tall for their width.
     static let aspectRatio: CGFloat = 434.0 / 880.0
-
-    /// Name of the cloud's image in the asset catalog.
     let asset: String
-    /// Center, as a share of the card's width.
     let x: CGFloat
-    /// Center, in ranks below the top one (so 1 is level with the second rank).
     let row: CGFloat
-    /// Width, as a share of the card's width.
     let width: CGFloat
 }
 
