@@ -703,6 +703,23 @@ final class ShopListViewModel {
 
     /// A pending item that is the same product as `name`, if any, so the form can offer to add
     /// to its quantity instead of creating a second card.
+    /// The latest item with the same name that had a price, to offer it again ("Última vez:
+    /// R$ 25,00"). Plain code over the house's items (no AI): same words, ignoring case and
+    /// accents; bought items count by when they were bought.
+    ///
+    /// - Parameter excluding: The item being edited, so it doesn't suggest its own price.
+    func lastPricedItem(named name: String, excluding excluded: ShopListItem? = nil) -> ShopListItem? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return items
+            .filter { item in
+                item.hasPrice
+                    && item.id != excluded?.id
+                    && ShopItemDuplicateFinder.isExactMatch(trimmed, item.name)
+            }
+            .max { ($0.boughtAt ?? $0.createdAt) < ($1.boughtAt ?? $1.createdAt) }
+    }
+
     func duplicateItem(named name: String) async -> ShopListItem? {
         let candidates = ShopItemDuplicateFinder.candidates(for: name, in: pendingItems)
         for candidate in candidates {

@@ -38,6 +38,8 @@ struct AddMoreItensInteligence: View {
     // Repeated items: suggestions that are the same product as one already on the list.
     /// The item already on the list, by position in ``suggestions``.
     @State private var duplicates: [Int: ShopListItem] = [:]
+    /// The dish an item came from ("quero fazer lasanha"), by position in ``suggestions``.
+    @State private var recipeDishes: [Int: String] = [:]
     /// Positions whose quantity is added to that existing item instead of creating a new card.
     @State private var merging: Set<Int> = []
     /// Whether the check is still running; adding waits for it, so nothing slips through.
@@ -163,7 +165,7 @@ struct AddMoreItensInteligence: View {
 
             ZStack(alignment: .topLeading) {
                 if text.isEmpty {
-                    Text("Ex.:\n2kg de arroz, R$ 25, eu e Ana\ndetergente para todos\n1 L de leite")
+                    Text("Ex.:\n2kg de arroz, R$ 25, eu e Ana\ndetergente para todos\nquero fazer lasanha")
                         .foregroundStyle(.gray.opacity(0.6))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 8)
@@ -227,6 +229,7 @@ struct AddMoreItensInteligence: View {
                     ForEach(Array(suggestions.enumerated()), id: \.offset) { index, suggestion in
                         reviewRow(
                             suggestion,
+                            dish: recipeDishes[index],
                             duplicate: duplicates[index],
                             isMerging: merging.contains(index),
                             setMerging: { shouldMerge in
@@ -295,6 +298,7 @@ struct AddMoreItensInteligence: View {
     /// with the arrow at the end, opens it in the item form to fix anything before adding.
     private func reviewRow(
         _ suggestion: ShopItemSuggestion,
+        dish: String?,
         duplicate: ShopListItem?,
         isMerging: Bool,
         setMerging: @escaping (Bool) -> Void,
@@ -342,6 +346,10 @@ struct AddMoreItensInteligence: View {
                             infoLine("dumbbell.fill", amountText(for: suggestion))
                             infoLine("tag.fill", category.displayName)
                             infoLine("person.2.fill", peopleText(for: suggestion, consumers: consumers))
+                            // Which dish it's for, when it came from a recipe.
+                            if let dish {
+                                infoLine("fork.knife", L10n.tr("Receita: %@", dish))
+                            }
 
                             if let share = ShopListViewModel.shareText(
                                 unitPrice: suggestion.unitPrice,
@@ -473,7 +481,12 @@ struct AddMoreItensInteligence: View {
         isTextFocused = false
         defer { isGenerating = false }
 
-        guard let result = await viewModel.suggestItems(from: trimmedText), !result.isEmpty else {
+        // Dishes to cook become their ingredients first ("quero fazer lasanha" -> massa, carne
+        // moída…); the rest of the text is read as usual.
+        let expansion = await IntelligenceManager.shared.expandRecipes(in: trimmedText)
+        let input = expansion?.text ?? trimmedText
+
+        guard let result = await viewModel.suggestItems(from: input), !result.isEmpty else {
             let message = L10n.tr("Nenhum item encontrado. Tente escrever de outro jeito.")
             errorText = message
             VoiceOver.announce(message)
@@ -481,8 +494,16 @@ struct AddMoreItensInteligence: View {
             return
         }
 
+        var dishes: [Int: String] = [:]
+        if let expansion {
+            for (index, item) in result.enumerated() {
+                dishes[index] = expansion.dish(for: item.name)
+            }
+        }
+
         withAnimation(.snappy) {
             included = Set(result.indices)
+            recipeDishes = dishes
             suggestions = result
         }
         HapticsManager.notify(.success)
@@ -519,6 +540,10 @@ struct AddMoreItensInteligence: View {
             duplicates[index] = existing
             // "Novo item" by default; the person picks "Somar" in the menu if they want it.
             merging.remove(index)
+            // A recipe ingredient the house already has on the list is probably not needed again.
+            if existing != nil, recipeDishes[index] != nil {
+                included.remove(index)
+            }
         }
     }
 
