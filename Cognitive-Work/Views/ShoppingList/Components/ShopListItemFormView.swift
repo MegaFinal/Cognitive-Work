@@ -431,16 +431,7 @@ struct ShopListItemFormView: View {
     /// "Nome: Arroz" under a description being typed; tapping it fills the form now.
     private func previewPill(_ preview: ShopItemSuggestion) -> some View {
         Button {
-//<<<<<<< HEAD
-//            guard PremiumManager.shared.allows(.shopAI) else {
-//                paywall = .shopAI
-//                return
-//            }
-//            aiInput = trimmedName
-//            aiDidFail = false
-//            isShowingAIPrompt = true
-//=======
-            lastReadName = trimmedName
+//            lastReadName = trimmedName
             applySuggestion(preview)
         } label: {
             Text(L10n.tr("Nome: \(preview.name)"))
@@ -744,7 +735,9 @@ struct ShopListItemFormView: View {
         let unit = item.unitMeasurement == .undefined ? UnitMeasurement.unit : item.unitMeasurement
         let date = (item.boughtAt ?? item.createdAt)
             .formatted(.dateTime.day(.twoDigits).month(.twoDigits).locale(L10n.locale))
-        let text = L10n.tr("Última vez: \(price) / \(unit.getDisplayName(for: 1)) · \(date)")
+        // Interpolated like the rest of the app now: the key stays "Última vez: %@ / %@ · %@".
+        let unitName = unit.getDisplayName(for: 1)
+        let text = L10n.tr("Última vez: \(price) / \(unitName) · \(date)")
 
         return Button {
             HapticsManager.selection()

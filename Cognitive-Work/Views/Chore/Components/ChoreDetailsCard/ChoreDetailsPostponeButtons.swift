@@ -11,14 +11,14 @@ import SwiftUI
 struct ChoreDetailsPostponeButtons: View {
     let viewModel: ChoreDetailsViewModel
     
-    /// Shorter English labels need less horizontal padding.
-    private var isEnglish: Bool { LanguageManager.shared.current == .english }
+    /// The labels in every language but Portuguese are shorter, so they need less horizontal padding.
+    private var hasShortLabels: Bool { LanguageManager.shared.current != .portuguese }
     
     var body: some View {
         HStack {
-            postponeButton("Adiar 1 semana", days: 7, horizontalPadding: isEnglish ? 18 : 25)
+            postponeButton("Adiar 1 semana", days: 7, horizontalPadding: hasShortLabels ? 18 : 25)
             Spacer()
-            postponeButton("Adiar 1 dia", days: 1, horizontalPadding: isEnglish ? 18 : 32)
+            postponeButton("Adiar 1 dia", days: 1, horizontalPadding: hasShortLabels ? 18 : 32)
         }
         .frame(width: width * 0.72)
     }

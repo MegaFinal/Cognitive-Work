@@ -10,41 +10,41 @@ import CloudKit
 
 /// The rewards tab: the ranking sky, the coupons anyone can buy and the coupons the user holds.
 struct GamificationView: View {
-
+    
     /// Loads the coins, rank, rooms and coupons and buys coupons.
     @State private var viewModel: GamificationViewModel
-
+    
     /// Id (``CouponEntry/id``) of the coupon brought to the center of the screen, if any.
     @State private var focusedKey: String?
-
+    
     /// Whether the coin balance sheet is open.
     @State private var showsCoins = false
-
+    
     /// Lets a ticket fly from the list to the center and back.
     @Namespace private var ticketNamespace
-
+    
     /// Width of a ticket in the horizontal lists.
     private static let ticketWidth: CGFloat = 145
-
+    
     /// Creates the screen. Pass a ready view model for previews.
     init(viewModel: GamificationViewModel? = nil) {
         self._viewModel = State(initialValue: viewModel ?? GamificationViewModel())
     }
-
+    
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
                     // MARK: - Title and actions
                     header
-
+                    
                     // MARK: - Ranking
                     RankSkyCard(
                         groups: viewModel.catalog.tiers,
                         myOwnerRecordName: viewModel.myOwnerRecordName
                     )
                     .padding(.horizontal, 30)
-
+                    
                     // MARK: - Coupons (or empty state)
                     if viewModel.catalog.entries.isEmpty {
                         if viewModel.hasLoaded {
@@ -110,43 +110,60 @@ struct GamificationView: View {
             )
         }
     }
-
+    
     // MARK: - Header
-
+    
     /// Page title laid out like the header of ``ShopListView``, with the coins and the room filter.
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
                 Text("Gamificação")
                     .font(.custom("Alan Sans", size: 34))
                     .fontWeight(.bold)
                     .accessibilityAddTraits(.isHeader)
-
-                Text(verbatim: itemsText)
-                    .font(.system(size: 18))
-                    .foregroundStyle(.subTitleGray)
-                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                HStack {
+                    Text("\(viewModel.coins)")
+                        .font(.system(size: 24))
+                        .fontWeight(.bold)
+                        .foregroundColor(.choreYellow)
+                    Image("RetroPig")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: width * 0.07)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .foregroundColor(.lowOpacityYellow.opacity(0.35))
+                )
             }
-
-            Spacer()
+            
+            Text(verbatim: itemsText)
+                .font(.system(size: 18))
+                .foregroundStyle(.subTitleGray)
+                .fontWeight(.semibold)
         }
         .padding(.horizontal, 30)
         .padding(.top, 20)
     }
-
+    
     /// "7 itens para comprar".
     private var itemsText: String {
         let count = viewModel.availableEntries.count
         return count == 1 ? L10n.tr("1 item para comprar") : L10n.tr("\(count) itens para comprar")
     }
-
+    
     /// The room's name, capitalized, in the app's language.
     private func roomName(_ room: RoomModel) -> String {
         room.name.localizedDefault.capitalized(with: L10n.locale)
     }
-
+    
     // MARK: - Coupons
-
+    
     /// A titled row of tickets that scrolls sideways; the title opens every coupon in a grid.
     private func couponSection(
         title: String,
@@ -163,9 +180,9 @@ struct GamificationView: View {
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(.black)
                         .accessibilityAddTraits(.isHeader)
-
+                    
                     Spacer()
-
+                    
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.subTitleGray)
@@ -175,7 +192,7 @@ struct GamificationView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-
+            
             if entries.isEmpty {
                 Text(verbatim: emptyText)
                     .font(.system(size: 15))
@@ -207,7 +224,6 @@ struct GamificationView: View {
     GamificationView(viewModel: GamificationViewModel(
         previewCoins: 45,
         previewPoints: 85,
-        // The default rooms, so the tickets get the symbols and colors the app really gives them.
         rooms: [DefaultRoomsOnboarding.kitchen, .livingRoom, .bathroom].map { room in
             RoomModel(name: room.rawValue, symbol: room.symbol, color: room.color, kind: room.rawValue)
         },
