@@ -29,6 +29,9 @@ struct CarouselCardFrame: View {
     var rotation: Double = 0
     /// Whether the back face (details) is the one showing.
     var isShowingBack: Bool = false
+    /// Runs when the details card's close button is tapped. `nil` closes the card focused in
+    /// the carousel (a card opened from a notification passes its own).
+    var onClose: (() -> Void)?
     /// How fast the faces cross-fade during the flip.
     private let fadeDuration: Double = 0.03
     
@@ -50,7 +53,8 @@ struct CarouselCardFrame: View {
                     chore: chore,
                     recurrentAssignment: recurrentAssignment,
                     carouselViewModel: carouselViewModel,
-                    isShowingBack: isShowingBack
+                    isShowingBack: isShowingBack,
+                    onClose: onClose
                 )
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .opacity(isShowingBack ? 1 : 0)

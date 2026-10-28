@@ -142,6 +142,17 @@
         }
       }
     },
+    "%@ comprou %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bought %@"
+          }
+        }
+      }
+    },
     "%@ de desconto no plano anual" : {
       "localizations" : {
         "en" : {
@@ -310,6 +321,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@님이 나 대신 %@을(를) 했어요"
+          }
+        }
+      }
+    },
+    "%@ fez %@ por você" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ did %@ for you"
           }
         }
       }
@@ -483,6 +505,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@님이 %@을(를) 갚아야 해요"
+          }
+        }
+      }
+    },
+    "%@ te deve %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ owes you %@"
           }
         }
       }
@@ -14874,6 +14907,17 @@
         }
       }
     },
+    "Essa tarefa estava na sua lista" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That chore was on your list"
+          }
+        }
+      }
+    },
     "Esse cupom já é seu neste ciclo." : {
       "localizations" : {
         "en" : {
@@ -17640,6 +17684,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "새 알림이 있어요"
+          }
+        }
+      }
+    },
+    "Há notificações novas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There are new notifications"
           }
         }
       }
@@ -31628,6 +31683,17 @@
         }
       }
     },
+    "Refaça a divisão automática para incluir esse morador" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo the automatic split to include this member"
+          }
+        }
+      }
+    },
     "Regar jardim" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34773,6 +34839,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "캘린더와 동기화하세요"
+          }
+        }
+      }
+    },
+    "Sincronize com o Calendário" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync with Calendar"
           }
         }
       }
@@ -38137,6 +38214,17 @@
         }
       }
     },
+    "Um item que você adicionou à lista de compras" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An item you added to the shopping list"
+          }
+        }
+      }
+    },
     "Um novo morador entrou na casa!" : {
       "localizations" : {
         "en" : {
@@ -38993,6 +39081,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple 캘린더에서 바로 내 집안일을 확인하세요"
+          }
+        }
+      }
+    },
+    "Veja as suas tarefas direto no Apple Calendar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See your chores right in Apple Calendar"
           }
         }
       }
@@ -39953,6 +40052,28 @@
         }
       }
     },
+    "Você deve %@ a %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe %@ to %@"
+          }
+        }
+      }
+    },
+    "Você deve %@ a %lld pessoas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You owe %@ to %lld people"
+          }
+        }
+      }
+    },
     "Você deve à casa" : {
       "localizations" : {
         "en" : {
@@ -40529,6 +40650,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "대기 중인 결제가 있어요"
+          }
+        }
+      }
+    },
+    "Você tem pagamentos a receber" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have payments to receive"
+          }
+        }
+      }
+    },
+    "Você tem pagamentos pendentes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have pending payments"
           }
         }
       }

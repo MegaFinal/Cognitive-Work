@@ -19,30 +19,35 @@ struct NotificationComponent: View {
     let subtitle: String
     
     var body: some View {
-        HStack {
+        HStack(spacing: 16) {
             // MARK: - Icon
             ZStack {
                 Capsule()
-                    .foregroundStyle(color)
-                    .frame(width: width * 0.12, height: height * 0.065)
+                    .fill(color)
+                    .opacity(0.45)
+                    .frame(width: 48, height: 60)
                 Image(systemName: symbol)
-                    .font(.system(size: 20))
-            }.padding(.trailing, 16)
+                    .font(.system(size: 22))
+            }
             // The icon only repeats the notification's kind, which the title already says.
             .accessibilityDecorative()
             
             // MARK: - Title and subtitle
-            VStack(alignment: .leading, spacing: 8){
+            VStack(alignment: .leading, spacing: 6) {
                 Text(title)
-                    .font(.system(size: 20))
-                    .fontWeight(.semibold)
-                Text(subtitle)
-                    .font(.system(size: 15))
-                    .foregroundStyle(.subTitleGray)
-                    
+                    .font(.system(size: 20, weight: .semibold))
+                    .multilineTextAlignment(.leading)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.subTitleGray)
+                        .multilineTextAlignment(.leading)
+                }
             }
-            .frame(width: width * 0.62, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        // The whole row is tappable, not just the icon and the text.
+        .contentShape(Rectangle())
         // "3 tarefas a pegar hoje, Escolha as que couberem no seu tempo" as one element.
         .accessibilityElement(children: .combine)
     }

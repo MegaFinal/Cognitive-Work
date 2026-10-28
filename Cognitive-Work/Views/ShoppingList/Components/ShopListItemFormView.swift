@@ -431,16 +431,7 @@ struct ShopListItemFormView: View {
     /// "Nome: Arroz" under a description being typed; tapping it fills the form now.
     private func previewPill(_ preview: ShopItemSuggestion) -> some View {
         Button {
-//<<<<<<< HEAD
-//            guard PremiumManager.shared.allows(.shopAI) else {
-//                paywall = .shopAI
-//                return
-//            }
-//            aiInput = trimmedName
-//            aiDidFail = false
-//            isShowingAIPrompt = true
-//=======
-            lastReadName = trimmedName
+//            lastReadName = trimmedName
             applySuggestion(preview)
         } label: {
             Text(L10n.tr("Nome: \(preview.name)"))

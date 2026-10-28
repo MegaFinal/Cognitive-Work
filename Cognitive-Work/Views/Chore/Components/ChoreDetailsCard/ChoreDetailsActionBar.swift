@@ -10,6 +10,8 @@ import SwiftUI
 /// Bar pinned to the top of the details card: close, the people responsible, and edit.
 struct ChoreDetailsActionBar: View {
     let viewModel: ChoreDetailsViewModel
+    /// Runs when "Fechar" is tapped. `nil` closes the card focused in the carousel.
+    var onClose: (() -> Void)?
     
     @State private var showsEditSheet = false
     
@@ -27,7 +29,11 @@ struct ChoreDetailsActionBar: View {
     
     private var closeButton: some View {
         Button {
-            viewModel.carouselViewModel.clearFocus()
+            if let onClose {
+                onClose()
+            } else {
+                viewModel.carouselViewModel.clearFocus()
+            }
         } label: {
             Image(systemName: "xmark")
                 .foregroundColor(.black)

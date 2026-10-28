@@ -19,12 +19,15 @@ struct ChoreDetailsCard: View {
     
     /// Whether the card is flipped to this side (the checklist loads only then).
     let isShowingBack: Bool
+    /// Runs when the close button is tapped. `nil` closes the card focused in the carousel.
+    private let onClose: (() -> Void)?
     
     init(
         chore: ChoreModel,
         recurrentAssignment: RecurrentAssignmentModel? = nil,
         carouselViewModel: CarouselViewModel,
-        isShowingBack: Bool
+        isShowingBack: Bool,
+        onClose: (() -> Void)? = nil
     ) {
         _viewModel = State(initialValue: ChoreDetailsViewModel(
             chore: chore,
@@ -32,6 +35,7 @@ struct ChoreDetailsCard: View {
             carouselViewModel: carouselViewModel
         ))
         self.isShowingBack = isShowingBack
+        self.onClose = onClose
     }
     
     var body: some View {
@@ -50,7 +54,7 @@ struct ChoreDetailsCard: View {
             }
             .padding(.vertical, Self.verticalInset)
             
-            ChoreDetailsActionBar(viewModel: viewModel)
+            ChoreDetailsActionBar(viewModel: viewModel, onClose: onClose)
                 .accessibilitySortPriority(1)
         }
         .task(id: isShowingBack) {
