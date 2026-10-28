@@ -164,7 +164,8 @@ struct ChoresView: View {
                         namespace: cardAnimation,
                         isFocused: true,
                         rotation: 180,
-                        isShowingBack: true
+                        isShowingBack: true,
+                        onClose: dismissChoreFromNotification
                     )
                     .zIndex(5)
                     .transition(.scale)

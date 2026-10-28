@@ -744,7 +744,7 @@ struct ShopListItemFormView: View {
         let unit = item.unitMeasurement == .undefined ? UnitMeasurement.unit : item.unitMeasurement
         let date = (item.boughtAt ?? item.createdAt)
             .formatted(.dateTime.day(.twoDigits).month(.twoDigits).locale(L10n.locale))
-        let text = L10n.tr("Última vez: %@ / %@ · %@", price, unit.getDisplayName(for: 1), date)
+        let text = L10n.tr("Última vez: \(price) / \(unit.getDisplayName(for: 1)) · \(date)")
 
         return Button {
             HapticsManager.selection()

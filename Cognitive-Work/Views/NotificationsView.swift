@@ -48,7 +48,7 @@ struct NotificationsView: View {
                 
                 // MARK: - Loading, empty message, or the sections
                 if viewModel.isLoading {
-                    ProgressView().frame(maxWidth: .infinity)
+                    ProgressView()
                         .voiceOverLabel(L10n.tr("Carregando notificações"))
                 } else if viewModel.sections.isEmpty {
                     Text("Nada por aqui nos últimos 14 dias")
@@ -59,7 +59,10 @@ struct NotificationsView: View {
                     }
                 }
             }
-            .padding(.top, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 32)
         }
         .scrollIndicators(.hidden)
         // MARK: - Loading, refreshing and marking as seen
@@ -103,7 +106,7 @@ struct NotificationsView: View {
     
     /// One day's group: the day's title and its notifications.
     private func sectionView(_ section: NotificationSection) -> some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 18) {
             Text(viewModel.title(for: section))
                 .font(.system(size: 17))
                 .foregroundStyle(.subTitleGray)

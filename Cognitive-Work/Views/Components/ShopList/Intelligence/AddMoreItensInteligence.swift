@@ -347,7 +347,7 @@ struct AddMoreItensInteligence: View {
                             infoLine("person.2.fill", peopleText(for: suggestion, consumers: consumers))
                             // Which dish it's for, when it came from a recipe.
                             if let dish {
-                                infoLine("fork.knife", L10n.tr("Receita: %@", dish))
+                                infoLine("fork.knife", L10n.tr("Receita: \(dish)"))
                             }
 
                             if let share = ShopListViewModel.shareText(
