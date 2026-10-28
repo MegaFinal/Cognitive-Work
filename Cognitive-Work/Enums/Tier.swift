@@ -5,6 +5,8 @@
 //  Created by Jonas Fernando Nascimento Melo on 13/08/26.
 //
 
+import Foundation
+
 /// Ranks, from lowest to highest, in the order of ``allCases``. The raw value is what is stored.
 ///
 /// Thirteen ranks form one ladder, each one ``pointsPerDivision`` points above the one before

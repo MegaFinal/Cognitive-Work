@@ -92,7 +92,7 @@ struct RankHistoryView: View {
                     )
                     .tint(.choreYellow)
 
-                    Text(L10n.tr("Faltam %lld pontos para %@", missing, next.displayName))
+                    Text(L10n.tr("Faltam \(missing) pontos para \(next.displayName)"))
                         .font(.system(size: 14))
                         .foregroundStyle(.subTitleGray)
                 } else {
@@ -135,7 +135,7 @@ struct RankHistoryView: View {
 
             Spacer(minLength: 8)
 
-            Text(L10n.tr("%lld pts", entry.points))
+            Text(L10n.tr("\(entry.points) pts"))
                 .font(.system(size: 15))
                 .fontWeight(.semibold)
                 .foregroundStyle(.titleGray)

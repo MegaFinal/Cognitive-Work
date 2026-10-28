@@ -37,7 +37,7 @@ extension ShopListViewModel {
         }
         let names = relatedUsers.map(\.name).filter { !$0.isEmpty }
         if !names.isEmpty {
-            parts.append(L10n.tr("para %@", accessibilityList(names)))
+            parts.append(L10n.tr("para \(accessibilityList(names))"))
         }
         parts.append(item.isBought ? L10n.tr("comprado") : L10n.tr("pendente"))
         return parts.joined(separator: ", ")
@@ -51,7 +51,7 @@ extension ShopListViewModel {
     /// "Alimentos, 3 itens".
     func accessibilityLabel(for section: ShopListSection) -> String {
         let count = section.items.count
-        let countText = count == 1 ? L10n.tr("1 item") : L10n.tr("%lld itens", count)
+        let countText = count == 1 ? L10n.tr("1 item") : L10n.tr("\(count) itens")
         return "\(section.title), \(countText)"
     }
 
@@ -69,12 +69,7 @@ extension ShopListViewModel {
     /// The popup's live total, spoken: "3 × 5 reais, total 15 reais". `nil` before a price is typed.
     static func accessibilityPurchaseTotal(text: String, quantity: Int) -> String? {
         guard let unit = parsePrice(text), unit > 0 else { return nil }
-        return L10n.tr(
-            "%lld × %@, total %@",
-            quantity,
-            VoiceOver.currency(unit),
-            VoiceOver.currency(unit * Double(quantity))
-        )
+        return L10n.tr("\(quantity) × \(VoiceOver.currency(unit)), total \(VoiceOver.currency(unit * Double(quantity)))")
     }
 
     // MARK: - Voice Control
@@ -85,9 +80,9 @@ extension ShopListViewModel {
         let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return [L10n.tr("Item")] }
         if item.isBought {
-            return [name, L10n.tr("Desmarcar %@", name)]
+            return [name, L10n.tr("Desmarcar \(name)")]
         }
-        return [name, L10n.tr("Comprar %@", name), L10n.tr("Marcar %@", name)]
+        return [name, L10n.tr("Comprar \(name)"), L10n.tr("Marcar \(name)")]
     }
 
     // MARK: - Actions that announce their result

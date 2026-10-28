@@ -260,7 +260,7 @@ enum RetroCalculator {
             completedChores: completed,
             totalChores: total,
             percentage: percentage,
-            summary: L10n.tr("Você realizou **%lld de %lld** \n tarefas da sua escala", completed, total),
+            summary: L10n.tr("Você realizou **\(completed) de \(total)** \n tarefas da sua escala"),
             subtitle: subtitle,
             closing: closing
         )
@@ -282,14 +282,14 @@ enum RetroCalculator {
 
         guard let top = bars.first else {
             return RetroRoomsContent(
-                title: L10n.tr("%lld cômodos", 0),
+                title: L10n.tr("\(0) cômodos"),
                 subtitle: L10n.tr("Nenhuma tarefa concluída nesse período."),
                 bars: []
             )
         }
         return RetroRoomsContent(
-            title: L10n.tr("%lld cômodos", bars.count),
-            subtitle: L10n.tr("Seu cômodo mais trabalhado: %@.", top.roomName),
+            title: L10n.tr("\(bars.count) cômodos"),
+            subtitle: L10n.tr("Seu cômodo mais trabalhado: \(top.roomName)."),
             bars: bars
         )
     }

@@ -42,7 +42,7 @@ struct OnboardingProgressButton: View {
 
     /// What VoiceOver reads: icon-only buttons get a word for their symbol.
     private var accessibilityText: String {
-        guard isSystemImage else { return L10n.tr(text) }
+        guard isSystemImage else { return L10n.tr(key: text) }
         switch text {
         case "checkmark": return L10n.tr("Salvar")
         default: return L10n.tr("Continuar")
@@ -51,7 +51,7 @@ struct OnboardingProgressButton: View {
 
     /// Voice Control names: the visible text first; icon-only buttons get short words to say.
     private var inputLabels: [String] {
-        guard isSystemImage else { return [L10n.tr(text)] }
+        guard isSystemImage else { return [L10n.tr(key: text)] }
         switch text {
         case "checkmark": return [L10n.tr("Confirmar"), L10n.tr("Salvar"), L10n.tr("OK")]
         default: return [L10n.tr("Continuar"), L10n.tr("Próximo"), L10n.tr("Avançar")]

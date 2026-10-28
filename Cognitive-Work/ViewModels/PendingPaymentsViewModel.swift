@@ -187,7 +187,7 @@ final class PendingPaymentsViewModel {
     /// Title of the "mark as paid" confirmation.
     var confirmationTitle: String {
         guard let group = settlementRequest else { return "" }
-        return L10n.tr("Marcar %@ de %@ como pago?", currencyText(group.total), group.counterparty.name)
+        return L10n.tr("Marcar \(currencyText(group.total)) de \(group.counterparty.name) como pago?")
     }
 
     /// Message of the "mark as paid" confirmation.
@@ -212,7 +212,7 @@ final class PendingPaymentsViewModel {
 
     /// Explains that the housemate has no Pix key yet.
     var missingPixKeyMessage: String {
-        L10n.tr("%@ ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix.", missingPixKeyName ?? "")
+        L10n.tr("\(missingPixKeyName ?? "") ainda não cadastrou uma chave Pix. Peça para a pessoa cadastrar em Perfil > Chave Pix.")
     }
 
     /// What the "Pagar" / "Pago!" button does. When you owe, it copies the housemate's Pix

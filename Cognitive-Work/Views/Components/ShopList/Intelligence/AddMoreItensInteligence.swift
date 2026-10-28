@@ -116,7 +116,7 @@ struct AddMoreItensInteligence: View {
                             .tint(.blue)
                             .buttonStyle(.glassProminent)
                             .disabled(included.isEmpty || isCheckingDuplicates)
-                            .voiceOverLabel(L10n.tr("Adicionar itens (%lld)", included.count))
+                            .voiceOverLabel(L10n.tr("Adicionar itens (\(included.count))"))
                             .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Confirmar"), L10n.tr("OK")])
                         }
                     }
@@ -258,7 +258,6 @@ struct AddMoreItensInteligence: View {
                             .font(.system(size: 13))
                             .foregroundColor(.red)
                     }
-
                     if isCheckingDuplicates {
                         HStack(spacing: 8) {
                             ProgressView()
@@ -267,7 +266,7 @@ struct AddMoreItensInteligence: View {
                                 .foregroundStyle(.subTitleGray)
                         }
                     }
-
+                    
                     // Back to the text, kept as typed, to fix it and try again.
                     Button {
                         errorText = nil
@@ -316,9 +315,9 @@ struct AddMoreItensInteligence: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .voiceOverLabel(L10n.tr("Incluir %@", suggestion.name))
+                .voiceOverLabel(L10n.tr("Incluir \(suggestion.name)"))
                 .voiceOverTraits(.isSelected, when: isIncluded)
-                .voiceControlNames([L10n.tr("Incluir %@", suggestion.name)])
+                .voiceControlNames([L10n.tr("Incluir \(suggestion.name)")])
 
                 Button(action: edit) {
                     HStack(spacing: 12) {
@@ -337,7 +336,7 @@ struct AddMoreItensInteligence: View {
                             Text(suggestion.name)
                                 .font(.system(size: 17, weight: .semibold))
                                 .foregroundStyle(.titleGray)
-
+                            
                             // One line each, with an icon: amount (and price), category, people.
                             infoLine("dumbbell.fill", amountText(for: suggestion))
                             infoLine("tag.fill", category.displayName)
@@ -365,7 +364,7 @@ struct AddMoreItensInteligence: View {
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
                 .voiceOverHint(L10n.tr("Toque duas vezes para editar."))
-                .voiceControlNames([L10n.tr("Editar %@", suggestion.name)])
+                .voiceControlNames([L10n.tr("Editar \(suggestion.name)")])
             }
 
             if let duplicate {
@@ -401,8 +400,8 @@ struct AddMoreItensInteligence: View {
                 .accessibilityHidden(true)
 
             Text(sameUnit
-                 ? L10n.tr("Já está na lista: %@", existingText)
-                 : L10n.tr("Já está na lista, em outra unidade: %@", existingText))
+                 ? L10n.tr("Já está na lista: \(existingText)")
+                 : L10n.tr("Já está na lista, em outra unidade: \(existingText)"))
                 .font(.system(size: 13))
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -413,7 +412,7 @@ struct AddMoreItensInteligence: View {
                     // so it's clear which is picked (icons on both made them look alike).
                     Picker(selection: Binding(get: { isMerging }, set: { setMerging($0) })) {
                         Text(L10n.tr("Adicionar como novo item")).tag(false)
-                        Text(L10n.tr("Somar à quantidade (%lld → %lld)", existing.quantity, existing.quantity + suggestion.quantity)).tag(true)
+                        Text(L10n.tr("Somar à quantidade (\(existing.quantity) → \(existing.quantity + suggestion.quantity))")).tag(true)
                     } label: {
                         EmptyView()
                     }

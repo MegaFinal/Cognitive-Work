@@ -76,7 +76,7 @@ struct CheckListCreateAndEdit: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .voiceOverLabel(L10n.tr("Remover %@", accessibilityName(of: item.wrappedValue)))
+                .voiceOverLabel(L10n.tr("Remover \(accessibilityName(of: item.wrappedValue))"))
             }
         }
         .padding(.vertical, 12)
@@ -120,7 +120,7 @@ struct CheckListCreateAndEdit: View {
     /// Removes the item `id`, always leaving one row to type into.
     private func remove(_ id: UUID) {
         if let item = localChecklist.first(where: { $0.id == id }) {
-            VoiceOver.announce(L10n.tr("%@ removido", accessibilityName(of: item)))
+            VoiceOver.announce(L10n.tr("\(accessibilityName(of: item)) removido"))
         }
         localChecklist.removeAll { $0.id == id }
         if localChecklist.isEmpty {

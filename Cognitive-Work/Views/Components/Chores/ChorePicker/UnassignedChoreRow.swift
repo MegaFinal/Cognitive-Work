@@ -59,7 +59,7 @@ struct UnassignedChoreRow: View {
         }
         .buttonStyle(ScaleButtonStyle())
         .voiceOverLabel(accessibilityLabel)
-        .voiceControlNames([item.chore.localizedName, L10n.tr("Pegar %@", item.chore.localizedName)])
+        .voiceControlNames([item.chore.localizedName, L10n.tr("Pegar \(item.chore.localizedName)")])
         .voiceOverHint(L10n.tr("Toque duas vezes para pegar esta tarefa."))
     }
     

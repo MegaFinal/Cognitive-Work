@@ -234,7 +234,7 @@ struct SelectRoomsOnboardingView: View {
     private func roomAccessibilityLabel(_ room: RoomDTO) -> String {
         if room.isAddButton { return L10n.tr("Adicionar cômodo") }
         let name = room.name.localizedDefault
-        return room.quantity > 1 ? L10n.tr("%@, %lld cômodos", name, room.quantity) : name
+        return room.quantity > 1 ? L10n.tr("\(name), \(room.quantity) cômodos") : name
     }
     
     /// Short names Voice Control users can say for a room card: the visible name first.
@@ -373,7 +373,7 @@ private struct OnboardingRoomCard: View {
                 .padding(.bottom, 20)
                 .foregroundColor(isSelected ? .white : .black)
             
-            Text(L10n.tr(text))
+            Text(L10n.tr(key: text))
                 .fontWeight(.medium)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, 20)
@@ -478,7 +478,7 @@ private struct RoomQuantityEditor: View {
         .background(Color.black.opacity(0.06), in: Capsule())
         // VoiceOver: one adjustable element (swipe up/down) instead of two small buttons.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(L10n.tr("Quantidade de %@", room.name.localizedDefault)))
+        .accessibilityLabel(Text(L10n.tr("Quantidade de \(room.name.localizedDefault)")))
         .accessibilityValue(Text(verbatim: "\(room.quantity)"))
         .accessibilityAdjustableAction { direction in
             switch direction {
@@ -493,7 +493,7 @@ private struct RoomQuantityEditor: View {
             }
         }
         // Voice Control can't swipe-adjust: "Mostrar ações para Quantidade" offers these.
-        .voiceControlNames([L10n.tr("Quantidade"), L10n.tr("Quantidade de %@", room.name.localizedDefault)])
+        .voiceControlNames([L10n.tr("Quantidade"), L10n.tr("Quantidade de \(room.name.localizedDefault)")])
         .accessibilityAction(named: Text(L10n.tr("Aumentar"))) {
             guard room.quantity < maxQuantity else { return }
             withAnimation(.snappy) { room.setQuantity(room.quantity + 1) }
@@ -515,8 +515,8 @@ private struct RoomQuantityEditor: View {
                 .focused($focusedInstance, equals: instance.id)
                 .submitLabel(.done)
                 .characterLimit(maxNameLength, text: name)
-                .accessibilityLabel(Text(L10n.tr("Nome do cômodo %lld", index + 1)))
-                .voiceControlNames([room.instanceName(at: index).localizedDefault, L10n.tr("Nome do cômodo %lld", index + 1)])
+                .accessibilityLabel(Text(L10n.tr("Nome do cômodo \(index + 1)")))
+                .voiceControlNames([room.instanceName(at: index).localizedDefault, L10n.tr("Nome do cômodo \(index + 1)")])
             
             // Tapping the pencil puts the cursor in this room's name field. The hit area is
             // larger than the icon so it is easy to tap.
@@ -531,8 +531,8 @@ private struct RoomQuantityEditor: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .voiceOverLabel(L10n.tr("Editar nome do cômodo %lld", index + 1))
-            .voiceControlNames([L10n.tr("Editar nome do cômodo %lld", index + 1), L10n.tr("Editar")])
+            .voiceOverLabel(L10n.tr("Editar nome do cômodo \(index + 1)"))
+            .voiceControlNames([L10n.tr("Editar nome do cômodo \(index + 1)"), L10n.tr("Editar")])
         }
     }
     

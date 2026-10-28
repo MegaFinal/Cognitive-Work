@@ -360,7 +360,7 @@ class CalendarManager {
     /// Event notes in the app's language: the chore description (or "Room chore") and its estimated duration.
     private func eventNotes(for chore: ChoreModel, separator: String) -> String {
         let description = chore.localizedDescription.isEmpty ? L10n.tr("Tarefa do cômodo") : chore.localizedDescription
-        return description + separator + L10n.tr("Duração estimada: %lld min", Int(chore.duration))
+        return description + separator + L10n.tr("Duração estimada: \(Int(chore.duration)) min")
     }
 
     /// Removes a calendar event using identifier-first lookup with title and date fallback matching.

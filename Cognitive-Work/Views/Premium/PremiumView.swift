@@ -129,7 +129,7 @@ struct PremiumView: View {
                     .accessibilityAddTraits(.isHeader)
 
                 Text(isUpgrade
-                     ? L10n.tr("Sua casa agora tem %lld moradores. O Premium continua ativo, mas o plano atual cobre uma casa menor.", premium.memberCount)
+                     ? L10n.tr("Sua casa agora tem \(premium.memberCount) moradores. O Premium continua ativo, mas o plano atual cobre uma casa menor.")
                      : L10n.tr("Uma assinatura libera tudo para a casa inteira."))
                     .font(.system(size: 17))
                     .foregroundStyle(.subTitleGray)
@@ -158,9 +158,9 @@ struct PremiumView: View {
             Label {
                 // Two keys instead of one: "%lld moradores" varies by plural ("1 morador"), and
                 // a plural variation only works on a string with a single number.
-                Text(L10n.tr("%lld moradores", premium.memberCount)
+                Text(L10n.tr("\(premium.memberCount) moradores")
                      + " · "
-                     + L10n.tr("Preço para %@", premium.requiredTier.title.lowercased()))
+                     + L10n.tr("Preço para \(premium.requiredTier.title.lowercased())"))
             } icon: {
                 Image(systemName: "person.3.fill")
             }
@@ -173,7 +173,7 @@ struct PremiumView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Sou estudante")
                         .font(.system(size: 16, weight: .semibold))
-                    Text("30% de desconto no plano anual")
+                    Text("\(Self.studentDiscount) de desconto no plano anual")
                         .font(.system(size: 13))
                         .foregroundStyle(.subTitleGray)
                 }
@@ -194,6 +194,11 @@ struct PremiumView: View {
                 .foregroundStyle(.subTitleGray)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// "30%" written the way the app's language writes percentages.
+    private static var studentDiscount: String {
+        0.3.formatted(.percent.precision(.fractionLength(0)).locale(L10n.locale))
     }
 
     /// The highlighted feature first, then what exists today, then "Em breve".
@@ -312,15 +317,15 @@ struct PremiumView: View {
         let date = premium.expirationDate.map { $0.formatted(date: .long, time: .omitted) }
         if premium.isPaidByMe {
             if let date {
-                text = L10n.tr("Você assina o Premium. Próxima renovação em %@.", date)
+                text = L10n.tr("Você assina o Premium. Próxima renovação em \(date).")
             } else {
                 text = L10n.tr("Você tem o Premium vitalício.")
             }
         } else {
             let name = payerName ?? L10n.tr("outro morador")
-            text = L10n.tr("Assinado por %@. Todos os moradores aproveitam os recursos Premium.", name)
+            text = L10n.tr("Assinado por \(name). Todos os moradores aproveitam os recursos Premium.")
             if premium.needsUpgrade {
-                text += " " + L10n.tr("A casa cresceu: peça para %@ atualizar o plano.", name)
+                text += " " + L10n.tr("A casa cresceu: peça para \(name) atualizar o plano.")
             }
         }
         return text

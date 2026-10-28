@@ -202,7 +202,7 @@ struct CouponTicket: View {
 
     /// The price as text: "1 moeda" or "N moedas".
     static func priceText(_ coupon: CouponModel) -> String {
-        coupon.price == 1 ? L10n.tr("1 moeda") : L10n.tr("%lld moedas", coupon.price)
+        coupon.price == 1 ? L10n.tr("1 moeda") : L10n.tr("\(coupon.price) moedas")
     }
 
     /// The whole ticket as one VoiceOver sentence: name, rank, price and state.

@@ -21,7 +21,9 @@ struct AnimatedPercentageText: View, Animatable {
 
     var body: some View {
         // MARK: - Rounded percentage (fixed-width digits so it doesn't wobble)
-        Text("\(Int(value.rounded()))%")
+        // FormatStyle instead of "\(n)%": languages write percentages differently ("45 %",
+        // "%45"), and a "%" in a localized string makes Xcode warn about it.
+        Text(verbatim: ChartA11y.percent(value / 100))
             .monospacedDigit()
     }
 }

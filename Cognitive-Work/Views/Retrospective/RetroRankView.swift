@@ -172,12 +172,12 @@ struct RetroRankContent: Equatable {
             ? 1
             : Double(progress.pointsIntoDivision) / Double(Tier.pointsPerDivision)
 
-        let pointsText = points == 1 ? L10n.tr("1 ponto") : L10n.tr("%lld pontos", points)
+        let pointsText = points == 1 ? L10n.tr("1 ponto") : L10n.tr("\(points) pontos")
         let detail: String
         if let next = progress.nextTier, let missing = progress.pointsToNext {
-            detail = L10n.tr("%@ no ciclo. Faltaram %lld para %@.", pointsText, missing, next.displayName)
+            detail = L10n.tr("\(pointsText) no ciclo. Faltaram \(missing) para \(next.displayName).")
         } else {
-            detail = L10n.tr("%@ no ciclo. Você chegou ao rank máximo!", pointsText)
+            detail = L10n.tr("\(pointsText) no ciclo. Você chegou ao rank máximo!")
         }
 
         return RetroRankContent(

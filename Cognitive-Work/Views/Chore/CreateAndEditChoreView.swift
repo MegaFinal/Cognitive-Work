@@ -390,7 +390,7 @@ struct CreateAndEditChoreView: View {
     /// "Já existe “Lavar a louça”".
     private var duplicateTitle: String {
         guard let duplicateChore else { return "" }
-        return L10n.tr("Já existe “%@”", duplicateChore.name)
+        return L10n.tr("Já existe “\(duplicateChore.name)”")
     }
 
     /// Where the existing chore is and how often it repeats.
@@ -769,7 +769,7 @@ struct CreateAndEditChoreView: View {
             lastReadName = viewModel.draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
             apply(suggestion)
         } label: {
-            Text(L10n.tr("Nome: %@", suggestion.name))
+            Text(L10n.tr("Nome: \(suggestion.name)"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -857,7 +857,7 @@ struct CreateAndEditChoreView: View {
                 withAnimation(.snappy) {
                     viewModel.addChecklistIdea(idea)
                 }
-                VoiceOver.announce(L10n.tr("%@ adicionado", idea))
+                VoiceOver.announce(L10n.tr("\(idea) adicionado"))
             } label: {
                 Text("Adicionar")
                     .font(.subheadline.weight(.semibold))
@@ -867,8 +867,8 @@ struct CreateAndEditChoreView: View {
                     .background(Color.chorePurple.opacity(0.7), in: Capsule())
             }
             .buttonStyle(.plain)
-            .voiceOverLabel(L10n.tr("Adicionar %@", idea))
-            .voiceControlNames([L10n.tr("Adicionar %@", idea), idea])
+            .voiceOverLabel(L10n.tr("Adicionar \(idea)"))
+            .voiceControlNames([L10n.tr("Adicionar \(idea)"), idea])
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
