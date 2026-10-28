@@ -34,8 +34,7 @@ struct EnterHarviiNetwork: View {
                     description: "Nos ajustes do celular, saia do Wi-Fi da sua casa e escolha a rede do Harvii.",
                     containerInset: sideMargin
                 )
-                
-                Spacer()
+                .padding(.bottom)
                 
                 WifiListExample(isHarviiNetwork: true)
                 passwordCard
@@ -82,7 +81,7 @@ struct EnterHarviiNetwork: View {
                 .font(.subheadline.weight(.semibold))
                 .buttonStyle(.glass)
                 .buttonBorderShape(.capsule)
-                .voiceControlNames([L10n.tr("Copiar senha")])
+                .voiceControlNames([L10n.tr("Copiar")])
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)

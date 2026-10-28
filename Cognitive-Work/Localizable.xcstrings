@@ -1497,138 +1497,6 @@
     "+%lld" : {
       "shouldTranslate" : false
     },
-    "Ajustes > Wi-Fi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings > Wi-Fi"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajustes > Wi-Fi"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réglages > Wi-Fi"
-          }
-        }
-      }
-    },
-    "Entre na rede do Harvii" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Join the Harvii network"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conéctate a la red de Harvii"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connecte-toi au réseau Harvii"
-          }
-        }
-      }
-    },
-    "Nos ajustes do celular, saia do Wi-Fi da sua casa e escolha a rede do Harvii." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In your phone's Settings, leave your home Wi-Fi and choose the Harvii network."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En los ajustes del celular, sal del Wi-Fi de tu casa y elige la red de Harvii."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dans les réglages du téléphone, quitte le Wi-Fi de ta maison et choisis le réseau Harvii."
-          }
-        }
-      }
-    },
-    "Rede do Harvii" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Harvii network"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Red de Harvii"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réseau Harvii"
-          }
-        }
-      }
-    },
-    "Senha da rede do Harvii" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Harvii network password"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Contraseña de la red de Harvii"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mot de passe du réseau Harvii"
-          }
-        }
-      }
-    },
-    "Sua rede" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your network"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu red"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ton réseau"
-          }
-        }
-      }
-    },
     "×%lld" : {
       "shouldTranslate" : false
     },
@@ -2458,6 +2326,9 @@
         }
       }
     },
+    "Abrir ajustes" : {
+
+    },
     "Abrir Ajustes" : {
       "localizations" : {
         "en" : {
@@ -3077,6 +2948,28 @@
         }
       }
     },
+    "Agora, digite o Wi-Fi da sua casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now, enter your home Wi-Fi"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora, escribe el Wi-Fi de tu casa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maintenant, saisis le Wi-Fi de ta maison"
+          }
+        }
+      }
+    },
     "Agrupar por categoria e deixar o que vence antes na frente." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3206,6 +3099,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réglages"
+          }
+        }
+      }
+    },
+    "Ajustes > Wi-Fi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings > Wi-Fi"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes > Wi-Fi"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglages > Wi-Fi"
           }
         }
       }
@@ -3832,6 +3747,9 @@
           }
         }
       }
+    },
+    "As tarefas da casa, na parede" : {
+
     },
     "As tarefas que sobraram da divisão ficam na tela inicial, no botão %@. Pegue as que couberem no seu tempo." : {
       "localizations" : {
@@ -5940,6 +5858,7 @@
       }
     },
     "Conectar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5984,6 +5903,7 @@
       }
     },
     "Conectar com WiFi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6006,6 +5926,7 @@
       }
     },
     "Conectar Harvii" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8201,6 +8122,28 @@
         }
       }
     },
+    "É por ele que o Harvii vai receber as tarefas." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That's how Harvii will receive the chores."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por ahí Harvii va a recibir las tareas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C’est par lui que Harvii recevra les tâches."
+          }
+        }
+      }
+    },
     "Editar" : {
       "localizations" : {
         "en" : {
@@ -8663,6 +8606,28 @@
         }
       }
     },
+    "Entre na rede do Harvii" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join the Harvii network"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conéctate a la red de Harvii"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecte-toi au réseau Harvii"
+          }
+        }
+      }
+    },
     "Entre na sua conta do iCloud para continuar." : {
       "localizations" : {
         "en" : {
@@ -8730,6 +8695,7 @@
       }
     },
     "Enviando dados do WiFi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10233,6 +10199,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ex. : 2 kg de riz, 25 R$, moi et Ana"
+          }
+        }
+      }
+    },
+    "Ex.: Casa da Bela" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g.: Bela's House"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej.: Casa de Bela"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. : Maison de Bela"
           }
         }
       }
@@ -16250,6 +16238,28 @@
         }
       }
     },
+    "Nome da sua rede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your network name"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre de tu red"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom de ton réseau"
+          }
+        }
+      }
+    },
     "Nome da tarefa" : {
       "localizations" : {
         "en" : {
@@ -16339,6 +16349,7 @@
       }
     },
     "Nome do Wi-Fi" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16381,6 +16392,31 @@
           }
         }
       }
+    },
+    "Nos ajustes do celular, saia do Wi-Fi da sua casa e escolha a rede do Harvii." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In your phone's Settings, leave your home Wi-Fi and choose the Harvii network."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En los ajustes del celular, sal del Wi-Fi de tu casa y elige la red de Harvii."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans les réglages du téléphone, quitte le Wi-Fi de ta maison et choisis le réseau Harvii."
+          }
+        }
+      }
+    },
+    "Nos ajustes do celular, saia do Wi-Fi do Harvii e volte para a rede da sua casa, a mesma que você digitou no passo anterior." : {
+
     },
     "Notebook" : {
       "localizations" : {
@@ -16712,6 +16748,9 @@
           }
         }
       }
+    },
+    "O Harvii recebe as tarefas da Pipa pelo Wi-Fi da sua casa e atualiza sozinho. Ninguém precisa abrir o celular nem escrever nada." : {
+
     },
     "O Harvii vai esquecer o WiFi e todos os celulares da casa precisarão configurar e parear de novo." : {
       "localizations" : {
@@ -17933,6 +17972,7 @@
       }
     },
     "Para que seja possível conectar o Harvii ao WiFi da sua casa, entre no WiFi HARVII, com senha 12345678, retorne ao app e envie o nome e senha do WiFi." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -20598,6 +20638,35 @@
         }
       }
     },
+    "rede da sua casa" : {
+
+    },
+    "rede do Harvii" : {
+
+    },
+    "Rede do Harvii" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii network"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red de Harvii"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réseau Harvii"
+          }
+        }
+      }
+    },
     "Regar jardim" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22155,6 +22224,28 @@
         }
       }
     },
+    "Senha da rede do Harvii" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii network password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseña de la red de Harvii"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe du réseau Harvii"
+          }
+        }
+      }
+    },
     "Senha do Wi-Fi" : {
       "localizations" : {
         "en" : {
@@ -22907,6 +22998,28 @@
         }
       }
     },
+    "Sua rede" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your network"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu red"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton réseau"
+          }
+        }
+      }
+    },
     "Sua retrospectiva chegou" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22948,6 +23061,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ton bilan est arrivé !"
+          }
+        }
+      }
+    },
+    "Sua senha" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your password"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu contraseña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton mot de passe"
           }
         }
       }
@@ -26221,6 +26356,9 @@
           }
         }
       }
+    },
+    "Volte para a rede da sua casa" : {
+
     }
   },
   "version" : "1.0"

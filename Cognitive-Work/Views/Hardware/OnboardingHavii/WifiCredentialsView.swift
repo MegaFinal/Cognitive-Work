@@ -13,16 +13,23 @@ struct WifiCredentialsView: View {
     @Bindable var viewModel: HardwareViewModel
     /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
-
+    
     /// Whether both fields are filled.
     private var canSubmit: Bool {
         !viewModel.userWifiName.isEmpty &&
         !viewModel.userWifiPassord.isEmpty
     }
     
+    /// The Wi-Fi was already sent before (the device has a host name), so this step only has to
+    /// move on to pairing.
+    private var wasWifiSent: Bool { !viewModel.hostName.isEmpty }
+    
+    /// Whether the continue button can be tapped.
+    private var canContinue: Bool { wasWifiSent || canSubmit }
+    
     /// Side margin of the whole screen, the same as the onboarding steps.
     private var sideMargin: CGFloat { width * 0.0565 }
-
+    
     var body: some View {
         NavigationStack {
             VStack (spacing: 64) {
@@ -37,7 +44,7 @@ struct WifiCredentialsView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     
                     // MARK: - Skip to pairing (Wi-Fi already sent), or the Wi-Fi fields
-                    if !viewModel.hostName.isEmpty {
+                    if wasWifiSent {
                         Button("Já enviei o WiFi, ir para o pareamento") {
                             viewModel.navigateToParingView = true
                         }
@@ -59,9 +66,6 @@ struct WifiCredentialsView: View {
                                 .autocorrectionDisabled()
                                 .characterLimit(TextLimits.wifiName, text: $viewModel.userWifiName)
                         }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.systemGroupedBackground), in: .rect(cornerRadius: 20))
                         
                         // TODO: Colocar aquele negócio de olho pra ver a senha ou deixar bolina
                         LabeledInput(
@@ -72,56 +76,33 @@ struct WifiCredentialsView: View {
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .characterLimit(TextLimits.wifiPassword, text: $viewModel.userWifiPassord)
-                                
+                            
                         }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.systemGroupedBackground), in: .rect(cornerRadius: 20))
                     }
                 }
-
+                
                 Spacer()
+                
+                // MARK: - Continue: sends the Wi-Fi (spinner meanwhile) or goes to pairing
+                HStack {
+                    Spacer()
+                    OnboardingProgressButton(
+                        width: width * 0.15,
+                        height: width * 0.15,
+                        text: "chevron.right",
+                        isSystemImage: true,
+                        isLoading: viewModel.isSending,
+                        isDisabled: !canContinue
+                    ) {
+                        await continueTapped()
+                    }
+                }
             }
             .padding(.horizontal, sideMargin)
             .padding(.bottom, height * 0.02)
-            .overlay(alignment: .bottomTrailing) {
-                OnboardingProgressButton(
-                    width: width * 0.15,
-                    height: width * 0.15,
-                    text: "chevron.right",
-                    isSystemImage: true
-                ) {
-                    // TODO: go to the next Harvii step.
-                }
-                .padding(.bottom, height * 0.02)
-                .padding(.trailing, width * 0.061)
-            }
-            .frame(maxHeight: .infinity, alignment: .bottom)
-
-            
-            .navigationTitle("Conectar com WiFi")
             .navigationBarTitleDisplayMode(.inline)
-            // MARK: - Toolbar: close / continue (spinner while sending)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .close) { dismiss() }
-                        .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if viewModel.isSending {
-                        ProgressView()
-                            .voiceOverLabel(L10n.tr("Enviando dados do WiFi"))
-                    } else {
-                        Button("Continuar", systemImage: "chevron.right") {
-                            Task { await viewModel.sendWifiCredentials() }
-                        }
-                        .buttonStyle(.glassProminent)
-                        // Icon-only in the toolbar: "Toque em Continuar" / "Enviar".
-                        .voiceControlNames([L10n.tr("Continuar"), L10n.tr("Enviar"), L10n.tr("Conectar")])
-                        .disabled(!canSubmit)
-                    }
-                }
-            }
+            
+            // TODO: back button to the previous Harvii step.
             // MARK: - Pairing step, result alert and keyboard
             .navigationDestination(isPresented: $viewModel.navigateToParingView) {
                 DevicePairView(hardwareViewModel: viewModel, onClose: { dismiss() })
@@ -136,6 +117,19 @@ struct WifiCredentialsView: View {
     }
 }
 
+extension WifiCredentialsView {
+    /// Goes straight to pairing when the Wi-Fi was already sent; otherwise sends it to the
+    /// device (``HardwareViewModel/sendWifiCredentials()`` opens pairing when it works and
+    /// shows the error alert when it doesn't).
+    func continueTapped() async {
+        if wasWifiSent {
+            viewModel.navigateToParingView = true
+        } else {
+            await viewModel.sendWifiCredentials()
+        }
+    }
+}
+
 /// A form field with its title above it, used for the Wi-Fi name and password.
 struct LabeledInput<Content: View>: View {
     /// The field's title (also its accessibility label).
@@ -144,7 +138,7 @@ struct LabeledInput<Content: View>: View {
     var spokenAlternatives: [String] = []
     /// The field itself.
     @ViewBuilder var content: () -> Content
-
+    
     /// Voice Control names: the visible title first, then the alternatives.
     private var inputLabelTexts: [Text] {
         var texts: [Text] = [Text(title)]
@@ -160,27 +154,28 @@ struct LabeledInput<Content: View>: View {
             Text(title)
                 .font(.body)
                 .padding(.leading, 12)
-                // The field below reads this title as its own label.
+            // The field below reads this title as its own label.
                 .accessibilityHidden(true)
             
             // MARK: Field in a rounded box
             content()
                 .accessibilityLabel(Text(title))
-                // Voice Control: the visible title first, then shorter alternatives.
+            // Voice Control: the visible title first, then shorter alternatives.
                 .accessibilityInputLabels(inputLabelTexts)
                 .padding(.horizontal, 16)
                 .frame(height: 48)
-                .background(Color(.secondarySystemGroupedBackground),
-                            in: .rect(cornerRadius: 16))
+            // Gray field inside the white card.
+                .background(Color(.systemGroupedBackground), in: .rect(cornerRadius: 16))
         }
+        // MARK: White card around title and field
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20))
     }
 }
 
 #Preview {
-//    Text("Perfil")
-//        .sheet(isPresented: .constant(true)) {
-            WifiCredentialsView(viewModel: HardwareViewModel())
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-//        }
+    WifiCredentialsView(viewModel: HardwareViewModel())
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
 }

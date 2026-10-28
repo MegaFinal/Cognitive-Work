@@ -29,12 +29,13 @@ struct WifiListExample: View {
 
             WifiRow(
                 name: Text(verbatim: harviiNetworkName),
-                caption: "Rede do Harvii",
+                caption: "rede do Harvii",
                 isSelected: isHarviiNetwork
             )
 
             WifiRow(
                 name: Text("Sua rede"),
+                caption: "rede da sua casa",
                 isSelected: !isHarviiNetwork
             )
         }
@@ -64,7 +65,7 @@ private struct WifiRow: View {
 
             Spacer()
 
-            if let caption {
+            if isSelected, let caption {
                 Text(caption)
                     .font(.subheadline)
             }
