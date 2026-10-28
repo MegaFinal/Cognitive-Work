@@ -10083,6 +10083,28 @@
         }
       }
     },
+    "Ex.:\n2kg de arroz, R$ 25, eu e Ana\ndetergente para todos\nquero fazer lasanha" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g.:\n2kg of rice, R$ 25, me and Ana\ndish soap for everyone\nI want to make lasagna"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej.:\n2 kg de arroz, R$ 25, yo y Ana\ndetergente para todos\nquiero hacer lasaña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ex. :\n2 kg de riz, 25 R$, moi et Ana\nliquide vaisselle pour tout le monde\nje veux faire des lasagnes"
+          }
+        }
+      }
+    },
     "Ex.: 2kg de arroz, R$ 25, eu e Ana" : {
       "localizations" : {
         "en" : {
@@ -20266,6 +20288,29 @@
         }
       }
     },
+    "Receita: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recipe: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receta: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recette : %@"
+          }
+        }
+      }
+    },
     "Recolher a toalha de rosto usada e pendurar uma limpa." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24179,6 +24224,29 @@
         }
       }
     },
+    "Toque duas vezes para usar este preço." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double tap to use this price."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca dos veces para usar este precio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche deux fois pour utiliser ce prix."
+          }
+        }
+      }
+    },
     "Toque duas vezes para ver os detalhes." : {
       "localizations" : {
         "en" : {
@@ -24601,6 +24669,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tout est réglé"
+          }
+        }
+      }
+    },
+    "Última vez: %@ / %@ · %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last time: %1$@ / %2$@ · %3$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Última vez: %1$@ / %2$@ · %3$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dernière fois : %1$@ / %2$@ · %3$@"
           }
         }
       }
