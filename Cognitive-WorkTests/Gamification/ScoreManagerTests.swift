@@ -100,7 +100,7 @@ struct ScoreManagerTests {
 
     @Test func scoresAreCopiedOntoUsers() {
         let user = localAlice(points: 0)
-        let other = UserModel(name: "bob", tier: .bronze1, points: 7, recordID: GamificationFixture.id("bob-house"), ownerRecordName: "bob-house")
+        let other = UserModel(name: "bob", tier: .novatoDaCasa, points: 7, recordID: GamificationFixture.id("bob-house"), ownerRecordName: "bob-house")
         var score = UserScoreModel(ownerRecordName: "alice-house", points: 80)
         score.recordID = GamificationFixture.scoreID(of: alice)
 

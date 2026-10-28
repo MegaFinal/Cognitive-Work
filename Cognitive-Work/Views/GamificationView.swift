@@ -8,18 +8,23 @@
 import SwiftUI
 import CloudKit
 
-/// The rewards tab: the user's rank per cycle, their coins and the coupons each room offers.
-/// Tapping a coupon brings it to the center of the screen, where it can be bought.
+/// The rewards tab: the ranking sky, the coupons anyone can buy and the coupons the user holds.
 struct GamificationView: View {
 
     /// Loads the coins, rank, rooms and coupons and buys coupons.
     @State private var viewModel: GamificationViewModel
 
-    /// Key (``couponKey(_:)``) of the coupon brought to the center of the screen, if any.
-    @State private var focusedCouponKey: String?
+    /// Id (``CouponEntry/id``) of the coupon brought to the center of the screen, if any.
+    @State private var focusedKey: String?
+
+    /// Whether the coin balance sheet is open.
+    @State private var showsCoins = false
 
     /// Lets a ticket fly from the list to the center and back.
     @Namespace private var ticketNamespace
+
+    /// Width of a ticket in the horizontal lists.
+    private static let ticketWidth: CGFloat = 145
 
     /// Creates the screen. Pass a ready view model for previews.
     init(viewModel: GamificationViewModel? = nil) {
@@ -28,47 +33,45 @@ struct GamificationView: View {
 
     var body: some View {
         NavigationStack {
-            // MARK: - Content, with the focused coupon on top
-            content
-                .toolbar(.hidden, for: .navigationBar)
-                // The focused coupon takes the whole screen.
-                .toolbar(focusedCouponKey == nil ? .automatic : .hidden, for: .tabBar)
-                .overlay { focusedCouponOverlay }
-        }
-    }
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 24) {
+                    // MARK: - Title and actions
+                    header
 
-    /// The scrolling page: title, rank, coins, room picker and the room's coupons.
-    private var content: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 20) {
-                // MARK: - Title
-                header
-                
-                // MARK: - Rank and coins
-                // Current rank last; swipe right for the past cycles.
-                RankCarousel(points: viewModel.points, history: viewModel.rankHistory)
-                
-                CoinsBalanceCard(coins: viewModel.coins)
+                    // MARK: - Ranking
+                    RankSkyCard(
+                        groups: viewModel.catalog.tiers,
+                        myOwnerRecordName: viewModel.myOwnerRecordName
+                    )
                     .padding(.horizontal, 30)
-                
-                // MARK: - Room picker and coupons (or empty state)
-                if viewModel.rooms.isEmpty {
-                    if viewModel.hasLoaded {
-                        emptyState(
-                            title: "Nenhum cômodo ainda",
-                            message: "Quando a casa tiver cômodos, os cupons de cada um aparecem aqui."
-                        )
+
+                    // MARK: - Coupons (or empty state)
+                    if viewModel.catalog.entries.isEmpty {
+                        if viewModel.hasLoaded {
+                            CouponEmptyState(
+                                title: "Nenhum cupom ainda",
+                                message: "Quando a casa tiver tarefas, os cupons de cada uma aparecem aqui."
+                            )
+                            .frame(height: 360)
+                        }
                     } else {
-                        Spacer()
+                        couponSection(
+                            title: L10n.tr("Cupons disponíveis"),
+                            entries: viewModel.availableEntries,
+                            source: .available,
+                            emptyText: L10n.tr("Nenhum cupom disponível agora.")
+                        )
+                        couponSection(
+                            title: L10n.tr("Seus cupons"),
+                            entries: viewModel.myEntries,
+                            source: .mine,
+                            emptyText: L10n.tr("Você ainda não tem cupons neste ciclo.")
+                        )
                     }
-                } else {
-                    roomPicker
-                        .padding(.horizontal, 30)
-                    
-                    couponList
                 }
+                .padding(.bottom, 24)
             }
-            .background(Color(.white).ignoresSafeArea())
+            .background(Color.white.ignoresSafeArea())
             // MARK: - Loading and refreshing
             .task {
                 guard !viewModel.hasLoaded else { return }
@@ -92,71 +95,49 @@ struct GamificationView: View {
             } message: {
                 Text(viewModel.alertMessage ?? "")
             }
+            // MARK: - Coin balance
+            .sheet(isPresented: $showsCoins) {
+                CoinsBalanceCard(coins: viewModel.coins)
+                    .padding(24)
+                    .presentationDetents([.height(170)])
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .couponFocus(
+                viewModel: viewModel,
+                entries: viewModel.catalog.entries,
+                focusedKey: $focusedKey,
+                namespace: ticketNamespace
+            )
         }
     }
 
     // MARK: - Header
 
-    /// Page title laid out like the header of ``ShopListView``.
+    /// Page title laid out like the header of ``ShopListView``, with the coins and the room filter.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Recompensas")
-                .font(.custom("Alan Sans", size: 34))
-                .fontWeight(.bold)
-                .accessibilityAddTraits(.isHeader)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Gamificação")
+                    .font(.custom("Alan Sans", size: 34))
+                    .fontWeight(.bold)
+                    .accessibilityAddTraits(.isHeader)
 
-            Text("Troque suas moedas por cupons")
-                .font(.system(size: 18))
-                .foregroundStyle(.subTitleGray)
-                .fontWeight(.semibold)
+                Text(verbatim: itemsText)
+                    .font(.system(size: 18))
+                    .foregroundStyle(.subTitleGray)
+                    .fontWeight(.semibold)
+            }
+
+            Spacer()
         }
         .padding(.horizontal, 30)
         .padding(.top, 20)
     }
 
-    // MARK: - Room picker
-
-    /// Same control as the chore form's "Cômodo" row: a menu showing the room as a colored tag.
-    private var roomPicker: some View {
-        HStack {
-            Text("Cômodo")
-                .bold()
-                .accessibilityHidden(true) // the menu says "Cômodo"
-
-            Spacer()
-
-            Menu {
-                Picker("Cômodo", selection: $viewModel.selectedRoomKey) {
-                    ForEach(viewModel.rooms, id: \.id) { room in
-                        Label {
-                            Text(roomName(room))
-                        } icon: {
-                            Image(uiImage: .coloredCircle(color: room.color.uiColor))
-                                .renderingMode(.original)
-                        }
-                        .tag(Optional(GamificationViewModel.key(for: room)))
-                    }
-                }
-            } label: {
-                HStack {
-                    CapsuleTag(
-                        tagName: viewModel.selectedRoom.map(roomName) ?? L10n.tr("Sem Cômodo"),
-                        tagColor: viewModel.selectedRoom?.color.uiColor ?? .gray,
-                        horizontalPadding: 10.0,
-                        verticalPadding: 1.5
-                    )
-
-                    Image(systemName: "chevron.up.chevron.down")
-                        .foregroundColor(.black)
-                        .imageScale(.small)
-                        .accessibilityHidden(true)
-                }
-                .fixedSize()
-            }
-            .voiceOverLabel(L10n.tr("Cômodo"))
-            .voiceOverValue(viewModel.selectedRoom.map(roomName) ?? L10n.tr("Sem Cômodo"))
-            .voiceControlNames([L10n.tr("Cômodo"), L10n.tr("Trocar cômodo")])
-        }
+    /// "7 itens para comprar".
+    private var itemsText: String {
+        let count = viewModel.availableEntries.count
+        return count == 1 ? L10n.tr("1 item para comprar") : L10n.tr("%lld itens para comprar", count)
     }
 
     /// The room's name, capitalized, in the app's language.
@@ -166,129 +147,59 @@ struct GamificationView: View {
 
     // MARK: - Coupons
 
-    /// The selected room's coupons, or an empty state.
-    @ViewBuilder
-    private var couponList: some View {
-        let coupons = viewModel.selectedCoupons
-        let color = viewModel.selectedRoom?.color ?? .yellow
-        let symbol = viewModel.selectedRoom?.symbol ?? "house"
+    /// A titled row of tickets that scrolls sideways; the title opens every coupon in a grid.
+    private func couponSection(
+        title: String,
+        entries: [CouponEntry],
+        source: CouponGridView.Source,
+        emptyText: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NavigationLink {
+                CouponGridView(title: title, source: source, viewModel: viewModel)
+            } label: {
+                HStack {
+                    Text(verbatim: title)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.black)
+                        .accessibilityAddTraits(.isHeader)
 
-        if coupons.isEmpty {
-            emptyState(
-                title: "Sem cupons por aqui",
-                message: "Esse cômodo ainda não tem cupons disponíveis."
-            )
-        } else {
-            ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 18) {
-                    ForEach(coupons, id: \.recordID) { coupon in
-                        let key = Self.couponKey(coupon)
-                        if focusedCouponKey == key {
-                            // Keeps its place while the ticket is at the center.
-                            Color.clear
-                                .frame(height: CouponTicket.height)
-                                .accessibilityHidden(true)
-                        } else {
-                            CouponCard(
-                                coupon: coupon,
-                                roomColor: color,
-                                roomSymbol: symbol,
-                                isAffordable: viewModel.canAfford(coupon),
-                                state: viewModel.state(of: coupon),
-                                isBuying: viewModel.buyingCouponName == key,
-                                onSelect: { focusCoupon(key) }
-                            )
-                            .matchedGeometryEffect(id: key, in: ticketNamespace)
-                        }
-                    }
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.subTitleGray)
+                        .accessibilityHidden(true)
                 }
                 .padding(.horizontal, 30)
-                .padding(.bottom, 24)
+                .contentShape(Rectangle())
             }
-        }
-    }
+            .buttonStyle(.plain)
 
-    // MARK: - Focused coupon
-
-    /// Identifies a coupon on screen; the same value ``GamificationViewModel/buyingCouponName`` uses.
-    static func couponKey(_ coupon: CouponModel) -> String {
-        coupon.recordID?.recordName ?? coupon.name
-    }
-
-    /// Brings a coupon to the center of the screen.
-    private func focusCoupon(_ key: String) {
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-            focusedCouponKey = key
-        }
-    }
-
-    /// Sends the focused coupon back to the list.
-    private func closeFocusedCoupon() {
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-            focusedCouponKey = nil
-        }
-    }
-
-    /// The chosen coupon at the center, over a white background. Tapping outside it closes it.
-    @ViewBuilder
-    private var focusedCouponOverlay: some View {
-        if let key = focusedCouponKey,
-           let coupon = viewModel.selectedCoupons.first(where: { Self.couponKey($0) == key }) {
-            ZStack {
-                Color.white
-                    .ignoresSafeArea()
-                    .contentShape(Rectangle())
-                    .onTapGesture { closeFocusedCoupon() }
-                    .accessibilityHidden(true)
-                    .transition(.opacity)
-
-                FocusedCouponView(
-                    coupon: coupon,
-                    roomColor: viewModel.selectedRoom?.color ?? .yellow,
-                    roomSymbol: viewModel.selectedRoom?.symbol ?? "house",
-                    isAffordable: viewModel.canAfford(coupon),
-                    state: viewModel.state(of: coupon),
-                    isBuying: viewModel.buyingCouponName == key,
-                    namespace: ticketNamespace,
-                    matchID: key,
-                    onBuy: { await viewModel.buy(coupon) },
-                    onClose: { closeFocusedCoupon() }
-                )
-            }
-        }
-    }
-
-    /// The mascot over the soft yellow disc, like ``ChoresEmptyState``.
-    private func emptyState(title: LocalizedStringKey, message: LocalizedStringKey) -> some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .fill(RoomColor.yellow.lowOpacityColor.opacity(0.3))
-
-                Image("loadingIcon")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 96)
-            }
-            .frame(width: 150, height: 150)
-            .accessibilityHidden(true)
-
-            VStack(spacing: 10) {
-                Text(title)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(.titleGray)
-                    .multilineTextAlignment(.center)
-
-                Text(message)
-                    .font(.system(size: 16))
+            if entries.isEmpty {
+                Text(verbatim: emptyText)
+                    .font(.system(size: 15))
                     .foregroundStyle(.subTitleGray)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 30)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 14) {
+                        ForEach(entries) { entry in
+                            CouponCell(
+                                entry: entry,
+                                viewModel: viewModel,
+                                focusedKey: focusedKey,
+                                namespace: ticketNamespace,
+                                onSelect: { focusCoupon($0, in: $focusedKey) }
+                            )
+                            .frame(width: Self.ticketWidth)
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 12)
+                }
             }
-            .accessibilityElement(children: .combine)
         }
-        .padding(.horizontal, 32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -296,61 +207,27 @@ struct GamificationView: View {
     GamificationView(viewModel: GamificationViewModel(
         previewCoins: 45,
         previewPoints: 85,
-        previewHistory: [
-            RankHistoryModel(
-                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
-                cycleKey: "2026-10-03",
-                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
-                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
-                tier: Tier(points: 160),
-                points: 10
-            ),
-            RankHistoryModel(
-                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
-                cycleKey: "2026-10-03",
-                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
-                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
-                tier: Tier(points: 160),
-                points: 100
-            ),
-            RankHistoryModel(
-                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
-                cycleKey: "2026-10-03",
-                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
-                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
-                tier: Tier(points: 160),
-                points: 200
-            ),
-            RankHistoryModel(
-                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
-                cycleKey: "2026-10-03",
-                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
-                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
-                tier: Tier(points: 160),
-                points: 300
-            ),
-            RankHistoryModel(
-                user: CKRecord.Reference(recordID: CKRecord.ID(recordName: "preview"), action: .none),
-                cycleKey: "2026-10-03",
-                cycleStart: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 3))!,
-                cycleEnd: Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 16))!,
-                tier: Tier(points: 160),
-                points: 400
-            )
-        ],
-        rooms: [
-            RoomModel(name: "Cozinha", symbol: "fork.knife", color: .orange),
-            RoomModel(name: "Sala", symbol: "sofa", color: .purple),
-            RoomModel(name: "Banheiro", symbol: "shower", color: .blue)
-        ],
+        // The default rooms, so the tickets get the symbols and colors the app really gives them.
+        rooms: [DefaultRoomsOnboarding.kitchen, .livingRoom, .bathroom].map { room in
+            RoomModel(name: room.rawValue, symbol: room.symbol, color: room.color, kind: room.rawValue)
+        },
         couponsByRoomName: [
-            "Cozinha": [
-                CouponModel(name: "Folga da louça por um dia", isOnSale: true, price: 30, tier: .tier1),
-                CouponModel(name: "Escolher o jantar", isOnSale: true, price: 80, tier: .tier3)
+            DefaultRoomsOnboarding.kitchen.rawValue: [
+                CouponModel(name: "Lavar a louça", isOnSale: true, price: 30, tier: .aprendiz),
+                CouponModel(name: "Limpar o fogão", isOnSale: true, price: 80, tier: .cavaleiroDoRodo)
             ],
-            "Sala": [
-                CouponModel(name: "Escolher o filme da noite", isOnSale: true, price: 20, tier: .tier1)
+            DefaultRoomsOnboarding.livingRoom.rawValue: [
+                CouponModel(name: "Aspirar a sala", isOnSale: true, price: 20, tier: .novatoDaCasa)
+            ],
+            DefaultRoomsOnboarding.bathroom.rawValue: [
+                CouponModel(name: "Limpar o banheiro", isOnSale: true, price: 60, tier: .vigiaDaCozinha)
             ]
-        ]
+        ],
+        users: [
+            UserModel(name: "Ana", tier: .aprendiz, points: 30, ownerRecordName: "ana"),
+            UserModel(name: "Bia", tier: .vigiaDaCozinha, points: 105, ownerRecordName: "bia"),
+            UserModel(name: "Caio", tier: .almaDaCasa, points: 320, ownerRecordName: "caio")
+        ],
+        myOwnerRecordName: "ana"
     ))
 }

@@ -4,28 +4,6 @@
     "" : {
       "shouldTranslate" : false
     },
-    "4 a 6 moradores" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "4 to 6 housemates"
-          }
-        }
-      }
-    },
-    "7 ou mais moradores" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "7 or more housemates"
-          }
-        }
-      }
-    },
     "%@ · cerca de %lld min" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36,17 +14,6 @@
           }
         }
       }
-    },
-    "%@ %@" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@"
-          }
-        }
-      },
-      "shouldTranslate" : false
     },
     "%@ adicionado" : {
       "extractionState" : "stale",
@@ -191,17 +158,6 @@
         }
       }
     },
-    "%@, %@" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$@"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
     "%@, %@ e mais %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -292,47 +248,6 @@
     },
     "%lld" : {
       "shouldTranslate" : false
-    },
-    "%lld moradores" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld housemate"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld housemates"
-                }
-              }
-            }
-          }
-        },
-        "pt-BR" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld morador"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld moradores"
-                }
-              }
-            }
-          }
-        }
-      }
     },
     "%lld × %@, total %@" : {
       "extractionState" : "stale",
@@ -582,6 +497,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld coins"
+          }
+        }
+      }
+    },
+    "%lld moradores" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld housemate"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld housemates"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld morador"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld moradores"
+                }
+              }
+            }
           }
         }
       }
@@ -861,391 +817,6 @@
         }
       }
     },
-    "A casa cresceu: peça para %@ atualizar o plano." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your home grew: ask %@ to upgrade the plan."
-          }
-        }
-      }
-    },
-    "Adicione vários itens de uma vez e receba sugestões do que está faltando." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add several items at once and get suggestions for what's missing."
-          }
-        }
-      }
-    },
-    "Anual" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Annual"
-          }
-        }
-      }
-    },
-    "Anual Estudante" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Student Annual"
-          }
-        }
-      }
-    },
-    "Assinado por %@. Todos os moradores aproveitam os recursos Premium." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscribed by %@. Every housemate gets the Premium features."
-          }
-        }
-      }
-    },
-    "Assinatura" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscription"
-          }
-        }
-      }
-    },
-    "Até 3 moradores" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Up to 3 housemates"
-          }
-        }
-      }
-    },
-    "Ativo" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Active"
-          }
-        }
-      }
-    },
-    "Atualize seu plano" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upgrade your plan"
-          }
-        }
-      }
-    },
-    "Criar tarefas com IA" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create chores with AI"
-          }
-        }
-      }
-    },
-    "Dashboard avançado" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Advanced dashboard"
-          }
-        }
-      }
-    },
-    "Dashboard e lista de compras no seu Harvii." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dashboard and shopping list on your Harvii."
-          }
-        }
-      }
-    },
-    "Descreva o que precisa ser feito e a IA monta as tarefas e a ordem." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Describe what needs to be done and AI creates the chores and their order."
-          }
-        }
-      }
-    },
-    "Entrou alguém novo ou a rotina mudou? Refaça a divisão na hora." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Someone new moved in or your routine changed? Redo the division right away."
-          }
-        }
-      }
-    },
-    "Escanear notas fiscais" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scan receipts"
-          }
-        }
-      }
-    },
-    "Histórico completo de gastos" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full expense history"
-          }
-        }
-      }
-    },
-    "IA na lista de compras" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI on the shopping list"
-          }
-        }
-      }
-    },
-    "Mais gráficos sobre a divisão da casa." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "More charts about how your home splits the chores."
-          }
-        }
-      }
-    },
-    "Mensal" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Monthly"
-          }
-        }
-      }
-    },
-    "Não encontramos uma assinatura ativa para este ID Apple." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We couldn't find an active subscription for this Apple Account."
-          }
-        }
-      }
-    },
-    "Não foi possível restaurar. Tente novamente." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't restore. Please try again."
-          }
-        }
-      }
-    },
-    "outro morador" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "another housemate"
-          }
-        }
-      }
-    },
-    "Preço para %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Price for %@"
-          }
-        }
-      }
-    },
-    "Premium" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium"
-          }
-        }
-      }
-    },
-    "Quem deve para quem" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Who owes whom"
-          }
-        }
-      }
-    },
-    "Rebalancear a divisão quando quiser" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rebalance chores anytime"
-          }
-        }
-      }
-    },
-    "Sua casa agora tem %lld moradores. O Premium continua ativo, mas o plano atual cobre uma casa menor." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your home now has %lld housemates. Premium is still active, but your current plan covers a smaller home."
-          }
-        }
-      }
-    },
-    "Telas extras no Harvii" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Extra Harvii screens"
-          }
-        }
-      }
-    },
-    "Tire uma foto e os preços são preenchidos." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Take a photo and the prices are filled in."
-          }
-        }
-      }
-    },
-    "Todos os meses da casa em um só lugar." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Every month of your home in one place."
-          }
-        }
-      }
-    },
-    "Uma assinatura libera tudo para a casa inteira." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "One subscription unlocks everything for the whole home."
-          }
-        }
-      }
-    },
-    "Veja os detalhes das pendências e acerte as contas com Pix." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See who owes what in detail and settle up with Pix."
-          }
-        }
-      }
-    },
-    "Vitalício" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lifetime"
-          }
-        }
-      }
-    },
-    "Você assina o Premium. Próxima renovação em %@." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You're subscribed to Premium. Next renewal on %@."
-          }
-        }
-      }
-    },
-    "Você tem o Premium vitalício." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have lifetime Premium."
-          }
-        }
-      }
-    },
     "×%lld" : {
       "shouldTranslate" : false
     },
@@ -1390,6 +961,17 @@
         }
       }
     },
+    "4 a 6 moradores" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4 to 6 housemates"
+          }
+        }
+      }
+    },
     "4 horas" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1454,6 +1036,17 @@
         }
       }
     },
+    "7 ou mais moradores" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 or more housemates"
+          }
+        }
+      }
+    },
     "30 minutos" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1481,6 +1074,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "30% off the annual plan"
+          }
+        }
+      }
+    },
+    "A casa cresceu: peça para %@ atualizar o plano." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your home grew: ask %@ to upgrade the plan."
           }
         }
       }
@@ -1965,6 +1569,17 @@
         }
       }
     },
+    "Adicione vários itens de uma vez e receba sugestões do que está faltando." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add several items at once and get suggestions for what's missing."
+          }
+        }
+      }
+    },
     "adquiridos por ter notado\nalgo na casa" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2209,6 +1824,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Previous"
+          }
+        }
+      }
+    },
+    "Anual" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annual"
+          }
+        }
+      }
+    },
+    "Anual Estudante" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student Annual"
           }
         }
       }
@@ -2471,6 +2108,28 @@
         }
       }
     },
+    "Assinado por %@. Todos os moradores aproveitam os recursos Premium." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscribed by %@. Every housemate gets the Premium features."
+          }
+        }
+      }
+    },
+    "Assinatura" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscription"
+          }
+        }
+      }
+    },
     "Até 1 hora" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2504,6 +2163,17 @@
         }
       }
     },
+    "Até 3 moradores" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 3 housemates"
+          }
+        }
+      }
+    },
     "Até 4 horas" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2526,6 +2196,17 @@
         }
       }
     },
+    "Ativo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active"
+          }
+        }
+      }
+    },
     "Através da nossa escala de atividades e recorrência de tarefas automatizada, basta olhar o calendário e saber o que você precisa fazer!" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2533,6 +2214,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "With our automated activity schedule and recurring chores, just look at the calendar to know what you need to do!"
+          }
+        }
+      }
+    },
+    "Atualize seu plano" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upgrade your plan"
           }
         }
       }
@@ -3999,6 +3691,17 @@
         }
       }
     },
+    "Criar tarefas com IA" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create chores with AI"
+          }
+        }
+      }
+    },
     "Criar uma casa" : {
       "localizations" : {
         "en" : {
@@ -4058,6 +3761,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can start today!"
+          }
+        }
+      }
+    },
+    "Dashboard avançado" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced dashboard"
+          }
+        }
+      }
+    },
+    "Dashboard e lista de compras no seu Harvii." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dashboard and shopping list on your Harvii."
           }
         }
       }
@@ -4237,6 +3962,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Describe what you'd like to buy and we'll fill it in automatically."
+          }
+        }
+      }
+    },
+    "Descreva o que precisa ser feito e a IA monta as tarefas e a ordem." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe what needs to be done and AI creates the chores and their order."
           }
         }
       }
@@ -4992,6 +4728,17 @@
         }
       }
     },
+    "Entrou alguém novo ou a rotina mudou? Refaça a divisão na hora." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Someone new moved in or your routine changed? Redo the division right away."
+          }
+        }
+      }
+    },
     "Enviando" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5302,6 +5049,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Biweekly schedule ready"
+          }
+        }
+      }
+    },
+    "Escanear notas fiscais" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan receipts"
           }
         }
       }
@@ -5685,6 +5443,7 @@
       }
     },
     "Esse cômodo ainda não tem cupons disponíveis." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6389,6 +6148,9 @@
         }
       }
     },
+    "Gamificação" : {
+
+    },
     "ganhas neste ciclo" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6617,6 +6379,17 @@
         }
       }
     },
+    "Histórico completo de gastos" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full expense history"
+          }
+        }
+      }
+    },
     "Histórico de ranks" : {
       "localizations" : {
         "en" : {
@@ -6687,6 +6460,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI"
+          }
+        }
+      }
+    },
+    "IA na lista de compras" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI on the shopping list"
           }
         }
       }
@@ -7729,6 +7513,17 @@
         }
       }
     },
+    "Mais gráficos sobre a divisão da casa." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More charts about how your home splits the chores."
+          }
+        }
+      }
+    },
     "Mais opções" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7911,6 +7706,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "monthly"
+          }
+        }
+      }
+    },
+    "Mensal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monthly"
           }
         }
       }
@@ -8310,6 +8116,17 @@
         }
       }
     },
+    "Não encontramos uma assinatura ativa para este ID Apple." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find an active subscription for this Apple Account."
+          }
+        }
+      }
+    },
     "Não entendi. Tente de novo." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8657,6 +8474,17 @@
         }
       }
     },
+    "Não foi possível restaurar. Tente novamente." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't restore. Please try again."
+          }
+        }
+      }
+    },
     "Não foi possível sair" : {
       "localizations" : {
         "en" : {
@@ -8785,6 +8613,7 @@
       }
     },
     "Nenhum cômodo ainda" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8803,6 +8632,12 @@
           }
         }
       }
+    },
+    "Nenhum cupom ainda" : {
+
+    },
+    "Nenhum cupom disponível" : {
+
     },
     "Nenhum item encontrado. Tente escrever de outro jeito." : {
       "extractionState" : "stale",
@@ -9719,6 +9554,9 @@
         }
       }
     },
+    "Os cupons que você comprar neste ciclo aparecem aqui." : {
+
+    },
     "Os moradores em verde já finalizaram essa etapa." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9799,6 +9637,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Other room"
+          }
+        }
+      }
+    },
+    "outro morador" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "another housemate"
           }
         }
       }
@@ -10686,6 +10535,17 @@
         }
       }
     },
+    "Preço para %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price for %@"
+          }
+        }
+      }
+    },
     "Preço por unidade" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10724,6 +10584,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fill in with AI"
+          }
+        }
+      }
+    },
+    "Premium" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium"
           }
         }
       }
@@ -10911,6 +10782,7 @@
       }
     },
     "Quando a casa tiver cômodos, os cupons de cada um aparecem aqui." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -10919,6 +10791,9 @@
           }
         }
       }
+    },
+    "Quando a casa tiver tarefas, os cupons de cada uma aparecem aqui." : {
+
     },
     "Quando as tarefas forem divididas, elas aparecem aqui." : {
       "localizations" : {
@@ -10929,6 +10804,9 @@
           }
         }
       }
+    },
+    "Quando houver cupons à venda, eles aparecem aqui." : {
+
     },
     "Quando receber o link, é só tocar nele para entrar na casa!" : {
       "localizations" : {
@@ -11090,6 +10968,17 @@
         }
       }
     },
+    "Quem deve para quem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who owes whom"
+          }
+        }
+      }
+    },
     "Quem é você na casa?" : {
       "localizations" : {
         "en" : {
@@ -11205,6 +11094,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ranking"
+          }
+        }
+      }
+    },
+    "Rebalancear a divisão quando quiser" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rebalance chores anytime"
           }
         }
       }
@@ -12029,6 +11929,7 @@
       }
     },
     "Sem cupons por aqui" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -12417,6 +12318,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Status"
+          }
+        }
+      }
+    },
+    "Sua casa agora tem %lld moradores. O Premium continua ativo, mas o plano atual cobre uma casa menor." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your home now has %lld housemates. Premium is still active, but your current plan covers a smaller home."
           }
         }
       }
@@ -12848,6 +12760,17 @@
         }
       }
     },
+    "Telas extras no Harvii" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra Harvii screens"
+          }
+        }
+      }
+    },
     "Televisão" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13098,6 +13021,17 @@
         }
       }
     },
+    "Tire uma foto e os preços são preenchidos." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take a photo and the prices are filled in."
+          }
+        }
+      }
+    },
     "Todo começo conta" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13138,6 +13072,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All banks"
+          }
+        }
+      }
+    },
+    "Todos os meses da casa em um só lugar." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every month of your home in one place."
           }
         }
       }
@@ -13447,6 +13392,7 @@
       }
     },
     "Troque suas moedas por cupons" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13484,6 +13430,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A new housemate joined the home!"
+          }
+        }
+      }
+    },
+    "Uma assinatura libera tudo para a casa inteira." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One subscription unlocks everything for the whole home."
           }
         }
       }
@@ -13767,6 +13724,17 @@
         }
       }
     },
+    "Veja os detalhes das pendências e acerte as contas com Pix." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See who owes what in detail and settle up with Pix."
+          }
+        }
+      }
+    },
     "Ver como carrossel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13916,12 +13884,37 @@
         }
       }
     },
+    "Vitalício" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lifetime"
+          }
+        }
+      }
+    },
     "Você" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "You"
+          }
+        }
+      }
+    },
+    "Você ainda não tem cupons" : {
+
+    },
+    "Você assina o Premium. Próxima renovação em %@." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're subscribed to Premium. Next renewal on %@."
           }
         }
       }
@@ -14169,6 +14162,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You hold this chore's coupon and can't take it this cycle."
+          }
+        }
+      }
+    },
+    "Você tem o Premium vitalício." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have lifetime Premium."
           }
         }
       }

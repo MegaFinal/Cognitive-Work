@@ -573,17 +573,38 @@ private struct IndexedOccurrence: Identifiable {
 private struct TodayOrderBox: View {
     let steps: [TodayChoreOrder.Step]
 
+    /// Closed with the chevron; remembered on this device, so it stays as the person left it.
+    @AppStorage("todayOrderBoxCollapsed") private var isCollapsed = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label {
-                Text("Ordem sugerida para hoje")
-            } icon: {
-                Image(systemName: "sparkles")
-            }
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(.subTitleGray)
-            .accessibilityAddTraits(.isHeader)
+            // The title row opens or closes the box (chevron on the right, like the day titles).
+            Button {
+                // No haptic, like the day titles.
+                withAnimation(.snappy) { isCollapsed.toggle() }
+            } label: {
+                HStack {
+                    Label {
+                        Text("Ordem sugerida para hoje")
+                    } icon: {
+                        Image(systemName: "sparkles")
+                    }
 
+                    Spacer()
+
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(.degrees(isCollapsed ? -90 : 0))
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.subTitleGray)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityValue(Text(verbatim: isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")))
+            .voiceOverHint(isCollapsed ? L10n.tr("Toque duas vezes para expandir.") : L10n.tr("Toque duas vezes para recolher."))
+
+            if !isCollapsed {
             ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(verbatim: "\(index + 1)")
@@ -604,6 +625,8 @@ private struct TodayOrderBox: View {
                     }
                 }
                 .accessibilityElement(children: .combine)
+                .transition(.opacity)
+            }
             }
         }
         .padding(16)
