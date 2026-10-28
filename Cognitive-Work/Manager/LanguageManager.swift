@@ -17,6 +17,8 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     case spanish = "es"
     /// French (France, informal "tu" like the rest of the app).
     case french = "fr"
+    /// Simplified Chinese.
+    case chinese = "zh-Hans"
 
     /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
@@ -32,6 +34,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         case .english: return "English"
         case .spanish: return "Español"
         case .french: return "Français"
+        case .chinese: return "简体中文"
         }
     }
 
@@ -41,6 +44,8 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         if preferred.hasPrefix("en") { return .english }
         if preferred.hasPrefix("es") { return .spanish }
         if preferred.hasPrefix("fr") { return .french }
+        // Simplified Chinese only ("zh-Hans", "zh-CN"); Traditional stays on the default.
+        if preferred.hasPrefix("zh-Hans") || preferred.hasPrefix("zh-CN") { return .chinese }
         return .portuguese
     }
 }
@@ -164,9 +169,10 @@ extension String {
     var localizedDefault: String {
         // Only the app's own default content is translated. Any other catalog key (weekday
         // abbreviations like "Qua", button titles…) typed by the user stays exactly as written.
-        if DefaultChoreCatalog.defaultTexts.contains(self) {
-            let translated = L10n.tr(key: self)
-            if translated != self { return translated }
+        // Case and accents don't matter ("lavar roupas" is the default "Lavar roupas").
+        if let key = DefaultChoreCatalog.defaultKey(for: self) {
+            let translated = L10n.tr(key: key)
+            if translated != key { return translated }
         }
         
         // "Quarto 2" -> "Bedroom 2"

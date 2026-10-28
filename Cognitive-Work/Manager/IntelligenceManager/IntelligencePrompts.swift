@@ -17,14 +17,14 @@ enum IntelligencePrompts {
     /// category, price and who splits it.
     enum ShopItemParse {
 
-        static let id = "shop-item-parse-v1"
+        static let id = "shop-item-parse-v2"
 
         /// The unit, category, priceKind and sharing names match the cases of the `Generated…`
         /// enums in ShopItemSuggestion.swift; keep them in sync.
         /// Rules for every field of one item. Shared with ``ShopListParse`` so both read prices,
         /// units and people the same way.
         static let fieldRules = """
-        name: the product only, without amount or unit, short (at most 18 characters).
+        name: the product only, without amount or unit, short (at most 18 characters). Write it in the same language and script the person used, exactly as they wrote it: never translate it ("咖啡" stays "咖啡", "coffee" stays "coffee", "café" stays "café").
         quantity and unit: the amount the person wrote. If they wrote no amount, use quantity 1 and unit.
         Convert fractions to gram or milliliter, for example "meio quilo" is 500 gram.
         Use package for packs, boxes, bags and bundles.
@@ -82,7 +82,7 @@ enum IntelligencePrompts {
     /// Turns a text with several products, one per line, into a list of items. Used by the AI
     enum ShopListParse {
 
-        static let id = "shop-list-parse-v1"
+        static let id = "shop-list-parse-v2"
 
         static let task = """
         You turn what the person typed into household shopping list items, one item per product, in the order written.
