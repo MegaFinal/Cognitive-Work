@@ -229,7 +229,7 @@ struct RoomsManagementView: View {
     /// The delete alert's title: "Excluir \"<room>\"?".
     private var deletionTitle: String {
         guard let roomPendingDeletion else { return "" }
-        return L10n.tr("Excluir \"%@\"?", roomPendingDeletion.name.localizedDefault)
+        return L10n.tr("Excluir \"\(roomPendingDeletion.name.localizedDefault)\"?")
     }
     
     /// The delete alert's message, saying how many chores go with the room.
@@ -241,7 +241,7 @@ struct RoomsManagementView: View {
         case 1:
             return L10n.tr("A tarefa deste cômodo também será excluída. Esta ação não pode ser desfeita.")
         default:
-            return L10n.tr("As %lld tarefas deste cômodo também serão excluídas. Esta ação não pode ser desfeita.", count)
+            return L10n.tr("As \(count) tarefas deste cômodo também serão excluídas. Esta ação não pode ser desfeita.")
         }
     }
 }
@@ -301,8 +301,8 @@ private struct RoomCard: View {
                 .buttonStyle(.plain)
                 .offset(x: -8, y: -8)
                 .transition(.scale.combined(with: .opacity))
-                .voiceOverLabel(L10n.tr("Excluir %@", room.name.localizedDefault))
-                .voiceControlNames([L10n.tr("Excluir %@", room.name.localizedDefault), L10n.tr("Excluir"), L10n.tr("Apagar")])
+                .voiceOverLabel(L10n.tr("Excluir \(room.name.localizedDefault)"))
+                .voiceControlNames([L10n.tr("Excluir \(room.name.localizedDefault)"), L10n.tr("Excluir"), L10n.tr("Apagar")])
             }
         }
     }
@@ -311,11 +311,8 @@ private struct RoomCard: View {
     private var card: some View {
         ZStack {
             VStack(spacing: 14) {
-                Image(systemName: room.symbol)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 52, height: 52)
-                    .fontWeight(.light)
+                SymbolImage(name: room.symbol)
+                    .frame(width: 84, height: 84)
                     .accessibilityHidden(true)
                 
                 Text(room.name.localizedDefault)
@@ -354,7 +351,7 @@ private struct RoomCard: View {
             onDelete()
         }
         // Voice Control: "Toque em Quarto" / "Mostrar ações para Quarto", not the chore count.
-        .voiceControlNames([room.name.localizedDefault, L10n.tr("Editar %@", room.name.localizedDefault)])
+        .voiceControlNames([room.name.localizedDefault, L10n.tr("Editar \(room.name.localizedDefault)")])
     }
     
     /// "Nenhuma tarefa", "1 tarefa" or "N tarefas".
@@ -362,7 +359,7 @@ private struct RoomCard: View {
         switch choreCount {
         case 0: L10n.tr("Nenhuma tarefa")
         case 1: L10n.tr("1 tarefa")
-        default: L10n.tr("%lld tarefas", choreCount)
+        default: L10n.tr("\(choreCount) tarefas")
         }
     }
 }
@@ -568,14 +565,11 @@ struct RoomFormSheet: View {
                 .id("\(selectedColor.rawValue).\(pattern.rawValue)")
                 .transition(.opacity)
             
-            Image(systemName: selectedSymbol)
-                .resizable()
-                .scaledToFit()
-                .fontWeight(.light)
+            SymbolImage(name: selectedSymbol)
                 .foregroundStyle(.white)
-                .frame(width: 70, height: 70)
-                .contentTransition(.symbolEffect(.replace))
-                .symbolEffect(.bounce, value: selectedColor)
+                .frame(width: 96, height: 96)
+                .id(selectedSymbol)
+                .transition(.opacity)
                 .frame(width: 140, height: 140)
                 .background(
                     RoundedRectangle(cornerRadius: 14)
@@ -595,10 +589,7 @@ struct RoomFormSheet: View {
         .animation(.easeInOut(duration: 0.3), value: pattern)
         // One summary of the live preview instead of an unlabeled icon.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.tr("Pré-visualização do cômodo: %@, %@, %@",
-                                    ProfileAccessibility.symbolName(selectedSymbol),
-                                    selectedColor.voiceOverName,
-                                    pattern.displayName))
+        .accessibilityLabel(L10n.tr("Pré-visualização do cômodo: \(ProfileAccessibility.symbolName(selectedSymbol)), \(selectedColor.voiceOverName), \(pattern.displayName)"))
         .accessibilityAddTraits(.isImage)
     }
     
@@ -709,11 +700,9 @@ struct RoomFormSheet: View {
                 ForEach(RoomsManagementViewModel.customRoomSymbols, id: \.self) { symbol in
                     let isSelected = selectedSymbol == symbol
                     
-                    Image(systemName: symbol)
-                        .resizable()
-                        .scaledToFit()
-                        // Wide glyphs (car, gamecontroller…) shrink to fit instead of overflowing.
-                        .frame(width: 24, height: 24)
+                    SymbolImage(name: symbol)
+                        // Wide glyphs shrink to fit instead of overflowing.
+                        .frame(width: 36, height: 36)
                         .foregroundStyle(isSelected ? Color.white : Color.primary)
                         // Fill the whole grid cell as a square so the circle behind is full size.
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

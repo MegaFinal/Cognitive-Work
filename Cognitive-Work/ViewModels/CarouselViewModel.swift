@@ -629,6 +629,27 @@ class CarouselViewModel {
     }
     
     /// Retrieves all assignment records corresponding to a specific chore on a given date.
+    /// Every open (not done) occurrence due today in the house, each with who does it and
+    /// whether it's the viewer's. Used to suggest the order of the viewer's day (see
+    /// ``TodayChoreOrder``), which also needs the others' chores ("lavar a louça" waits for
+    /// whoever cooks).
+    func openOccurrencesToday() -> [(occurrence: ChoreOccurrence, userIDs: Set<CKRecord.ID>, isMine: Bool)] {
+        let today = Calendar.current.startOfDay(for: Date())
+        var result: [(occurrence: ChoreOccurrence, userIDs: Set<CKRecord.ID>, isMine: Bool)] = []
+
+        for chore in cardModels {
+            if let refs = chore.dailyAssignmentsReference, !refs.isEmpty {
+                for assignment in getAssignments(for: chore, on: today) where !assignment.isCompleted {
+                    let ids = Set((assignment.userReferences ?? []).map(\.recordID))
+                    result.append((ChoreOccurrence(chore: chore, assignment: assignment), ids, !ids.isDisjoint(with: viewerRecordIDs)))
+                }
+            } else if let due = chore.dueDate, Calendar.current.isDate(due, inSameDayAs: today), !chore.isDone {
+                result.append((ChoreOccurrence(chore: chore, assignment: nil), responsibleUserIDs(of: chore), isViewerResponsible(for: chore)))
+            }
+        }
+        return result
+    }
+
     func getAssignments(for chore: ChoreModel, on date: Date?) -> [RecurrentAssignmentModel] {
         guard let date,
               let refs = chore.dailyAssignmentsReference,

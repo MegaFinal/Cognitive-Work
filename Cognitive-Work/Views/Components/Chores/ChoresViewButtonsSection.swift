@@ -44,7 +44,7 @@ struct ChoresViewButtonsSection: View {
         }
         .floatingActionPlacement()
         // MARK: - New-chore form
-        .navigationDestination(isPresented: $showCreateView) {
+        .sheet(isPresented: $showCreateView) {
             CreateAndEditChoreView(
                 originalModel: ChoreModel(
                     name: "",

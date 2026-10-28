@@ -64,20 +64,20 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
         self.init(rawValue: kind ?? name)
     }
     
-    /// SF Symbol shown for this room.
+    /// Name of the room's icon in the `ChoresSymbols/DefaultRooms` asset folder.
     var symbol: String {
         switch self {
-        case .bedroom: "bed.double"
+        case .bedroom: "bed.stripes"
         case .livingRoom: "sofa"
-        case .laundryRoom: "washer"
-        case .kitchen: "cooktop"
+        case .laundryRoom: "clothes.line.stripes"
+        case .kitchen: "stove.pans"
         case .bathroom: "toilet"
-        case .homeOffice: "macbook.and.iphone"
-        case .balcony: "window.casement"
-        case .pantry: "cabinet"
+        case .homeOffice: "computer"
+        case .balcony: "balcony.plastic.chair"
+        case .pantry: "pantry"
         case .powderRoom: "sink"
-        case .garage: "door.garage.open"
-        case .garden: "sprinkler.and.droplets"
+        case .garage: "garage.car"
+        case .garden: "snake.plant"
         }
     }
     
@@ -147,7 +147,7 @@ private extension DefaultRoomsOnboarding {
         let room = DefaultRoomsOnboarding.bedroom.roomDTO
         return [
             ChoreDTO(
-                name: "Arrumar cama",
+                name: "Arrumar a cama",
                 description: "Esticar o lençol, ajeitar o edredom e os travesseiros.",
                 frequency: .daily,
                 duration: 5,
@@ -155,7 +155,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Trocar lençois",
+                name: "Trocar lençóis",
                 description: "Trocar lençol, fronhas e capa do edredom e levar o usado para lavar.",
                 frequency: .weekly,
                 duration: 15,
@@ -163,7 +163,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Tirar pó sala",
+                name: "Tirar o pó",
                 description: "Passar pano nas superfícies do criado-mudo, cômoda e prateleiras.",
                 frequency: .weekly,
                 duration: 10,
@@ -171,7 +171,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Limpar chão",
+                name: "Limpar o chão",
                 description: "Aspirar embaixo da cama, varrer e passar pano no quarto todo.",
                 frequency: .weekly,
                 duration: 20,
@@ -179,10 +179,18 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Organizar roupas",
+                name: "Organizar armário",
                 description: "Dobrar e guardar as roupas, separar o que não usa mais.",
                 frequency: .monthly,
                 duration: 40,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Arejar o quarto",
+                description: "Abrir janelas e cortinas para renovar o ar do quarto.",
+                frequency: .daily,
+                duration: 5,
                 priorityTag: .low,
                 room: room
             )
@@ -194,7 +202,7 @@ private extension DefaultRoomsOnboarding {
         let room = DefaultRoomsOnboarding.livingRoom.roomDTO
         return [
             ChoreDTO(
-                name: "Organizar sala",
+                name: "Organizar a sala",
                 description: "Guardar objetos fora do lugar, ajeitar almofadas e mantas.",
                 frequency: .daily,
                 duration: 10,
@@ -203,7 +211,7 @@ private extension DefaultRoomsOnboarding {
                 
             ),
             ChoreDTO(
-                name: "Tirar o pó",
+                name: "Tirar pó",
                 description: "Limpar mesa de centro, estantes, quadros e rodapés.",
                 frequency: .weekly,
                 duration: 15,
@@ -211,7 +219,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Aspirar móveis",
+                name: "Aspirar sofá",
                 description: "Aspirar entre as almofadas do sofá e os tapetes da sala.",
                 frequency: .weekly,
                 duration: 20,
@@ -219,7 +227,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Varrer chão",
+                name: "Varrer o chão",
                 description: "Limpar o piso da sala inteira, incluindo cantos e embaixo dos móveis.",
                 frequency: .weekly,
                 duration: 20,
@@ -250,7 +258,7 @@ private extension DefaultRoomsOnboarding {
         let room = DefaultRoomsOnboarding.laundryRoom.roomDTO
         return [
             ChoreDTO(
-                name: "Lavar roupa",
+                name: "Lavar roupas",
                 description: "Separar por cor e tecido e colocar na máquina.",
                 frequency: .weekly,
                 duration: 30,
@@ -258,7 +266,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Estender roupa",
+                name: "Estender roupas",
                 description: "Pendurar no varal e recolher assim que secar.",
                 frequency: .weekly,
                 duration: 15,
@@ -266,7 +274,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Dobrar roupas",
+                name: "Dobrar e guardar",
                 description: "Dobrar as peças limpas e distribuir nos armários.",
                 frequency: .weekly,
                 duration: 40,
@@ -274,15 +282,15 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Separar lixo",
-                description: "Organizar plástico, papel e vidro e levar para a coleta.",
+                name: "Passar roupa",
+                description: "Passar as peças que precisam e deixá-las prontas para guardar.",
                 frequency: .weekly,
-                duration: 10,
-                priorityTag: .medium,
+                duration: 30,
+                priorityTag: .low,
                 room: room
             ),
             ChoreDTO(
-                name: "Limpar tanque",
+                name: "Limpar o tanque",
                 description: "Esfregar o tanque, limpar o filtro e a borracha da máquina.",
                 frequency: .monthly,
                 duration: 20,
@@ -305,7 +313,7 @@ private extension DefaultRoomsOnboarding {
         let room = DefaultRoomsOnboarding.kitchen.roomDTO
         return [
             ChoreDTO(
-                name: "Lavar louça",
+                name: "Lavar a louça",
                 description: "Lavar, secar e guardar pratos, panelas e talheres.",
                 frequency: .daily,
                 duration: 20,
@@ -313,7 +321,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Limpar bancada",
+                name: "Limpar fogão",
                 description: "Passar pano na pia, na bancada e tirar a gordura do fogão.",
                 frequency: .daily,
                 duration: 10,
@@ -321,7 +329,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Tirar lixo",
+                name: "Tirar o lixo",
                 description: "Trocar o saco e levar o lixo para fora.",
                 frequency: .daily,
                 duration: 5,
@@ -329,7 +337,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Varrer chão",
+                name: "Varrer o chão",
                 description: "Limpar o piso da cozinha, incluindo embaixo da mesa e dos armários.",
                 frequency: .weekly,
                 duration: 20,
@@ -345,10 +353,18 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Repor despensa",
+                name: "Repor mantimentos",
                 description: "Conferir validades, repor o que acabou e reorganizar as prateleiras.",
                 frequency: .monthly,
                 duration: 25,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Limpar micro-ondas",
+                description: "Limpar por dentro e por fora com pano úmido e detergente neutro.",
+                frequency: .weekly,
+                duration: 10,
                 priorityTag: .low,
                 room: room
             )
@@ -360,7 +376,7 @@ private extension DefaultRoomsOnboarding {
         let room = DefaultRoomsOnboarding.bathroom.roomDTO
         return [
             ChoreDTO(
-                name: "Limpar vaso",
+                name: "Limpar o vaso",
                 description: "Escovar por dentro, desinfetar o assento e a parte externa.",
                 frequency: .weekly,
                 duration: 10,
@@ -368,7 +384,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Limpar pia",
+                name: "Limpar a pia",
                 description: "Esfregar a cuba, a torneira e deixar o espelho sem manchas.",
                 frequency: .weekly,
                 duration: 10,
@@ -376,7 +392,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Limpar box",
+                name: "Limpar o box",
                 description: "Tirar o limo dos azulejos e o acúmulo de sabão do vidro do box.",
                 frequency: .weekly,
                 duration: 20,
@@ -400,11 +416,19 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Lavar chão",
+                name: "Lavar o chão",
                 description: "Esfregar o piso com desinfetante e desentupir o ralo.",
                 frequency: .monthly,
                 duration: 20,
                 priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Esvaziar lixeira",
+                description: "Trocar o saco da lixeira e levar o lixo para fora.",
+                frequency: .weekly,
+                duration: 5,
+                priorityTag: .medium,
                 room: room
             )
         ]
@@ -423,7 +447,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Limpar pc",
+                name: "Limpar computador",
                 description: "Passar pano de microfibra na tela e tirar a poeira entre as teclas.",
                 frequency: .weekly,
                 duration: 10,
@@ -431,7 +455,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Tirar pó",
+                name: "Tirar o pó",
                 description: "Limpar a mesa, as prateleiras e os equipamentos.",
                 frequency: .weekly,
                 duration: 10,
@@ -439,7 +463,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Varrer chão",
+                name: "Varrer o chão",
                 description: "Limpar o piso, incluindo embaixo da mesa e da cadeira.",
                 frequency: .weekly,
                 duration: 15,
@@ -455,10 +479,18 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Organizar papeis",
+                name: "Organizar papéis",
                 description: "Arquivar o que é importante e descartar os papéis desnecessários.",
                 frequency: .monthly,
                 duration: 30,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Esvaziar lixeira",
+                description: "Esvaziar a lixeira e descartar papéis e embalagens.",
+                frequency: .weekly,
+                duration: 5,
                 priorityTag: .low,
                 room: room
             )
@@ -502,7 +534,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Lavar piso",
+                name: "Lavar o piso",
                 description: "Lavar o piso com água e sabão e puxar a água para o ralo.",
                 frequency: .monthly,
                 duration: 25,
@@ -555,6 +587,14 @@ private extension DefaultRoomsOnboarding {
                 duration: 30,
                 priorityTag: .low,
                 room: room
+            ),
+            ChoreDTO(
+                name: "Checar pragas",
+                description: "Procurar traças, formigas e sinais de umidade nos mantimentos.",
+                frequency: .monthly,
+                duration: 10,
+                priorityTag: .low,
+                room: room
             )
         ]
     }
@@ -564,7 +604,7 @@ private extension DefaultRoomsOnboarding {
         let room = DefaultRoomsOnboarding.powderRoom.roomDTO
         return [
             ChoreDTO(
-                name: "Limpar vaso",
+                name: "Limpar o vaso",
                 description: "Escovar por dentro, desinfetar o assento e a parte externa.",
                 frequency: .weekly,
                 duration: 10,
@@ -572,7 +612,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Limpar pia",
+                name: "Limpar a pia",
                 description: "Esfregar a cuba e a torneira e secar a bancada.",
                 frequency: .weekly,
                 duration: 5,
@@ -580,7 +620,7 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Trocar toalha",
+                name: "Trocar a toalha",
                 description: "Recolher a toalha de rosto usada e pendurar uma limpa.",
                 frequency: .weekly,
                 duration: 5,
@@ -604,10 +644,18 @@ private extension DefaultRoomsOnboarding {
                 room: room
             ),
             ChoreDTO(
-                name: "Lavar chão",
+                name: "Lavar o chão",
                 description: "Esfregar o piso com desinfetante e limpar o ralo.",
                 frequency: .monthly,
                 duration: 15,
+                priorityTag: .low,
+                room: room
+            ),
+            ChoreDTO(
+                name: "Esvaziar lixeira",
+                description: "Trocar o saco da lixeira e levar o lixo para fora.",
+                frequency: .weekly,
+                duration: 5,
                 priorityTag: .low,
                 room: room
             )

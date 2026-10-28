@@ -9,7 +9,7 @@ import SwiftUI
 
 /// A coupon brought to the center of the screen, over a white background.
 ///
-/// Pulling the ticket down tears the stub off: past ``tearDistance`` the stub falls away, the
+/// Pulling the ticket's stub sideways tears it off: past ``tearDistance`` the stub flies away, the
 /// celebration starts right away and the coupon is bought meanwhile. If the purchase fails, the
 /// celebration stops and the stub comes back. A coupon that can't be bought (already held,
 /// someone else's, another one of the room already held this cycle, too expensive) only gives a
@@ -50,8 +50,11 @@ struct FocusedCouponView: View {
     /// How far down the ticket has to be pulled to tear the stub off.
     static let tearDistance: CGFloat = 110
 
-    /// How far the finger pulled down.
+    /// How far the finger pulled sideways (always positive).
     @State private var pull: CGFloat = 0
+
+    /// Which way the finger pulled: 1 to the right, -1 to the left.
+    @State private var pullDirection: CGFloat = 1
 
     /// The stub came off and the purchase is running (or done).
     @State private var isTorn = false
@@ -92,15 +95,18 @@ struct FocusedCouponView: View {
     /// the last dash, which is the stronger "far enough" tap (``isPastTearPoint``).
     private var tearStep: Int {
         guard canBuy, !isTorn else { return 0 }
-        let dashes = CouponTicket.perforationDashCount
+        let dashes = CouponTicket.perforationDashCount(width: max(ticketFrame.width, 1))
         let perDash = Self.tearDistance / CGFloat(dashes)
         return min(Int(pull / perDash), dashes - 1)
     }
 
     var body: some View {
         ZStack {
-            // MARK: - Ticket, hint and close button
+            // MARK: - Ticket and hint
             content
+
+            // MARK: - Back button
+            backButton
 
             // MARK: - Celebration
             // Confetti, stars and sparkles all over the screen once it's bought.
@@ -122,22 +128,46 @@ struct FocusedCouponView: View {
         .onChange(of: finishedAttempts) { resolvePurchase() }
     }
 
-    /// The ticket (with the tear gesture), the hint and the "Fechar" button.
+    /// The round glass button at the top that brings the ticket back to the list.
+    private var backButton: some View {
+        VStack {
+            HStack {
+                Button(action: onClose) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.black)
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .voiceOverLabel(L10n.tr("Fechar"))
+                Spacer()
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .opacity(isTorn ? 0 : 1)
+        .disabled(isTorn)
+    }
+
+    /// The ticket (with the tear gesture) and the hint under it.
     private var content: some View {
         VStack(spacing: 28) {
             CouponTicket(
                 coupon: coupon,
                 roomColor: roomColor,
-                 roomSymbol: roomSymbol,
+                roomSymbol: roomSymbol,
                 isAffordable: isAffordable,
                 state: state,
                 isBuying: isBuying && !isTorn,
+                metrics: .focused,
                 stubOffset: stubOffset,
                 stubRotation: stubRotation
             )
             .matchedGeometryEffect(id: matchID, in: namespace)
             // A little pop when the purchase goes through.
-            .scaleEffect(isCelebrating && !reduceMotion ? 1.12 : 1.06)
+            .scaleEffect(isCelebrating && !reduceMotion ? 1.05 : 1)
             .animation(.spring(response: 0.3, dampingFraction: 0.45), value: isCelebrating)
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { ticketFrame = $0 }
             .contentShape(Rectangle())
@@ -152,13 +182,8 @@ struct FocusedCouponView: View {
 
             hint
                 .frame(maxWidth: .infinity)
-
-            Button(L10n.tr("Fechar"), action: onClose)
-                .buttonStyle(.glass)
-                .opacity(isTorn ? 0 : 1)
-                .disabled(isTorn)
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, 24)
     }
 
     /// The room's color first, then the rest of the palette.
@@ -168,27 +193,28 @@ struct FocusedCouponView: View {
 
     // MARK: - Tearing
 
-    /// Where the stub is: following the finger, or fallen off once torn.
+    /// Where the stub is: following the finger, or flown off once torn.
     private var stubOffset: CGSize {
-        if isTorn { return CGSize(width: 30, height: 700) }
-        return CGSize(width: pull * 0.08, height: pull)
+        if isTorn { return CGSize(width: pullDirection * 600, height: 90) }
+        return CGSize(width: pull * pullDirection, height: pull * 0.06)
     }
 
     /// How much the stub tilts while pulled (none with reduced motion).
     private var stubRotation: Angle {
         guard !reduceMotion else { return .zero }
-        if isTorn { return .degrees(30) }
-        return .degrees(min(pull / Self.tearDistance * 14, 20))
+        if isTorn { return .degrees(pullDirection * 30) }
+        return .degrees(pullDirection * min(pull / Self.tearDistance * 14, 20))
     }
 
-    /// Pulls the stub down; tears it if released past ``tearDistance``, otherwise springs back.
+    /// Pulls the stub sideways; tears it if released past ``tearDistance``, otherwise springs back.
     private var tearGesture: some Gesture {
         DragGesture(minimumDistance: 8)
             .onChanged { value in
                 guard !isTorn else { return }
-                let down = max(value.translation.height, 0)
+                let sideways = abs(value.translation.width)
+                if value.translation.width != 0 { pullDirection = value.translation.width > 0 ? 1 : -1 }
                 // Can't be bought: it only gives a little, so it's clear it won't tear.
-                pull = canBuy ? down : min(down * 0.25, 24)
+                pull = canBuy ? sideways : min(sideways * 0.25, 24)
             }
             .onEnded { _ in
                 guard !isTorn else { return }
@@ -266,12 +292,9 @@ struct FocusedCouponView: View {
                     Text(verbatim: L10n.tr("Moedas insuficientes"))
                 case .available:
                     VStack(spacing: 6) {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(roomColor.uiColor)
-                            .symbolEffect(.bounce.down, options: .repeat(.periodic(delay: 1.2)), isActive: !reduceMotion)
-                            .accessibilityHidden(true)
-                        Text(verbatim: L10n.tr("Puxe para baixo para destacar e comprar por %@", CouponTicket.priceText(coupon)))
+                        Text(verbatim: L10n.tr("Destaque o ticket para comprá-lo"))
+                        Text(verbatim: CouponTicket.priceText(coupon))
+                            .font(.system(size: 13, weight: .regular))
                     }
                 }
             }

@@ -10,14 +10,12 @@ import CloudKit
 
 // MARK: - Presentation types
 
-/// How the list orders (and groups) its items.
+/// How the items are ordered inside each category card. The list is always grouped by category.
 enum ShopListSortOption: String, CaseIterable, Identifiable {
-    /// Grouped by category (aisle).
-    case category
-    /// Most recently added first, without groups.
-    case addedOrder
-    /// Alphabetical, without groups.
-    case name
+    /// Most recently added first.
+    case newestFirst
+    /// Added longest ago first.
+    case oldestFirst
 
     /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
@@ -25,18 +23,16 @@ enum ShopListSortOption: String, CaseIterable, Identifiable {
     /// The option's name in the sort menu, translated.
     var label: String {
         switch self {
-        case .category: return L10n.tr("Categoria")
-        case .addedOrder: return L10n.tr("Adicionados recentemente")
-        case .name: return L10n.tr("Nome")
+        case .newestFirst: return L10n.tr("Adicionados recentemente")
+        case .oldestFirst: return L10n.tr("Adicionados há mais tempo")
         }
     }
 
     /// SF Symbol of the option in the sort menu.
     var symbol: String {
         switch self {
-        case .category: return "square.grid.2x2"
-        case .addedOrder: return "clock"
-        case .name: return "textformat"
+        case .newestFirst: return "clock"
+        case .oldestFirst: return "clock.arrow.circlepath"
         }
     }
 }
@@ -75,6 +71,27 @@ struct ShopListSection: Identifiable {
     let title: String
     /// The items in the section.
     let items: [ShopListItem]
+    /// The category the section groups, or `nil` for sections that mix categories ("A comprar",
+    /// "Comprados"). It gives the card its color and icon.
+    var category: ShopItemCategory? = nil
+}
+
+/// One card of the stacked list: a section plus how the stack draws it.
+struct ShopListStackEntry: Identifiable {
+    /// The section the card shows.
+    let section: ShopListSection
+    /// Whether the card is open (header and items) or closed (header only).
+    let isExpanded: Bool
+    /// Whether the next card sits on top of this one's lower edge. Only closed cards that are
+    /// followed by another closed card overlap.
+    let overlapsNext: Bool
+    /// Whether the card comes right after another open card, to which it is stitched.
+    let followsExpanded: Bool
+    /// Whether another open card comes right after this one and is stitched to it.
+    let precedesExpanded: Bool
+
+    /// The section's id, so SwiftUI keeps the card's identity while it moves.
+    var id: String { section.id }
 }
 
 /// Owns the house's shopping list, its items, and the house members available to assign items.
@@ -141,65 +158,105 @@ final class ShopListViewModel {
     // MARK: - Presentation
 
     /// How the list is ordered.
-    var sortOption: ShopListSortOption = .category
+    var sortOption: ShopListSortOption = .newestFirst
 
     /// Identifies the "Comprados" section.
     static let boughtSectionID = "bought"
 
-    /// Sections the user collapsed.
-    private(set) var collapsedSectionIDs: Set<String> = []
+    /// Sections the user opened.
+    private(set) var expandedSectionIDs: Set<String> = [ShopListViewModel.boughtSectionID]
+
+    /// The card that was just opened.
+    private(set) var movingSectionID: String?
+
+    /// Clears ``movingSectionID`` once the card has settled.
+    @ObservationIgnored
+    private var movingResetTask: Task<Void, Never>?
 
     /// Whether the "+" button can add items (the list has to be loaded first).
     var canAddItems: Bool { list != nil }
 
     /// "3 itens para comprar", shown under the title.
     var pendingSummary: String {
-        L10n.tr("%lld itens para comprar", pendingItems.count)
+        L10n.tr("\(pendingItems.count) itens para comprar")
     }
 
-    /// Pending items as sections
+    /// Pending items as one section per category, in the fixed ``ShopItemCategory/listOrder``,
+    /// each with its items in the order of ``sortOption``.
     var pendingSections: [ShopListSection] {
         let pending = pendingItems
 
-        switch sortOption {
-        case .category:
-            return ShopItemCategory.allCases.compactMap { category in
-                let items = Self.sort(pending.filter { $0.category == category }, by: .addedOrder)
-                return items.isEmpty ? nil : ShopListSection(id: category.rawValue, title: category.displayName, items: items)
-            }
-        case .addedOrder, .name:
-            let items = Self.sort(pending, by: sortOption)
-            return items.isEmpty ? [] : [ShopListSection(id: "pending", title: L10n.tr("A comprar"), items: items)]
+        return ShopItemCategory.listOrder.compactMap { category in
+            let items = sorted(pending.filter { $0.category == category })
+            return items.isEmpty ? nil : ShopListSection(id: category.rawValue, title: category.displayName, items: items, category: category)
         }
     }
 
     /// The "Comprados" section, or `nil` when nothing was bought yet.
     var boughtSection: ShopListSection? {
-        let items = Self.sort(boughtItems, by: sortOption == .name ? .name : .addedOrder)
+        let items = sorted(boughtItems)
         return items.isEmpty ? nil : ShopListSection(id: Self.boughtSectionID, title: L10n.tr("Comprados"), items: items)
     }
 
-    /// `items` in the order of `option` (newest first for category and added order).
-    private static func sort(_ items: [ShopListItem], by option: ShopListSortOption) -> [ShopListItem] {
-        switch option {
-        case .name:
-            return items.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        case .category, .addedOrder:
-            return items.sorted { $0.createdAt > $1.createdAt }
+    /// `items` by the date they were added, in the direction of ``sortOption``.
+    private func sorted(_ items: [ShopListItem]) -> [ShopListItem] {
+        switch sortOption {
+        case .newestFirst: return items.sorted { $0.createdAt > $1.createdAt }
+        case .oldestFirst: return items.sorted { $0.createdAt < $1.createdAt }
         }
     }
 
     /// Whether `section` is collapsed.
     func isCollapsed(_ section: ShopListSection) -> Bool {
-        collapsedSectionIDs.contains(section.id)
+        !expandedSectionIDs.contains(section.id)
     }
 
     /// Collapses or expands `section`.
     func toggleCollapsed(_ section: ShopListSection) {
-        if collapsedSectionIDs.contains(section.id) {
-            collapsedSectionIDs.remove(section.id)
+        if expandedSectionIDs.contains(section.id) {
+            expandedSectionIDs.remove(section.id)
+            movingResetTask?.cancel()
+            movingSectionID = nil
         } else {
-            collapsedSectionIDs.insert(section.id)
+            expandedSectionIDs.insert(section.id)
+            markMoving(section)
+        }
+    }
+
+    /// Lays `sections` out as a stack of cards
+    func stackEntries(for sections: [ShopListSection]) -> [ShopListStackEntry] {
+        let closed = sections.filter { isCollapsed($0) }
+        let open = sections.filter { !isCollapsed($0) }
+
+        let closedEntries = closed.enumerated().map { index, section in
+            ShopListStackEntry(
+                section: section,
+                isExpanded: false,
+                overlapsNext: index < closed.count - 1,
+                followsExpanded: false,
+                precedesExpanded: false
+            )
+        }
+        let openEntries = open.enumerated().map { index, section in
+            ShopListStackEntry(
+                section: section,
+                isExpanded: true,
+                overlapsNext: false,
+                followsExpanded: index > 0,
+                precedesExpanded: index < open.count - 1
+            )
+        }
+        return closedEntries + openEntries
+    }
+
+    /// Remembers `section` as the moving card for a moment (see ``movingSectionID``).
+    private func markMoving(_ section: ShopListSection) {
+        movingSectionID = section.id
+        movingResetTask?.cancel()
+        movingResetTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled else { return }
+            self?.movingSectionID = nil
         }
     }
 
@@ -239,9 +296,7 @@ final class ShopListViewModel {
     @ObservationIgnored
     private var appliedSnapshotID: UUID?
 
-    /// Shows the house data already in memory right away (loaded by the app's initial
-    /// loading), then brings it up to date if it went stale in the meantime. Waiting for the
-    /// network before showing anything is what left the tab blank for a while.
+    /// Shows the house data already in memory right away
     func setup() async {
         guard !isPreview else { hasLoaded = true; return }
         if let cached = HouseDataStore.shared.snapshot {
@@ -343,9 +398,7 @@ final class ShopListViewModel {
         formatPriceInput(String(Int((value * 100).rounded())))
     }
 
-    /// The required fields that are still empty or invalid. The form disables its confirm
-    /// button while this isn't empty, and ``saveItem(_:name:valueText:quantity:unitMeasurement:category:relatedUsers:addedBy:)``
-    /// refuses to save, so an item can never be created without all of them.
+    /// The required fields that are still empty or invalid. 
     static func missingFields(
         name: String,
         quantity: Int,
@@ -650,7 +703,6 @@ final class ShopListViewModel {
         selectedConsumers: [UserModel]
     ) async -> ShopItemSuggestion? {
         let entry = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Too short to mean anything.
         guard entry.count >= 3 else { return nil }
         return await IntelligenceManager.shared.suggestShopItem(
             for: entry,
@@ -661,15 +713,15 @@ final class ShopListViewModel {
     }
 
     /// A pending item that is the same product as `name`, if any, so the form can offer to add
-    /// to its quantity instead of creating a second card. Candidates come from comparing names;
-    /// the on-device model then confirms the ones that only share a word. Without Apple
-    /// Intelligence, only an identical name counts.
+    /// to its quantity instead of creating a second card.
     func duplicateItem(named name: String) async -> ShopListItem? {
         let candidates = ShopItemDuplicateFinder.candidates(for: name, in: pendingItems)
         for candidate in candidates {
             if ShopItemDuplicateFinder.isExactMatch(name, candidate.name) {
                 return candidate
             }
+            // Comparing with AI is Premium; the free plan only matches identical names.
+            guard PremiumManager.shared.allows(.shopAI) else { continue }
             if await IntelligenceManager.shared.isSameProduct(name, as: candidate.name) == true {
                 return candidate
             }
@@ -687,9 +739,6 @@ final class ShopListViewModel {
     /// Merges a new entry into an item already on the list: adds `amount` to its quantity and
     /// adds `consumers` who aren't sharing it yet (for example, the person adding it now when a
     /// housemate created the item). Name, price, unit and category stay as they are.
-    ///
-    /// Goes through ``saveItem(_:name:valueText:quantity:unitMeasurement:category:relatedUsers:addedBy:)``
-    /// so the points for added beneficiaries work exactly as when editing by hand.
     @discardableResult
     func merge(into item: ShopListItem, adding amount: Int, consumers: [UserModel]) async -> Bool {
         let range = QuantityStepper.allowedRange
@@ -751,7 +800,7 @@ final class ShopListViewModel {
         let total = unitPrice * Double(quantity)
         let share = (total / Double(consumerCount) * 100).rounded() / 100
         let format = FloatingPointFormatStyle<Double>.Currency(code: "BRL").locale(L10n.locale)
-        return L10n.tr("%@ por pessoa", share.formatted(format))
+        return L10n.tr("\(share.formatted(format)) por pessoa")
     }
 
     // MARK: - Previews

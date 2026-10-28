@@ -62,6 +62,8 @@ struct AddMoreItensInteligence: View {
                     writing
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGray6).ignoresSafeArea())
             .navigationTitle("Adicionar com IA")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -75,11 +77,62 @@ struct AddMoreItensInteligence: View {
                     .voiceOverLabel(L10n.tr("Cancelar"))
                     .voiceControlNames([L10n.tr("Fechar"), L10n.tr("Cancelar")])
                 }
+
+                if suggestions == nil {
+                    ToolbarItem(placement: .confirmationAction) {
+                        if isGenerating {
+                            ProgressView()
+                        } else {
+                            Button {
+                                Task { await generate() }
+                            } label: {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12))
+                                    .bold()
+                                    .foregroundColor(.white)
+                            }
+                            .tint(.blue)
+                            .buttonStyle(.glassProminent)
+                            .disabled(trimmedText.count < 3 || voice.isBusy)
+                            .voiceOverLabel(L10n.tr("Gerar itens"))
+                            .voiceControlNames([L10n.tr("Gerar itens"), L10n.tr("Próximo"), L10n.tr("Continuar")])
+                        }
+                    }
+                } else if let suggestions {
+                    // Review step: "Adicionar itens" is the blue checkmark at the top right,
+                    // like confirming the single-item form.
+                    ToolbarItem(placement: .confirmationAction) {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Button {
+                                Task { await save(suggestions) }
+                            } label: {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 12))
+                                    .bold()
+                                    .foregroundColor(.white)
+                            }
+                            .tint(.blue)
+                            .buttonStyle(.glassProminent)
+                            .disabled(included.isEmpty || isCheckingDuplicates)
+                            .voiceOverLabel(L10n.tr("Adicionar itens (\(included.count))"))
+                            .voiceControlNames([L10n.tr("Adicionar"), L10n.tr("Confirmar"), L10n.tr("OK")])
+                        }
+                    }
+                }
+
+                // Closes the keyboard from the text box (Return adds a new line there).
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("OK") { isTextFocused = false }
+                        .fontWeight(.semibold)
+                }
             }
         }
         .presentationDragIndicator(.visible)
+        .presentationBackground(Color(.systemGray6))
         .interactiveDismissDisabled(isSaving)
-        .dismissKeyboardOnTap()
         // The arrow on a card opens the usual item form; confirming replaces that suggestion.
         .sheet(item: $editing) { draft in
             if let suggestions, suggestions.indices.contains(draft.id) {
@@ -100,9 +153,11 @@ struct AddMoreItensInteligence: View {
 
     // MARK: - Step 1: writing
 
+    /// Scrolls with the keyboard up, so the hint at the top stays reachable.
     private var writing: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Escreva um item por linha, com quantidade, preço e para quem é.")
+        ScrollView(showsIndicators: false) {
+        VStack(alignment: .leading, spacing: 24) {
+            Text("Descreva o que deseja adicionar na sua lista, com quantidade, preço(opcional) e quem irá consumir.")
                 .font(.system(size: 15))
                 .foregroundStyle(.subTitleGray)
 
@@ -120,13 +175,14 @@ struct AddMoreItensInteligence: View {
                     .focused($isTextFocused)
                     // Locked while speech is still turning into text.
                     .disabled(voice.isBusy)
-                    .voiceOverLabel(L10n.tr("Escreva um item por linha, com quantidade, preço e para quem é."))
+                    // Same words as the hint above it.
+                    .voiceOverLabel(L10n.tr("Descreva o que deseja adicionar na sua lista, com quantidade, preço(opcional) e quem irá consumir."))
             }
             .font(.system(size: 17))
             .frame(minHeight: 180)
             .padding(12)
             .background(
-                Color(.systemGray6).opacity(0.5),
+                Color.white,
                 in: RoundedRectangle(cornerRadius: 20, style: .continuous)
             )
 
@@ -135,6 +191,12 @@ struct AddMoreItensInteligence: View {
                     .font(.system(size: 13))
                     .foregroundColor(.red)
             }
+            
+            Text("Ou")
+                .font(.system(size: 13))
+                .fontWeight(.semibold)
+                .foregroundStyle(.subTitleGray)
+                .frame(maxWidth: .infinity, alignment: .center)
 
             // Say the items instead of typing; each recording becomes a new line, and the text
             // can still be fixed before generating the cards.
@@ -145,19 +207,10 @@ struct AddMoreItensInteligence: View {
                 appendsToText: true,
                 onStart: { isTextFocused = false }
             )
-
-            Spacer()
-
-            primaryButton(
-                title: L10n.tr("Gerar itens"),
-                isLoading: isGenerating,
-                isEnabled: trimmedText.count >= 3 && !voice.isBusy
-            ) {
-                Task { await generate() }
-            }
         }
         .padding(22)
-        .task { isTextFocused = true }
+        }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     // MARK: - Step 2: review
@@ -197,44 +250,42 @@ struct AddMoreItensInteligence: View {
                     }
                 }
                 .padding(.horizontal, 22)
-            }
 
-            VStack(spacing: 10) {
-                if let errorText {
-                    Text(errorText)
-                        .font(.system(size: 13))
-                        .foregroundColor(.red)
-                }
-
-                if isCheckingDuplicates {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                        Text("Procurando itens repetidos…")
+                // Right under the list (not pinned to the bottom): status, then "Editar texto".
+                VStack(spacing: 12) {
+                    if let errorText {
+                        Text(errorText)
                             .font(.system(size: 13))
-                            .foregroundStyle(.subTitleGray)
+                            .foregroundColor(.red)
                     }
+                    if isCheckingDuplicates {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("Procurando itens repetidos…")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.subTitleGray)
+                        }
+                    }
+                    
+                    // Back to the text, kept as typed, to fix it and try again.
+                    Button {
+                        errorText = nil
+                        resetDuplicates()
+                        withAnimation(.snappy) { self.suggestions = nil }
+                    } label: {
+                        Label("Editar texto", systemImage: "pencil.line")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.titleGray)
+                            .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isSaving)
                 }
-
-                primaryButton(
-                    title: L10n.tr("Adicionar itens (%lld)", included.count),
-                    isLoading: isSaving,
-                    isEnabled: !included.isEmpty && !isCheckingDuplicates
-                ) {
-                    Task { await save(suggestions) }
-                }
-
-                // Back to the text, kept as typed, to fix it and try again.
-                Button("Editar texto") {
-                    errorText = nil
-                    resetDuplicates()
-                    withAnimation(.snappy) { self.suggestions = nil }
-                }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.titleGray)
-                .disabled(isSaving)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 8)
+                .padding(.bottom, 22)
+                .padding(.horizontal, 22)
             }
-            .padding(.horizontal, 22)
-            .padding(.bottom, 22)
         }
         .padding(.top, 22)
     }
@@ -264,16 +315,17 @@ struct AddMoreItensInteligence: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .voiceOverLabel(L10n.tr("Incluir %@", suggestion.name))
+                .voiceOverLabel(L10n.tr("Incluir \(suggestion.name)"))
                 .voiceOverTraits(.isSelected, when: isIncluded)
-                .voiceControlNames([L10n.tr("Incluir %@", suggestion.name)])
+                .voiceControlNames([L10n.tr("Incluir \(suggestion.name)")])
 
                 Button(action: edit) {
                     HStack(spacing: 12) {
-                        Image(systemName: category.symbol)
-                            .font(.system(size: 18, weight: .semibold))
+                        // Category icons are image assets now; SymbolImage also handles SF Symbols.
+                        SymbolImage(name: category.symbol)
                             .foregroundStyle(category.color)
-                            .frame(width: 40, height: 40)
+                            .frame(width: 32, height: 32)
+                            .frame(width: 51, height: 56)
                             .background(
                                 category.softColor.opacity(0.45),
                                 in: RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -284,22 +336,11 @@ struct AddMoreItensInteligence: View {
                             Text(suggestion.name)
                                 .font(.system(size: 17, weight: .semibold))
                                 .foregroundStyle(.titleGray)
-
-                            Text(detailText(for: suggestion))
-                                .font(.system(size: 13))
-                                .foregroundStyle(.subTitleGray)
-
-                            // Say when the house is only the default, so a misread "para mim" is easy
-                            // to spot before saving.
-                            if suggestion.consumers == nil {
-                                Text("Para: todos (não informado)")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(.orange)
-                            } else if !consumers.isEmpty {
-                                Text(L10n.tr("Para: %@", consumers.map(\.name).joined(separator: ", ")))
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(.subTitleGray)
-                            }
+                            
+                            // One line each, with an icon: amount (and price), category, people.
+                            infoLine("dumbbell.fill", amountText(for: suggestion))
+                            infoLine("tag.fill", category.displayName)
+                            infoLine("person.2.fill", peopleText(for: suggestion, consumers: consumers))
 
                             if let share = ShopListViewModel.shareText(
                                 unitPrice: suggestion.unitPrice,
@@ -323,20 +364,18 @@ struct AddMoreItensInteligence: View {
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
                 .voiceOverHint(L10n.tr("Toque duas vezes para editar."))
-                .voiceControlNames([L10n.tr("Editar %@", suggestion.name)])
+                .voiceControlNames([L10n.tr("Editar \(suggestion.name)")])
             }
 
-            // Kept outside the edit button so its menu can be tapped on its own.
             if let duplicate {
                 duplicateBar(for: suggestion, existing: duplicate, isMerging: isMerging, setMerging: setMerging)
-                    .padding(.leading, 56)
             }
         }
         .padding(.vertical, 12)
         .padding(.leading, 6)
         .padding(.trailing, 14)
         .background(
-            Color(.systemGray6).opacity(0.5),
+            Color.white,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
         .opacity(isIncluded ? 1 : 0.5)
@@ -353,31 +392,29 @@ struct AddMoreItensInteligence: View {
         let sameUnit = existing.unitMeasurement == suggestion.unit
         let existingText = "\(existing.name) · \(existing.quantity) \(existing.unitMeasurement.getDisplayName(for: Double(existing.quantity)))"
 
-        return HStack(alignment: .firstTextBaseline, spacing: 6) {
+        return HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: "exclamationmark.circle.fill")
-                .font(.system(size: 13))
+                .font(.system(size: 15))
                 .foregroundStyle(.orange)
+                .frame(width: 44)
                 .accessibilityHidden(true)
 
             Text(sameUnit
-                 ? L10n.tr("Já está na lista: %@", existingText)
-                 : L10n.tr("Já está na lista, em outra unidade: %@", existingText))
+                 ? L10n.tr("Já está na lista: \(existingText)")
+                 : L10n.tr("Já está na lista, em outra unidade: \(existingText)"))
                 .font(.system(size: 13))
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if sameUnit {
                 Menu {
-                    Button {
-                        setMerging(true)
+                    // Plain options in a picker: only the chosen one gets the system checkmark,
+                    // so it's clear which is picked (icons on both made them look alike).
+                    Picker(selection: Binding(get: { isMerging }, set: { setMerging($0) })) {
+                        Text(L10n.tr("Adicionar como novo item")).tag(false)
+                        Text(L10n.tr("Somar à quantidade (\(existing.quantity) → \(existing.quantity + suggestion.quantity))")).tag(true)
                     } label: {
-                        Label(L10n.tr("Somar à quantidade (%lld → %lld)", existing.quantity, existing.quantity + suggestion.quantity),
-                              systemImage: isMerging ? "checkmark" : "plus")
-                    }
-                    Button {
-                        setMerging(false)
-                    } label: {
-                        Label(L10n.tr("Adicionar como novo item"), systemImage: isMerging ? "plus.square" : "checkmark")
+                        EmptyView()
                     }
                 } label: {
                     HStack(spacing: 3) {
@@ -394,12 +431,22 @@ struct AddMoreItensInteligence: View {
         }
     }
 
-    /// "2 quilogramas · Alimentos · R$ 25,00".
-    private func detailText(for suggestion: ShopItemSuggestion) -> String {
-        var parts = [
-            "\(suggestion.quantity) \(suggestion.unit.getDisplayName(for: Double(suggestion.quantity)))",
-            suggestion.category.displayName
-        ]
+    /// A small grey line with its icon in front ("􀝾 2 quilogramas").
+    private func infoLine(_ systemImage: String, _ text: String) -> some View {
+        Label {
+            Text(text)
+        } icon: {
+            Image(systemName: systemImage)
+                .font(.system(size: 11))
+                .frame(width: 16)
+        }
+        .font(.system(size: 13))
+        .foregroundStyle(.subTitleGray)
+    }
+
+    /// "2 quilogramas · R$ 25,00" (the price only when one was said).
+    private func amountText(for suggestion: ShopItemSuggestion) -> String {
+        var parts = ["\(suggestion.quantity) \(suggestion.unit.getDisplayName(for: Double(suggestion.quantity)))"]
         if let unitPrice = suggestion.unitPrice {
             let format = FloatingPointFormatStyle<Double>.Currency(code: "BRL").locale(L10n.locale)
             parts.append((unitPrice * Double(suggestion.quantity)).formatted(format))
@@ -407,29 +454,13 @@ struct AddMoreItensInteligence: View {
         return parts.joined(separator: " · ")
     }
 
-    // MARK: - Buttons
-
-    private func primaryButton(
-        title: String,
-        isLoading: Bool,
-        isEnabled: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Text(title)
-                        .fontWeight(.semibold)
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 44)
-        }
-        .buttonStyle(.glassProminent)
-        .tint(.black)
-        .disabled(!isEnabled || isLoading)
+    /// "Ana, Bruno", or "Todos" when it's for the whole house (said, or nobody named, which is
+    /// the default when saving).
+    private func peopleText(for suggestion: ShopItemSuggestion, consumers: [UserModel]) -> String {
+        let house = Set(viewModel.houseUsers.map(\.id))
+        let isEveryone = suggestion.consumers == nil
+            || (!house.isEmpty && Set(consumers.map(\.id)) == house)
+        return isEveryone ? L10n.tr("Todos") : consumers.map(\.name).joined(separator: ", ")
     }
 
     // MARK: - Actions
@@ -485,11 +516,8 @@ struct AddMoreItensInteligence: View {
     private func setDuplicate(_ existing: ShopListItem?, at index: Int, for suggestion: ShopItemSuggestion) {
         withAnimation(.snappy) {
             duplicates[index] = existing
-            if let existing, existing.unitMeasurement == suggestion.unit {
-                merging.insert(index)
-            } else {
-                merging.remove(index)
-            }
+            // "Novo item" by default; the person picks "Somar" in the menu if they want it.
+            merging.remove(index)
         }
     }
 

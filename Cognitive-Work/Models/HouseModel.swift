@@ -37,6 +37,17 @@ class HouseModel: CloudKitSyncable {
 
     /// References to the ``RoomModel`` records belonging to this house.
     private var roomsReference: [CKRecord.Reference]?
+
+    /// Until when the house has Premium, written by the device of the member who subscribed.
+    /// See ``PremiumManager``.
+    private(set) var premiumExpiresAt: Date? = nil
+
+    /// iCloud record name of the member paying for Premium (``UserModel/ownerRecordName``).
+    private(set) var premiumOwnerRecordName: String? = nil
+
+    /// Product ID of the plan paying for Premium (see ``PremiumPlan``), so every member knows
+    /// which house size it covers.
+    private(set) var premiumProductID: String? = nil
     
     /// The house's chores, fetched from CloudKit.
     var chores: [ChoreModel] {
@@ -110,6 +121,9 @@ class HouseModel: CloudKitSyncable {
         self.usersReference = record["users"] as? [CKRecord.Reference]
         self.shopListReference = record["shopList"] as? CKRecord.Reference
         self.roomsReference = record["rooms"] as? [CKRecord.Reference]
+        self.premiumExpiresAt = record["premiumExpiresAt"] as? Date
+        self.premiumOwnerRecordName = record["premiumOwner"] as? String
+        self.premiumProductID = record["premiumProductID"] as? String
     }
 
     /// Creates a new, unsaved house.
@@ -154,6 +168,9 @@ class HouseModel: CloudKitSyncable {
         record["users"] = usersReference
         record["shopList"] = shopListReference
         record["rooms"] = roomsReference
+        // The premium fields are left out on purpose: only
+        // ``setPremium(expiresAt:ownerRecordName:productID:)`` writes them, so renaming the house with an
+        // old copy in memory never erases a subscription another member just saved.
     }
     
     /// Adds `rooms` to the house's room list and saves the house.
@@ -286,6 +303,26 @@ class HouseModel: CloudKitSyncable {
             return await CloudKitManager.shared.fetchRecord(for: self)
         }
         return nil
+    }
+
+    // MARK: - Premium
+
+    /// Saves who pays for Premium, with which plan and until when. Pass `nil` to remove Premium.
+    ///
+    /// Writes only these two fields on the latest copy of the record. Any member may call it
+    /// (the share is read-write); ``PremiumManager`` only does when this device has the
+    /// subscription.
+    @discardableResult
+    func setPremium(expiresAt: Date?, ownerRecordName: String?, productID: String?) async -> Bool {
+        guard let record = await fetchSelfRecord() else { return false }
+        record["premiumExpiresAt"] = expiresAt
+        record["premiumOwner"] = ownerRecordName
+        record["premiumProductID"] = productID
+        guard await CloudKitManager.shared.update(record: record) else { return false }
+        premiumExpiresAt = expiresAt
+        premiumOwnerRecordName = ownerRecordName
+        premiumProductID = productID
+        return true
     }
 
     // MARK: - Delete

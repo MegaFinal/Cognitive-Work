@@ -26,10 +26,8 @@ struct ChoreCard: View {
             
             // MARK: - Room icon, responsible member and tags
             HStack {
-                Image(systemName: room?.symbol ?? chore.symbolName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: width * 0.2)
+                SymbolImage(name: room?.symbol ?? chore.symbolName)
+                    .frame(width: width * 0.3)
                     .padding(.horizontal)
                 
                 ChorePriority(chore: chore, user: user)
@@ -50,17 +48,9 @@ struct ChoreCard: View {
         let tier = ChoreDurationTier.from(minutes: chore.duration)
         let roomName = room?.name.localizedDefault ?? L10n.tr("Cômodo")
         if let user {
-            return L10n.tr(
-                "%@: %@. Responsável: %@, prioridade %@, duração %@",
-                roomName, chore.localizedName, user.name,
-                chore.priorityTag.displayName, tier.displayText
-            )
+            return L10n.tr("\(roomName): \(chore.localizedName). Responsável: \(user.name), prioridade \(chore.priorityTag.displayName), duração \(tier.displayText)")
         }
-        return L10n.tr(
-            "%@: %@. Prioridade %@, duração %@",
-            roomName, chore.localizedName,
-            chore.priorityTag.displayName, tier.displayText
-        )
+        return L10n.tr("\(roomName): \(chore.localizedName). Prioridade \(chore.priorityTag.displayName), duração \(tier.displayText)")
     }
     
     /// Room name over the chore name.

@@ -27,42 +27,47 @@ struct PendingPaymentsView: View {
     var body: some View {
         let groups = viewModel.groups
 
-        VStack(alignment: .leading, spacing: 22) {
-            // MARK: - Balance and the two totals ("Você deve" / "Te devem")
-            VStack(spacing: 12) {
-                DebtBalanceCard(
-                    title: viewModel.balanceTitle,
-                    caption: viewModel.balanceCaption,
-                    amountText: viewModel.balanceText,
-                    color: viewModel.balanceColor,
-                    accessibilityAmount: viewModel.balanceAccessibilityText
-                )
-                summaryCards
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+        // MARK: - The whole page scrolls: title, balance, totals, then the receipts
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Pendências")
+                    .font(.custom("Alan Sans", size: 34))
+                    .fontWeight(.bold)
+                    .padding(.horizontal, 10)
+                    .accessibilityAddTraits(.isHeader)
 
-            // MARK: - Empty state, or one section per housemate
-            if groups.isEmpty {
-                // Centered in the space under the cards.
-                emptyState
-                    .frame(maxHeight: .infinity)
-                    .padding(.bottom, 60)
-            } else {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 22) {
+                // Balance, then "Você deve" / "Te devem"
+                VStack(spacing: 16) {
+                    DebtBalanceCard(
+                        title: viewModel.balanceTitle,
+                        caption: viewModel.balanceCaption,
+                        amountText: viewModel.balanceText,
+                        color: viewModel.balanceColor,
+                        accessibilityAmount: viewModel.balanceAccessibilityText
+                    )
+                    summaryCards
+                }
+
+                // MARK: Empty state, or one receipt per housemate
+                if groups.isEmpty {
+                    emptyState
+                        .padding(.top, 40)
+                } else {
+                    VStack(alignment: .leading, spacing: 28) {
                         ForEach(groups) { group in
                             section(for: group)
                                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 60)
+                    .padding(.top, 10)
                 }
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 60)
         }
         .background(Color.white.ignoresSafeArea())
-        .navigationTitle("Pendências")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .animation(.snappy, value: viewModel.selectedDirection)
         .animation(.snappy, value: viewModel.groups.map(\.id))
@@ -126,6 +131,7 @@ struct PendingPaymentsView: View {
         DebtGroupSection(
             user: group.counterparty,
             title: viewModel.title(for: group),
+            banner: group.counterparty.banner,
             totalText: viewModel.currencyText(group.total),
             rows: group.entries.map {
                 .init(
@@ -145,7 +151,11 @@ struct PendingPaymentsView: View {
             confirmationMessage: viewModel.confirmationMessage,
             confirmationButtonTitle: viewModel.confirmationButtonTitle,
             onConfirmSettlement: { viewModel.confirmSettlementAnnouncing() },
-            onCancelSettlement: { viewModel.cancelSettlement() }
+            onCancelSettlement: { viewModel.cancelSettlement() },
+            headerAccessibilityText: viewModel.headerAccessibilityLabel(for: group),
+            totalAccessibilityText: viewModel.accessibilityAmount(group.total),
+            settleAccessibilityLabel: viewModel.settleAccessibilityLabel(for: group),
+            settleAccessibilityValue: viewModel.settleAccessibilityValue(for: group)
         )
     }
 
@@ -167,13 +177,14 @@ struct PendingPaymentsView: View {
     /// Shown when the selected side has no debts.
     private var emptyState: some View {
         VStack(spacing: 10) {
-            Image(systemName: "checkmark.circle")
-                .font(.system(size: 44))
+            SymbolImage(name: "plastic.bag")
+                .frame(width: 64, height: 64)
                 .foregroundStyle(.choreYellow)
                 .accessibilityHidden(true)
 
             Text(viewModel.emptyTitle)
-                .font(.system(size: 22, weight: .bold))
+                .font(.custom("Alan Sans", size: 24))
+                .fontWeight(.bold)
                 .foregroundStyle(.titleGray)
 
             Text(viewModel.emptyMessage)

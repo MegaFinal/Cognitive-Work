@@ -77,7 +77,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                 .frame(width: width * 0.84, alignment: .leading)
                 .padding(.top, 30)
                 .padding(.bottom, width * 0.02)
-                .accessibilityLabel(Text(L10n.tr("%lld moradores na casa", houseUsers.count)))
+                .accessibilityLabel(Text(L10n.tr("\(houseUsers.count) moradores na casa")))
             
             if !hasLoadedUsers {
                 ProgressView()
@@ -197,7 +197,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                             UserProfilePictureTag(user: user, widthMultiplier: 0.15)
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(Text(L10n.tr("%@, pronto", user.name)))
+                        .accessibilityLabel(Text(L10n.tr("\(user.name), pronto")))
                     }
                 }
             }
@@ -218,7 +218,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
                             UserProfilePictureTag(user: user, widthMultiplier: 0.15)
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(Text(L10n.tr("%@, ainda configurando o tempo livre", user.name)))
+                        .accessibilityLabel(Text(L10n.tr("\(user.name), ainda configurando o tempo livre")))
                     }
                 }
             }
@@ -348,7 +348,7 @@ struct InviteAndWaitUsersFreeTimeOnboardingView: View {
         if pendingUsers.isEmpty {
             VoiceOver.announce(L10n.tr("Todos os moradores estão prontos"))
         } else {
-            VoiceOver.announce(L10n.tr("Aguardando os moradores: %lld de %lld prontos", completedUsers.count, houseUsers.count))
+            VoiceOver.announce(L10n.tr("Aguardando os moradores: \(completedUsers.count) de \(houseUsers.count) prontos"))
         }
     }
 }

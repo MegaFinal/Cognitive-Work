@@ -61,9 +61,7 @@ struct DateDivisionComponent: View {
         // One element with the full dates ("Divisão atual, de 28 de setembro a 11 de outubro").
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
-            L10n.tr("Divisão atual, de %@ a %@",
-                    ChartA11y.dayMonth(viewModel.periodStart),
-                    ChartA11y.dayMonth(viewModel.periodFinish))
+            L10n.tr("Divisão atual, de \(ChartA11y.dayMonth(viewModel.periodStart)) a \(ChartA11y.dayMonth(viewModel.periodFinish))")
         )
     }
 }

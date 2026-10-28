@@ -25,12 +25,21 @@ struct ResponsibleUserPicker: View {
         selectedUsers.contains { $0.id == user.id }
     }
     
+    /// Avatar and "+" button size, as a fraction of the screen width.
+    private let avatarWidthMultiplier = 0.11
+    
     var body: some View {
-        HStack(spacing: 5) {
-            // MARK: - Selected members (tap one to remove it)
+        HStack(spacing: 10) {
+            // MARK: - Selected members (tap one, or its "–" badge, to remove it)
             ForEach(selectedUsers) { selectedUser in
-                UserProfilePictureTag(user: selectedUser, widthMultiplier: 0.1)
-                    .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
+                UserProfilePictureTag(user: selectedUser, widthMultiplier: avatarWidthMultiplier)
+                    .overlay(alignment: .topTrailing) {
+                        Image(systemName: "minus.circle.fill")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, Color.choreOrange)
+                            .font(.system(size: 18))
+                            .offset(x: 3, y: -3)
+                    }
                     .onTapGesture {
                         selectedUsers.removeAll { $0.id == selectedUser.id }
                     }
@@ -39,10 +48,10 @@ struct ResponsibleUserPicker: View {
                     .voiceOverLabel(selectedUser.name)
                     .voiceOverHint(L10n.tr("Toque duas vezes para remover dos responsáveis."))
                     .accessibilityAddTraits(.isButton)
-                    .voiceControlNames([selectedUser.name, L10n.tr("Remover %@", selectedUser.name)])
+                    .voiceControlNames([selectedUser.name, L10n.tr("Remover \(selectedUser.name)")])
                     .accessibilityAction {
                         selectedUsers.removeAll { $0.id == selectedUser.id }
-                        VoiceOver.announce(L10n.tr("%@ removido", selectedUser.name))
+                        VoiceOver.announce(L10n.tr("\(selectedUser.name) removido"))
                     }
             }
             
@@ -65,10 +74,10 @@ struct ResponsibleUserPicker: View {
                 }
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 20))
+                    .font(.system(size: 22))
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
-                    .frame(width: 38, height: 38)
+                    .frame(width: width * avatarWidthMultiplier, height: width * avatarWidthMultiplier)
                     .background(Color.blue)
                     .clipShape(Circle())
             }

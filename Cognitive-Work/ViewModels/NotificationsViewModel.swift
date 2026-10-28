@@ -395,8 +395,8 @@ class NotificationsViewModel {
                 id: "grab-\(day.timeIntervalSince1970)",
                 kind: .grabChore,
                 // Plural rules ("1 tarefa" / "3 tarefas") live in Localizable.xcstrings.
-                title: L10n.tr("%lld tarefas a pegar hoje", list.count),
-                subtitle: L10n.tr(Notifications.grabChore.subTitle),
+                title: L10n.tr("\(list.count) tarefas a pegar hoje"),
+                subtitle: L10n.tr(key: Notifications.grabChore.subTitle),
                 date: day,
                 destination: .pickChores
             )
@@ -429,10 +429,10 @@ class NotificationsViewModel {
                 kind = .noUserDelayedChore
                 // Lowercase first letter so it reads well mid-sentence ("Ninguém pegou limpar...").
                 let midSentenceName: String = choreName.prefix(1).lowercased() + choreName.dropFirst()
-                title = L10n.tr("Ninguém pegou %@", midSentenceName)
+                title = L10n.tr("Ninguém pegou \(midSentenceName)")
             } else if occurrence.userIDs.contains(where: { myIDs.contains($0) }) {
                 kind = .yourDelayedChore
-                title = L10n.tr("%@ está atrasado", choreName)
+                title = L10n.tr("\(choreName) está atrasado")
             } else {
                 return nil // someone else's late chore: don't notify me
             }
@@ -448,7 +448,7 @@ class NotificationsViewModel {
                 id: "late-\(recordName)",
                 kind: kind,
                 title: title,
-                subtitle: L10n.tr("%@ · cerca de %lld min", room, Int(chore.duration.rounded())),
+                subtitle: L10n.tr("\(room) · cerca de \(Int(chore.duration.rounded())) min"),
                 date: lateSince,
                 destination: .chore(chore, occurrence.assignment)
             )
@@ -466,8 +466,8 @@ class NotificationsViewModel {
             NotificationModel(
                 id: "division-\(cycleStart.timeIntervalSince1970)",
                 kind: .newDivision,
-                title: L10n.tr(Notifications.newDivision.rawValue),
-                subtitle: L10n.tr(Notifications.newDivision.subTitle),
+                title: L10n.tr(key: Notifications.newDivision.rawValue),
+                subtitle: L10n.tr(key: Notifications.newDivision.subTitle),
                 date: cycleStart,
                 destination: .dashboard
             )
@@ -480,8 +480,8 @@ class NotificationsViewModel {
                 NotificationModel(
                     id: "retro-\(cycleStart.timeIntervalSince1970)",
                     kind: .retrospective,
-                    title: L10n.tr(Notifications.retrospective.rawValue),
-                    subtitle: L10n.tr(Notifications.retrospective.subTitle),
+                    title: L10n.tr(key: Notifications.retrospective.rawValue),
+                    subtitle: L10n.tr(key: Notifications.retrospective.subTitle),
                     date: cycleStart,
                     destination: .retrospective
                 )
@@ -499,8 +499,8 @@ class NotificationsViewModel {
             return NotificationModel(
                 id: "user-\(id.recordName)",
                 kind: .newUser,
-                title: L10n.tr("%@ entrou na casa", user.name),
-                subtitle: L10n.tr(Notifications.newUser.subTitle),
+                title: L10n.tr("\(user.name) entrou na casa"),
+                subtitle: L10n.tr(key: Notifications.newUser.subTitle),
                 date: joined,
                 destination: .newMember
             )
@@ -529,7 +529,7 @@ class NotificationsViewModel {
         // Singular/plural ("1 nova notificação" / "3 novas notificações") come from Localizable.xcstrings.
         newCount == 0
             ? L10n.tr("Nenhuma notificação nova")
-            : L10n.tr("%lld novas notificações", newCount)
+            : L10n.tr("\(newCount) novas notificações")
     }
 
     /// The last time the user opened the screen (or the distant past).

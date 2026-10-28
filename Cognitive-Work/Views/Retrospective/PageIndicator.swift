@@ -35,7 +35,7 @@ struct PageIndicator: View {
         // One adjustable element: swipe up/down to change page.
         .accessibilityElement(children: .ignore)
         .voiceOverLabel(L10n.tr("Página"))
-        .voiceOverValue(L10n.tr("%lld de %lld", current + 1, count))
+        .voiceOverValue(L10n.tr("\(current + 1) de \(count)"))
         .accessibilityAdjustableAction { direction in
             switch direction {
             case .increment:

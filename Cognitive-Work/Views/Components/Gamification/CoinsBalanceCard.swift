@@ -15,7 +15,7 @@ struct CoinsBalanceCard: View {
 
     /// "1 moeda" or "N moedas", translated.
     private var coinsText: String {
-        coins == 1 ? L10n.tr("1 moeda") : L10n.tr("%lld moedas", coins)
+        coins == 1 ? L10n.tr("1 moeda") : L10n.tr("\(coins) moedas")
     }
 
     var body: some View {

@@ -106,7 +106,8 @@ struct ContentView: View {
     
     // MARK: - Tabs
     
-    /// The five tabs: Tarefas, Compras, Progresso, Recompensas and Perfil.
+    /// The four tabs: Tarefas, Compras, Recompensas and Perfil. The progress screen is opened from
+    /// the progress cards on Tarefas.
     private var tabs: some View {
         TabView {
             ChoresView()
@@ -117,11 +118,6 @@ struct ContentView: View {
             ShopListView()
                 .tabItem {
                     Label("Compras", systemImage: "basket")
-                }
-            
-            DashboardView()
-                .tabItem {
-                    Label("Progresso", systemImage: "figure.2")
                 }
             
             GamificationView()

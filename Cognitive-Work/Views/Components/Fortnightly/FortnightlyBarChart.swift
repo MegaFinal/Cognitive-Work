@@ -52,7 +52,7 @@ struct FortnightlyBarChart: View {
         }
         // VoiceOver: days in order, bars as buttons, plus an audio graph of minutes per resident.
         .accessibilityElement(children: .contain)
-        .voiceOverLabel(L10n.tr("Gráfico da escala quinzenal, %lld tarefas em %lld dias", entries.count, daysToShow))
+        .voiceOverLabel(L10n.tr("Gráfico da escala quinzenal, \(entries.count) tarefas em \(daysToShow) dias"))
         .accessibilityChartDescriptor(chartDescriptor)
         
         // MARK: - Scrolling or fixed
@@ -133,7 +133,7 @@ private struct FortnightlyDayUserBar: View {
                 .accessibilityValue(
                     entries.isEmpty
                         ? L10n.tr("Sem tarefas")
-                        : L10n.tr("%lld tarefas", entries.count)
+                        : L10n.tr("\(entries.count) tarefas")
                 )
             
             // MARK: - Bars (colored by member, sized by chore length)

@@ -82,7 +82,7 @@ struct VoiceControlButton: View {
                 Task { await voice.start(contextualStrings: contextualStrings) }
             }
         } label: {
-            VStack(spacing: 8) {
+            VStack(spacing: 24) {
                 Group {
                     if voice.isPreparing || voice.isFinishing {
                         ProgressView()
@@ -98,7 +98,7 @@ struct VoiceControlButton: View {
                 .background(Circle().fill(voice.isListening ? Color.red : Color.black))
 
                 Text(micCaption)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.subTitleGray)
             }
             .contentShape(Rectangle())

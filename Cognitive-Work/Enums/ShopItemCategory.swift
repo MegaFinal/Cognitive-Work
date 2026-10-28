@@ -31,6 +31,9 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
     /// Identifier for SwiftUI lists (the raw value).
     var id: String { rawValue }
 
+    /// The fixed order of the cards on the shopping list
+    static let listOrder: [ShopItemCategory] = [.food, .drinks, .produce, .cleaning, .other, .hygiene, .pets, .home]
+
     /// Preselected when adding an item: the first one in the picker.
     static let `default`: ShopItemCategory = .food
 
@@ -40,25 +43,26 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
         case .food: return L10n.tr("Alimentos")
         case .produce: return L10n.tr("Hortifruti")
         case .drinks: return L10n.tr("Bebidas")
-        case .cleaning: return L10n.tr("Limpeza")
-        case .hygiene: return L10n.tr("Higiene")
+        case .cleaning: return L10n.tr("Produtos de limpeza")
+        case .hygiene: return L10n.tr("Farmácia")
         case .home: return L10n.tr("Casa")
         case .pets: return L10n.tr("Pets")
         case .other: return L10n.tr("Outros")
         }
     }
 
-    /// SF Symbol drawn on cards and chips.
+    /// Icon drawn on cards and chips: the `ShoppingListSymbols` artwork (the home category has
+    /// none yet, so it keeps an SF Symbol). Drawn with ``SymbolImage``.
     var symbol: String {
         switch self {
-        case .food: return "fork.knife"
-        case .produce: return "carrot.fill"
-        case .drinks: return "mug.fill"
-        case .cleaning: return "sparkles"
-        case .hygiene: return "shower.fill"
+        case .food: return "food"
+        case .produce: return "fruit"
+        case .drinks: return "drinks"
+        case .cleaning: return "cleaning"
+        case .hygiene: return "farmacy"
         case .home: return "house"
-        case .pets: return "pawprint"
-        case .other: return "basket"
+        case .pets: return "pets"
+        case .other: return "plastic.bag"
         }
     }
 
@@ -67,7 +71,7 @@ enum ShopItemCategory: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .food: return .orange
         case .produce: return .green
-        case .drinks: return .purple
+        case .drinks: return .yellow
         case .cleaning: return .blue
         case .hygiene: return .blue
         case .home: return .yellow

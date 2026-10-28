@@ -91,9 +91,7 @@ struct ProfileBannerSheet: View {
         .animation(.easeInOut(duration: 0.3), value: selectedColor)
         .animation(.easeInOut(duration: 0.3), value: pattern)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(L10n.tr("Pré-visualização do banner: %@, %@",
-                                    selectedColor.voiceOverName,
-                                    pattern.displayName))
+        .accessibilityLabel(L10n.tr("Pré-visualização do banner: \(selectedColor.voiceOverName), \(pattern.displayName)"))
     }
     
     // MARK: - Color

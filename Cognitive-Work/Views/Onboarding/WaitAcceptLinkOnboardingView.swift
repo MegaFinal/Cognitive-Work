@@ -33,7 +33,7 @@ struct WaitAcceptLinkOnboardingView: View {
         guard !name.isEmpty else {
             return L10n.tr("Oi! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠")
         }
-        return L10n.tr("Oi, aqui é %@! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠", name)
+        return L10n.tr("Oi, aqui é \(name)! Baixei o Pipa e quero entrar na nossa casa. Pode me mandar o link de convite? 🏠")
     }
     
     // MARK: - Body

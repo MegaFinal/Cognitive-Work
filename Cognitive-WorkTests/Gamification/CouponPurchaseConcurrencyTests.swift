@@ -218,7 +218,7 @@ struct CouponPurchaseConcurrencyTests {
 
     @Test func holderIsSparedTheChoreInTheNextDivision() {
         let ana = F.id("ana")
-        var coupon = CouponModel(name: "dishes", isOnSale: true, price: 26, tier: .bronze1,
+        var coupon = CouponModel(name: "dishes", isOnSale: true, price: 26, tier: .novatoDaCasa,
                                  currentUser: CKRecord.Reference(recordID: ana, action: .none),
                                  task: CKRecord.Reference(recordID: dishes, action: .none))
         coupon.purchasedCycleKey = "2026-10-02"
@@ -243,7 +243,7 @@ struct CouponPurchaseConcurrencyTests {
     @Test func couponIsUsedWhenTheDivisionIsGeneratedAgainTheSameDay() {
         let ana = F.id("ana")
         let latest = F.cycle(start: F.day(2026, 10, 21))
-        var coupon = CouponModel(name: "dishes", isOnSale: true, price: 26, tier: .bronze1,
+        var coupon = CouponModel(name: "dishes", isOnSale: true, price: 26, tier: .novatoDaCasa,
                                  currentUser: CKRecord.Reference(recordID: ana, action: .none),
                                  task: CKRecord.Reference(recordID: dishes, action: .none))
         coupon.purchasedCycleKey = latest.key

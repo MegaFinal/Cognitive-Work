@@ -7,25 +7,15 @@
 
 import SwiftUI
 
-/// A dashboard card with a horizontal bar. It shows one of two things:
-/// - The user's share of the house's mental effort, with the ideal share marked on the bar.
-/// - How many public chores have no owner yet.
+/// A dashboard card with a horizontal bar: the user's share of the house's mental effort,
+/// with the ideal share marked on the bar.
 struct BarPercentageComponent: View {
     /// Provides the shares, the counts and their texts.
     @State var viewModel: DashboardViewModel
-    
-    /// `true` shows the "chores without owner" card; `false` shows the mental effort card.
-    ///
-    /// The "without owner" layout is temporary and will change when the pending chores section is done.
-    let isUnassignedChores: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if isUnassignedChores {
-                unasingededChoresContent
-            } else {
-                cognitiveLoadContent
-            }
+            cognitiveLoadContent
         }
         .padding()
         .background(Color(.systemGray6).opacity(0.5))
@@ -80,54 +70,6 @@ struct BarPercentageComponent: View {
         }
     }
     
-    // MARK: - Unassigned Chores
-    // TODO: Temporary visualization. Replace this layout when the pending chores section is finalized.
-    
-    /// The "chores without owner" card: the count, the bar and its legend.
-    private var unasingededChoresContent: some View {
-        
-        VStack(alignment: .leading, spacing: 16) {
-            
-            HStack(alignment: .top, spacing: 12) {
-                Text("\(viewModel.unownedPublicCount)")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundStyle(.orange)
-                    // Read by the title below ("3 tarefas sem dono").
-                    .accessibilityHidden(true)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Tarefas sem dono")
-                        .font(.title2.bold())
-                        .voiceOverLabel(L10n.tr("%lld tarefas sem dono", viewModel.unownedPublicCount))
-                        .accessibilityAddTraits(.isHeader)
-                    
-                    Text("O trabalho de notar, lembrar e distribuir tarefas também faz parte da organização da casa")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            do {
-                ZStack(alignment: .leading) {
-                    baseBarChart
-                    unassignedChoresChart
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: height * 0.05)
-                .accessibilityElement(children: .ignore)
-                .voiceOverLabel(L10n.tr("Gráfico de tarefas sem dono"))
-                .voiceOverValue(viewModel.unownedAccessibilityValue)
-            }
-            
-            HStack(spacing: 16) {
-                caption("tarefas sem dono", .orange)
-                caption("tarefas de moradores", .gray.opacity(0.2))
-            }
-            .padding(.top, 4)
-            .accessibilityHidden(true)
-        }
-    }
-    
-    
     // MARK: - Charts
     
     /// The full gray bar behind the colored one.
@@ -136,12 +78,6 @@ struct BarPercentageComponent: View {
             .frame(maxWidth: .infinity)
             .frame(height: height * 0.03)
             .foregroundStyle(Color(.systemGray5).opacity(0.8))
-    }
-    
-    /// The orange part of the bar: the share of public chores without owner (temporary).
-    private var unassignedChoresChart: some View {
-        
-        filledBar(progress: viewModel.unownedPublicProgress, color: .orange)
     }
     
     // MARK: - Charts Cognive workload
@@ -251,7 +187,7 @@ struct BarPercentageComponent: View {
     viewModel.myCognitiveShareText = "100%"
     viewModel.idealCognitiveShareText = "50%"
     
-    return BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
+    return BarPercentageComponent(viewModel: viewModel)
 }
 
 
@@ -262,5 +198,5 @@ struct BarPercentageComponent: View {
     viewModel.myCognitiveShareText = "100%"
     viewModel.idealCognitiveShareText = "100%"
     
-    return BarPercentageComponent(viewModel: viewModel, isUnassignedChores: false)
+    return BarPercentageComponent(viewModel: viewModel)
 }

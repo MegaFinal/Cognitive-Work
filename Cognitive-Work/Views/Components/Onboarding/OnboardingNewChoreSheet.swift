@@ -118,13 +118,9 @@ struct OnboardingNewChoreSheet: View {
     /// icon, and the chore's name written straight on it.
     private var heroCard: some View {
         VStack(spacing: 18) {
-            Image(systemName: selectedRoom?.symbol ?? "house")
-                .resizable()
-                .scaledToFit()
-                .fontWeight(.light)
-                .frame(width: 64, height: 64)
-                .contentTransition(.symbolEffect(.replace))
-                .accessibilityDecorative()
+            SymbolImage(name: selectedRoom?.symbol ?? "house")
+                .frame(width: 88, height: 88)
+                .accessibilityHidden(true)
             
             VStack(spacing: 6) {
                 TextField(

@@ -26,7 +26,7 @@ struct DoughnutChart: View {
     
     /// "X de Y" (done of total).
     private var completedAndAllChores: String {
-        L10n.tr("%lld de %lld", viewModel.completedToday, viewModel.totalToday)
+        L10n.tr("\(viewModel.completedToday) de \(viewModel.totalToday)")
     }
     
     /// Two slices: done (blue) and still to do (light gray).

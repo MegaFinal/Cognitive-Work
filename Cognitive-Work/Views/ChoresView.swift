@@ -46,6 +46,12 @@ struct ChoresView: View {
     
     /// Opens the screen that creates a new division (from the new member pop-up).
     @State private var isResetting = false
+
+    /// The Premium paywall (re-dividing mid-cycle is Premium).
+    @State private var paywall: PremiumFeature?
+    
+    /// Opens the progress screen (from any of the progress cards).
+    @State private var isShowingProgress = false
     
     /// Creates the view, optionally injecting a pre-populated view model (used by previews and tests).
     init(carouselVM: CarouselViewModel = CarouselViewModel()) {
@@ -173,10 +179,11 @@ struct ChoresView: View {
                 // MARK: - Unassigned chores popup, always on top of everything else
                 if carouselVM.isShowingUnassignedList {
                     
-                    Color.clear
+                    Color.black.opacity(0.3)
                         .contentShape(Rectangle())
                         .ignoresSafeArea()
                         .zIndex(2000)
+                        .transition(.opacity)
                         .onTapGesture {
                             carouselVM.dismissUnassignedList()
                         }
@@ -196,24 +203,8 @@ struct ChoresView: View {
                 }
                 
                 // MARK: - Pick Unassigned Chore Card Overlay
-                if let item = carouselVM.itemAwaitingDate {
-                    Color.black.opacity(0.45)
-                        .ignoresSafeArea()
-                        .contentShape(Rectangle())
-                        .onTapGesture { }
-                        .zIndex(2999)
-                        .transition(.opacity)
-                        .accessibilityHidden(true)
-                    
-                    VStack {
-                        Spacer()
-                        PickUnassignedChoreCard(item: item, carouselViewModel: carouselVM)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .zIndex(3000)
-                    .transition(.scale)
-                }
+                PickUnassignedChoreOverlay(carouselViewModel: carouselVM)
+                    .zIndex(2999)
             }
             .background(
                 Color(.white)
@@ -229,7 +220,12 @@ struct ChoresView: View {
                     isResetting = false
                 }
             }
+            // MARK: - Progress screen (opened by the progress cards)
+            .navigationDestination(isPresented: $isShowingProgress) {
+                DashboardView()
+            }
         }
+        .premiumPaywall($paywall)
         // MARK: - Loading and the progress cards' color
         .task {
             await carouselVM.fetchAllData()
@@ -276,19 +272,7 @@ struct ChoresView: View {
     
     /// White gradient behind the fixed block: opaque, then transparent a little below it.
     private var headerFade: some View {
-        LinearGradient(
-            stops: [
-                .init(color: Color(.systemBackground), location: 0),
-                .init(color: Color(.systemBackground), location: 0.8),
-                .init(color: Color(.systemBackground).opacity(0), location: 1)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        // Extends over the status bar and 24 pt below the block for the fade.
-        .padding(.bottom, -24)
-        .ignoresSafeArea(edges: .top)
-        .allowsHitTesting(false)
+        HeaderFade()
     }
     
     /// Side margin shared by the header, the progress cards and the chore list (the list's
@@ -396,17 +380,17 @@ struct ChoresView: View {
         let cardColor = carouselVM.layoutMode == .grid ? activeRoomColor : .black
         
         return HStack(spacing: 10) {
-            ProgressIndicatorCard(
+            progressCard(
                 title: "Tempo médio",
                 data: dashboard?.totalTimeFormatted ?? "0h00",
                 color: cardColor
             )
-            ProgressIndicatorCard(
+            progressCard(
                 title: "A fazer",
-                data: L10n.tr("%lld tarefas", dashboard?.toDo ?? 0),
+                data: L10n.tr("\(dashboard?.toDo ?? 0) tarefas"),
                 color: cardColor
             )
-            ProgressIndicatorCard(
+            progressCard(
                 title: "Concluído",
                 data: (dashboard?.completionPercentage ?? 0)
                     .formatted(.percent.precision(.fractionLength(0)).locale(L10n.locale)),
@@ -417,6 +401,18 @@ struct ChoresView: View {
         .animation(.easeInOut, value: activeRoomColor)
         .accessibilityElement(children: .contain)
         .voiceOverLabel(L10n.tr("Progresso do dia"))
+    }
+    
+    /// One progress card; tapping it opens the progress screen.
+    private func progressCard(title: LocalizedStringKey, data: String, color: Color) -> some View {
+        Button {
+            HapticsManager.selection()
+            isShowingProgress = true
+        } label: {
+            ProgressIndicatorCard(title: title, data: data, color: color)
+        }
+        .buttonStyle(.plain)
+        .voiceOverHint(L10n.tr("Abre o seu progresso."))
     }
     
     // MARK: - Actions
@@ -448,7 +444,7 @@ struct ChoresView: View {
         let centeredChore = carouselVM.visibleChores[carouselVM.activeIndex]
         
         if let room = carouselVM.getRoom(for: centeredChore) {
-            activeRoomColor = room.color.lowOpacityColor
+            activeRoomColor = room.color.progressCardColor
         } else {
             activeRoomColor = .gray
         }
@@ -474,7 +470,13 @@ struct ChoresView: View {
                 NewUserPopUp {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         carouselVM.showNewUserPopUp = false
-                        isResetting = true
+                        // Free plan: the new member joins the division at the next cycle (and
+                        // can take chores without an owner meanwhile). Premium re-divides now.
+                        if PremiumManager.shared.allows(.rebalanceDivision) {
+                            isResetting = true
+                        } else {
+                            paywall = .rebalanceDivision
+                        }
                     }
                 } onDismiss: {
                     carouselVM.showNewUserPopUp = false
@@ -496,7 +498,7 @@ private struct ProgressIndicatorCard: View {
     /// Formatted data result (e.g., "1h 30m").
     var data: String
     /// The card's background color.
-    var color: Color = .gray
+    var color: Color = .black
     
     var body: some View {
         VStack(spacing: 5) {

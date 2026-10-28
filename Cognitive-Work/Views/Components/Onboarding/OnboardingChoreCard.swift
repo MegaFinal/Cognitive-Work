@@ -28,11 +28,8 @@ struct OnboardingChoreCard: View {
             Spacer(minLength: 8)
             
             // MARK: - Room icon
-            Image(systemName: room.symbol)
-                .resizable()
-                .scaledToFit()
-                .fontWeight(.light)
-                .frame(width: 72, height: 72)
+            SymbolImage(name: room.symbol)
+                .frame(width: 112, height: 112)
             
             Spacer(minLength: 12)
         }

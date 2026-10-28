@@ -48,6 +48,16 @@ struct ChoreListLayout: View {
     /// Gap above each day's title, separating it from the previous day.
     private let daySpacing: CGFloat = 20
     
+    /// The suggested order of the viewer's chores today (see ``TodayChoreOrder``).
+    private var todayOrder: TodayChoreOrder { TodayChoreOrder.shared }
+
+    /// Changes whenever today's open chores change, to refresh ``todayOrder``.
+    private var todayOrderKey: String {
+        viewModel.openOccurrencesToday()
+            .map { "\($0.occurrence.id)\($0.isMine)" }
+            .joined(separator: "|")
+    }
+
     /// Look and feel of the swipe-to-delete — see ``SwipeToDeleteStyle``.
     private let swipeStyle = SwipeToDeleteStyle()
     
@@ -68,6 +78,13 @@ struct ChoreListLayout: View {
                         .padding(.bottom, titleToCardSpacing)
                     
                     if !collapsedDays.contains(group.id) {
+                        // Today only: the suggested order of the viewer's own chores (AI).
+                        if group.isToday, todayOrder.steps.count >= 2 {
+                            TodayOrderBox(steps: todayOrder.steps)
+                                .frame(width: width * 0.92)
+                                .padding(.bottom, cardSpacing)
+                        }
+
                         VStack(spacing: cardSpacing) {
                             ForEach(group.occurrences) { item in
                                 card(for: item)
@@ -92,6 +109,10 @@ struct ChoreListLayout: View {
             }
         }
         .matchedGeometryEffect(id: "Spawnpoint", in: namespace)
+        // Rebuilds the suggested order when today's chores change (done, added, reassigned).
+        .task(id: todayOrderKey) {
+            await todayOrder.refresh(using: viewModel)
+        }
         // MARK: - Empty state
         .overlay {
             if viewModel.visibleOccurrences.isEmpty {
@@ -157,7 +178,7 @@ struct ChoreListLayout: View {
         // "Hoje, quinta-feira, 25 de setembro" — header — "expandido, 3 tarefas"
         .voiceOverLabel(group.accessibilityTitle)
         .voiceControlNames([group.title])
-        .accessibilityValue(Text(verbatim: "\(isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")), \(L10n.tr("%lld tarefas", group.occurrences.count))"))
+        .accessibilityValue(Text(verbatim: "\(isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")), \(L10n.tr("\(group.occurrences.count) tarefas"))"))
         .voiceOverHint(isCollapsed ? L10n.tr("Toque duas vezes para expandir.") : L10n.tr("Toque duas vezes para recolher."))
         .accessibilityAddTraits(.isHeader)
     }
@@ -324,7 +345,7 @@ struct SwipeToDeleteRow<Content: View>: View {
         // MARK: - The card, with the delete button behind it
         content
             // MARK: - VoiceOver alternative to the swipe: an "Excluir" action on the row
-            .accessibilityAction(named: Text(L10n.tr(style.title ?? "Excluir"))) {
+            .accessibilityAction(named: Text(L10n.tr(key: style.title ?? "Excluir"))) {
                 dismissAndDelete()
             }
             .background(alignment: .trailing) {
@@ -495,6 +516,11 @@ private struct DayGroup: Identifiable {
     
     /// A unique id: the day (undated groups use a far future date).
     var id: Date { day ?? .distantFuture }
+
+    /// Whether this is today's group (it gets the suggested-order box).
+    var isToday: Bool {
+        day.map { Calendar.current.isDateInToday($0) } ?? false
+    }
     
     /// "Hoje", "Amanhã", or the weekday's name ("Sexta-feira"). Past days never get a
     /// group — `CarouselViewModel` leaves them out of the list.
@@ -537,4 +563,78 @@ private struct IndexedOccurrence: Identifiable {
     
     /// The occurrence's id.
     var id: String { occurrence.id }
+}
+
+// MARK: - Suggested order for today
+
+/// "Ordem sugerida" under today's title: the viewer's own chores for today, numbered in the
+/// order the AI suggests, each with why when something has to come first ("Depois de
+/// “Cozinhar” (Ana)"). Only a suggestion: the cards below keep their usual order.
+private struct TodayOrderBox: View {
+    let steps: [TodayChoreOrder.Step]
+
+    /// Closed with the chevron; remembered on this device, so it stays as the person left it.
+    @AppStorage("todayOrderBoxCollapsed") private var isCollapsed = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // The title row opens or closes the box (chevron on the right, like the day titles).
+            Button {
+                // No haptic, like the day titles.
+                withAnimation(.snappy) { isCollapsed.toggle() }
+            } label: {
+                HStack {
+                    Label {
+                        Text("Ordem sugerida para hoje")
+                    } icon: {
+                        Image(systemName: "sparkles")
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(.degrees(isCollapsed ? -90 : 0))
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.subTitleGray)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityValue(Text(verbatim: isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")))
+            .voiceOverHint(isCollapsed ? L10n.tr("Toque duas vezes para expandir.") : L10n.tr("Toque duas vezes para recolher."))
+
+            if !isCollapsed {
+            ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(verbatim: "\(index + 1)")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color.chorePurple)
+                        .frame(width: 18, alignment: .leading)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(step.name)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.titleGray)
+
+                        if let note = step.note {
+                            Text(note)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.subTitleGray)
+                        }
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .transition(.opacity)
+            }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.aiOpacity, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color.chorePurple.opacity(0.5), style: StrokeStyle(lineWidth: 1.2, dash: [6, 4]))
+        )
+    }
 }

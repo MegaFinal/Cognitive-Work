@@ -29,18 +29,18 @@ enum ProfileAccessibility {
             return room.rawValue.localizedDefault
         }
         switch symbol {
-        case "lamp.table": return L10n.tr("Abajur")
-        case "tv": return L10n.tr("Televisão")
-        case "books.vertical": return L10n.tr("Livros")
-        case "gamecontroller": return L10n.tr("Videogame")
-        case "dumbbell": return L10n.tr("Halteres")
-        case "pawprint": return L10n.tr("Animal de estimação")
-        case "car": return L10n.tr("Carro")
-        case "tree": return L10n.tr("Árvore")
-        case "shippingbox": return L10n.tr("Caixa")
-        case "stairs": return L10n.tr("Escada")
-        case "bathtub": return L10n.tr("Banheira")
-        case "music.note": return L10n.tr("Música")
+        case "armchair": return L10n.tr("Poltrona")
+        case "twin.bed.stripes": return L10n.tr("Cama de solteiro")
+        case "laptop": return L10n.tr("Notebook")
+        case "stove.pans": return L10n.tr("Panelas no fogão")
+        case "shower": return L10n.tr("Chuveiro")
+        case "washing.machine": return L10n.tr("Máquina de lavar")
+        case "clothes.basket": return L10n.tr("Cesto de roupa")
+        case "clothes.line.filled": return L10n.tr("Varal")
+        case "balcony.aluminum.chair": return L10n.tr("Cadeira de varanda")
+        case "default.plant": return L10n.tr("Planta")
+        case "bicicle": return L10n.tr("Bicicleta")
+        case "kite": return L10n.tr("Pipa")
         default: return L10n.tr("Ícone")
         }
     }
@@ -50,8 +50,8 @@ enum ProfileAccessibility {
         switch names.count {
         case 0: return ""
         case 1: return names[0]
-        case 2: return L10n.tr("%@ e %@", names[0], names[1])
-        default: return L10n.tr("%@, %@ e mais %lld", names[0], names[1], names.count - 2)
+        case 2: return L10n.tr("\(names[0]) e \(names[1])")
+        default: return L10n.tr("\(names[0]), \(names[1]) e mais \(names.count - 2)")
         }
     }
 }

@@ -92,47 +92,42 @@ struct PickUnassignedChoreCard: View {
             header
                 .padding(.bottom)
             
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 8) {
-                    // MARK: - Chore, question, "take all" switch and calendar
-                    choreDetail
-                    
-                    calendarText
-                    
-                    if isDaily {
-                        Toggle(isOn: allDailyIncluded) {
-                            Text("Pegar todas as tarefas diárias")
-                                .font(.system(size: 15))
-                                .foregroundStyle(.black)
-                        }
-                        .toggleStyle(.switch)
-                        .voiceControlNames([L10n.tr("Pegar todas as tarefas diárias"), L10n.tr("Pegar todas")])
-                        .padding(8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    
-                    CustomCalendar(
-                        selectedDate: isDaily ? Binding<Date?>.constant(nil) : activeDateBinding,
-                        window: effectiveWindow,
-                        opacityForDay: { date in carouselViewModel.loadOpacity(on: date, in: window) },
-                        highlightedDays: includedDates,
-                        selectableDays: isDaily ? Set(slots.compactMap { $0.date }) : nil,
-                        onTapDay: isDaily ? { day in toggleDailySlot(day) } : nil
-                    )
-                    
-                    // MARK: - Error message
-                    if didFail {
-                        Text("Não foi possível salvar. Tente novamente.")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.red)
-                    }
+            // MARK: - Chore, question, "take all" switch and calendar
+            choreDetail
+            
+            calendarText
+            
+            if isDaily {
+                Toggle(isOn: allDailyIncluded) {
+                    Text("Pegar todas as tarefas diárias")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.black)
                 }
+                .toggleStyle(.switch)
+                .voiceControlNames([L10n.tr("Pegar todas as tarefas diárias"), L10n.tr("Pegar todas")])
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             
-            Spacer()
+            CustomCalendar(
+                selectedDate: isDaily ? Binding<Date?>.constant(nil) : activeDateBinding,
+                window: effectiveWindow,
+                opacityForDay: { date in carouselViewModel.loadOpacity(on: date, in: window) },
+                highlightedDays: includedDates,
+                selectableDays: isDaily ? Set(slots.compactMap { $0.date }) : nil,
+                onTapDay: isDaily ? { day in toggleDailySlot(day) } : nil
+            )
+            
+            // MARK: - Error message
+            if didFail {
+                Text("Não foi possível salvar. Tente novamente.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.red)
+            }
         }
         .padding(16)
-        .frame(width: width * 0.88, height: height * 0.62)
+        // The height follows the content: a calendar with more weeks makes the popup taller.
+        .frame(width: width * 0.88)
         .background(.white)
         .clipShape(RoundedRectangle(cornerRadius: 31))
         .shadow(color: .black.opacity(0.2), radius: 25, x: 0, y: 8)
