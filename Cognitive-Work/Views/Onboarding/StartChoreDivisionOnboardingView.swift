@@ -85,7 +85,7 @@ private struct InfoCard: View {
                     Circle()
                         .foregroundStyle(tagColor)
                 )
-                .accessibilityLabel(Text(L10n.tr("Etapa %@ de %lld", number, 3)))
+                .accessibilityLabel(Text(L10n.tr("Etapa \(number) de \(3)")))
             
             // MARK: Title and description
             VStack(alignment: .leading, spacing: 10) {

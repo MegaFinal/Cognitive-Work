@@ -270,7 +270,7 @@ private struct OnboardingCustomSliderComponent: View {
         // VoiceOver: each day is one adjustable element — "Segunda-feira, 2 horas", swipe up or
         // down to change it — instead of a drag-only row.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(L10n.tr(dayOfWeek.name.trimmingCharacters(in: .whitespaces))))
+        .accessibilityLabel(Text(L10n.tr(key: dayOfWeek.name.trimmingCharacters(in: .whitespaces))))
         .accessibilityValue(Text(FreeTimeSlider.accessibilityValue(for: selectedFreeTimeLevel)))
         .accessibilityAdjustableAction { direction in
             guard !isLoading else { return }
@@ -283,8 +283,8 @@ private struct OnboardingCustomSliderComponent: View {
         // Voice Control: "Mostrar ações para Segunda-feira" → "Aumentar"/"Diminuir", since it
         // can't swipe-adjust. The visible abbreviation ("Seg") comes first.
         .voiceControlNames([
-            L10n.tr(dayOfWeek.nameAbbreviation),
-            L10n.tr(dayOfWeek.name.trimmingCharacters(in: .whitespaces))
+            L10n.tr(key: dayOfWeek.nameAbbreviation),
+            L10n.tr(key: dayOfWeek.name.trimmingCharacters(in: .whitespaces))
         ])
         .accessibilityAction(named: Text(L10n.tr("Aumentar"))) {
             guard !isLoading else { return }

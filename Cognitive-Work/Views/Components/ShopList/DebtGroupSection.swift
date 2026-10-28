@@ -104,7 +104,7 @@ struct DebtGroupSection: View {
                     .voiceOverLabel(headerAccessibilityText ?? "\(title), \(L10n.tr("Total")) \(totalText)")
                     .accessibilityAddTraits(.isHeader)
 
-                Text(rows.count == 1 ? L10n.tr("1 item") : L10n.tr("%lld itens", rows.count))
+                Text(rows.count == 1 ? L10n.tr("1 item") : L10n.tr("\(rows.count) itens"))
                     .font(.system(size: 13, weight: .medium, design: .monospaced))
                     .opacity(0.85)
                     .accessibilityHidden(true)
@@ -242,7 +242,7 @@ struct DebtGroupSection: View {
 
     /// Speakable names for the settle button: what it shows, then one naming the person.
     private var settleInputLabels: [String] {
-        isPaid ? [settleTitle] : [settleTitle, L10n.tr("Pagar %@", title)]
+        isPaid ? [settleTitle] : [settleTitle, L10n.tr("Pagar \(title)")]
     }
 
     /// The settle button's look: a black capsule with a short title on one line, and a checkmark

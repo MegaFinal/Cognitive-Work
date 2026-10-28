@@ -573,8 +573,7 @@ class CloudKitManager {
             name: profile.name,
             profilePicture: profilePictureDuplicate,
             banner: profile.banner,
-            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
-            tier: .bronze1,
+            tier: .novatoDaCasa,
             coins: profile.coins,
             house: CKRecord.Reference(recordID: houseID, action: .none),
             couponLimit: profile.couponLimit,
@@ -589,6 +588,10 @@ class CloudKitManager {
         
         await house.appendUsers([saved])
         clearPendingJoin(ifMatching: houseID.zoneID)
+        
+        // Tells the admin, who can redo the automatic division.
+        let memberName = profile.name
+        Task { await NotificationManager.shared.notifyNewMember(named: memberName, houseID: houseID) }
         return true
     }
     

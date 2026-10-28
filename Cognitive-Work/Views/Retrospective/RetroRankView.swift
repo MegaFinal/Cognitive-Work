@@ -36,9 +36,6 @@ struct RetroRankView: View {
             // MARK: - Rank arc with the rank icon, and the rank's name (spinner while loading)
             if coinsViewModel.isLoaded {
                 ZStack(alignment: .bottom) {
-                    RankArc(progress: content.arcFraction, tint: content.tint, lineWidth: 20)
-                        .frame(width: width * 0.75, height: width * 0.4)
-                    
                     if let tier = content.tier {
                         Image(tier.imageName)
                             .resizable()
@@ -175,12 +172,12 @@ struct RetroRankContent: Equatable {
             ? 1
             : Double(progress.pointsIntoDivision) / Double(Tier.pointsPerDivision)
 
-        let pointsText = points == 1 ? L10n.tr("1 ponto") : L10n.tr("%lld pontos", points)
+        let pointsText = points == 1 ? L10n.tr("1 ponto") : L10n.tr("\(points) pontos")
         let detail: String
         if let next = progress.nextTier, let missing = progress.pointsToNext {
-            detail = L10n.tr("%@ no ciclo. Faltaram %lld para %@.", pointsText, missing, next.displayName)
+            detail = L10n.tr("\(pointsText) no ciclo. Faltaram \(missing) para \(next.displayName).")
         } else {
-            detail = L10n.tr("%@ no ciclo. Você chegou ao rank máximo!", pointsText)
+            detail = L10n.tr("\(pointsText) no ciclo. Você chegou ao rank máximo!")
         }
 
         return RetroRankContent(
@@ -194,11 +191,11 @@ struct RetroRankContent: Equatable {
         )
     }
 
-    /// One message per rank group (Bronze, Prata/Ouro, Platina/Diamante, Mestre).
+    /// One message per rank group (início, meio, topo da escada).
     private static func message(for tier: Tier) -> String {
         let step = Tier.allCases.firstIndex(of: tier) ?? 0
         switch step {
-        case _ where tier == .master: return L10n.tr("Você chegou ao topo, parabéns!")
+        case _ where tier == .almaDaCasa: return L10n.tr("Você chegou ao topo, parabéns!")
         case 9...: return L10n.tr("Que ciclo! Poucos chegam tão longe")
         case 3...: return L10n.tr("Mandou bem! Dá para subir ainda mais")
         default: return L10n.tr("Todo começo conta")
@@ -208,7 +205,7 @@ struct RetroRankContent: Equatable {
     /// Same colors as the rewards tab's arc: red (far from the next division) → green (almost),
     /// pink at Mestre.
     private static func tint(for tier: Tier, fraction: Double) -> Color {
-        if tier == .master { return .rankMasterPink }
+        if tier == .almaDaCasa { return .rankMasterPink }
         switch fraction {
         case ..<0.25: return .tagRed
         case ..<0.5: return .choreOrange
@@ -227,19 +224,19 @@ struct RetroRankContent: Equatable {
 
 #Preview("Bronze 2") {
     RetroPreviewHost(page: .rank) {
-        RetroRankView(viewModel: $0, coinsViewModel: .preview(earned: Tier.bronze2.cycleCoins, tier: .bronze2, points: 30))
+        RetroRankView(viewModel: $0, coinsViewModel: .preview(earned: Tier.aprendiz.cycleCoins, tier: .aprendiz, points: 30))
     }
 }
 
 #Preview("Ouro 2") {
     RetroPreviewHost(page: .rank) {
-        RetroRankView(viewModel: $0, coinsViewModel: .preview(earned: Tier.gold2.cycleCoins, tier: .gold2, points: 192))
+        RetroRankView(viewModel: $0, coinsViewModel: .preview(earned: Tier.protetorDoLar.cycleCoins, tier: .protetorDoLar, points: 192))
     }
 }
 
 #Preview("Mestre") {
     RetroPreviewHost(page: .rank) {
-        RetroRankView(viewModel: $0, coinsViewModel: .preview(earned: Tier.master.cycleCoins, tier: .master, points: 410))
+        RetroRankView(viewModel: $0, coinsViewModel: .preview(earned: Tier.almaDaCasa.cycleCoins, tier: .almaDaCasa, points: 410))
     }
 }
 #endif

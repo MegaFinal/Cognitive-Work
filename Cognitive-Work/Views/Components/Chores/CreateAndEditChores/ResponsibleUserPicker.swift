@@ -48,10 +48,10 @@ struct ResponsibleUserPicker: View {
                     .voiceOverLabel(selectedUser.name)
                     .voiceOverHint(L10n.tr("Toque duas vezes para remover dos responsáveis."))
                     .accessibilityAddTraits(.isButton)
-                    .voiceControlNames([selectedUser.name, L10n.tr("Remover %@", selectedUser.name)])
+                    .voiceControlNames([selectedUser.name, L10n.tr("Remover \(selectedUser.name)")])
                     .accessibilityAction {
                         selectedUsers.removeAll { $0.id == selectedUser.id }
-                        VoiceOver.announce(L10n.tr("%@ removido", selectedUser.name))
+                        VoiceOver.announce(L10n.tr("\(selectedUser.name) removido"))
                     }
             }
             

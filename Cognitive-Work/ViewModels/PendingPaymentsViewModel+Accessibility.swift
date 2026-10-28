@@ -28,16 +28,16 @@ extension PendingPaymentsViewModel {
 
     /// "Isabela, total R$ 45,00".
     func headerAccessibilityLabel(for group: DebtGroup) -> String {
-        L10n.tr("%@, total %@", title(for: group), VoiceOver.currency(group.total))
+        L10n.tr("\(title(for: group)), total \(VoiceOver.currency(group.total))")
     }
 
     /// "Pagar R$ 45,00 para Isabela" or "Marcar que Isabela pagou".
     func settleAccessibilityLabel(for group: DebtGroup) -> String {
         switch group.direction {
         case .youOwe:
-            return L10n.tr("Pagar %@ para %@", VoiceOver.currency(group.total), group.counterparty.name)
+            return L10n.tr("Pagar \(VoiceOver.currency(group.total)) para \(group.counterparty.name)")
         case .owedToYou:
-            return L10n.tr("Marcar que %@ pagou", group.counterparty.name)
+            return L10n.tr("Marcar que \(group.counterparty.name) pagou")
         }
     }
 

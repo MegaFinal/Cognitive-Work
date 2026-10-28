@@ -47,7 +47,7 @@ final class TodayChoreOrder {
     func note(for occurrenceID: String) -> String? {
         guard let index = steps.firstIndex(where: { $0.id == occurrenceID }) else { return nil }
         let step = steps[index]
-        let place = steps.count >= 2 ? L10n.tr("%lldª de %lld hoje", index + 1, steps.count) : nil
+        let place = steps.count >= 2 ? L10n.tr("\(index + 1)ª de \(steps.count) hoje") : nil
         switch (place, step.note) {
         case let (place?, note?): return place + " · " + note
         case let (place?, nil): return place
@@ -175,11 +175,11 @@ final class TodayChoreOrder {
         carousel: CarouselViewModel
     ) -> String {
         let name = entry.occurrence.chore.name
-        guard !entry.isMine else { return L10n.tr("Depois de “%@”", name) }
+        guard !entry.isMine else { return L10n.tr("Depois de “\(name)”") }
         let people = carousel.userModels
             .filter { user in user.recordID.map { entry.userIDs.contains($0) } ?? false }
             .map(\.name)
-        guard !people.isEmpty else { return L10n.tr("Depois de “%@”", name) }
-        return L10n.tr("Depois de “%@” (%@)", name, people.joined(separator: ", "))
+        guard !people.isEmpty else { return L10n.tr("Depois de “\(name)”") }
+        return L10n.tr("Depois de “\(name)” (\(people.joined(separator: ", ")))")
     }
 }

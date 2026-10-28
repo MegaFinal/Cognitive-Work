@@ -119,7 +119,7 @@ struct FortnightlyView: View {
         selectedUser = viewModel.users.first { $0.recordID == entry.userID }
         // The card below the chart changes out of VoiceOver's focus: say what it now shows.
         if changed {
-            VoiceOver.announce(L10n.tr("Detalhes de %@ abaixo do gráfico", entry.choreName.localizedDefault))
+            VoiceOver.announce(L10n.tr("Detalhes de \(entry.choreName.localizedDefault) abaixo do gráfico"))
         }
     }
     
@@ -151,7 +151,7 @@ struct FortnightlyView: View {
         }
         // Colors only matter visually: every bar already reads its resident's name.
         .accessibilityElement(children: .ignore)
-        .voiceOverLabel(L10n.tr("Moradores na legenda: %@", ChartA11y.list(viewModel.users.map(\.name))))
+        .voiceOverLabel(L10n.tr("Moradores na legenda: \(ChartA11y.list(viewModel.users.map(\.name)))"))
     }
 }
 

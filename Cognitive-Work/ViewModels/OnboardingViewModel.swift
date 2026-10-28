@@ -229,7 +229,7 @@ class OnboardingViewModel {
             profilePicture: assetCopy,
             banner: user.banner,
             // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
-            tier: .bronze1,
+            tier: .novatoDaCasa,
             coins: user.coins,
             badges: user.badgesReference,
             tasks: user.choresReference,
@@ -1069,8 +1069,7 @@ class OnboardingViewModel {
             name: profile.name,
             profilePicture: assetCopy,
             banner: profile.banner,
-            // Points (and the rank) live in the house's `UserScoreModel`, not on the user.
-            tier: .bronze1,
+            tier: .novatoDaCasa,
             coins: profile.coins,
             house: houseReference,
             couponLimit: profile.couponLimit,
@@ -1095,6 +1094,10 @@ class OnboardingViewModel {
             if let savedUser {
                 await house.appendUsers([savedUser])
                 rollbackJournal.joinedMembership = savedUser.recordID.map(OnboardingRollbackJournal.StoredRecordID.init)
+                
+                // Tells the admin, who can redo the automatic division.
+                let memberName = sharedUser.name
+                Task { await NotificationManager.shared.notifyNewMember(named: memberName, houseID: houseRecordID) }
             }
         }
         

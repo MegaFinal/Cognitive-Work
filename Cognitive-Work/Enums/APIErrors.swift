@@ -6,6 +6,7 @@
 //
 
 /// Errors that can happen while the app talks to the external device (the ESP32 "Harvii") over the local network.
+import Foundation
 enum APIErrors: String, Error {
     /// The data to send could not be turned into JSON.
     case unableToEncode

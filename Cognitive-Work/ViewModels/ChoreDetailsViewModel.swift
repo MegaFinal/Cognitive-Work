@@ -98,7 +98,7 @@ final class ChoreDetailsViewModel {
         parts.append(occurrenceDate.map(CarouselViewModel.accessibilityDateText) ?? L10n.tr("Sem data definida"))
         if !checkList.isEmpty {
             let done = checkList.filter(\.isDone).count
-            parts.append(L10n.tr("%lld de %lld itens concluídos", done, checkList.count))
+            parts.append(L10n.tr("\(done) de \(checkList.count) itens concluídos"))
         }
         return parts.joined(separator: ", ")
     }

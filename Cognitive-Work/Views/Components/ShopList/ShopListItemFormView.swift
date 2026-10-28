@@ -294,7 +294,7 @@ struct ShopListItemFormView: View {
             presenting: duplicate
         ) { existing in
             if existing.unitMeasurement == unitMeasurement {
-                Button(L10n.tr("Somar à quantidade (%lld → %lld)", existing.quantity, existing.quantity + quantity)) {
+                Button(L10n.tr("Somar à quantidade (\(existing.quantity) → \(existing.quantity + quantity))")) {
                     Task { await addToExisting(existing) }
                 }
             }
@@ -443,7 +443,7 @@ struct ShopListItemFormView: View {
             lastReadName = trimmedName
             applySuggestion(preview)
         } label: {
-            Text(L10n.tr("Nome: %@", preview.name))
+            Text(L10n.tr("Nome: \(preview.name)"))
                 .font(.system(size: 15))
                 .foregroundStyle(.subTitleGray)
                 .lineLimit(1)
@@ -1070,13 +1070,13 @@ struct ShopListItemFormView: View {
         }
         return L10n.tr("Você pode somar a quantidade ao item que já está na lista.")
             + "\n"
-            + L10n.tr("Também entram na divisão: %@", joining.map(\.name).joined(separator: ", "))
+            + L10n.tr("Também entram na divisão: \(joining.map(\.name).joined(separator: ", "))")
     }
 
     /// "“leite” is already on the list".
     private var duplicateTitle: String {
         guard let duplicate else { return "" }
-        return L10n.tr("Já tem “%@” na lista", duplicate.name)
+        return L10n.tr("Já tem “\(duplicate.name)” na lista")
     }
 
     /// Deletes the item; closes the sheet on success or shows the error.

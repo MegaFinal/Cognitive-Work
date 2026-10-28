@@ -41,9 +41,9 @@ extension CarouselViewModel {
         case 0:
             return L10n.tr("Sem responsável")
         case 1:
-            return L10n.tr("Responsável: %@", names[0])
+            return L10n.tr("Responsável: \(names[0])")
         default:
-            return L10n.tr("Responsáveis: %@", names.formatted(.list(type: .and).locale(L10n.locale)))
+            return L10n.tr("Responsáveis: \(names.formatted(.list(type: .and).locale(L10n.locale)))")
         }
     }
 
@@ -52,9 +52,9 @@ extension CarouselViewModel {
     /// "Prioridade média, duração curta, frequência semanal".
     func accessibilityTagsText(for chore: ChoreModel) -> String {
         [
-            L10n.tr("Frequência %@", chore.frequency.displayName),
-            L10n.tr("Prioridade %@", chore.priorityTag.displayName),
-            L10n.tr("Duração %@", ChoreDurationTier.from(minutes: chore.duration).displayText)
+            L10n.tr("Frequência \(chore.frequency.displayName)"),
+            L10n.tr("Prioridade \(chore.priorityTag.displayName)"),
+            L10n.tr("Duração \(ChoreDurationTier.from(minutes: chore.duration).displayText)")
         ].joined(separator: ", ")
     }
 
@@ -104,7 +104,7 @@ extension CarouselViewModel {
             for: chore,
             assignment: getAssignmentsForActiveContext(for: chore).first
         )
-        let position = L10n.tr("%lld de %lld", activeIndex + 1, visibleChores.count)
+        let position = L10n.tr("\(activeIndex + 1) de \(visibleChores.count)")
         return "\(summary). \(position)"
     }
 
@@ -125,7 +125,7 @@ extension CarouselViewModel {
     /// Short names for a chore card: the name shown on the card first.
     func voiceControlInputLabels(for chore: ChoreModel) -> [String] {
         let name = chore.localizedName
-        return name.isEmpty ? [L10n.tr("Tarefa")] : [name, L10n.tr("Tarefa %@", name)]
+        return name.isEmpty ? [L10n.tr("Tarefa")] : [name, L10n.tr("Tarefa \(name)")]
     }
 
     /// Moves the carousel one card forward (`step` = 1) or back (`step` = -1), the same way a

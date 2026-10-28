@@ -70,7 +70,7 @@ enum DefaultRoomsOnboarding: String, CaseIterable, Identifiable {
         case .bedroom: "bed.stripes"
         case .livingRoom: "sofa"
         case .laundryRoom: "clothes.line.stripes"
-        case .kitchen: "stove"
+        case .kitchen: "stove.pans"
         case .bathroom: "toilet"
         case .homeOffice: "computer"
         case .balcony: "balcony.plastic.chair"

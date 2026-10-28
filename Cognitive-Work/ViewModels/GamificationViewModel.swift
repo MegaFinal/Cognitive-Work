@@ -40,8 +40,18 @@ final class GamificationViewModel {
     /// The house's rooms, as tabs of the coupon list.
     private(set) var rooms: [RoomModel] = []
 
+    /// Coupons of the period with their room's color, symbol and tier, and the members of each
+    /// rank. See ``GamificationCatalog``.
+    private(set) var catalog: GamificationCatalog = .empty
+
     /// Whether the first load finished, so the screen can tell "loading" from "empty".
     private(set) var hasLoaded = false
+
+    /// ``UserModel/ownerRecordName`` of the signed-in member, to find their vehicle in the ranking.
+    private(set) var myOwnerRecordName: String?
+
+    /// Key of the room the coupon lists are limited to (``key(for:)``); `nil` shows every room.
+    var roomFilterKey: String?
 
     /// Key of the room chosen in the picker; `nil` until the first load picks one.
     var selectedRoomKey: String?
@@ -100,7 +110,9 @@ final class GamificationViewModel {
         previewPoints: Int = 0,
         previewHistory: [RankHistoryModel] = [],
         rooms: [RoomModel],
-        couponsByRoomName: [String: [CouponModel]]
+        couponsByRoomName: [String: [CouponModel]],
+        users: [UserModel] = [],
+        myOwnerRecordName: String? = nil
     ) {
         self.coins = previewCoins
         self.points = previewPoints
@@ -110,10 +122,36 @@ final class GamificationViewModel {
             couponsByRoom[Self.key(for: room)] = couponsByRoomName[room.name] ?? []
         }
         self.selectedRoomKey = rooms.first.map(Self.key(for:))
+        self.myOwnerRecordName = myOwnerRecordName
+        self.catalog = GamificationCatalog(
+            entries: rooms.flatMap { room in
+                (couponsByRoomName[room.name] ?? []).map { coupon in
+                    CouponEntry(
+                        coupon: coupon, roomName: room.name, roomKey: Self.key(for: room),
+                        color: room.color, symbol: room.symbol, state: .available
+                    )
+                }
+            },
+            users: users
+        )
         self.hasLoaded = true
     }
 
     // MARK: - Derived
+
+    /// Coupons anyone can still buy in this cycle, in the room chosen in the filter.
+    var availableEntries: [CouponEntry] { filtered(catalog.availableCoupons) }
+
+    /// Coupons the member holds in this cycle, in the room chosen in the filter.
+    var myEntries: [CouponEntry] { filtered(catalog.myCoupons) }
+
+    /// The coupon `entry` stands for, now with the room-limit rule of ``state(of:)``.
+    func state(of entry: CouponEntry) -> CouponCard.PurchaseState { state(of: entry.coupon) }
+
+    private func filtered(_ entries: [CouponEntry]) -> [CouponEntry] {
+        guard let roomFilterKey else { return entries }
+        return entries.filter { $0.roomKey == roomFilterKey }
+    }
 
     /// The room whose coupons are shown.
     var selectedRoom: RoomModel? {
@@ -244,6 +282,7 @@ final class GamificationViewModel {
         latestCycleKey = HouseCycleModel.latest(snapshot.cycles)?.key
         let coupons = withRecentPurchases(snapshot.coupons)
         houseUser = snapshot.houseUser
+        myOwnerRecordName = snapshot.houseUser?.ownerRecordName
         points = snapshot.houseUser?.points ?? 0
         // Loaded with the rest of the house data (`HouseDataStore`).
         rankHistory = snapshot.pastRanks(of: snapshot.houseUser)
@@ -282,6 +321,14 @@ final class GamificationViewModel {
         }
         roomKeyByCoupon = roomByCoupon
         couponsByRoom = grouped
+        catalog = GamificationCatalog(
+            coupons: grouped.values.flatMap { $0 },
+            chores: snapshot.chores,
+            rooms: snapshot.rooms,
+            users: snapshot.users,
+            myUserID: snapshot.houseUser?.recordID,
+            latestCycleKey: latestCycleKey
+        )
 
         if selectedRoom == nil {
             selectedRoomKey = rooms.first.map(Self.key(for:))

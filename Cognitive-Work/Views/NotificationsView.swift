@@ -17,6 +17,12 @@ struct NotificationsView: View {
     var onOpenChore: (ChoreModel, RecurrentAssignmentModel?) -> Void = { _, _ in }
     /// Runs on a "entrou na casa" notification (offers to divide again).
     var onNewMember: () -> Void = {}
+    /// Runs on an "item comprado" notification.
+    var onOpenShopList: () -> Void = {}
+    /// Runs on a debt notification.
+    var onOpenPendingPayments: () -> Void = {}
+    /// Runs on the calendar sync suggestion.
+    var onOpenCalendarSettings: () -> Void = {}
     
     /// Builds the notifications.
     @State private var viewModel = NotificationsViewModel()
@@ -60,6 +66,10 @@ struct NotificationsView: View {
         .task { await viewModel.load() }
         .task { await retroCoinsViewModel.load() }
         .refreshable {
+            // Looks for new records in the database, schedules the ones for this user, and then
+            // reloads the list with them.
+            await NotificationManager.shared.processIncoming()
+            await NotificationManager.shared.refreshReminders()
             await viewModel.load(force: true)
             await retroCoinsViewModel.reload()
         }
@@ -162,6 +172,15 @@ struct NotificationsView: View {
         case .newMember:
             dismiss()
             onNewMember()
+        case .shopList:
+            dismiss()
+            onOpenShopList()
+        case .pendingPayments:
+            dismiss()
+            onOpenPendingPayments()
+        case .calendarSync:
+            dismiss()
+            onOpenCalendarSettings()
         }
     }
 }
