@@ -197,7 +197,8 @@ struct FreeTimeSlider: View {
     VStack(spacing: 32) {
         FreeTimeSlider(rating: $rating, isLoading: .constant(false))
 
-        Text("Blocos selecionados: \(rating)")
+        // Preview only: verbatim, so it doesn't become a key nobody translates.
+        Text(verbatim: "Blocos selecionados: \(rating)")
             .font(.system(size: 17, weight: .semibold))
             .contentTransition(.numericText())
             .animation(.default, value: rating)

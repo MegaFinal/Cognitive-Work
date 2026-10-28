@@ -27,7 +27,7 @@ enum FreeTimeEnum: String{
     /// Label shown to the user, in the app's language. (`rawValue` is kept as the stable
     /// Portuguese identifier.)
     var displayName: String {
-        rawValue.isEmpty ? "" : L10n.tr(rawValue)
+        rawValue.isEmpty ? "" : L10n.tr(key: rawValue)
     }
     
     /// The free time in hours (for example, `0.5` for ``thirtyMinutes``).

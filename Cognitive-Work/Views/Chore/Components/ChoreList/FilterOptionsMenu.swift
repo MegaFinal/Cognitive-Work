@@ -135,7 +135,7 @@ struct FilterOptionsMenu: View {
             FilterMenuRow(
                 systemImage: "line.3.horizontal.decrease",
                 title: "Filtros",
-                subtitle: activeFilterCount == 0 ? L10n.tr("Nenhum") : L10n.tr("%lld ativos", activeFilterCount)
+                subtitle: activeFilterCount == 0 ? L10n.tr("Nenhum") : L10n.tr("\(activeFilterCount) ativos")
             )
         }
     }
@@ -187,7 +187,7 @@ struct FilterOptionsMenu: View {
         switch selected.count {
         case 0: return L10n.tr("Nenhum")
         case 1: return selected[0]
-        default: return L10n.tr("%lld selecionados", selected.count)
+        default: return L10n.tr("\(selected.count) selecionados")
         }
     }
 }

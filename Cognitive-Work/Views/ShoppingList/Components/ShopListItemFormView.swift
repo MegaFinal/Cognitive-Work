@@ -177,6 +177,11 @@ struct ShopListItemFormView: View {
 
                     section("Valor (opcional)", isSuggested: isSuggested(.price)) {
                         priceField
+
+                        // The price paid last time for the same product, one tap to reuse it.
+                        if let last = lastPriced {
+                            lastPriceButton(for: last)
+                        }
                     }
 
                     section("Responsável", isSuggested: isSuggested(.consumers)) {
@@ -289,7 +294,7 @@ struct ShopListItemFormView: View {
             presenting: duplicate
         ) { existing in
             if existing.unitMeasurement == unitMeasurement {
-                Button(L10n.tr("Somar à quantidade (%lld → %lld)", existing.quantity, existing.quantity + quantity)) {
+                Button(L10n.tr("Somar à quantidade (\(existing.quantity) → \(existing.quantity + quantity))")) {
                     Task { await addToExisting(existing) }
                 }
             }
@@ -438,7 +443,7 @@ struct ShopListItemFormView: View {
             lastReadName = trimmedName
             applySuggestion(preview)
         } label: {
-            Text(L10n.tr("Nome: %@", preview.name))
+            Text(L10n.tr("Nome: \(preview.name)"))
                 .font(.system(size: 15))
                 .foregroundStyle(.subTitleGray)
                 .lineLimit(1)
@@ -718,6 +723,53 @@ struct ShopListItemFormView: View {
                 .foregroundStyle(.black)
         }
         .animation(.snappy, value: category)
+    }
+
+    /// The latest item with this name that had a price, while the price here is still empty.
+    private var lastPriced: ShopListItem? {
+        guard valueText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        let editing: ShopListItem? = {
+            if case .edit(let item) = mode { return item }
+            return nil
+        }()
+        return viewModel.lastPricedItem(named: trimmedName, excluding: editing)
+    }
+
+    /// "Última vez: R$ 25,00 / quilograma · 12/10". Tapping it fills the price (per unit, like
+    /// the field) and the unit it was bought in.
+    private func lastPriceButton(for item: ShopListItem) -> some View {
+        let price = (item.value ?? 0).formatted(
+            FloatingPointFormatStyle<Double>.Currency(code: "BRL").locale(L10n.locale)
+        )
+        let unit = item.unitMeasurement == .undefined ? UnitMeasurement.unit : item.unitMeasurement
+        let date = (item.boughtAt ?? item.createdAt)
+            .formatted(.dateTime.day(.twoDigits).month(.twoDigits).locale(L10n.locale))
+        // Interpolated like the rest of the app now: the key stays "Última vez: %@ / %@ · %@".
+        let unitName = unit.getDisplayName(for: 1)
+        let text = L10n.tr("Última vez: \(price) / \(unitName) · \(date)")
+
+        return Button {
+            HapticsManager.selection()
+            withAnimation(.snappy) {
+                valueText = ShopListViewModel.priceInputText(for: item.value ?? 0)
+                unitMeasurement = unit
+            }
+        } label: {
+            Label(text, systemImage: "clock.arrow.circlepath")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.titleGray)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                // Same look as the app's other suggestions: AI tint with a dashed purple border.
+                .background(Color.aiOpacity, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(Color.chorePurple, style: StrokeStyle(lineWidth: 1.2, dash: [5, 3]))
+                )
+        }
+        .buttonStyle(.plain)
+        .transition(.opacity)
+        .voiceOverHint(L10n.tr("Toque duas vezes para usar este preço."))
     }
 
     /// The price field.
@@ -1020,13 +1072,13 @@ struct ShopListItemFormView: View {
         }
         return L10n.tr("Você pode somar a quantidade ao item que já está na lista.")
             + "\n"
-            + L10n.tr("Também entram na divisão: %@", joining.map(\.name).joined(separator: ", "))
+            + L10n.tr("Também entram na divisão: \(joining.map(\.name).joined(separator: ", "))")
     }
 
     /// "“leite” is already on the list".
     private var duplicateTitle: String {
         guard let duplicate else { return "" }
-        return L10n.tr("Já tem “%@” na lista", duplicate.name)
+        return L10n.tr("Já tem “\(duplicate.name)” na lista")
     }
 
     /// Deletes the item; closes the sheet on success or shows the error.

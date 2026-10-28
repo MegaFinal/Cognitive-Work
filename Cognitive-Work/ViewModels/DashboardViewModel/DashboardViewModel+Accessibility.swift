@@ -36,7 +36,7 @@ enum ChartA11y {
 
     /// "15 minutos".
     static func minutes(_ value: Double) -> String {
-        L10n.tr("%lld minutos", Int(value.rounded()))
+        L10n.tr("\(Int(value.rounded())) minutos")
     }
 
     /// "Lavar a louça, Cozinha, tarefa curta, 15 minutos": what a chore bar says.
@@ -44,7 +44,7 @@ enum ChartA11y {
         let tier = ChoreDurationTier.from(minutes: minutes)
         var parts = [name]
         if let room, !room.isEmpty { parts.append(room) }
-        parts.append(L10n.tr("tarefa %@", tier.displayText))
+        parts.append(L10n.tr("tarefa \(tier.displayText)"))
         if minutes > 0 { parts.append(Self.minutes(minutes)) }
         return parts.joined(separator: ", ")
     }
@@ -57,7 +57,7 @@ extension DashboardViewModel {
     /// "3 de 4 tarefas concluídas, 75%" for the "Hoje" doughnut.
     var todayAccessibilityValue: String {
         guard totalToday > 0 else { return L10n.tr("Nenhuma tarefa para hoje") }
-        return L10n.tr("%lld de %lld tarefas concluídas, %@", completedToday, totalToday, completionText)
+        return L10n.tr("\(completedToday) de \(totalToday) tarefas concluídas, \(completionText)")
     }
 
     /// How the user's share compares to the ideal one; mirrors the bar's color scale.
@@ -76,7 +76,7 @@ extension DashboardViewModel {
     var cognitiveShareAccessibilityValue: String {
         var parts = [myCognitiveShareText]
         if idealCognitiveShare > 0 && idealCognitiveShare < 1 {
-            parts.append(L10n.tr("ideal %@", idealCognitiveShareText))
+            parts.append(L10n.tr("ideal \(idealCognitiveShareText)"))
         }
         if let status = cognitiveShareStatusText { parts.append(status) }
         return parts.joined(separator: ", ")

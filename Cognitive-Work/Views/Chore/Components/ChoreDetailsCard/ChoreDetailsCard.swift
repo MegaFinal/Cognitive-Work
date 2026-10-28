@@ -106,7 +106,7 @@ struct ChoreDetailsCard: View {
                 .foregroundStyle(.subTitleGray)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 30)
-                .voiceOverLabel(L10n.tr("Sugestão: %@", note))
+                .voiceOverLabel(L10n.tr("Sugestão: \(note)"))
             }
         }
     }

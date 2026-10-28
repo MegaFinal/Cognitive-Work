@@ -207,6 +207,8 @@
 				en,
 				Base,
 				"pt-BR",
+				es,
+				fr,
 				ko,
 				ja,
 			);

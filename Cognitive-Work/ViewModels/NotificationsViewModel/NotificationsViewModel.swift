@@ -21,6 +21,12 @@ enum NotificationDestination {
     case newMember
     /// A chore (and, for a recurring chore, the occurrence) to open.
     case chore(ChoreModel, RecurrentAssignmentModel?)
+    /// The shopping list tab.
+    case shopList
+    /// The screen with the debts between housemates.
+    case pendingPayments
+    /// The Apple Calendar sync switch, in the general settings.
+    case calendarSync
 }
 
 /// One notification on the notifications screen.
@@ -50,7 +56,10 @@ struct NotificationSection: Identifiable {
 }
 
 /// Builds the notifications screen from the house's data: chores to pick, late chores, new
-/// members, new divisions and the retrospective. Nothing is stored; everything is derived.
+/// members, new divisions and the retrospective, plus payments, the calendar suggestion and the
+/// notifications other members caused (a chore done for you, an item bought), which are read from
+/// the records ``NotificationManager`` keeps in CloudKit for 14 days. Nothing else is stored;
+/// everything is derived.
 ///
 /// A notification is "new" when it happened after the screen was last opened.
 @Observable
@@ -76,11 +85,54 @@ class NotificationsViewModel {
     /// The snapshot and day the current `sections` were built for.
     @ObservationIgnored private var builtSnapshotID: UUID?
     @ObservationIgnored private var builtDay: Date?
+    /// The notifications derived from that snapshot (before the 14-day window).
+    @ObservationIgnored private var derivedItems: [NotificationModel] = []
+    /// The notifications that come from CloudKit records and shop items, reloaded on every ``load(force:now:)``.
+    @ObservationIgnored private var extraItems: [NotificationModel] = []
+
+    // MARK: - Cache
+
+    /// What the last ``load(force:now:)`` built, kept for the whole app session so the screen
+    /// opens with it right away while a fresh load runs (stale-while-revalidate). Every
+    /// instance shares it, including the one the bell uses to count unseen notifications.
+    private final class Cache: @unchecked Sendable {
+        struct Entry {
+            var derivedItems: [NotificationModel]
+            var extraItems: [NotificationModel]
+            var snapshotID: UUID?
+            var day: Date?
+        }
+        private let lock = NSLock()
+        private var entry: Entry?
+        
+        var value: Entry? {
+            get { lock.lock(); defer { lock.unlock() }; return entry }
+            set { lock.lock(); entry = newValue; lock.unlock() }
+        }
+    }
+    private static let cache = Cache()
+    
+    /// Forgets the cached notifications (leaving the house, logging out).
+    static func clearCache() {
+        cache.value = nil
+    }
+    
+    /// Starts with the cached notifications, if there are any, so the screen isn't empty
+    /// while ``load(force:now:)`` runs.
+    init() {
+        guard let cached = Self.cache.value else { return }
+        derivedItems = cached.derivedItems
+        extraItems = cached.extraItems
+        builtSnapshotID = cached.snapshotID
+        builtDay = cached.day
+        publish(now: Date())
+    }
 
     // MARK: - Loading
 
-    /// Reads the house data from `HouseDataStore`. The store only hits CloudKit when its
-    /// data is missing or stale, so opening this screen usually costs no request at all.
+    /// Reads the house data from `HouseDataStore`, which only hits CloudKit when its data is
+    /// missing or stale, and reloads the notification records and the shopping list (for the
+    /// payments), which can change without the house data changing.
     /// - Parameter force: `true` for pull-to-refresh, to bypass the store's cache.
     func load(force: Bool = false, now: Date = Date()) async {
         let store = HouseDataStore.shared
@@ -90,20 +142,33 @@ class NotificationsViewModel {
         let snapshot = await store.load(force: force)
         guard !Task.isCancelled else { return }
 
-        // Same data and same day: the list we already have is still correct.
-        if snapshot.id == builtSnapshotID,
-           let builtDay, calendar.isDate(builtDay, inSameDayAs: now) {
-            return
+        // Same data and same day: the notifications derived from the snapshot are still correct.
+        let isSnapshotCurrent = snapshot.id == builtSnapshotID
+            && builtDay.map { calendar.isDate($0, inSameDayAs: now) } == true
+        if !isSnapshotCurrent {
+            derivedItems = derivedNotifications(from: snapshot, now: now)
+            builtSnapshotID = snapshot.id
+            builtDay = now
+            // Shows the new derived items right away, with the cached extras, while the
+            // CloudKit records are fetched.
+            publish(now: now)
         }
 
-        rebuild(from: snapshot, now: now)
-        builtSnapshotID = snapshot.id
-        builtDay = now
+        extraItems = await loadExtraNotifications(snapshot: snapshot, now: now)
+        guard !Task.isCancelled else { return }
+        publish(now: now)
+        
+        Self.cache.value = Cache.Entry(
+            derivedItems: derivedItems,
+            extraItems: extraItems,
+            snapshotID: builtSnapshotID,
+            day: builtDay
+        )
     }
 
-    /// Builds every notification from data already in memory. No CloudKit calls.
-    private func rebuild(from snapshot: HouseSnapshot, now: Date) {
-        guard let me = snapshot.houseUser else { return }
+    /// Builds every notification that comes from the house's data already in memory. No CloudKit calls.
+    private func derivedNotifications(from snapshot: HouseSnapshot, now: Date) -> [NotificationModel] {
+        guard let me = snapshot.houseUser else { return [] }
 
         // Fast lookup tables: recordID → object.
         let choresByID = Dictionary(
@@ -134,11 +199,118 @@ class NotificationsViewModel {
         all += divisionNotifications(snapshot.assignments)
         all += newUserNotifications(snapshot.users, myIDs: myIDs)
 
+        return all
+    }
+
+    /// Merges every source, keeps the last 14 days and groups by day.
+    private func publish(now: Date) {
+        let windowStart = calendar.date(
+            byAdding: .day, value: -Self.lifetimeInDays, to: calendar.startOfDay(for: now)
+        ) ?? now
+
         // The 14-day rule lives in a single place (and nothing from the future shows up).
-        all = all.filter { $0.date >= windowStart && $0.date <= now }
+        let all = (derivedItems + extraItems).filter { $0.date >= windowStart && $0.date <= now }
 
         sections = makeSections(from: all)
         newCount = all.filter { $0.date > lastSeenDate }.count
+    }
+
+    // MARK: - Notifications from CloudKit
+
+    /// The notifications that don't come from the house's chores: what other members caused
+    /// (records saved by ``NotificationManager``), the payments and the calendar suggestion.
+    private func loadExtraNotifications(snapshot: HouseSnapshot, now: Date) async -> [NotificationModel] {
+        guard let me = snapshot.houseUser else { return [] }
+
+        async let records = NotificationManager.shared.fetchChanges()
+        async let shopItems = CloudKitManager.shared.fetchAll(ShopListItem.self)
+        let (dtos, items) = await (records, shopItems)
+        let myID = await CloudKitManager.shared.fetchCurrentUserRecordID()?.recordName ?? me.ownerRecordName
+
+        var result = await recordNotifications(dtos, myID: myID)
+        result += debtNotifications(items, snapshot: snapshot, now: now)
+        result += calendarNotification(snapshot, now: now)
+        return result
+    }
+
+    /// "X fez a tarefa Y por você" and "X comprou Y": the records addressed to `myID`. Other
+    /// kinds of record (a new division, a new member) already show up from the house's data.
+    private func recordNotifications(_ dtos: [NotificationCloudDTO], myID: String) async -> [NotificationModel] {
+        typealias Keys = NotificationManager.UserInfoKey
+        var result: [NotificationModel] = []
+
+        for dto in dtos {
+            guard let recordName = dto.recordID?.recordName,
+                  dto.recipientIDs.contains(myID),
+                  let createdAt = dto.userInfo[Keys.createdAt] as? Double,
+                  let raw = dto.userInfo[Keys.kind] as? String,
+                  let kind = Notifications(rawValue: raw),
+                  kind == .choreDoneForYou || kind == .itemBought,
+                  let titleKey = dto.userInfo[Keys.titleKey] as? String
+            else { continue }
+
+            let title = NotificationManager.localized(titleKey, dto.userInfo[Keys.titleArgs] as? [String] ?? [])
+            var subtitle = ""
+            if let bodyKey = dto.userInfo[Keys.bodyKey] as? String, !bodyKey.isEmpty {
+                subtitle = NotificationManager.localized(bodyKey, dto.userInfo[Keys.bodyArgs] as? [String] ?? [])
+            }
+            // A chore that no longer exists has nowhere to go: falls back to the progress tab.
+            let destination = await NotificationManager.shared.resolveDestination(from: dto.userInfo) ?? .dashboard
+
+            result.append(
+                NotificationModel(
+                    id: "record-\(recordName)",
+                    kind: kind,
+                    title: title,
+                    subtitle: subtitle,
+                    date: Date(timeIntervalSince1970: createdAt),
+                    destination: destination
+                )
+            )
+        }
+        return result
+    }
+
+    /// "Você tem pagamentos pendentes" and "...a receber", from the first weekly reminder on
+    /// (the same dates the push is scheduled for). The date moves forward every week.
+    private func debtNotifications(
+        _ items: [ShopListItem], snapshot: HouseSnapshot, now: Date
+    ) -> [NotificationModel] {
+        let ledger = DebtCalculator.ledger(
+            items: items,
+            users: snapshot.users,
+            userRecords: snapshot.userRecords,
+            me: snapshot.houseUser
+        )
+        return DebtReminders.summaries(from: ledger).compactMap { summary -> NotificationModel? in
+            guard let date = DebtReminders.lastFireDate(since: summary.since, now: now) else { return nil }
+            return NotificationModel(
+                id: "debt-\(summary.key)",
+                kind: summary.kind,
+                title: summary.title,
+                subtitle: summary.body,
+                date: date,
+                destination: .pendingPayments
+            )
+        }
+    }
+
+    /// Suggests the Apple Calendar sync to a member who joined in the last week and hasn't turned it on.
+    private func calendarNotification(_ snapshot: HouseSnapshot, now: Date) -> [NotificationModel] {
+        guard !UserDefaults.standard.bool(forKey: "isCalendarSyncEnabled"),
+              let joined = snapshot.houseUser?.joinedAt,
+              now.timeIntervalSince(joined) < 7 * 24 * 3600 else { return [] }
+
+        return [
+            NotificationModel(
+                id: "calendar-sync",
+                kind: .calendarSync,
+                title: L10n.tr(key: Notifications.calendarSync.rawValue),
+                subtitle: L10n.tr(key: Notifications.calendarSync.subTitle),
+                date: joined,
+                destination: .calendarSync
+            )
+        ]
     }
 
     // MARK: - Occurrences
@@ -223,8 +395,8 @@ class NotificationsViewModel {
                 id: "grab-\(day.timeIntervalSince1970)",
                 kind: .grabChore,
                 // Plural rules ("1 tarefa" / "3 tarefas") live in Localizable.xcstrings.
-                title: L10n.tr("%lld tarefas a pegar hoje", list.count),
-                subtitle: L10n.tr(Notifications.grabChore.subTitle),
+                title: L10n.tr("\(list.count) tarefas a pegar hoje"),
+                subtitle: L10n.tr(key: Notifications.grabChore.subTitle),
                 date: day,
                 destination: .pickChores
             )
@@ -257,10 +429,10 @@ class NotificationsViewModel {
                 kind = .noUserDelayedChore
                 // Lowercase first letter so it reads well mid-sentence ("Ninguém pegou limpar...").
                 let midSentenceName: String = choreName.prefix(1).lowercased() + choreName.dropFirst()
-                title = L10n.tr("Ninguém pegou %@", midSentenceName)
+                title = L10n.tr("Ninguém pegou \(midSentenceName)")
             } else if occurrence.userIDs.contains(where: { myIDs.contains($0) }) {
                 kind = .yourDelayedChore
-                title = L10n.tr("%@ está atrasado", choreName)
+                title = L10n.tr("\(choreName) está atrasado")
             } else {
                 return nil // someone else's late chore: don't notify me
             }
@@ -276,7 +448,7 @@ class NotificationsViewModel {
                 id: "late-\(recordName)",
                 kind: kind,
                 title: title,
-                subtitle: L10n.tr("%@ · cerca de %lld min", room, Int(chore.duration.rounded())),
+                subtitle: L10n.tr("\(room) · cerca de \(Int(chore.duration.rounded())) min"),
                 date: lateSince,
                 destination: .chore(chore, occurrence.assignment)
             )
@@ -294,8 +466,8 @@ class NotificationsViewModel {
             NotificationModel(
                 id: "division-\(cycleStart.timeIntervalSince1970)",
                 kind: .newDivision,
-                title: L10n.tr(Notifications.newDivision.rawValue),
-                subtitle: L10n.tr(Notifications.newDivision.subTitle),
+                title: L10n.tr(key: Notifications.newDivision.rawValue),
+                subtitle: L10n.tr(key: Notifications.newDivision.subTitle),
                 date: cycleStart,
                 destination: .dashboard
             )
@@ -308,8 +480,8 @@ class NotificationsViewModel {
                 NotificationModel(
                     id: "retro-\(cycleStart.timeIntervalSince1970)",
                     kind: .retrospective,
-                    title: L10n.tr(Notifications.retrospective.rawValue),
-                    subtitle: L10n.tr(Notifications.retrospective.subTitle),
+                    title: L10n.tr(key: Notifications.retrospective.rawValue),
+                    subtitle: L10n.tr(key: Notifications.retrospective.subTitle),
                     date: cycleStart,
                     destination: .retrospective
                 )
@@ -327,8 +499,8 @@ class NotificationsViewModel {
             return NotificationModel(
                 id: "user-\(id.recordName)",
                 kind: .newUser,
-                title: L10n.tr("%@ entrou na casa", user.name),
-                subtitle: L10n.tr(Notifications.newUser.subTitle),
+                title: L10n.tr("\(user.name) entrou na casa"),
+                subtitle: L10n.tr(key: Notifications.newUser.subTitle),
                 date: joined,
                 destination: .newMember
             )
@@ -357,7 +529,7 @@ class NotificationsViewModel {
         // Singular/plural ("1 nova notificação" / "3 novas notificações") come from Localizable.xcstrings.
         newCount == 0
             ? L10n.tr("Nenhuma notificação nova")
-            : L10n.tr("%lld novas notificações", newCount)
+            : L10n.tr("\(newCount) novas notificações")
     }
 
     /// The last time the user opened the screen (or the distant past).
@@ -368,5 +540,6 @@ class NotificationsViewModel {
     /// Marks every notification as seen (called when the screen closes).
     func markAllAsSeen(now: Date = Date()) {
         defaults.set(now, forKey: Self.lastSeenKey)
+        Task { @MainActor in NotificationManager.shared.markNotificationsSeen() }
     }
 }

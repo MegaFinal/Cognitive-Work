@@ -303,7 +303,7 @@ private struct RoomCapsule: View {
         .animation(.snappy(duration: 0.25), value: selectedCount)
         .accessibilityLabel(Text(room.name.localizedDefault))
         .voiceControlNames([room.name.localizedDefault])
-        .voiceOverValue(selectedCount > 0 ? L10n.tr("%lld tarefas marcadas", selectedCount) : "")
+        .voiceOverValue(selectedCount > 0 ? L10n.tr("\(selectedCount) tarefas marcadas") : "")
         .voiceOverHint(isSelected ? "" : L10n.tr("Mostra as tarefas deste cômodo"))
         .voiceOverTraits(.isSelected, when: isSelected)
     }

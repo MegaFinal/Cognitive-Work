@@ -178,7 +178,7 @@ final class ShopListViewModel {
 
     /// "3 itens para comprar", shown under the title.
     var pendingSummary: String {
-        L10n.tr("%lld itens para comprar", pendingItems.count)
+        L10n.tr("\(pendingItems.count) itens para comprar")
     }
 
     /// Pending items as one section per category, in the fixed ``ShopItemCategory/listOrder``,
@@ -633,6 +633,8 @@ final class ShopListViewModel {
                 return
             }
 
+            notifyItemBought(item, by: currentUser)
+            
             var points = ScoreValues.shoppingItemBought.points
             if price != nil { points += ScoreValues.receiptScanned(itemCount: 1).points }
             await ScoreManager.shared.assignScoreForMyUser(score: points)
@@ -641,6 +643,15 @@ final class ShopListViewModel {
         }
     }
 
+    /// Tells the member who added `item` that somebody else bought it.
+    private func notifyItemBought(_ item: ShopListItem, by buyer: UserModel) {
+        guard let addedByID = item.addedByRecordID,
+              let owner = houseUsers.first(where: { $0.recordID == addedByID }),
+              owner.ownerRecordName != buyer.ownerRecordName else { return }
+        
+        Task { await NotificationManager.shared.notifyItemBought(item, by: buyer.name, to: owner) }
+    }
+    
     /// Dismisses the error shown by the view.
     func clearError() {
         errorMessage = nil
@@ -703,6 +714,23 @@ final class ShopListViewModel {
 
     /// A pending item that is the same product as `name`, if any, so the form can offer to add
     /// to its quantity instead of creating a second card.
+    /// The latest item with the same name that had a price, to offer it again ("Última vez:
+    /// R$ 25,00"). Plain code over the house's items (no AI): same words, ignoring case and
+    /// accents; bought items count by when they were bought.
+    ///
+    /// - Parameter excluding: The item being edited, so it doesn't suggest its own price.
+    func lastPricedItem(named name: String, excluding excluded: ShopListItem? = nil) -> ShopListItem? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return items
+            .filter { item in
+                item.hasPrice
+                    && item.id != excluded?.id
+                    && ShopItemDuplicateFinder.isExactMatch(trimmed, item.name)
+            }
+            .max { ($0.boughtAt ?? $0.createdAt) < ($1.boughtAt ?? $1.createdAt) }
+    }
+
     func duplicateItem(named name: String) async -> ShopListItem? {
         let candidates = ShopItemDuplicateFinder.candidates(for: name, in: pendingItems)
         for candidate in candidates {
@@ -789,7 +817,7 @@ final class ShopListViewModel {
         let total = unitPrice * Double(quantity)
         let share = (total / Double(consumerCount) * 100).rounded() / 100
         let format = FloatingPointFormatStyle<Double>.Currency(code: "BRL").locale(L10n.locale)
-        return L10n.tr("%@ por pessoa", share.formatted(format))
+        return L10n.tr("\(share.formatted(format)) por pessoa")
     }
 
     // MARK: - Previews

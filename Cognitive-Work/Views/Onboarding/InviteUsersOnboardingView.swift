@@ -79,7 +79,7 @@ struct InviteUsersOnboardingView: View {
         .onChange(of: houseUsers.count) { oldCount, newCount in
             // Someone accepted the invite while the user waits on this screen.
             if newCount > oldCount && oldCount > 0 {
-                VoiceOver.announce(L10n.tr("%lld moradores na casa", newCount))
+                VoiceOver.announce(L10n.tr("\(newCount) moradores na casa"))
             }
         }
         .onChange(of: didFailToPrepareInvite) { _, didFail in

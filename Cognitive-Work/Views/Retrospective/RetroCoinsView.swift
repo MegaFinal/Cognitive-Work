@@ -190,7 +190,7 @@ struct RetroCoinsView: View {
     /// "ganhas neste ciclo com o rank X", or without the rank when it is unknown.
     private var subtitle: String {
         if let tierName = content.tierName {
-            return L10n.tr("ganhas neste ciclo com o rank %@", tierName)
+            return L10n.tr("ganhas neste ciclo com o rank \(tierName)")
         }
         return L10n.tr("ganhas neste ciclo")
     }

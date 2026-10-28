@@ -49,10 +49,10 @@ private struct BlockingOperationView: View {
         .interactiveDismissDisabled()
         // One modal element announcing the operation; VoiceOver can't reach the screen behind.
         .accessibilityElement(children: .ignore)
-        .voiceOverLabel(L10n.tr(message))
+        .voiceOverLabel(L10n.tr(key: message))
         .accessibilityAddTraits([.isModal, .updatesFrequently])
         .onAppear {
-            VoiceOver.announce(L10n.tr(message))
+            VoiceOver.announce(L10n.tr(key: message))
         }
     }
 }

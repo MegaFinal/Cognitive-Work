@@ -97,7 +97,18 @@ final class ScheduleViewModel {
         await setup()
         await resetUpcomingSchedule(for: chores)
         await TaskSchedulerEngine.schedule(chores: chores, users: users)
+        announceNewDivision()
         isLoading = false
+    }
+    
+    /// Tells the other members the chores were divided again, and replans this device's
+    /// reminders (retrospective, chores to pick up) for the new division.
+    private func announceNewDivision() {
+        let members = users
+        Task {
+            await NotificationManager.shared.notifyNewDivision(to: members)
+            await NotificationManager.shared.refreshReminders(force: true)
+        }
     }
     
     /// Loads the schedule, generating a new division first when `shouldGenerate` is `true`.
@@ -116,7 +127,7 @@ final class ScheduleViewModel {
                 users: users
             )
 
-            // TODO: implement notification for users when its done loading?
+            announceNewDivision()
             NotificationCenter.default.post(
                 name: .cloudKitDidChange,
                 object: nil

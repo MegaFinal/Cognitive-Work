@@ -1094,6 +1094,10 @@ class OnboardingViewModel {
             if let savedUser {
                 await house.appendUsers([savedUser])
                 rollbackJournal.joinedMembership = savedUser.recordID.map(OnboardingRollbackJournal.StoredRecordID.init)
+                
+                // Tells the admin, who can redo the automatic division.
+                let memberName = sharedUser.name
+                Task { await NotificationManager.shared.notifyNewMember(named: memberName, houseID: houseRecordID) }
             }
         }
         
