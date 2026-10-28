@@ -178,7 +178,7 @@ final class ShopListViewModel {
 
     /// "3 itens para comprar", shown under the title.
     var pendingSummary: String {
-        L10n.tr("%lld itens para comprar", pendingItems.count)
+        L10n.tr("\(pendingItems.count) itens para comprar")
     }
 
     /// Pending items as one section per category, in the fixed ``ShopItemCategory/listOrder``,
@@ -789,7 +789,7 @@ final class ShopListViewModel {
         let total = unitPrice * Double(quantity)
         let share = (total / Double(consumerCount) * 100).rounded() / 100
         let format = FloatingPointFormatStyle<Double>.Currency(code: "BRL").locale(L10n.locale)
-        return L10n.tr("%@ por pessoa", share.formatted(format))
+        return L10n.tr("\(share.formatted(format)) por pessoa")
     }
 
     // MARK: - Previews

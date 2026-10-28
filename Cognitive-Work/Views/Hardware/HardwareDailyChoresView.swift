@@ -222,7 +222,7 @@ private struct OverflowStrip: View {
     var count: Int
 
     var body: some View {
-        Text(verbatim: "+" + L10n.tr("%lld tarefas", count))
+        Text(verbatim: "+" + L10n.tr("\(count) tarefas"))
             .font(.title3)
             .fontWeight(.semibold)
             .foregroundColor(EInkShade.darkGray)

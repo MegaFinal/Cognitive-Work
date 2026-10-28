@@ -178,7 +178,7 @@ struct ChoreListLayout: View {
         // "Hoje, quinta-feira, 25 de setembro" — header — "expandido, 3 tarefas"
         .voiceOverLabel(group.accessibilityTitle)
         .voiceControlNames([group.title])
-        .accessibilityValue(Text(verbatim: "\(isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")), \(L10n.tr("%lld tarefas", group.occurrences.count))"))
+        .accessibilityValue(Text(verbatim: "\(isCollapsed ? L10n.tr("recolhido") : L10n.tr("expandido")), \(L10n.tr("\(group.occurrences.count) tarefas"))"))
         .voiceOverHint(isCollapsed ? L10n.tr("Toque duas vezes para expandir.") : L10n.tr("Toque duas vezes para recolher."))
         .accessibilityAddTraits(.isHeader)
     }
@@ -345,7 +345,7 @@ struct SwipeToDeleteRow<Content: View>: View {
         // MARK: - The card, with the delete button behind it
         content
             // MARK: - VoiceOver alternative to the swipe: an "Excluir" action on the row
-            .accessibilityAction(named: Text(L10n.tr(style.title ?? "Excluir"))) {
+            .accessibilityAction(named: Text(L10n.tr(key: style.title ?? "Excluir"))) {
                 dismissAndDelete()
             }
             .background(alignment: .trailing) {

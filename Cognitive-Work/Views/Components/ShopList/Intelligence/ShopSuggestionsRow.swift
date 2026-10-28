@@ -36,7 +36,6 @@ struct ShopSuggestionCards: View {
                     ShopDottedDivider()
                         .padding(.vertical, 4)
                 }
-
                 ForEach(suggestions) { suggestion in
                     card(for: suggestion)
                 }
@@ -88,9 +87,9 @@ struct ShopSuggestionCards: View {
             }
             .buttonStyle(.plain)
             .disabled(addingID != nil)
-            .voiceOverLabel(L10n.tr("Adicionar %@", suggestion.name))
+            .voiceOverLabel(L10n.tr("Adicionar \(suggestion.name)"))
             .voiceOverHint(reason(for: suggestion.kind))
-            .voiceControlNames([L10n.tr("Adicionar %@", suggestion.name), suggestion.name])
+            .voiceControlNames([L10n.tr("Adicionar \(suggestion.name)"), suggestion.name])
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -126,7 +125,7 @@ struct ShopSuggestionCards: View {
     /// Why it's suggested, read by VoiceOver (no longer shown on the card).
     private func reason(for kind: ShopListSuggestion.Kind) -> String {
         switch kind {
-        case .usual(let days): return L10n.tr("Costuma entrar na lista a cada %lld dias.", days)
+        case .usual(let days): return L10n.tr("Costuma entrar na lista a cada \(days) dias.")
         case .goesWithList: return L10n.tr("Combina com o que está na lista.")
         }
     }
@@ -136,7 +135,7 @@ struct ShopSuggestionCards: View {
         defer { addingID = nil }
         if await model.add(suggestion) {
             HapticsManager.notify(.success)
-            VoiceOver.announce(L10n.tr("%@ adicionado", suggestion.name))
+            VoiceOver.announce(L10n.tr("\(suggestion.name) adicionado"))
         } else {
             HapticsManager.notify(.error)
         }

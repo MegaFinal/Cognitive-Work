@@ -13,8 +13,8 @@ extension UserProfileViewModel {
     var accessibilityProfileSummary: String {
         guard let user else { return L10n.tr("Carregando perfil") }
 
-        let points = user.points == 1 ? L10n.tr("1 ponto") : L10n.tr("%lld pontos", user.points)
-        let coins = user.coins == 1 ? L10n.tr("1 moeda") : L10n.tr("%lld moedas", user.coins)
+        let points = user.points == 1 ? L10n.tr("1 ponto") : L10n.tr("\(user.points) pontos")
+        let coins = user.coins == 1 ? L10n.tr("1 moeda") : L10n.tr("\(user.coins) moedas")
         return [user.name, user.tier.displayName, points, coins]
             .filter { !$0.isEmpty }
             .joined(separator: ", ")

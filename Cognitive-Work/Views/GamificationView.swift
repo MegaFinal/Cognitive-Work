@@ -137,7 +137,7 @@ struct GamificationView: View {
     /// "7 itens para comprar".
     private var itemsText: String {
         let count = viewModel.availableEntries.count
-        return count == 1 ? L10n.tr("1 item para comprar") : L10n.tr("%lld itens para comprar", count)
+        return count == 1 ? L10n.tr("1 item para comprar") : L10n.tr("\(count) itens para comprar")
     }
 
     /// The room's name, capitalized, in the app's language.

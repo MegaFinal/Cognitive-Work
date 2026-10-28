@@ -375,7 +375,7 @@ struct ChoresView: View {
             )
             progressCard(
                 title: "A fazer",
-                data: L10n.tr("%lld tarefas", dashboard?.toDo ?? 0),
+                data: L10n.tr("\(dashboard?.toDo ?? 0) tarefas"),
                 color: cardColor
             )
             progressCard(
