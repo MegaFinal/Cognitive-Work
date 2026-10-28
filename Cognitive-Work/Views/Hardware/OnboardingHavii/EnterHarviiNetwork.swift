@@ -26,65 +26,68 @@ struct EnterHarviiNetwork: View {
     private var sideMargin: CGFloat { width * 0.0565 }
     
     var body: some View {
-        VStack(alignment: .center, spacing: 64) {
-            
-            OnboardingHeader(
-                title: "Entre na rede do Harvii",
-                description: "Nos ajustes do celular, saia do Wi-Fi da sua casa e escolha a rede do Harvii.",
-                containerInset: sideMargin
-            )
-            
-            WifiListExample(isHarviiNetwork: true)
-            
-            passwordCard
-            
-            Spacer()
-            
-            openConfigurationButton
-            
-        }
-        .padding(.horizontal, sideMargin)
-        .padding(.bottom, height * 0.02)
-        .overlay(alignment: .bottomTrailing) {
-            OnboardingProgressButton(
-                width: width * 0.15,
-                height: width * 0.15,
-                text: "chevron.right",
-                isSystemImage: true
-            ) {
-                // TODO: go to the next Harvii step.
+        NavigationStack{
+            VStack(alignment: .center, spacing: 45) {
+                
+                OnboardingHeader(
+                    title: "Entre na rede do Harvii",
+                    description: "Nos ajustes do celular, saia do Wi-Fi da sua casa e escolha a rede do Harvii.",
+                    containerInset: sideMargin
+                )
+                
+                Spacer()
+                
+                WifiListExample(isHarviiNetwork: true)
+                passwordCard
+                
+                Spacer()
+                
+                openConfigurationButton
+                
             }
+            .padding(.horizontal, sideMargin)
             .padding(.bottom, height * 0.02)
-            .padding(.trailing, width * 0.061)
+            .overlay(alignment: .bottomTrailing) {
+                OnboardingProgressButton(
+                    width: width * 0.15,
+                    height: width * 0.15,
+                    text: "chevron.right",
+                    isSystemImage: true
+                ) {
+                    // TODO: go to the next Harvii step.
+                }
+                .padding(.bottom, height * 0.02)
+                .padding(.trailing, width * 0.061)
+            }
+            .frame(maxHeight: .infinity, alignment: .bottom)
         }
-        .frame(maxHeight: .infinity, alignment: .bottom)
     }
     
     // MARK: - Password
     
     /// The Harvii network password, with a button that copies it.
     private var passwordCard: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Senha da rede do Harvii")
-                    .font(.subheadline.weight(.semibold))
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Senha da rede do Harvii")
+                .font(.subheadline.weight(.semibold))
+            
+            HStack {
                 Text(verbatim: harviiPassword)
                     .font(.title2.weight(.semibold))
+                Spacer()
+                
+                Button(isPasswordCopied ? LocalizedStringKey("Copiado") : LocalizedStringKey("Copiar")) {
+                    copyPassword()
+                }
+                .font(.subheadline.weight(.semibold))
+                .buttonStyle(.glass)
+                .buttonBorderShape(.capsule)
+                .voiceControlNames([L10n.tr("Copiar senha")])
             }
-            
-            Spacer()
-            
-            Button(isPasswordCopied ? LocalizedStringKey("Copiado") : LocalizedStringKey("Copiar")) {
-                copyPassword()
-            }
-            .font(.subheadline.weight(.semibold))
-            .buttonStyle(.glass)
-            .buttonBorderShape(.capsule)
-            .voiceControlNames([L10n.tr("Copiar")])
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemGroupedBackground), in: .rect(cornerRadius: 20))
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemGroupedBackground), in: .rect(cornerRadius: 20))
     }
     
     // MARK: openConfigurationButton

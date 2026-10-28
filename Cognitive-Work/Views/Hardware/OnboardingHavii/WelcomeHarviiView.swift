@@ -31,8 +31,7 @@ struct WelcomeHarviiView: View {
                         .font(.largeTitle)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
-                        .padding(.bottom, height * 0.028)
-                        .padding(.top, height * 0.052)
+                        .padding(.init(top: height * 0.052, leading: 0, bottom: height * 0.028, trailing: 0))
                     
                     Text("O Harvii recebe as tarefas da Pipa pelo Wi-Fi da sua casa e atualiza sozinho. Ninguém precisa abrir o celular nem escrever nada.")
                         .font(.body)
