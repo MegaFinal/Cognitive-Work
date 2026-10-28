@@ -45,7 +45,12 @@ struct Cognitive_WorkApp: App {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
-                Task { await HardwareViewModel.deliverNow() }
+                Task {
+                    await HardwareViewModel.deliverNow()
+                    await NotificationManager.shared.processIncoming()
+                    await NotificationManager.shared.refreshReminders()
+                    await NotificationManager.shared.refreshUnseenNotifications()
+                }
             case .background:
                 HardwareBackgroundSync.scheduleAppRefresh()
             default:

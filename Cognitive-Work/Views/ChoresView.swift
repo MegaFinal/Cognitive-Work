@@ -347,8 +347,20 @@ struct ChoresView: View {
                         .font(.system(size: 22))
                         .foregroundColor(.black)
                         .padding(8)
+                        .overlay(alignment: .topTrailing) {
+                            // Red dot while there are notifications the user hasn't seen.
+                            if NotificationManager.shared.hasUnseenNotifications {
+                                Circle()
+                                    .fill(.red)
+                                    .frame(width: 10, height: 10)
+                                    .padding(.top, 6)
+                                    .padding(.trailing, 6)
+                            }
+                        }
                 }
                 .voiceOverLabel(L10n.tr("Notificações"))
+                .accessibilityValue(NotificationManager.shared.hasUnseenNotifications
+                                    ? L10n.tr("Há notificações novas") : "")
                 .voiceControlNames([L10n.tr("Notificações"), L10n.tr("Avisos")])
                 
                 // MARK: Filter menu (list only)

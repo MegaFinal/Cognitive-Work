@@ -797,6 +797,7 @@ class CarouselViewModel {
         refreshVisible()
         
         if willBeDone {
+            notifyOwnersChoreDone(chore, assignment: nil)
             return await ScoreManager.shared.assignScoreForMyUser(chore: chore)
         }
         if let doer {
@@ -820,12 +821,43 @@ class CarouselViewModel {
         refreshVisible()
         
         if willBeDone {
+            if let choreID = assignment.choreReference?.recordID,
+               let chore = cardModels.first(where: { $0.recordID == choreID }) {
+                notifyOwnersChoreDone(chore, assignment: assignment)
+            }
             return await ScoreManager.shared.assignScoreForMyUser(assignment: assignment)
         }
         if let doer {
             return await ScoreManager.shared.removeScore(assignment: assignment, for: doer)
         }
         return await ScoreManager.shared.removeScoreForMyUser(assignment: assignment)
+    }
+    
+    /// Tells the members a chore was assigned to that someone else did it. Does nothing when
+    /// nobody has it or the current user is one of them.
+    private func notifyOwnersChoreDone(_ chore: ChoreModel, assignment: RecurrentAssignmentModel?) {
+        var ownerRefs = assignment?.userReferences ?? []
+        if assignment == nil {
+            ownerRefs = chore.allResponsibleUsersReference ?? []
+            if let current = chore.currentResponsibleReference,
+               !ownerRefs.contains(where: { $0.recordID == current.recordID }) {
+                ownerRefs.append(current)
+            }
+        }
+        
+        let ownerIDs = Set(ownerRefs.map(\.recordID))
+        guard !ownerIDs.isEmpty, !viewerRecordIDs.isEmpty,
+              ownerIDs.isDisjoint(with: viewerRecordIDs),
+              let doer = dashboardUser else { return }
+        
+        let owners = userModels.filter { user in user.recordID.map(ownerIDs.contains) ?? false }
+        guard !owners.isEmpty else { return }
+        
+        Task {
+            await NotificationManager.shared.notifyChoreDone(
+                chore, assignment: assignment, by: doer.name, for: owners
+            )
+        }
     }
     
     // MARK: - Postpone

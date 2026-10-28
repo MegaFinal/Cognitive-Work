@@ -580,6 +580,8 @@ final class ShopListViewModel {
                 return
             }
 
+            notifyItemBought(item, by: currentUser)
+            
             var points = ScoreValues.shoppingItemBought.points
             if price != nil { points += ScoreValues.receiptScanned(itemCount: 1).points }
             await ScoreManager.shared.assignScoreForMyUser(score: points)
@@ -588,6 +590,15 @@ final class ShopListViewModel {
         }
     }
 
+    /// Tells the member who added `item` that somebody else bought it.
+    private func notifyItemBought(_ item: ShopListItem, by buyer: UserModel) {
+        guard let addedByID = item.addedByRecordID,
+              let owner = houseUsers.first(where: { $0.recordID == addedByID }),
+              owner.ownerRecordName != buyer.ownerRecordName else { return }
+        
+        Task { await NotificationManager.shared.notifyItemBought(item, by: buyer.name, to: owner) }
+    }
+    
     /// Dismisses the error shown by the view.
     func clearError() {
         errorMessage = nil
