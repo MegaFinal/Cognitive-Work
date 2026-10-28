@@ -107,6 +107,41 @@
         }
       }
     },
+    "%@ comprou" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ bought"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ compró"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ a acheté"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@さんが購入しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@님이 구매했어요"
+          }
+        }
+      }
+    },
     "%@ comprou %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -138,17 +173,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@님이 %@을(를) 구매했어요"
-          }
-        }
-      }
-    },
-    "%@ comprou %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ bought %@"
           }
         }
       }
@@ -325,17 +349,6 @@
         }
       }
     },
-    "%@ fez %@ por você" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ did %@ for you"
-          }
-        }
-      }
-    },
     "%@ no ciclo. Faltaram %lld para %@." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -505,17 +518,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@님이 %@을(를) 갚아야 해요"
-          }
-        }
-      }
-    },
-    "%@ te deve %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ owes you %@"
           }
         }
       }
@@ -7319,6 +7321,41 @@
         }
       }
     },
+    "Carro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Car"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voiture"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "車"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자동차"
+          }
+        }
+      }
+    },
     "Carrossel" : {
       "localizations" : {
         "en" : {
@@ -7386,9 +7423,6 @@
           }
         }
       }
-    },
-    "Casa da bela" : {
-
     },
     "Casa não encontrada." : {
       "localizations" : {
@@ -11731,6 +11765,12 @@
         }
       }
     },
+    "Disparear" : {
+
+    },
+    "Disparear este celular" : {
+
+    },
     "Disponível quando todos os moradores terminarem a configuração" : {
       "localizations" : {
         "en" : {
@@ -14967,17 +15007,6 @@
         }
       }
     },
-    "Essa tarefa estava na sua lista" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "That chore was on your list"
-          }
-        }
-      }
-    },
     "Esse cupom já é seu neste ciclo." : {
       "localizations" : {
         "en" : {
@@ -15348,6 +15377,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "이 이름은 집 전체 집안일용으로 예약되어 있어요."
+          }
+        }
+      }
+    },
+    "Estender roupa" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hang the laundry"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tender la ropa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Étendre le linge"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "洗濯物を干す"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "빨래 널기"
           }
         }
       }
@@ -17751,17 +17815,6 @@
         }
       }
     },
-    "Há notificações novas" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There are new notifications"
-          }
-        }
-      }
-    },
     "Haptics" : {
       "localizations" : {
         "en" : {
@@ -17797,7 +17850,38 @@
       }
     },
     "Harvii está recebendo as atualizações das tarefas da sua casa em tempo real!\nQuando alguém completar alguma tarefa no celular, o Harvii atualizará sozinho." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii is receiving your home's chore updates in real time!\nWhen someone completes a chore on their phone, Harvii updates on its own."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Harvii está recibiendo las actualizaciones de las tareas de tu casa en tiempo real!\nCuando alguien complete una tarea en el celular, Harvii se actualizará solo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii reçoit les mises à jour des tâches de votre foyer en temps réel !\nQuand quelqu’un termine une tâche sur son téléphone, Harvii se met à jour tout seul."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harviiはおうちの家事の更新をリアルタイムで受け取っています！\n誰かが携帯電話で家事を完了すると、Harviiが自動で更新されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii가 집안일 업데이트를 실시간으로 받고 있어요!\n누군가 휴대폰에서 집안일을 완료하면 Harvii가 알아서 업데이트돼요."
+          }
+        }
+      }
     },
     "Histórico completo de gastos" : {
       "localizations" : {
@@ -20517,6 +20601,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "유리 청소"
+          }
+        }
+      }
+    },
+    "Limpeza" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaning"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpieza"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nettoyage"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "掃除"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "청소"
           }
         }
       }
@@ -24981,7 +25100,38 @@
       }
     },
     "Nome da sua rede" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your network name"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre de tu red"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom de votre réseau"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ネットワーク名"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "네트워크 이름"
+          }
+        }
+      }
     },
     "Nome da tarefa" : {
       "localizations" : {
@@ -27878,7 +28028,38 @@
       }
     },
     "pareado" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "paired"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "emparejado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "appairé"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ペアリング"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "페어링"
+          }
+        }
+      }
     },
     "Pareamento" : {
       "localizations" : {
@@ -29216,6 +29397,41 @@
         }
       }
     },
+    "Pix copia e cola" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix copy and paste"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix copiar y pegar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix copier-coller"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix コピー&ペースト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pix 복사 후 붙여넣기"
+          }
+        }
+      }
+    },
     "Pix copia e cola copiado!" : {
       "localizations" : {
         "en" : {
@@ -30034,6 +30250,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "청소 용품"
+          }
+        }
+      }
+    },
+    "Progresso" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progress"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progreso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progression"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進捗"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "진행 상황"
           }
         }
       }
@@ -31235,6 +31486,41 @@
         }
       }
     },
+    "Ranking" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ranking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ranking"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classement"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ランキング"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "랭킹"
+          }
+        }
+      }
+    },
     "Ranking da casa" : {
       "localizations" : {
         "en" : {
@@ -31747,6 +32033,28 @@
         }
       }
     },
+    "Rede do Harvii" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii network"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red de Harvii"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réseau Harvii"
+          }
+        }
+      }
+    },
     "Refaça a divisão automática para incluir esse morador" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31778,39 +32086,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "이 구성원을 포함하려면 자동 분배를 다시 하세요"
-          }
-        }
-      }
-    },
-    "Refaça a divisão automática para incluir esse morador" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redo the automatic split to include this member"
-          }
-        }
-      }
-    },
-    "Rede do Harvii" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Harvii network"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Red de Harvii"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réseau Harvii"
           }
         }
       }
@@ -33770,6 +34045,41 @@
         }
       }
     },
+    "Selecione as tarefas" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select the chores"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecciona las tareas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionne les tâches"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "家事を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "집안일 선택"
+          }
+        }
+      }
+    },
     "Selecione as tarefas que serão divididas igualmente entre todos" : {
       "localizations" : {
         "en" : {
@@ -34508,7 +34818,38 @@
       }
     },
     "Seu Harvii está\n%@!" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Harvii is\n%@!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Tu Harvii está\n%@!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre Harvii est\n%@ !"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harviiの\n%@が完了しました！"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harvii가\n%@되었어요!"
+          }
+        }
+      }
     },
     "Seu histórico aparece aqui quando o primeiro ciclo terminar." : {
       "localizations" : {
@@ -34985,17 +35326,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "캘린더와 동기화하세요"
-          }
-        }
-      }
-    },
-    "Sincronize com o Calendário" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sync with Calendar"
           }
         }
       }
@@ -38213,6 +38543,41 @@
         }
       }
     },
+    "Trocar toalha" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the towel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar la toalla"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer la serviette"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タオル交換"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "수건 교체"
+          }
+        }
+      }
+    },
     "Trocar toalhas" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38381,17 +38746,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "장보기 목록에 추가한 항목"
-          }
-        }
-      }
-    },
-    "Um item que você adicionou à lista de compras" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "An item you added to the shopping list"
           }
         }
       }
@@ -39252,17 +39606,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple 캘린더에서 바로 내 집안일을 확인하세요"
-          }
-        }
-      }
-    },
-    "Veja as suas tarefas direto no Apple Calendar" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See your chores right in Apple Calendar"
           }
         }
       }
@@ -40223,28 +40566,6 @@
         }
       }
     },
-    "Você deve %@ a %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You owe %@ to %@"
-          }
-        }
-      }
-    },
-    "Você deve %@ a %lld pessoas" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You owe %@ to %lld people"
-          }
-        }
-      }
-    },
     "Você deve à casa" : {
       "localizations" : {
         "en" : {
@@ -40825,28 +41146,6 @@
         }
       }
     },
-    "Você tem pagamentos a receber" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have payments to receive"
-          }
-        }
-      }
-    },
-    "Você tem pagamentos pendentes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have pending payments"
-          }
-        }
-      }
-    },
     "Voltar" : {
       "localizations" : {
         "en" : {
@@ -40915,317 +41214,106 @@
         }
       }
     },
-    "%@ comprou" : {
-      "extractionState" : "stale",
+    "Sem WiFi armazenado" : {
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ bought"
+            "value" : "No Wi-Fi saved"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ compró"
+            "value" : "Ningún Wi-Fi guardado"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ a acheté"
+            "value" : "Aucun Wi-Fi enregistré"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@さんが購入しました"
+            "value" : "保存されたWi-Fiはありません"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@님이 구매했어요"
+            "value" : "저장된 Wi-Fi 없음"
           }
         }
       }
     },
-    "Carro" : {
-      "extractionState" : "stale",
+    "Desparear" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Car"
+            "value" : "Unpair"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto"
+            "value" : "Desemparejar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voiture"
+            "value" : "Désappairer"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "車"
+            "value" : "ペアリングを解除"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "자동차"
+            "value" : "페어링 해제"
           }
         }
       }
     },
-    "Estender roupa" : {
-      "extractionState" : "stale",
+    "Desparear este celular" : {
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hang the laundry"
+            "value" : "Unpair this phone"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tender la ropa"
+            "value" : "Desemparejar este celular"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Étendre le linge"
+            "value" : "Désappairer ce téléphone"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "洗濯物を干す"
+            "value" : "この携帯電話のペアリングを解除"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "빨래 널기"
-          }
-        }
-      }
-    },
-    "Limpeza" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cleaning"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Limpieza"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nettoyage"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "掃除"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "청소"
-          }
-        }
-      }
-    },
-    "Pix copia e cola" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pix copy and paste"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pix copiar y pegar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pix copier-coller"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pix コピー&ペースト"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pix 복사 후 붙여넣기"
-          }
-        }
-      }
-    },
-    "Progresso" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Progress"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Progreso"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Progression"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "進捗"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "진행 상황"
-          }
-        }
-      }
-    },
-    "Ranking" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ranking"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ranking"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Classement"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ランキング"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "랭킹"
-          }
-        }
-      }
-    },
-    "Selecione as tarefas" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select the chores"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecciona las tareas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionne les tâches"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "家事を選択"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "집안일 선택"
-          }
-        }
-      }
-    },
-    "Trocar toalha" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change the towel"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambiar la toalla"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Changer la serviette"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "タオル交換"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "수건 교체"
+            "value" : "이 휴대폰 페어링 해제"
           }
         }
       }

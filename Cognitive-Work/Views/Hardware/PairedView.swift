@@ -17,7 +17,7 @@ struct PairedView: View {
     
     var body: some View {
         
-        let wifiName = (hardwareViewModel.wifiName == "") ? "Sem WiFi armazenado" : hardwareViewModel.wifiName
+        let wifiName = (hardwareViewModel.wifiName == "") ? L10n.tr("Sem WiFi armazenado") : hardwareViewModel.wifiName
         
         VStack(alignment: .leading) {
             Text("Seu Harvii está\n\(Text("pareado").foregroundStyle(.choreGreen))!")
@@ -36,7 +36,7 @@ struct PairedView: View {
                     .font(.subheadline.weight(.semibold))
                 
                 Text(wifiName)
-                    .font(.default)
+                    .font(.body)
                     .foregroundStyle(.subTitleGray)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 16)
@@ -44,6 +44,7 @@ struct PairedView: View {
                     .background(Color(.systemGroupedBackground), in: .rect(cornerRadius: 20))
             }
             .padding(.top, height * 0.02)
+            .accessibilityElement(children: .combine)
             
             Spacer()
             
@@ -51,14 +52,14 @@ struct PairedView: View {
                 hardwareViewModel.disconnectThisPhone()
                 disconectThisPhone = true
             } label: {
-                Text("Disparear")
+                Text("Desparear")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(Color(.systemGray5), in: .capsule)
             }
-            .voiceControlNames([L10n.tr("Disparear este celular"), L10n.tr("Disparear")])
+            .voiceControlNames([L10n.tr("Desparear este celular"), L10n.tr("Desparear")])
             .buttonStyle(.plain)
             .padding(.bottom, height * 0.14)
         }
