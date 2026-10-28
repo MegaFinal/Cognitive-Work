@@ -24,7 +24,7 @@ private struct PreviewHouse {
     private let ana = PreviewHouse.member("Ana", points: 90)
     private let bruno = PreviewHouse.member("Bruno", points: 60)
     
-    private let kitchen = PreviewHouse.room("Cozinha", symbol: "stove", color: .yellow)
+    private let kitchen = PreviewHouse.room("Cozinha", symbol: "stove.pans", color: .yellow)
     private let bathroom = PreviewHouse.room("Banheiro", symbol: "toilet", color: .blue)
     private let livingRoom = PreviewHouse.room("Sala de Estar", symbol: "sofa", color: .orange)
     private let laundry = PreviewHouse.room("Área de Serviço", symbol: "clothes.line.stripes", color: .blue)

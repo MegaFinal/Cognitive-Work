@@ -27,17 +27,6 @@
         }
       }
     },
-    "%@ %@" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
     "%@ adicionado" : {
       "localizations" : {
         "en" : {
@@ -260,17 +249,6 @@
           }
         }
       }
-    },
-    "%@, %@" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$@"
-          }
-        }
-      },
-      "shouldTranslate" : false
     },
     "%@, %@ e mais %lld" : {
       "localizations" : {
@@ -1633,6 +1611,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 article"
+          }
+        }
+      }
+    },
+    "1 item para comprar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 item to buy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 ítem por comprar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 article à acheter"
           }
         }
       }
@@ -3034,6 +3034,28 @@
         }
       }
     },
+    "Ajudante oficial" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Official Helper"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayudante oficial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant officiel"
+          }
+        }
+      }
+    },
     "Ajustes" : {
       "localizations" : {
         "en" : {
@@ -3140,6 +3162,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alimentation"
+          }
+        }
+      }
+    },
+    "Alma da casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soul of the House"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alma de la casa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Âme de la maison"
           }
         }
       }
@@ -3472,6 +3516,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couper les branches sèches et tailler les plantes."
+          }
+        }
+      }
+    },
+    "Aprendiz" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apprentice"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprendiz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apprenti"
           }
         }
       }
@@ -3925,6 +3991,28 @@
         }
       }
     },
+    "avião" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "plane"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "avión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "avion"
+          }
+        }
+      }
+    },
     "Avisos" : {
       "localizations" : {
         "en" : {
@@ -4257,6 +4345,7 @@
       }
     },
     "Bronze" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4762,6 +4851,28 @@
         }
       }
     },
+    "Cavaleiro do rodo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Knight of the Squeegee"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caballero del trapeador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chevalier de la raclette"
+          }
+        }
+      }
+    },
     "Celular desconectado." : {
       "localizations" : {
         "en" : {
@@ -5057,6 +5168,7 @@
       }
     },
     "Ciclo atual" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6495,6 +6607,28 @@
         }
       }
     },
+    "Cupons disponíveis" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available coupons"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cupones disponibles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coupons disponibles"
+          }
+        }
+      }
+    },
     "curta" : {
       "localizations" : {
         "en" : {
@@ -6733,6 +6867,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Après cette période, tout est redistribué entre vous."
+          }
+        }
+      }
+    },
+    "Desbloqueie em" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlocks at"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se desbloquea en"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se débloque à"
           }
         }
       }
@@ -7135,6 +7291,28 @@
         }
       }
     },
+    "Destaque o ticket para comprá-lo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pull out the ticket to buy it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destaca el ticket para comprarlo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mets le ticket en avant pour l’acheter"
+          }
+        }
+      }
+    },
     "Desvinculando de uma casa antiga..." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7291,6 +7469,7 @@
       }
     },
     "Diamante" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9323,6 +9502,28 @@
         }
       }
     },
+    "Escudeiro da faxina" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaning Squire"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escudero de la limpieza"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Écuyer du ménage"
+          }
+        }
+      }
+    },
     "Esfregar a cuba e a torneira e secar a bancada." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9478,28 +9679,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cette maison n’a pas encore de liste de courses."
-          }
-        }
-      }
-    },
-    "Esse cômodo ainda não tem cupons disponíveis." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This room has no coupons available yet."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este ambiente todavía no tiene cupones disponibles."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cette pièce n’a pas encore de coupons disponibles."
           }
         }
       }
@@ -10678,6 +10857,28 @@
         }
       }
     },
+    "foguete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rocket"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cohete"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fusée"
+          }
+        }
+      }
+    },
     "foi o rank que você alcançou neste ciclo" : {
       "localizations" : {
         "en" : {
@@ -10828,6 +11029,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fréquence %@"
+          }
+        }
+      }
+    },
+    "Gamificação" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gamification"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gamificación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gamification"
           }
         }
       }
@@ -11186,6 +11409,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ranger ce qui traîne, arranger les coussins et les plaids."
+          }
+        }
+      }
+    },
+    "Guardião da casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "House Guardian"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardián de la casa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardien de la maison"
           }
         }
       }
@@ -12393,6 +12638,28 @@
         }
       }
     },
+    "Lenda da casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "House Legend"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leyenda de la casa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Légende de la maison"
+          }
+        }
+      }
+    },
     "Levantando escalas" : {
       "localizations" : {
         "en" : {
@@ -13561,6 +13828,7 @@
       }
     },
     "Mestre" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -13578,6 +13846,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Maître"
+          }
+        }
+      }
+    },
+    "Mestre da casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "House Master"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maestro de la casa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maître de la maison"
           }
         }
       }
@@ -15298,28 +15588,6 @@
         }
       }
     },
-    "Nenhum cômodo ainda" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No rooms yet"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todavía no hay ambientes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune pièce pour l’instant"
-          }
-        }
-      }
-    },
     "Nenhum cômodo padrão foi selecionado para a casa." : {
       "localizations" : {
         "en" : {
@@ -15338,6 +15606,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune pièce par défaut n’a été sélectionnée pour la maison."
+          }
+        }
+      }
+    },
+    "Nenhum cupom ainda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No coupons yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no hay cupones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas encore de coupons"
+          }
+        }
+      }
+    },
+    "Nenhum cupom disponível" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No coupons available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay cupones disponibles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun coupon disponible"
+          }
+        }
+      }
+    },
+    "Nenhum cupom disponível agora." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No coupons available right now."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay cupones disponibles ahora."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun coupon disponible pour le moment."
           }
         }
       }
@@ -15696,6 +16030,7 @@
       }
     },
     "nível" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16044,6 +16379,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nouvelle tâche"
+          }
+        }
+      }
+    },
+    "Novato da casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "House Rookie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novato de la casa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Petit nouveau"
           }
         }
       }
@@ -16935,6 +17292,28 @@
         }
       }
     },
+    "Os cupons que você comprar neste ciclo aparecem aqui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The coupons you buy this cycle show up here."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los cupones que compres en este ciclo aparecerán aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les coupons que tu achètes ce cycle apparaissent ici."
+          }
+        }
+      }
+    },
     "Os moradores não vão conseguir te pagar pelo app até você cadastrar outra." : {
       "localizations" : {
         "en" : {
@@ -17024,6 +17403,7 @@
       }
     },
     "Ouro" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -17892,6 +18272,7 @@
       }
     },
     "Passe de tarefa" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -18376,6 +18757,50 @@
         }
       }
     },
+    "pipa grande" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "big kite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cometa grande"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "grand cerf-volant"
+          }
+        }
+      }
+    },
+    "pipa pequena" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "small kite"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cometa pequeña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "petit cerf-volant"
+          }
+        }
+      }
+    },
     "Pipa Premium" : {
       "localizations" : {
         "en" : {
@@ -18465,6 +18890,7 @@
       }
     },
     "Platina" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -18576,6 +19002,7 @@
       }
     },
     "Prata" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -18974,6 +19401,28 @@
         }
       }
     },
+    "Protetor do lar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Protector"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protector del hogar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protecteur du foyer"
+          }
+        }
+      }
+    },
     "Próxima" : {
       "localizations" : {
         "en" : {
@@ -19107,6 +19556,7 @@
       }
     },
     "Puxe para baixo para destacar e comprar por %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -19151,24 +19601,24 @@
         }
       }
     },
-    "Quando a casa tiver cômodos, os cupons de cada um aparecem aqui." : {
+    "Quando a casa tiver tarefas, os cupons de cada uma aparecem aqui." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Once the house has rooms, each room's coupons show up here."
+            "value" : "Once the home has chores, each chore's coupons show up here."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cuando la casa tenga ambientes, los cupones de cada uno aparecerán aquí."
+            "value" : "Cuando la casa tenga tareas, los cupones de cada una aparecerán aquí."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quand la maison aura des pièces, les coupons de chacune apparaîtront ici."
+            "value" : "Quand la maison aura des tâches, les coupons de chacune apparaîtront ici."
           }
         }
       }
@@ -19191,6 +19641,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quand les tâches seront réparties, elles apparaîtront ici."
+          }
+        }
+      }
+    },
+    "Quando houver cupons à venda, eles aparecem aqui." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When coupons are on sale, they show up here."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando haya cupones a la venta, aparecerán aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand des coupons seront en vente, ils apparaîtront ici."
           }
         }
       }
@@ -19680,6 +20152,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "R$"
+          }
+        }
+      }
+    },
+    "Ranking da casa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home ranking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ranking de la casa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classement de la maison"
           }
         }
       }
@@ -20887,6 +21381,28 @@
         }
       }
     },
+    "Sábio do lar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Sage"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sabio del hogar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sage du foyer"
+          }
+        }
+      }
+    },
     "Saindo da casa..." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21331,28 +21847,6 @@
         }
       }
     },
-    "Sem cupons por aqui" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No coupons here"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No hay cupones por aquí"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas de coupons ici"
-          }
-        }
-      }
-    },
     "Sem data" : {
       "localizations" : {
         "en" : {
@@ -21547,6 +22041,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mot de passe du Wi-Fi"
+          }
+        }
+      }
+    },
+    "Sentinela da sala" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Living Room Sentinel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Centinela de la sala"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sentinelle du salon"
           }
         }
       }
@@ -21834,6 +22350,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tes pièces"
+          }
+        }
+      }
+    },
+    "Seus cupons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your coupons"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus cupones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes coupons"
           }
         }
       }
@@ -23864,6 +24402,7 @@
       }
     },
     "Trocar cômodo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24018,28 +24557,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Changer les serviettes"
-          }
-        }
-      }
-    },
-    "Troque suas moedas por cupons" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trade your coins for coupons"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambia tus monedas por cupones"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Échange tes jetons contre des coupons"
           }
         }
       }
@@ -24265,6 +24782,7 @@
       }
     },
     "uso único" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -24955,6 +25473,28 @@
         }
       }
     },
+    "Vigia da cozinha" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kitchen Lookout"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vigía de la cocina"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vigie de la cuisine"
+          }
+        }
+      }
+    },
     "Vitalício" : {
       "localizations" : {
         "en" : {
@@ -24995,6 +25535,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Toi"
+          }
+        }
+      }
+    },
+    "Você ainda não tem cupons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have any coupons yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no tienes cupones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu n’as pas encore de coupons"
+          }
+        }
+      }
+    },
+    "Você ainda não tem cupons neste ciclo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have any coupons this cycle yet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no tienes cupones en este ciclo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu n’as pas encore de coupons ce cycle."
           }
         }
       }
