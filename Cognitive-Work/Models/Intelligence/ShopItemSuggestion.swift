@@ -256,7 +256,7 @@ extension IntelligenceManager {
         // The model sometimes translates a Chinese name into Portuguese ("咖啡" -> "café", from
         // the prompt's examples). When the person wrote just the product, keep their words.
         let written = (sourceText ?? input).trimmingCharacters(in: .whitespacesAndNewlines)
-        if written.hasCJK, !name.hasCJK, let product = Self.chineseProductName(in: written) {
+        if written.hasCJK, !name.hasCJK, let product = Self.cjkProductName(in: written) {
             name = String(product.prefix(TextLimits.shopItemName))
         }
         let range = QuantityStepper.allowedRange
@@ -355,20 +355,30 @@ extension IntelligenceManager {
         }
     }
 
-    // MARK: Chinese product name
+    // MARK: Chinese, Japanese and Korean product name
 
-    /// Units, money and people words that surround a product in Chinese ("2公斤咖啡，25元，给我").
-    private static let chineseNonProductWords = [
-        "公斤", "千克", "毫升", "克", "升", "个", "包", "盒", "瓶", "袋", "罐", "斤", "块", "元", "钱",
-        "每人", "大家", "所有人", "全家", "我们", "给", "我", "和", "的", "买", "要", "一", "两"
+    /// Units, money and people words around a product, in Chinese ("2公斤咖啡，25元，给我"),
+    /// Japanese ("コーヒー2袋、25レアル、私に") and Korean ("커피 2봉지 25헤알 나한테").
+    /// Longer words first, so "毫升" goes before "升".
+    private static let cjkNonProductWords = [
+        // Chinese
+        "公斤", "千克", "毫升", "每人", "大家", "所有人", "全家", "我们",
+        "克", "升", "个", "包", "盒", "瓶", "袋", "罐", "斤", "块", "元", "钱",
+        "给", "我", "和", "的", "买", "要", "一", "两",
+        // Japanese
+        "キログラム", "グラム", "リットル", "キロ", "パック", "レアル", "みんな", "私たち", "全員",
+        "個", "本", "袋", "円", "私", "僕", "俺", "用", "に", "を", "と", "の", "で",
+        // Korean
+        "킬로그램", "킬로", "그램", "리터", "봉지", "헤알", "모두", "우리", "나한테", "저한테",
+        "에게", "한테", "개", "팩", "병", "원", "나", "저", "을", "를", "과", "와"
     ]
 
-    /// The product in a Chinese entry: the longest run of Chinese characters once units, money
-    /// and people words are taken out ("2公斤咖啡，25元，给我" -> "咖啡"). Used when the model
-    /// translated the name ("café") instead of keeping it.
-    static func chineseProductName(in text: String) -> String? {
+    /// The product in a Chinese, Japanese or Korean entry: the longest run of those characters
+    /// once units, money and people words are taken out ("2公斤咖啡，25元，给我" -> "咖啡").
+    /// Used when the model translated the name ("café") instead of keeping it.
+    static func cjkProductName(in text: String) -> String? {
         var cleaned = text
-        for word in chineseNonProductWords {
+        for word in cjkNonProductWords {
             cleaned = cleaned.replacingOccurrences(of: word, with: " ")
         }
         var runs: [String] = []
@@ -402,8 +412,21 @@ extension IntelligenceManager {
     ]
 
     /// Chinese has no spaces between words, so these are looked for inside the text instead.
-    private static let everyonePhrases = ["大家", "所有人", "全家", "每个人", "我们", "tout le monde", "todo el mundo"]
-    private static let selfPhrases = ["我"]
+    /// Chinese and Japanese have no spaces between words, and Korean glues particles to words
+    /// ("나한테"), so these are looked for inside the text instead.
+    private static let everyonePhrases = [
+        "大家", "所有人", "全家", "每个人", "我们",            // Chinese
+        "みんな", "皆", "全員", "家族", "私たち",              // Japanese
+        "모두", "다같이", "다 같이", "전부", "우리",            // Korean
+        "tout le monde", "todo el mundo"
+    ]
+    private static let selfPhrases = [
+        "我",                                                  // Chinese
+        "私", "僕", "俺", "自分",                              // Japanese
+        "나한테", "나를", "내가", "내꺼", "저한테", "제가", "제꺼" // Korean
+    ]
+    /// "Us" words, taken out before looking for "me" ("我们" contains "我").
+    private static let usPhrases = ["我们", "私たち"]
 
     /// Who an item is for, read straight from its own text: housemates whose first name appears
     /// in it, the person typing for "eu" / "mim" / "me", or everyone for "todos" / "casa".
@@ -434,8 +457,12 @@ extension IntelligenceManager {
             if !picked.contains(where: { $0.id == user.id }) { picked.append(user) }
         }
         // "我" (me) counts, but not inside "我们" (us), which means the whole house.
-        let withoutUs = foldedText.replacingOccurrences(of: "我们", with: "")
-        let saysSelf = !words.isDisjoint(with: selfWords) || selfPhrases.contains(where: withoutUs.contains)
+        var withoutUs = foldedText
+        for us in usPhrases { withoutUs = withoutUs.replacingOccurrences(of: us, with: "") }
+        // Korean "나" / "저" (me) as a word on their own.
+        let koreanSelf = words.contains("나") || words.contains("저")
+        let saysSelf = !words.isDisjoint(with: selfWords) || koreanSelf
+            || selfPhrases.contains(where: withoutUs.contains)
         if saysSelf, let currentUser { add(currentUser) }
         for user in housemates where isMentioned(user.name, in: words) || isMentionedCJK(user.name, in: foldedText) {
             add(user)
